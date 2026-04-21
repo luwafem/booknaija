@@ -27,21 +27,23 @@ export const handler = async (event) => {
       const endTime = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
 
       const googleClientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-      
-      // --- KEY FORMATTING FIX ---
       let privateKey = process.env.GOOGLE_PRIVATE_KEY;
 
+      // --- SAFE KEY FORMATTING FIX ---
       if (privateKey) {
-        // 1. Remove accidental quotes at the start/end
+        // 1. Remove quotes if present
         privateKey = privateKey.replace(/^"|"$/g, '');
-        
-        // 2. Replace literal \n (backslash-n) with real newlines (for JSON copies)
+
+        // 2. Fix literal \n (backslash-n) to real newlines (needed for some JSON formats)
         privateKey = privateKey.replace(/\\n/g, '\n');
-        
-        // 3. FIX SINGLE-LINE KEY: 
-        // If Netlify stripped newlines, force them back in around the headers.
-        privateKey = privateKey.replace(/(-----BEGIN PRIVATE KEY-----)/, '$1\n');
-        privateKey = privateKey.replace(/(-----END PRIVATE KEY-----)/, '\n$1');
+
+        // 3. FIX NETLIFY SINGLE-LINE ISSUE (Safe Check)
+        if (!privateKey.includes('-----BEGIN PRIVATE KEY-----\n')) {
+            privateKey = privateKey.replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n');
+        }
+        if (!privateKey.includes('\n-----END PRIVATE KEY-----')) {
+            privateKey = privateKey.replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----');
+        }
       }
 
       if (googleClientEmail && privateKey && calendarId) {
