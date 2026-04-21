@@ -1,3 +1,4 @@
+// MUST use 'import' because package.json has "type": "module"
 import { google } from 'googleapis';
 
 export const handler = async (event) => {
@@ -28,11 +29,22 @@ export const handler = async (event) => {
       const endTime = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
 
       const googleClientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-      const googlePrivateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+      
+      // --- FIX IS HERE ---
+      // 1. Get the raw string
+      let rawKey = process.env.GOOGLE_PRIVATE_KEY;
+      
+      if (rawKey) {
+        // 2. Replace literal "\n" (backslash-n) with real newlines
+        rawKey = rawKey.replace(/\\n/g, '\n');
+        
+        // 3. Remove accidental quotes at the very start or very end
+        rawKey = rawKey.replace(/^"|"$/g, '');
+      }
 
-      if (googleClientEmail && googlePrivateKey && calendarId) {
+      if (googleClientEmail && rawKey && calendarId) {
         const auth = new google.auth.GoogleAuth({
-          credentials: { client_email: googleClientEmail, private_key: googlePrivateKey },
+          credentials: { client_email: googleClientEmail, private_key: rawKey },
           scopes: ['https://www.googleapis.com/auth/calendar.events'],
         });
         
