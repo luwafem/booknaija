@@ -1,6 +1,6 @@
-const { google } = require('googleapis');
+import { google } from 'googleapis';
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   try {
     const { slug, reference, calendarId } = JSON.parse(event.body);
     
