@@ -1,4 +1,3 @@
-// MUST use 'import' because package.json has "type": "module"
 import { google } from 'googleapis';
 
 export const handler = async (event) => {
@@ -20,7 +19,6 @@ export const handler = async (event) => {
     const m = vd.data.metadata;
     const isProduct = m.type === 'product';
 
-    // Only add to Google Calendar if it's a SERVICE
     if (!isProduct) {
       const date = m.date;
       const time = m.time;
@@ -30,21 +28,25 @@ export const handler = async (event) => {
 
       const googleClientEmail = process.env.GOOGLE_CLIENT_EMAIL;
       
-      // --- FIX IS HERE ---
-      // 1. Get the raw string
-      let rawKey = process.env.GOOGLE_PRIVATE_KEY;
-      
-      if (rawKey) {
-        // 2. Replace literal "\n" (backslash-n) with real newlines
-        rawKey = rawKey.replace(/\\n/g, '\n');
+      // --- KEY FORMATTING FIX ---
+      let privateKey = process.env.GOOGLE_PRIVATE_KEY;
+
+      if (privateKey) {
+        // 1. Remove accidental quotes at the start/end
+        privateKey = privateKey.replace(/^"|"$/g, '');
         
-        // 3. Remove accidental quotes at the very start or very end
-        rawKey = rawKey.replace(/^"|"$/g, '');
+        // 2. Replace literal \n (backslash-n) with real newlines (for JSON copies)
+        privateKey = privateKey.replace(/\\n/g, '\n');
+        
+        // 3. FIX SINGLE-LINE KEY: 
+        // If Netlify stripped newlines, force them back in around the headers.
+        privateKey = privateKey.replace(/(-----BEGIN PRIVATE KEY-----)/, '$1\n');
+        privateKey = privateKey.replace(/(-----END PRIVATE KEY-----)/, '\n$1');
       }
 
-      if (googleClientEmail && rawKey && calendarId) {
+      if (googleClientEmail && privateKey && calendarId) {
         const auth = new google.auth.GoogleAuth({
-          credentials: { client_email: googleClientEmail, private_key: rawKey },
+          credentials: { client_email: googleClientEmail, private_key: privateKey },
           scopes: ['https://www.googleapis.com/auth/calendar.events'],
         });
         
