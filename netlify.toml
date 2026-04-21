@@ -1,8 +1,14 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  # --- ADD THIS LINE ---
+  # This forces Netlify to use Node 18 for building AND running functions
+  NODE_VERSION = "18"
 
 [functions]
+  # Explicitly point to where your functions folder is
+  directory = "netlify/functions"
+  # Keep the esbuild bundler
   node_bundler = "esbuild"
 
 [[redirects]]
