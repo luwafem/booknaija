@@ -2,11 +2,11 @@ import { useState } from 'react';
 
 export default function ProductList({ products, selectedProducts, onSelect, accent, label }) {
   return (
-    <section className="px-6 mt-8">
-      <h2 className="text-[11px] font-semibold text-stone-500 uppercase tracking-[0.15em] mb-3 px-1">
+    <section className="px-6 mt-8 max-w-xl mx-auto">
+      <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-6 px-1">
         {label}
       </h2>
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-3">
         {products.map((p) => (
           <ProductCard
             key={p.id}
@@ -23,31 +23,34 @@ export default function ProductList({ products, selectedProducts, onSelect, acce
 
 function ProductCard({ product, active, accent, onClick }) {
   const [openDetails, setOpenDetails] = useState(false);
-  
   const canShowDetails = product.showDetails !== false && product.description;
 
   return (
     <div
       onClick={onClick}
-      className="text-left rounded-xl border transition-all duration-200 group bg-white/[0.02] overflow-hidden flex flex-col cursor-pointer"
+      className={`
+        w-full text-left rounded-2xl border transition-all duration-300 group relative overflow-hidden flex flex-col cursor-pointer
+        ${active 
+          ? 'bg-white/5' 
+          : 'bg-white/[0.02] hover:bg-white/[0.04]'
+        }
+      `}
       style={
         active
           ? { 
-              background: `${accent}08`, 
-              borderColor: `${accent}40`, 
-              boxShadow: `0 4px 20px -4px ${accent}15`,
-              borderWidth: '1px' 
+              borderColor: `${accent}60`, 
+              boxShadow: `0 0 0 1px ${accent}30, 0 4px 20px -4px ${accent}15`,
             }
-          : { borderColor: 'rgba(255,255,255,0.04)' }
+          : { borderColor: 'rgba(255,255,255,0.05)' }
       }
     >
       {/* Image Container */}
-      <div className="aspect-square overflow-hidden bg-[#111] relative">
+      <div className="aspect-square w-full bg-black border-b border-white/5 relative">
         {product.image ? (
           <img 
             src={product.image} 
             alt={product.name} 
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
             loading="lazy"
           />
         ) : (
@@ -60,10 +63,12 @@ function ProductCard({ product, active, accent, onClick }) {
         
         {active && (
           <div 
-            className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-lg"
-            style={{ background: accent, color: '#0a0a0a' }}
+            className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center shadow-lg z-10 transition-transform duration-300 scale-95 group-hover:scale-100"
+            style={{ backgroundColor: accent, color: '#0a0a0a' }}
           >
-            ✓
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 13l4 4L19 7" />
+            </svg>
           </div>
         )}
       </div>
@@ -71,20 +76,20 @@ function ProductCard({ product, active, accent, onClick }) {
       {/* Text Content */}
       <div className="p-3 flex-1 flex flex-col justify-between">
         <div>
-          <p className="text-sm font-medium leading-snug text-stone-300 group-hover:text-white transition-colors line-clamp-2">
+          <h3 className={`text-sm font-semibold truncate mb-1 transition-colors ${active ? 'text-white' : 'text-stone-300'}`}>
             {product.name}
-          </p>
+          </h3>
           
           {/* Details Toggle */}
           {canShowDetails && (
             <button
               onClick={(e) => {
-                e.stopPropagation(); // Prevent adding to cart
+                e.stopPropagation(); 
                 setOpenDetails(!openDetails);
               }}
-              className="flex items-center gap-1 mt-1.5 text-[11px] font-medium text-stone-600 hover:text-stone-300 transition-colors"
+              className="mb-2 text-[11px] font-medium text-stone-500 hover:text-white transition-colors flex items-center gap-2 group/btn"
             >
-              <span className="w-3.5 h-3.5 rounded border border-stone-700 flex items-center justify-center text-[9px]">
+              <span className="w-4 h-4 rounded border border-stone-700 flex items-center justify-center text-[10px] text-stone-400 group-hover/btn:border-stone-500 group-hover/btn:text-white transition-colors">
                 {openDetails ? '−' : '+'}
               </span>
               {openDetails ? 'Less' : 'More'}
@@ -93,13 +98,13 @@ function ProductCard({ product, active, accent, onClick }) {
 
           {/* Expandable Details */}
           {openDetails && canShowDetails && (
-            <p className="text-[11px] text-stone-500 leading-relaxed mt-2 pt-2 border-t border-white/[0.06] animate-fade-in">
+            <p className="text-xs text-stone-300 leading-relaxed animate-fade-in">
               {product.description}
             </p>
           )}
         </div>
 
-        <p className="text-xs mt-2 font-bold tabular-nums" style={{ color: accent }}>
+        <p className={`text-sm font-bold tabular-nums mt-2 transition-colors ${active ? 'text-white' : ''}`} style={{ color: accent }}>
           ₦{product.price.toLocaleString()}
         </p>
       </div>

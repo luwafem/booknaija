@@ -64,9 +64,7 @@ export default function BookingForm({ biz, selectedId, selectedProducts = [], on
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           slug: biz.slug, 
-          // If products, join IDs. If service, use single ID.
           serviceId: isProduct ? selectedProducts.join(',') : selectedId, 
-          // Combined names for the receipt (e.g., "Serum, Glue")
           serviceName: itemNames, 
           amount: totalAmount,
           date: isProduct ? 'N/A' : date, 
@@ -135,29 +133,34 @@ export default function BookingForm({ biz, selectedId, selectedProducts = [], on
   );
 
   if (!hasSelection) return (
-    <div className="text-center py-12 border border-dashed border-stone-800/40 rounded-2xl bg-white/[0.01]">
-      <p className="text-stone-600 text-sm">Select a service or product above to continue</p>
+    <div className="text-center py-12 rounded-2xl border border-dashed border-white/5 bg-white/[0.01]">
+      <div className="w-12 h-12 rounded-full bg-white/[0.02] border border-white/5 mx-auto mb-3 flex items-center justify-center text-stone-600">
+         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.567-2.226m-2.51-2.225l.567 2.226m-2.51-2.225l-2.51 2.225a.75.75 0 01-.554-.759l-1.285-5.137a3 3 0 00-1.794-2.187L2.77 5.313a.75.75 0 01.85-.748l7.4 2.246a3 3 0 011.75 2.187l1.78 7.127a.75.75 0 01-.851.748L12 14.5l-4.995 1.721a.75.75 0 01-.463-1.549z" />
+         </svg>
+      </div>
+      <p className="text-stone-500 text-sm">Select a service or product above to continue</p>
     </div>
   );
 
-  const inputBase = 'w-full bg-[#111] border rounded-xl px-4 py-3 text-sm text-white placeholder-stone-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-30';
-  const inputStyle = { borderColor: 'rgba(255,255,255,0.06)', ['--tw-ring-color']: accent };
+  const inputBase = 'w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-stone-700 transition-all duration-200 focus:outline-none focus:border-white/30 focus:bg-black/60';
+  const labelStyle = "block text-[11px] text-stone-500 uppercase tracking-[0.15em] mb-2 px-1 font-semibold";
 
   return (
-    <form onSubmit={pay} className="space-y-4 mt-2">
+    <form onSubmit={pay} className="space-y-5 mt-2">
       
       {/* ── SINGLE SERVICE SUMMARY ── */}
       {isService && (
-        <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border backdrop-blur-sm"
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm"
           style={{ borderColor: `${accent}20` }}>
           <div className="min-w-0">
-            <p className="text-sm font-medium truncate">{svc.name}</p>
-            <p className="text-xs text-stone-600 mt-1">{svc.duration}</p>
+            <p className="text-sm font-semibold truncate text-stone-200">{svc.name}</p>
+            <p className="text-xs text-stone-500 mt-1">{svc.duration}</p>
           </div>
           <div className="flex items-center gap-4 flex-shrink-0 ml-3">
             <p className="text-sm font-bold tabular-nums" style={{ color: accent }}>₦{svc.price.toLocaleString()}</p>
-            <button type="button" onClick={onDeselect} className="text-stone-600 hover:text-white transition-colors p-1 hover:bg-stone-800 rounded-lg">
-              <XIcon />
+            <button type="button" onClick={onDeselect} className="text-stone-500 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded-lg">
+              <XIcon className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -165,9 +168,9 @@ export default function BookingForm({ biz, selectedId, selectedProducts = [], on
 
       {/* ── MULTIPLE PRODUCTS SUMMARY (CART VIEW) ── */}
       {isProduct && (
-        <div className="p-4 rounded-xl bg-white/[0.02] border backdrop-blur-sm space-y-3" style={{ borderColor: `${accent}20` }}>
+        <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm space-y-3" style={{ borderColor: `${accent}20` }}>
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-stone-500 uppercase tracking-widest">Your Order ({selectedPrds.length})</h3>
+            <h3 className="text-[11px] font-bold text-stone-500 uppercase tracking-widest">Your Order ({selectedPrds.length})</h3>
             <button 
               type="button" 
               onClick={() => onProductDeselect('all')} 
@@ -177,18 +180,18 @@ export default function BookingForm({ biz, selectedId, selectedProducts = [], on
             </button>
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-3">
             {selectedPrds.map((p) => (
-              <div key={p.id} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
+              <div key={p.id} className="flex items-center justify-between">
                 <div className="min-w-0 flex items-center gap-3">
                   {p.image && (
-                    <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-white/[0.04]" />
+                    <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-white/5" />
                   )}
                   <p className="text-sm text-stone-300 truncate">{p.name}</p>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0 ml-3">
                   <p className="text-sm font-bold tabular-nums" style={{ color: accent }}>₦{p.price.toLocaleString()}</p>
-                  <button type="button" onClick={() => onProductDeselect(p.id)} className="text-stone-600 hover:text-white transition-colors p-1 hover:bg-stone-800 rounded-lg">
+                  <button type="button" onClick={() => onProductDeselect(p.id)} className="text-stone-500 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-lg">
                     <XIcon className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -197,8 +200,8 @@ export default function BookingForm({ biz, selectedId, selectedProducts = [], on
           </div>
 
           {/* Cart Total */}
-          <div className="flex items-center justify-between pt-2 border-t border-white/[0.08]">
-            <span className="text-sm font-medium text-stone-300">Total</span>
+          <div className="flex items-center justify-between pt-3 border-t border-white/5">
+            <span className="text-sm font-semibold text-stone-300">Total</span>
             <span className="text-base font-bold tabular-nums" style={{ color: accent }}>
               ₦{totalAmount.toLocaleString()}
             </span>
@@ -216,14 +219,14 @@ export default function BookingForm({ biz, selectedId, selectedProducts = [], on
       {!isProduct && (
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-[11px] text-stone-600 uppercase tracking-[0.15em] mb-2 px-1 font-semibold">Date</label>
+            <label className={labelStyle}>Date</label>
             <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} 
-              className={inputBase} style={{ ...inputStyle, colorScheme: 'dark' }} />
+              className={inputBase} style={{ colorScheme: 'dark' }} />
           </div>
           <div>
-            <label className="block text-[11px] text-stone-600 uppercase tracking-[0.15em] mb-2 px-1 font-semibold">Time</label>
+            <label className={labelStyle}>Time</label>
             <input required type="time" value={time} onChange={(e) => setTime(e.target.value)} 
-              className={inputBase} style={{ ...inputStyle, colorScheme: 'dark' }} />
+              className={inputBase} style={{ colorScheme: 'dark' }} />
           </div>
         </div>
       )}
@@ -231,25 +234,25 @@ export default function BookingForm({ biz, selectedId, selectedProducts = [], on
       {/* ── DELIVERY ADDRESS (Products Only) ── */}
       {isProduct && (
         <div>
-          <label className="block text-[11px] text-stone-600 uppercase tracking-[0.15em] mb-2 px-1 font-semibold">Delivery Address</label>
+          <label className={labelStyle}>Delivery Address</label>
           <textarea required placeholder="Enter your delivery address" value={address} onChange={(e) => setAddress(e.target.value)} 
-            className={`${inputBase} h-24 resize-none`} style={inputStyle} />
+            className={`${inputBase} h-24 resize-none`} />
         </div>
       )}
 
       {/* ── CONTACT DETAILS ── */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div>
-          <label className="block text-[11px] text-stone-600 uppercase tracking-[0.15em] mb-2 px-1 font-semibold">Your Name</label>
-          <input required placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} className={inputBase} style={inputStyle} />
+          <label className={labelStyle}>Your Name</label>
+          <input required placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} className={inputBase} />
         </div>
         <div>
-          <label className="block text-[11px] text-stone-600 uppercase tracking-[0.15em] mb-2 px-1 font-semibold">Email</label>
-          <input required type="email" placeholder="you@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className={inputBase} style={inputStyle} />
+          <label className={labelStyle}>Email</label>
+          <input required type="email" placeholder="you@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className={inputBase} />
         </div>
         <div>
-          <label className="block text-[11px] text-stone-600 uppercase tracking-[0.15em] mb-2 px-1 font-semibold">Phone</label>
-          <input required placeholder="+234..." value={phone} onChange={(e) => setPhone(e.target.value)} className={inputBase} style={inputStyle} />
+          <label className={labelStyle}>Phone</label>
+          <input required placeholder="+234..." value={phone} onChange={(e) => setPhone(e.target.value)} className={inputBase} />
         </div>
       </div>
 
@@ -257,11 +260,10 @@ export default function BookingForm({ biz, selectedId, selectedProducts = [], on
       <button 
         type="submit" 
         disabled={loading}
-        className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide transition-all duration-200 disabled:opacity-40 hover:brightness-110 active:scale-[0.98] mt-2"
+        className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide transition-all duration-200 disabled:opacity-50 hover:brightness-110 active:scale-[0.98] mt-2 shadow-lg"
         style={{ 
           background: accent, 
-          color: '#0a0a0a',
-          boxShadow: `0 8px 24px -6px ${accent}50`
+          color: '#0a0a0a'
         }}>
         {loading ? 'Processing…' : isProduct ? `Pay ₦${totalAmount.toLocaleString()}` : 'Pay & Book'}
       </button>

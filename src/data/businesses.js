@@ -3,6 +3,7 @@ const businesses = {
   'glamour-lash': {
     name: 'Glamour Lash Studio',
     slug: 'glamour-lash',
+    logo:'',
     tagline: 'Premium lash extensions in Lagos',
     bio: 'Certified lash artist with 5+ years experience. Specialising in classic, volume & mega volume techniques for a natural, fluttery look.',
     phone: '+234 812 345 6789',
@@ -57,6 +58,7 @@ const businesses = {
   'velvet-nails': {
     name: 'Velvet Nail Bar',
     slug: 'velvet-nails',
+    logo:'',
     tagline: 'Luxury nail art & manicures in Lekki',
     bio: 'Your go-to nail studio for flawless acrylics, gel extensions, and hand-painted nail art. Walk in fierce, walk out flawless.',
     phone: '+234 809 876 5432',
@@ -92,6 +94,7 @@ const businesses = {
   'glow-skin': {
     name: 'Glow Skin Clinic',
     slug: 'glow-skin',
+    logo:'',
     tagline: 'Expert facials & skincare in Victoria Island',
     bio: 'Medical-grade facials and advanced skincare treatments tailored to Nigerian skin. Consultation-based approach — no guesswork.',
     phone: '+234 803 456 7890',
