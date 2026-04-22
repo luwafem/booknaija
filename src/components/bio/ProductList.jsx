@@ -6,6 +6,12 @@ export default function ProductList({ products, selectedProducts, onSelect, acce
       <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-6 px-1">
         {label}
       </h2>
+      
+      {/* 
+        Grid Layout:
+        Standard items take 1 column (2 per row).
+        Wide items take 2 columns (1 per row).
+      */}
       <div className="grid grid-cols-2 gap-3">
         {products.map((p) => (
           <ProductCard
@@ -13,7 +19,8 @@ export default function ProductList({ products, selectedProducts, onSelect, acce
             product={p}
             active={selectedProducts.includes(p.id)}
             accent={accent}
-            onClick={() => onSelect(p.id)}
+            // UPDATED: Pass a wrapper function that captures Size & Color
+            onClick={(id, size, color) => onSelect(id, size, color)}
           />
         ))}
       </div>
@@ -23,13 +30,46 @@ export default function ProductList({ products, selectedProducts, onSelect, acce
 
 function ProductCard({ product, active, accent, onClick }) {
   const [openDetails, setOpenDetails] = useState(false);
+  
+  // --- SIZE LOGIC ---
+  const hasSizes = product.sizes && product.sizes.length > 0;
+  const [selectedSize, setSelectedSize] = useState(hasSizes ? product.sizes[0] : null);
+  
+  // --- COLOR LOGIC ---
+  const hasColors = product.colors && product.colors.length > 0;
+  const [selectedColor, setSelectedColor] = useState(hasColors ? product.colors[0] : null);
+  
+  // --- IMAGE CAROUSEL LOGIC ---
+  const allImages = product.images || (product.image ? [product.image] : []);
+  const [currentImgIndex, setCurrentImgIndex] = useState(0);
+
+  const nextImage = (e) => {
+    e.stopPropagation();
+    if (allImages.length > 1) {
+      setCurrentImgIndex((prev) => (prev + 1) % allImages.length);
+    }
+  };
+
+  const handleSizeClick = (size) => (e) => {
+    e.stopPropagation(); // Prevent card selection when picking a size
+    setSelectedSize(size);
+  };
+
+  const handleColorClick = (color) => (e) => {
+    e.stopPropagation(); // Prevent card selection when picking a color
+    setSelectedColor(color);
+  };
+
   const canShowDetails = product.showDetails !== false && product.description;
+  const isWide = product.layout === 'wide';
 
   return (
     <div
-      onClick={onClick}
+      // UPDATED: Capture current size/color state when clicking the main card
+      onClick={() => onClick(product.id, selectedSize, selectedColor)}
       className={`
         w-full text-left rounded-2xl border transition-all duration-300 group relative overflow-hidden flex flex-col cursor-pointer
+        ${isWide ? 'col-span-2' : 'col-span-1'}
         ${active 
           ? 'bg-white/5' 
           : 'bg-white/[0.02] hover:bg-white/[0.04]'
@@ -45,12 +85,17 @@ function ProductCard({ product, active, accent, onClick }) {
       }
     >
       {/* Image Container */}
-      <div className="aspect-square w-full bg-black border-b border-white/5 relative">
-        {product.image ? (
+      <div 
+        className={`
+          w-full bg-black border-b border-white/5 relative overflow-hidden
+          ${isWide ? 'aspect-[4/5]' : 'aspect-square'} 
+        `}
+      >
+        {allImages.length > 0 ? (
           <img 
-            src={product.image} 
+            src={allImages[currentImgIndex]} 
             alt={product.name} 
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
             loading="lazy"
           />
         ) : (
@@ -60,13 +105,29 @@ function ProductCard({ product, active, accent, onClick }) {
             </svg>
           </div>
         )}
+
+        {/* Image Dots (Carousel Indicator) */}
+        {allImages.length > 1 && (
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 z-10 pointer-events-none">
+            {allImages.map((_, idx) => (
+              <div 
+                key={idx} 
+                onClick={nextImage}
+                className={`
+                  h-1.5 rounded-full transition-all duration-300 pointer-events-auto cursor-pointer
+                  ${idx === currentImgIndex ? 'w-6 bg-white/90' : 'w-1.5 bg-white/40'}
+                `}
+              />
+            ))}
+          </div>
+        )}
         
         {active && (
           <div 
-            className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center shadow-lg z-10 transition-transform duration-300 scale-95 group-hover:scale-100"
+            className="absolute top-4 right-4 w-7 h-7 rounded-full flex items-center justify-center shadow-lg z-10 transition-transform duration-300 scale-95 group-hover:scale-100"
             style={{ backgroundColor: accent, color: '#0a0a0a' }}
           >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 13l4 4L19 7" />
             </svg>
           </div>
@@ -74,11 +135,79 @@ function ProductCard({ product, active, accent, onClick }) {
       </div>
 
       {/* Text Content */}
-      <div className="p-3 flex-1 flex flex-col justify-between">
+      <div className={`
+        p-4 flex-1 flex flex-col justify-between
+        ${isWide ? 'p-6 pb-10' : 'p-3'} 
+      `}>
         <div>
-          <h3 className={`text-sm font-semibold truncate mb-1 transition-colors ${active ? 'text-white' : 'text-stone-300'}`}>
+          <h3 className={`
+            font-semibold mb-1 transition-colors line-clamp-1
+            ${isWide ? 'text-2xl mb-4' : 'text-sm'} 
+            ${active ? 'text-white' : 'text-stone-300'}
+          `}>
             {product.name}
           </h3>
+          
+          {/* SIZE CHIPS */}
+          {hasSizes && (
+            <div className={`
+              flex flex-wrap gap-1.5 mb-3
+              ${isWide ? 'mb-4' : 'mb-2'}
+            `}>
+              {product.sizes.map((size) => (
+                <button
+                  key={size}
+                  onClick={handleSizeClick(size)}
+                  className={`
+                    rounded-full transition-all duration-200
+                    ${selectedSize === size 
+                      ? 'scale-105 font-semibold shadow-sm' 
+                      : 'hover:bg-white/10'
+                    }
+                  `}
+                  style={{
+                    backgroundColor: selectedSize === size ? accent : 'transparent',
+                    color: selectedSize === size ? '#0a0a0a' : '#a1a1aa',
+                    border: selectedSize === size ? 'none' : '1px solid rgba(255,255,255,0.15)',
+                    fontSize: isWide ? '0.875rem' : '0.75rem', 
+                    padding: isWide ? '0.25rem 0.75rem' : '0.125rem 0.5rem' 
+                  }}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* COLOR SWATCHES */}
+          {hasColors && (
+            <div className={`
+              flex flex-wrap gap-2 mb-3
+              ${isWide ? 'mb-4' : 'mb-2'}
+            `}>
+              {product.colors.map((color) => (
+                <button
+                  key={color}
+                  onClick={handleColorClick(color)}
+                  title={color} 
+                  className={`
+                    rounded-full transition-transform duration-200 relative
+                    border border-white/20
+                    ${selectedColor === color ? 'scale-110 shadow-lg' : 'hover:scale-105'}
+                  `}
+                  style={{
+                    backgroundColor: color,
+                    // Ring effect for selected color
+                    boxShadow: selectedColor === color 
+                      ? `0 0 0 2px #0a0a0a, 0 0 0 4px ${accent}` 
+                      : 'none',
+                    width: isWide ? '20px' : '16px', 
+                    height: isWide ? '20px' : '16px',
+                  }}
+                />
+              ))}
+            </div>
+          )}
           
           {/* Details Toggle */}
           {canShowDetails && (
@@ -87,7 +216,9 @@ function ProductCard({ product, active, accent, onClick }) {
                 e.stopPropagation(); 
                 setOpenDetails(!openDetails);
               }}
-              className="mb-2 text-[11px] font-medium text-stone-500 hover:text-white transition-colors flex items-center gap-2 group/btn"
+              className={`mb-2 font-medium text-stone-500 hover:text-white transition-colors flex items-center gap-2 group/btn
+                ${isWide ? 'text-xs mb-4' : 'text-[11px]'}
+              `}
             >
               <span className="w-4 h-4 rounded border border-stone-700 flex items-center justify-center text-[10px] text-stone-400 group-hover/btn:border-stone-500 group-hover/btn:text-white transition-colors">
                 {openDetails ? '−' : '+'}
@@ -98,13 +229,20 @@ function ProductCard({ product, active, accent, onClick }) {
 
           {/* Expandable Details */}
           {openDetails && canShowDetails && (
-            <p className="text-xs text-stone-300 leading-relaxed animate-fade-in">
+            <p className={`
+              text-stone-300 leading-relaxed animate-fade-in
+              ${isWide ? 'text-base leading-relaxed mb-4' : 'text-xs'}
+            `}>
               {product.description}
             </p>
           )}
         </div>
 
-        <p className={`text-sm font-bold tabular-nums mt-2 transition-colors ${active ? 'text-white' : ''}`} style={{ color: accent }}>
+        <p className={`
+          font-bold tabular-nums mt-2 transition-colors
+          ${isWide ? 'text-2xl' : 'text-sm'}
+          ${active ? 'text-white' : ''}
+        `} style={{ color: accent }}>
           ₦{product.price.toLocaleString()}
         </p>
       </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { XIcon, CalendarIcon } from './Icons';
 
-export default function BookingForm({ biz, selectedId, selectedProducts = [], onDeselect, onProductDeselect, reference }) {
+export default function BookingForm({ biz, selectedId, selectedProducts = [], onDeselect, onProductDeselect, reference, productVariants = {} }) {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [name, setName] = useState('');
@@ -18,18 +18,27 @@ export default function BookingForm({ biz, selectedId, selectedProducts = [], on
   // Derive selections
   const svc = biz.services?.find((s) => s.id === selectedId);
   const selectedPrds = biz.products?.filter((p) => selectedProducts.includes(p.id)) || [];
-  
   const isService = !!svc;
   const isProduct = selectedPrds.length > 0;
   const hasSelection = isService || isProduct;
+
+  // Helper to get size/color for a specific product ID
+  const getProductVariant = (id) => productVariants[id] || {};
 
   // Calculate dynamic totals for Paystack
   const totalAmount = isProduct 
     ? selectedPrds.reduce((sum, p) => sum + p.price, 0) 
     : svc?.price || 0;
 
+  // Updated itemNames to include Size and Color context
   const itemNames = isProduct 
-    ? selectedPrds.map(p => p.name).join(', ')
+    ? selectedPrds.map(p => {
+        const v = getProductVariant(p.id);
+        const parts = [p.name];
+        if (v.size) parts.push(`Size: ${v.size}`);
+        if (v.color) parts.push(`Color: ${v.color}`);
+        return parts.join(', ');
+      }).join('; ')
     : svc?.name || '';
 
   useEffect(() => {
@@ -40,17 +49,17 @@ export default function BookingForm({ biz, selectedId, selectedProducts = [], on
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slug: biz.slug, reference, calendarId: biz.calendarId }),
     })
-      .then(async (r) => {
-        const text = await r.text();
-        try { return JSON.parse(text); }
-        catch { return { error: `Server error: ${text.substring(0, 100)}` }; }
-      })
-      .then((d) => {
-        if (d.success) { setBooking(d.booking); setOk(true); }
-        else { setErr(d.error || 'Booking failed'); }
-      })
-      .catch((e) => setErr('Network error: ' + e.message))
-      .finally(() => setLoading(false));
+    .then(async (r) => {
+      const text = await r.text();
+      try { return JSON.parse(text); }
+      catch { return { error: `Server error: ${text.substring(0, 100)}` }; }
+    })
+    .then((d) => {
+      if (d.success) { setBooking(d.booking); setOk(true); }
+      else { setErr(d.error || 'Booking failed'); }
+    })
+    .catch((e) => setErr('Network error: ' + e.message))
+    .finally(() => setLoading(false));
   }, [reference, biz.slug, biz.calendarId]);
 
   async function pay(e) {
@@ -65,7 +74,7 @@ export default function BookingForm({ biz, selectedId, selectedProducts = [], on
         body: JSON.stringify({
           slug: biz.slug, 
           serviceId: isProduct ? selectedProducts.join(',') : selectedId, 
-          serviceName: itemNames, 
+          serviceName: itemNames, // Now includes size/color
           amount: totalAmount,
           date: isProduct ? 'N/A' : date, 
           time: isProduct ? 'N/A' : time,
@@ -136,7 +145,7 @@ export default function BookingForm({ biz, selectedId, selectedProducts = [], on
     <div className="text-center py-12 rounded-2xl border border-dashed border-white/5 bg-white/[0.01]">
       <div className="w-12 h-12 rounded-full bg-white/[0.02] border border-white/5 mx-auto mb-3 flex items-center justify-center text-stone-600">
          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.567-2.226m-2.51-2.225l.567 2.226m-2.51-2.225l-2.51 2.225a.75.75 0 01-.554-.759l-1.285-5.137a3 3 0 00-1.794-2.187L2.77 5.313a.75.75 0 01.85-.748l7.4 2.246a3 3 0 011.75 2.187l1.78 7.127a.75.75 0 01-.851.748L12 14.5l-4.995 1.721a.75.75 0 01-.463-1.549z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.567-2.226m-2.51-2.225l.567 2.226m-2.51-2.225l2.51 2.225a.75.75 0 01-.554-.759l-1.285-5.137a3 3 0 00-1.794-2.187L2.77 5.313a.75.75 0 01.85-.748l7.4 2.246a3 3 0 011.75 2.187l1.78 7.127a.75.75 0 01-.851.748L12 14.5l-4.995 1.721a.75.75 0 01-.463-1.549z" />
          </svg>
       </div>
       <p className="text-stone-500 text-sm">Select a service or product above to continue</p>
@@ -181,22 +190,43 @@ export default function BookingForm({ biz, selectedId, selectedProducts = [], on
           </div>
           
           <div className="space-y-3">
-            {selectedPrds.map((p) => (
-              <div key={p.id} className="flex items-center justify-between">
-                <div className="min-w-0 flex items-center gap-3">
-                  {p.image && (
-                    <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-white/5" />
-                  )}
-                  <p className="text-sm text-stone-300 truncate">{p.name}</p>
+            {selectedPrds.map((p) => {
+              const variant = getProductVariant(p.id);
+              return (
+                <div key={p.id} className="flex items-start justify-between">
+                  <div className="min-w-0 flex items-center gap-3">
+                    {p.image && (
+                      <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-white/5" />
+                    )}
+                    <div className="flex flex-col">
+                      <p className="text-sm text-stone-300">{p.name}</p>
+                      
+                      {/* NEW: Size & Color Display */}
+                      {(variant.size || variant.color) && (
+                        <div className="flex gap-2 text-[10px] text-stone-500 mt-0.5">
+                          {variant.size && <span className="border border-white/10 px-1.5 rounded bg-white/5">Size: {variant.size}</span>}
+                          {variant.color && (
+                            <span className="flex items-center gap-1.5 border border-white/10 px-1.5 rounded bg-white/5">
+                              <span 
+                                className="w-3 h-3 rounded-full border border-stone-600/30"
+                                style={{ backgroundColor: variant.color }} 
+                              />
+                              {variant.color}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-2 flex-shrink-0 ml-3">
+                    <p className="text-sm font-bold tabular-nums" style={{ color: accent }}>₦{p.price.toLocaleString()}</p>
+                    <button type="button" onClick={() => onProductDeselect(p.id)} className="text-stone-500 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-lg">
+                      <XIcon className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 flex-shrink-0 ml-3">
-                  <p className="text-sm font-bold tabular-nums" style={{ color: accent }}>₦{p.price.toLocaleString()}</p>
-                  <button type="button" onClick={() => onProductDeselect(p.id)} className="text-stone-500 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-lg">
-                    <XIcon className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Cart Total */}

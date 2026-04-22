@@ -20,7 +20,10 @@ const businesses = {
     socials: { instagram: 'https://instagram.com/glamourlashlagos', tiktok: 'https://tiktok.com/@glamourlashlagos' },
     paystackPublicKey: 'pk_test_129628160c0fdb0e1e837751e5ff0233872676b8',
     calendarId: 'd1863c6bf333e670957c47e53bdbc60b77303177fdcefce487cbd05e6d14edfc@group.calendar.google.com',
-    active: true, servicesEnabled: true, productsEnabled: true,
+    active: true, 
+    adsEnabled: true, 
+    servicesEnabled: true, 
+    productsEnabled: true,
     services: [
       { 
         id: 'classic', name: 'Classic Lash Set', duration: '2 hrs', price: 15000, image: 'https://picsum.photos/seed/classic-thumb/200/200', 
@@ -42,7 +45,8 @@ const businesses = {
       },
       { 
         id: 'removal', name: 'Lash Removal', duration: '30 min', price: 3000, image: '', 
-        showDetails: false // Details disabled for this service
+        showDetails: true, 
+        description: 'Safe and gentle removal of existing lash extensions without damaging your natural lashes.'
       },
     ],
     products: [
@@ -51,7 +55,11 @@ const businesses = {
         showDetails: true,
         description: 'Peptide-infused serum to nourish follicles and promote natural lash growth. Apply daily to clean lash lines.'
       },
-      { id: 'glue', name: 'Lash Adhesive (5g)', price: 3500, image: 'https://picsum.photos/seed/glue-prod/400/400', showDetails: false },
+      { 
+        id: 'glue', name: 'Lash Adhesive (5g)', price: 3500, image: 'https://picsum.photos/seed/glue-prod/400/400', 
+        showDetails: true, 
+        description: 'Professional-grade, low-fume adhesive designed for long-lasting retention. Latex-free and waterproof.' 
+      },
     ],
   },
 
@@ -75,19 +83,62 @@ const businesses = {
     socials: { instagram: 'https://instagram.com/velvetnailslekki', tiktok: 'https://tiktok.com/@velvetnailslekki' },
     paystackPublicKey: 'pk_test_a4b8c2d0e6f18294a7b3c5d6e8f0a1b2c4d6e8f0',
     calendarId: 'e2f4a6c8d0b2a4e6f8a0c2e4b6d8f0a2c4e6b8d0f2a4c6e8b0d2f4a6c8e0b2d4@group.calendar.google.com',
-    active: true, servicesEnabled: true, productsEnabled: true,
+    active: true, 
+    adsEnabled: true, 
+    servicesEnabled: true, 
+    productsEnabled: true,
     services: [
-      { id: 'gel-manicure', name: 'Gel Manicure', duration: '1 hr', price: 8000, image: 'https://picsum.photos/seed/gel-thumb/200/200', images: ['https://picsum.photos/seed/gel-1/400/400'], showDetails: false },
-      { id: 'acrylic-full', name: 'Acrylic Full Set', duration: '2 hrs', price: 18000, image: 'https://picsum.photos/seed/acrylic-thumb/200/200', images: ['https://picsum.photos/seed/acrylic-1/400/400','https://picsum.photos/seed/acrylic-2/400/400'], showDetails: true, description: 'Full coverage using liquid monomer and polymer powder. Sculpted to your desired shape and length.' },
-      { id: 'acrylic-fill', name: 'Acrylic Fill', duration: '1.5 hrs', price: 12000, image: 'https://picsum.photos/seed/fill-thumb/200/200', images: [], showDetails: false },
-      { id: 'nail-art', name: 'Custom Nail Art (per hand)', duration: '45 min', price: 5000, image: 'https://picsum.photos/seed/art-thumb/200/200', images: ['https://picsum.photos/seed/art-1/400/400','https://picsum.photos/seed/art-2/400/400','https://picsum.photos/seed/art-3/400/400'], showDetails: true, description: 'Hand-painted designs, chrome finishes, or encapsulated charms. Price is per hand; added to any base service.' },
-      { id: 'pedicure', name: 'Luxury Pedicure', duration: '1.5 hrs', price: 10000, image: '', showDetails: false },
-      { id: 'removal', name: 'Acrylic/Gel Removal', duration: '30 min', price: 2500, image: '', showDetails: false },
+      { 
+        id: 'gel-manicure', name: 'Gel Manicure', duration: '1 hr', price: 8000, image: 'https://picsum.photos/seed/gel-thumb/200/200', 
+        images: ['https://picsum.photos/seed/gel-1/400/400'], 
+        showDetails: true, 
+        description: 'Classic gel polish application with cuticle care. Long-lasting, chip-resistant shine for up to 3 weeks.' 
+      },
+      { 
+        id: 'acrylic-full', name: 'Acrylic Full Set', duration: '2 hrs', price: 18000, image: 'https://picsum.photos/seed/acrylic-thumb/200/200', 
+        images: ['https://picsum.photos/seed/acrylic-1/400/400','https://picsum.photos/seed/acrylic-2/400/400'], 
+        showDetails: true, 
+        description: 'Full coverage using liquid monomer and polymer powder. Sculpted to your desired shape and length.' 
+      },
+      { 
+        id: 'acrylic-fill', name: 'Acrylic Fill', duration: '1.5 hrs', price: 12000, image: 'https://picsum.photos/seed/fill-thumb/200/200', 
+        images: [], 
+        showDetails: true, 
+        description: 'Infills to cover of growth gap of your existing acrylics. Includes reshaping, buffing, and polish.' 
+      },
+      { 
+        id: 'nail-art', name: 'Custom Nail Art (per hand)', duration: '45 min', price: 5000, image: 'https://picsum.photos/seed/art-thumb/200/200', 
+        images: ['https://picsum.photos/seed/art-1/400/400','https://picsum.photos/seed/art-2/400/400','https://picsum.photos/seed/art-3/400/400'], 
+        showDetails: true, 
+        description: 'Hand-painted designs, chrome finishes, or encapsulated charms. Price is per hand; added to any base service.' 
+      },
+      { 
+        id: 'pedicure', name: 'Luxury Pedicure', duration: '1.5 hrs', price: 10000, image: '', 
+        showDetails: true, 
+        description: 'Relaxing foot soak, callus removal, cuticle care, exfoliation, massage, and polish application.' 
+      },
+      { 
+        id: 'removal', name: 'Acrylic/Gel Removal', duration: '30 min', price: 2500, image: '', 
+        showDetails: true, 
+        description: 'Safe and gentle removal of gel polish or acrylics to prepare your natural nails for a fresh set.' 
+      },
     ],
     products: [
-      { id: 'top-coat', name: 'No-Wipe Top Coat (15ml)', price: 4500, image: 'https://picsum.photos/seed/topcoat/400/400', showDetails: true, description: 'High-gloss, non-sticky finish top coat. Cures in 60 seconds under UV/LED lamp.' },
-      { id: 'nail-oil', name: 'Cuticle Oil Pen', price: 2000, image: 'https://picsum.photos/seed/cuticle/400/400', showDetails: false },
-      { id: 'nail-art-kit', name: 'Rhinestone & Charm Kit', price: 3500, image: 'https://picsum.photos/seed/rhinestone/400/400', showDetails: false },
+      { 
+        id: 'top-coat', name: 'No-Wipe Top Coat (15ml)', price: 4500, image: 'https://picsum.photos/seed/topcoat/400/400', 
+        showDetails: true, 
+        description: 'High-gloss, non-sticky finish top coat. Cures in 60 seconds under UV/LED lamp.' 
+      },
+      { 
+        id: 'nail-oil', name: 'Cuticle Oil Pen', price: 2000, image: 'https://picsum.photos/seed/cuticle/400/400', 
+        showDetails: true, 
+        description: 'Nourishing oil blend with jojoba and vitamin E to hydrate cuticles and promote healthy nail growth.' 
+      },
+      { 
+        id: 'nail-art-kit', name: 'Rhinestone & Charm Kit', price: 3500, image: 'https://picsum.photos/seed/rhinestone/400/400', 
+        showDetails: true, 
+        description: 'Assortment of high-quality rhinestones, pearls, and metal charms for customizing your nail art at home.' 
+      },
     ],
   },
 
@@ -111,16 +162,137 @@ const businesses = {
     socials: { instagram: 'https://instagram.com/glowskinclinic' },
     paystackPublicKey: 'pk_test_f1e2d3c4b5a697886950413223344556677889900',
     calendarId: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2@group.calendar.google.com',
-    active: true, servicesEnabled: true, productsEnabled: false,
+    active: true, 
+    adsEnabled: false, // Ads are OFF (Premium)
+    servicesEnabled: true, 
+    productsEnabled: false,
     services: [
-      { id: 'deep-cleanse', name: 'Deep Cleanse Facial', duration: '1 hr', price: 12000, image: 'https://picsum.photos/seed/cleanse-thumb/200/200', images: ['https://picsum.photos/seed/cleanse-1/400/400'], showDetails: false },
-      { id: 'hydrating', name: 'Hydrating Facial', duration: '1.5 hrs', price: 18000, image: 'https://picsum.photos/seed/hydrate-thumb/200/200', images: ['https://picsum.photos/seed/hydrate-1/400/400'], showDetails: true, description: 'Intense moisture infusion using hyaluronic acid masks. Ideal for dry, dehydrated, or sun-exposed skin.' },
-      { id: 'chemical-peel', name: 'Chemical Peel (Mild)', duration: '45 min', price: 20000, image: 'https://picsum.photos/seed/peel-thumb/200/200', images: [], showDetails: false },
-      { id: 'microderm', name: 'Microdermabrasion', duration: '1 hr', price: 25000, image: 'https://picsum.photos/seed/micro-thumb/200/200', images: ['https://picsum.photos/seed/micro-1/400/400'], showDetails: false },
-      { id: 'led-therapy', name: 'LED Light Therapy', duration: '30 min', price: 8000, image: '', showDetails: false },
-      { id: 'consultation', name: 'Skin Consultation', duration: '20 min', price: 3000, image: '', showDetails: false },
+      { 
+        id: 'deep-cleanse', name: 'Deep Cleanse Facial', duration: '1 hr', price: 12000, image: 'https://picsum.photos/seed/cleanse-thumb/200/200', 
+        images: ['https://picsum.photos/seed/cleanse-1/400/400'], 
+        showDetails: true, 
+        description: 'Thorough cleansing and exfoliation to remove impurities and unclog pores. Leaves skin feeling fresh and breathing.' 
+      },
+      { 
+        id: 'hydrating', name: 'Hydrating Facial', duration: '1.5 hrs', price: 18000, image: 'https://picsum.photos/seed/hydrate-thumb/200/200', 
+        images: ['https://picsum.photos/seed/hydrate-1/400/400'], 
+        showDetails: true, 
+        description: 'Intense moisture infusion using hyaluronic acid masks. Ideal for dry, dehydrated, or sun-exposed skin.' 
+      },
+      { 
+        id: 'chemical-peel', name: 'Chemical Peel (Mild)', duration: '45 min', price: 20000, image: 'https://picsum.photos/seed/peel-thumb/200/200', 
+        images: [], 
+        showDetails: true, 
+        description: 'A mild chemical peel to improve skin texture, tone, and clarity. Reduces the appearance of fine lines and mild acne scars.' 
+      },
+      { 
+        id: 'microderm', name: 'Microdermabrasion', duration: '1 hr', price: 25000, image: 'https://picsum.photos/seed/micro-thumb/200/200', 
+        images: ['https://picsum.photos/seed/micro-1/400/400'], 
+        showDetails: true, 
+        description: 'Non-invasive exfoliation treatment that removes dead skin cells, promoting new cell growth and a smoother complexion.' 
+      },
+      { 
+        id: 'led-therapy', name: 'LED Light Therapy', duration: '30 min', price: 8000, image: '', 
+        showDetails: true, 
+        description: 'Uses specific wavelengths of light to treat acne, reduce inflammation, and stimulate collagen production.' 
+      },
+      { 
+        id: 'consultation', name: 'Skin Consultation', duration: '20 min', price: 3000, image: '', 
+        showDetails: true, 
+        description: 'Professional skin analysis to determine your skin type and concerns. Includes a recommended treatment plan.' 
+      },
     ],
     products: [],
+  },
+
+  // --- UPDATED FASHION BUSINESS (With Sizes & Colors) ---
+  'lagos-luxe': {
+    name: 'Lagos Luxe Boutique',
+    slug: 'lagos-luxe',
+    logo:'',
+    tagline: 'Contemporary African Fashion & Luxe Wear',
+    bio: 'Where modern style meets African heritage. We offer curated pieces from top designers, perfect for weddings, galas, and red carpet events.',
+    phone: '+234 701 234 5678',
+    whatsapp: '2347012345678',
+    location: 'The Palms Shopping Mall, Lekki, Lagos',
+    hours: 'Mon–Sun, 10 AM – 9 PM',
+    accent: '#b76e79', // Rose Gold
+    avatar: '',
+    hero: 'https://picsum.photos/seed/lagos-hero/800/600',
+    gallery: [
+      { group: 'Store Lookbook', images: ['https://picsum.photos/seed/store-1/600/600','https://picsum.photos/seed/store-2/600/600','https://picsum.photos/seed/store-3/600/600'] },
+      { group: 'Customer Fit', images: ['https://picsum.photos/seed/fit-1/600/600','https://picsum.photos/seed/fit-2/600/600','https://picsum.photos/seed/fit-3/600/600'] },
+    ],
+    socials: { instagram: 'https://instagram.com/lagosluxe', tiktok: 'https://tiktok.com/@lagosluxe' },
+    paystackPublicKey: 'pk_test_lagos_luxe_mock_key_12345',
+    calendarId: 'fashion_calendar_placeholder@group.calendar.google.com',
+    active: true, 
+    adsEnabled: true, 
+    servicesEnabled: false, // Retail only (no bookings)
+    productsEnabled: true,
+    products: [
+      { 
+        id: 'silk-dress', 
+        name: 'Crimson Silk Gown', 
+        layout: 'wide', 
+        price: 45000, 
+        sizes: ['US 4', 'US 6', 'US 8', 'US 10'], // NEW: Sizes
+        colors: ['#C8102E', '#1a1a1a', '#00563B'], // NEW: Colors (Crimson, Black, Emerald)
+        images: [
+          'https://picsum.photos/seed/dress-front/800/450',
+          'https://picsum.photos/seed/dress-side/800/450',
+          'https://picsum.photos/seed/dress-back/800/450'
+        ],
+        showDetails: true, 
+        description: 'A stunning floor-length gown made from 100% raw silk. Features intricate beadwork along the neckline and a high slit.'
+      },
+      { 
+        id: 'gold-heels', 
+        name: 'Gold Block Heels', 
+        price: 18000, 
+        sizes: ['36', '37', '38', '39', '40', '41'], // NEW: Sizes
+        colors: ['#FFD700'], // NEW: Color
+        image: 'https://picsum.photos/seed/heels-thumb/400/400',
+        showDetails: true, 
+        description: 'Comfortable yet elegant 4-inch block heels. Gold plated finish with cushioned insole for all-day wear.' 
+      },
+      { 
+        id: 'turquoise-set', 
+        name: 'Turquoise Agbada Set', 
+        layout: 'wide', 
+        price: 85000, 
+        sizes: ['S', 'M', 'L', 'XL', 'XXL'], // NEW: Sizes
+        colors: ['#40E0D0'], // NEW: Color
+        images: [
+          'https://picsum.photos/seed/agbada-1/800/450',
+          'https://picsum.photos/seed/agbada-2/800/450'
+        ],
+        showDetails: true, 
+        description: 'Luxury Agbada set for men featuring traditional embroidery with a modern twist. Made from premium Swiss voile. Includes top, trousers, and matching cap.'
+      },
+      { 
+        id: 'clutch', 
+        name: 'Beaded Evening Clutch', 
+        price: 12000, 
+        image: 'https://picsum.photos/seed/clutch-thumb/400/400', 
+        showDetails: true, 
+        description: 'Hand-beaded clutch purse perfect for holding your phone, keys, and lipstick. Comes with a detachable gold chain.' 
+      },
+      { 
+        id: 'summer-maxi', 
+        name: 'Floral Maxi Dress', 
+        layout: 'wide', 
+        price: 35000, 
+        sizes: ['XS', 'S', 'M', 'L', 'XL'], // NEW: Sizes
+        colors: ['#E9967A', '#F4C2C2', '#FFDAB9'], // NEW: Colors (Sunset floral tones)
+        images: [
+          'https://picsum.photos/seed/maxi-1/800/450',
+          'https://picsum.photos/seed/maxi-2/800/450'
+        ],
+        showDetails: true, 
+        description: 'Lightweight cotton maxi dress with a flattering V-neckline. Perfect for weekend brunches or beach getaways.' 
+      }
+    ],
   },
 };
 
