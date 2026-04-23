@@ -48,13 +48,14 @@ export default function Gallery({ gallery, accent }) {
                   {g.group}
                 </h3>
               )}
-              {/* Responsive Grid: 2 cols on mobile, 3 on desktop for breathing room */}
+              {/* Responsive Grid: 2 cols on mobile, 3 on desktop */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                 {g.images.map((img, iIdx) => (
                   <button
                     key={iIdx}
                     onClick={() => openLightbox(gIdx, iIdx)}
-                    className="aspect-square rounded-2xl overflow-hidden bg-black border border-white/5 hover:border-white/20 transition-all duration-300 group relative shadow-lg"
+                    // CHANGED: aspect-square -> aspect-[3/4] for a taller, portrait look
+                    className="aspect-[3/4] rounded-2xl overflow-hidden bg-black border border-white/5 hover:border-white/20 transition-all duration-300 group relative shadow-lg"
                   >
                     <img
                       src={img}
