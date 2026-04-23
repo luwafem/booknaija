@@ -1,6 +1,6 @@
 exports.handler = async (event) => {
   try {
-    // Added address to destructuring
+    // Added  address to destructuring
     const { slug, amount, date, time, name, email, phone, calendarId, serviceId, serviceName, type, address } = JSON.parse(event.body);
     
     const envKey = `PAYSTACK_SECRET_${slug.replace(/-/g, '_').toUpperCase()}`;
