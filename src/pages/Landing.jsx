@@ -19,7 +19,7 @@ const steps = [
 ];
 
 const features = [
-  { t: 'Upfront Payments', d: 'Stop chasing money. Clients pay at the point of booking so you are guaranteed your fee.', icon: <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /> },
+  { t: 'Upfront Paystack Payments', d: 'Stop chasing money. Clients pay securely via Paystack at the point of booking so you are guaranteed your fee.', icon: <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /> },
   { t: 'Product Sales', d: 'Not just bookings. Sell wigs, care products, or merchandise directly from your storefront.', icon: <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /> },
   { t: 'Google Calendar Sync', d: 'Avoid double-bookings. We automatically block slots when you have personal plans.', icon: <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /> },
   { t: 'Automated Reminders', d: 'We send WhatsApp and Email reminders to your clients so they never miss an appointment.', icon: <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /> },
@@ -76,20 +76,21 @@ export default function Landing() {
                 Start Free Trial
               </Link>
               <div className="flex items-center gap-3 text-sm font-medium text-zinc-600">
-               
                 <span>Refer & Earn Free Months</span>
               </div>
             </div>
+
+            {/* ✅ Added Disclaimer under Start Free Trial */}
+            <p className="mt-4 text-[11px] text-zinc-400 text-center lg:text-left max-w-sm mx-auto lg:mx-0 leading-relaxed">
+              Earnings are paid directly to your bank via Paystack. Settlement takes up to 24 hours on business days (excludes weekends & public holidays).
+            </p>
           </div>
 
-          {/* Visual Mockup - Updated with Product */}
+          {/* Visual Mockup */}
           <div className="lg:col-span-1 flex justify-center lg:justify-end">
             <div className="relative w-[300px]">
-              {/* Phone Body */}
               <div className="relative bg-zinc-900 rounded-[2.5rem] p-3 border-[6px] border-zinc-200">
-                {/* Screen */}
                 <div className="bg-white rounded-[2rem] h-[580px] overflow-hidden flex flex-col relative">
-                  {/* Status Bar */}
                   <div className="h-8 w-full bg-white z-10 flex justify-between items-center px-6 pt-2">
                     <div className="text-[10px] font-bold">9:41</div>
                     <div className="w-16 h-4 bg-black rounded-full absolute left-1/2 -translate-x-1/2 top-2"></div>
@@ -99,7 +100,6 @@ export default function Landing() {
                     </div>
                   </div>
 
-                  {/* App Content */}
                   <div className="flex-1 p-5 pt-4 flex flex-col">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center text-purple-700 font-bold text-xl">BG</div>
@@ -110,7 +110,6 @@ export default function Landing() {
                     </div>
 
                     <div className="space-y-3">
-                      {/* Service Item */}
                       <div className="p-3 border border-zinc-200 rounded-xl flex justify-between items-center bg-white hover:border-purple-300 transition-colors">
                         <div>
                           <p className="text-xs font-bold text-zinc-900">Knotless Braids</p>
@@ -119,7 +118,6 @@ export default function Landing() {
                         <button className="bg-zinc-900 text-white text-[10px] font-bold px-3 py-2 rounded-lg">Book</button>
                       </div>
 
-                      {/* Product Item */}
                       <div className="p-3 border border-zinc-200 rounded-xl flex justify-between items-center bg-white hover:border-purple-300 transition-colors">
                         <div>
                           <p className="text-xs font-bold text-zinc-900">Silk Bonnet</p>
@@ -128,7 +126,6 @@ export default function Landing() {
                         <button className="bg-purple-100 text-purple-700 text-[10px] font-bold px-3 py-2 rounded-lg">Buy</button>
                       </div>
 
-                      {/* Service Item */}
                       <div className="p-3 border border-zinc-200 rounded-xl flex justify-between items-center bg-white hover:border-purple-300 transition-colors opacity-60">
                         <div>
                           <p className="text-xs font-bold text-zinc-900">Wig Install</p>
@@ -139,7 +136,6 @@ export default function Landing() {
                     </div>
                   </div>
                   
-                  {/* Bottom Nav simulation */}
                   <div className="h-16 border-t border-zinc-100 flex justify-around items-center px-4">
                     <div className="w-6 h-6 bg-zinc-900 rounded-full"></div>
                     <div className="w-6 h-6 bg-zinc-100 rounded-full"></div>
@@ -148,7 +144,6 @@ export default function Landing() {
                 </div>
               </div>
               
-              {/* Floating Badge - No Animation */}
               <div className="absolute -right-4 top-20 bg-white border border-zinc-200 p-3 rounded-xl">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center text-green-600">
@@ -161,7 +156,7 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Advantage Section - Pure White */}
+        {/* Advantage Section */}
         <section className="py-24 border-y border-zinc-200">
            <div className="grid md:grid-cols-2 gap-16 items-center">
              <div className="order-2 md:order-1">
@@ -191,7 +186,7 @@ export default function Landing() {
                  Stop losing sales to missed DMs. Your BookNaija link is a 24/7 storefront that handles bookings, product sales, and payments automatically.
                </p>
                <ul className="space-y-4">
-                 {['Custom business URL', 'Integrated with Paystack', 'Real-time availability', 'Sell services & products'].map((item) => (
+                 {['Custom business URL', 'Secure Paystack Integration', 'Real-time availability', 'Sell services & products'].map((item) => (
                    <li key={item} className="flex items-center gap-3 text-sm font-medium text-zinc-700">
                      <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
@@ -237,7 +232,7 @@ export default function Landing() {
                   </div>
                   <ul className="space-y-4 mb-10 text-sm text-zinc-600 font-medium">
                     <li className="flex items-center gap-3"><svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg> Sell Services & Products</li>
-                    <li className="flex items-center gap-3"><svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg> Automated Payments</li>
+                    <li className="flex items-center gap-3"><svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg> Secure Paystack Payouts</li>
                     <li className="flex items-center gap-3"><svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg> Google Calendar Sync</li>
                     <li className="flex items-center gap-3 text-purple-600 font-bold"> Refer 3 friends = 1 Free Month</li>
                   </ul>
@@ -247,7 +242,13 @@ export default function Landing() {
                   >
                     Start Your Storefront
                   </Link>
-                  <p className="mt-4 text-center text-xs text-zinc-400">Cancel anytime. No contracts.</p>
+                  
+                  <div className="mt-4 text-center">
+                    <p className="text-xs text-zinc-400">Cancel anytime. No contracts.</p>
+                    <p className="mt-1 text-[10px] text-zinc-300 leading-relaxed max-w-xs mx-auto">
+                      Earnings are paid directly to your bank via Paystack. Settlement takes up to 24 hours on business days (excludes weekends & public holidays).
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -261,7 +262,6 @@ export default function Landing() {
             <p className="text-zinc-500 font-medium">We handle technical setup. You just handle the business.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 relative">
-            {/* Connector Line (Desktop only) */}
             <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-0.5 bg-zinc-100 -z-10"></div>
             
             {steps.map((s) => (
@@ -276,7 +276,7 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Features Grid - Pure White */}
+        {/* Features Grid */}
         <section className="py-24 border-y border-zinc-200">
           <div className="max-w-4xl mx-auto text-center mb-20">
             <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-4 tracking-tight">Included in your plan</h2>
@@ -297,7 +297,6 @@ export default function Landing() {
       </main>
 
       {/* Footer */}
-            {/* Footer */}
       <footer className="bg-white border-t border-zinc-100 pt-20 pb-12 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-10 mb-16">
@@ -323,9 +322,6 @@ export default function Landing() {
               <div className="space-y-4">
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Company</p>
                 <ul className="space-y-3 text-sm font-medium text-zinc-600">
-                  {/* Removed About/Contact as those pages don't exist in App.js yet. 
-                      AdSense flags 404 pages as errors. */}
-                  {/* ADSENSE FIX: Use Link component to point to actual routes */}
                   <li><Link to="/privacy" className="hover:text-zinc-900 transition-colors">Privacy Policy</Link></li>
                   <li><Link to="/terms" className="hover:text-zinc-900 transition-colors">Terms of Service</Link></li>
                 </ul>
@@ -338,7 +334,6 @@ export default function Landing() {
               © {new Date().getFullYear()} BookNaija Technologies.
             </p>
             <div className="flex gap-6 text-xs font-medium text-zinc-400">
-              {/* ADSENSE FIX: Use Link component to point to actual routes */}
               <Link to="/terms" className="hover:text-zinc-900 transition-colors">Terms</Link>
               <Link to="/privacy" className="hover:text-zinc-900 transition-colors">Privacy</Link>
             </div>
