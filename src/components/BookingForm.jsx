@@ -43,7 +43,10 @@ export default function BookingForm({ biz, selectedId, selectedProducts = [], on
 
   useEffect(() => {
     if (!reference) return;
+    
+    console.log('🔄 Verifying payment, reference:', reference);
     setLoading(true);
+    
     fetch('/.netlify/functions/create-booking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -51,14 +54,23 @@ export default function BookingForm({ biz, selectedId, selectedProducts = [], on
     })
     .then(async (r) => {
       const text = await r.text();
+      console.log('📡 Raw response:', r.status, text);
       try { return JSON.parse(text); }
-      catch { return { error: `Server error: ${text.substring(0, 100)}` }; }
+      catch { return { error: `Server error: ${text.substring(0, 200)}` }; }
     })
     .then((d) => {
-      if (d.success) { setBooking(d.booking); setOk(true); }
-      else { setErr(d.error || 'Booking failed'); }
+      console.log('📦 Parsed response:', d);
+      if (d.success) { 
+        setBooking(d.booking); 
+        setOk(true); 
+      } else { 
+        setErr(d.error || 'Booking failed'); 
+      }
     })
-    .catch((e) => setErr('Network error: ' + e.message))
+    .catch((e) => {
+      console.error('❌ Network error:', e);
+      setErr('Network error: ' + e.message);
+    })
     .finally(() => setLoading(false));
   }, [reference, biz.slug, biz.calendarId]);
 
@@ -314,7 +326,7 @@ export default function BookingForm({ biz, selectedId, selectedProducts = [], on
                   </div>
                   <div className="flex flex-col items-end gap-2 flex-shrink-0 ml-3">
                     <p className="text-sm font-bold tabular-nums" style={{ color: accent }}>₦{p.price.toLocaleString()}</p>
-                    <button type="button" onClick={() => onProductPeselect(p.id)} className="text-stone-500 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-lg">
+                    <button type="button" onClick={() => onProductDeselect(p.id)} className="text-stone-500 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-lg">
                       <XIcon className="w-3.5 h-3.5" />
                     </button>
                   </div>
