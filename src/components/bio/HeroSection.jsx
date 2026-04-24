@@ -120,14 +120,14 @@ export default function HeroSection({ biz }) {
           >
             <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <WhatsAppIcon className="w-4 h-4 text-black" />
-            <span className="text-black font-bold uppercase tracking-[0.2em] text-[10px]">Secure Booking</span>
+            <span className="text-black font-bold uppercase tracking-[0.2em] text-[10px]">whatsapp</span>
           </a>
           
           <a
             href={`tel:${biz.phone}`}
             className="flex items-center justify-center gap-3 py-5 rounded-full border border-white/10 bg-white/[0.03] backdrop-blur-md text-white font-bold hover:bg-white/[0.08] hover:border-white/20 transition-all duration-300 uppercase tracking-[0.2em] text-[10px]"
           >
-            <PhoneIcon className="w-3.5 h-3.5 opacity-60" /> Call Inquiries
+            <PhoneIcon className="w-3.5 h-3.5 opacity-60" /> Call 
           </a>
         </div>
 
