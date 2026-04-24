@@ -6,6 +6,7 @@ import HeroSection from '../components/bio/HeroSection';
 import Gallery from '../components/bio/Gallery';
 import ServiceList from '../components/bio/ServiceList';
 import ProductList from '../components/bio/ProductList';
+import FoodList from '../components/bio/FoodList'; // NEW: Import FoodList
 
 // --- ADSENSE CONFIGURATION (GLOBAL) ---
 // IMPORTANT: Replace these with your actual IDs from Google AdSense
@@ -79,13 +80,8 @@ const ReferralLink = ({ slug }) => {
     <div className="mx-6 mt-4 md:mt-6">
       <div className="flex items-center justify-between gap-4 rounded-xl bg-white/5 border border-white/5 p-3 px-4">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/10 flex items-center justify-center flex-shrink-0">
-             <svg className="w-4 h-4 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l-4 4a4 4 0 005.656 5.656l1.1 1.1" />
-            </svg>
-          </div>
+         
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold text-stone-500 uppercase tracking-wider mb-0.5">Referral Link</p>
             <div className="flex items-center gap-2 text-sm">
                <span className="text-stone-300 truncate max-w-[200px]">
                  {referralUrl}
@@ -100,17 +96,13 @@ const ReferralLink = ({ slug }) => {
         >
           {copied ? (
              <>
-               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-               </svg>
+              
                <span>Copied!</span>
              </>
           ) : (
              <>
-               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 00-2-2V7a2 2 0 002 2v2M4 6H2v12a2 2 0 012-2H6a2 2 0 002-2v2M12 12h6" />
-               </svg>
-               <span>Copy</span>
+              
+               <span>Copy Referral Link</span>
              </>
           )}
         </button>
@@ -129,8 +121,12 @@ export default function BioPage() {
   const [selectedId, setSelectedId] = useState('');
   // State for multiple Product selection (Array of IDs)
   const [selectedProducts, setSelectedProducts] = useState([]);
-  // NEW: State for Product Variants (Size & Color)
+  // State for Product Variants (Size & Color)
   const [selectedProductVariants, setSelectedProductVariants] = useState({});
+  
+  // NEW: State for Food Selection
+  const [selectedFood, setSelectedFood] = useState([]);
+  const [selectedFoodVariants, setSelectedFoodVariants] = useState({});
   
   const formRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
@@ -149,7 +145,7 @@ export default function BioPage() {
         const rect = el.getBoundingClientRect();
         const windowHeight = window.innerHeight;
         
-        // Check if the form is already mostly visible in the viewport
+        // Check if form is already mostly visible in viewport
         const isVisible = rect.top >= 0 && rect.bottom <= windowHeight;
 
         // Only scroll if the form is NOT currently visible
@@ -190,6 +186,8 @@ export default function BioPage() {
   const accent = biz.accent || '#c8a97e';
   const showServices = biz.servicesEnabled && biz.services?.length > 0;
   const showProducts = biz.productsEnabled && biz.products?.length > 0;
+  // NEW: Check for Food
+  const showFood = biz.foodEnabled && biz.food?.length > 0;
   
   // --- ADSENSE POLICY COMPLIANCE LOGIC ---
   
@@ -197,9 +195,14 @@ export default function BioPage() {
   const adsEnabled = biz.adsEnabled !== false;
   
   // 2. Content Density Check (Prevent "Ad Cramming")
-  const totalItems = (biz.services?.length || 0) + (biz.products?.length || 0);
+  // UPDATED: Include food in totalItems count
+  const totalItems = (biz.services?.length || 0) + (biz.products?.length || 0) + (biz.food?.length || 0);
+  
+  // UPDATED: Include food in content check
+  const hasAnyContent = showServices || showProducts || showFood;
+  
+  // FIX: Define hasEnoughContent before using it
   const hasEnoughContent = totalItems >= 4;
-  const hasAnyContent = showServices || showProducts;
 
   const showAds = adsEnabled && hasAnyContent;
   const showPrimaryAd = showAds; 
@@ -217,7 +220,7 @@ export default function BioPage() {
       heroImages = biz.gallery.slice(0, 4);
   }
 
-  // Toggle single service: clears any selected products
+  // Toggle single service: clears any selected products AND food
   function handleServiceSelect(id) {
     setSelectedId((prev) => {
       // Only trigger scroll if we are selecting something new (or toggling on)
@@ -227,12 +230,14 @@ export default function BioPage() {
       return prev === id ? '' : id;
     });
     setSelectedProducts([]); // Empty product cart
+    setSelectedFood([]);    // NEW: Empty food cart
   }
 
-  // Toggle multiple products: clears selected service
+  // Toggle multiple products: clears selected service AND food
   // UPDATED: Now handles Size and Color
   function handleProductSelect(id, size, color) {
     setSelectedId(''); // Empty service selection
+    setSelectedFood([]); // NEW: Empty food selection
     const isAdding = !selectedProducts.includes(id);
     
     // 1. Manage Product IDs (Cart)
@@ -259,6 +264,55 @@ export default function BioPage() {
     // Auto-scroll to form only when adding a new product
     if (isAdding) {
       scrollToForm();
+    }
+  }
+
+  // NEW: Handler for Food Selection (Addons & Quantity)
+  function handleFoodSelect(id, variant) {
+    setSelectedId(''); // Clear service
+    setSelectedProducts([]); // Clear products
+    
+    // Check if item already exists
+    const exists = selectedFood.includes(id);
+    
+    if (exists) {
+      // If exists, just update the variant (e.g. user changed quantity or addons)
+      setSelectedFoodVariants(prev => ({ ...prev, [id]: variant }));
+    } else {
+      // Add new
+      setSelectedFood(prev => [...prev, id]);
+      setSelectedFoodVariants(prev => ({ ...prev, [id]: variant }));
+    }
+    scrollToForm();
+  }
+
+  // FIX: Extracted handler for Product Deselect to fix parsing errors
+  function handleProductDeselect(id) {
+    if (id === 'all') {
+      setSelectedProducts([]);
+      setSelectedProductVariants({});
+    } else {
+      setSelectedProducts(prev => prev.filter(p => p !== id));
+      setSelectedProductVariants(prev => { 
+        const next = { ...prev }; 
+        delete next[id]; 
+        return next; 
+      });
+    }
+  }
+
+  // NEW: Handler for Food Deselect
+  function handleFoodDeselect(id) {
+    if (id === 'all') {
+      setSelectedFood([]);
+      setSelectedFoodVariants({});
+    } else {
+      setSelectedFood(prev => prev.filter(f => f !== id));
+      setSelectedFoodVariants(prev => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
     }
   }
 
@@ -309,6 +363,17 @@ export default function BioPage() {
           />
         )}
 
+        {/* --- NEW: FOOD LIST --- */}
+        {showFood && (
+          <FoodList
+            food={biz.food}
+            selectedFood={selectedFood}
+            foodVariants={selectedFoodVariants}
+            onSelect={handleFoodSelect}
+            accent={accent}
+          />
+        )}
+
         {/* --- ADSENSE PLACEMENT 2: PRE-BOOKING --- */}
         {showSecondaryAd && (
           <div className="mx-6 mt-8 mb-6">
@@ -325,16 +390,12 @@ export default function BioPage() {
             biz={biz}
             selectedId={selectedId}
             selectedProducts={selectedProducts}
-            productVariants={selectedProductVariants} // NEW: Pass variant data
+            productVariants={selectedProductVariants}
+            selectedFood={selectedFood}
+            foodVariants={selectedFoodVariants}
             onDeselect={() => setSelectedId('')}
-            onProductDeselect={(id) => id === 'all' 
-              ? (setSelectedProducts([]), setSelectedProductVariants({})) // NEW: Clear all variants
-              : (setSelectedProducts(prev => prev.filter(p => p !== id)), setSelectedProductVariants(prev => { // NEW: Clear single variant
-                  const next = { ...prev }; 
-                  delete next[id]; 
-                  return next; 
-                }))
-            }
+            onProductDeselect={handleProductDeselect}
+            onFoodDeselect={handleFoodDeselect}
           />
         </div>
 
@@ -349,8 +410,6 @@ export default function BioPage() {
         {/* --- LEGAL & COMPLIANCE FOOTER --- */}
         {/* AdSense requires Privacy Policy and Terms of Service links */}
         <div className="px-6 pt-12 pb-8 text-center">
-          {/* MOVED: Referral Link now sits here, above the nav */}
-          <ReferralLink slug={biz.slug} />
 
           <nav className="flex justify-center gap-6 mb-6">
             <a href="/privacy" className="text-[11px] text-stone-500 hover:text-stone-300 underline decoration-stone-700 hover:decoration-stone-500 underline-offset-4 transition-colors">
@@ -359,11 +418,13 @@ export default function BioPage() {
             <a href="/terms" className="text-[11px] text-stone-500 hover:text-stone-300 underline decoration-stone-700 hover:decoration-stone-500 underline-offset-4 transition-colors">
               Terms of Service
             </a>
-          </nav>
+          </nav> 
           
           <p className="text-[11px] text-stone-500 uppercase tracking-widest font-semibold">
-            Secured by Paystack · Funds go directly to {biz.name}
-          </p>
+            Secured by Paystack
+          </p> 
+          {/* MOVED: Referral Link now sits here, above the nav */}
+          <ReferralLink slug={biz.slug} />
         </div>
         {/* ----------------------------------- */}
       </div>
