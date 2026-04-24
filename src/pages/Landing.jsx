@@ -32,25 +32,28 @@ export default function Landing() {
     <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-zinc-100 selection:text-zinc-900">
       
       {/* Header */}
-      <nav className="bg-white border-b border-zinc-200 sticky top-0 z-50 px-6">
-        <div className="max-w-7xl mx-auto py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-zinc-900 text-white rounded-md flex items-center justify-center font-bold text-sm tracking-tighter">
-              BN
-            </div>
-            <span className="font-bold text-lg tracking-tight text-zinc-900">BookNaija</span>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <Link 
-              to="/signup" 
-              className="bg-zinc-900 text-white px-6 py-2.5 text-sm font-semibold rounded-lg hover:bg-zinc-800 transition-all active:scale-95"
-            >
-              Get Started
-            </Link>
-          </div>
-        </div>
-      </nav>
+<nav className="bg-white  sticky top-0 z-50 px-6">
+  <div className="max-w-7xl mx-auto py-3 flex justify-between items-center">
+    {/* Logo Container */}
+    <Link to="/" className="flex items-center">
+      <img 
+        src="/fav-removebg.png" 
+        alt="BookNaija Logo" 
+        /* Changed h-14 to h-20 (80px) and added scale for extra pop */
+        className="h-20 w-auto object-contain transition-transform hover:scale-105" 
+      />
+    </Link>
+    
+    <div className="flex items-center gap-4">
+      <Link 
+        to="/signup" 
+        className="bg-zinc-900 text-white px-6 py-2.5 text-sm font-semibold rounded-lg hover:bg-zinc-700 transition-all active:scale-95"
+      >
+        Get Started
+      </Link>
+    </div>
+  </div>
+</nav>
 
       <main className="max-w-7xl mx-auto px-6">
         
@@ -71,7 +74,7 @@ export default function Landing() {
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-center lg:justify-start">
               <Link 
                 to="/signup"
-                className="w-full sm:w-auto bg-purple-600 text-white px-8 py-4 text-base font-semibold rounded-xl hover:bg-purple-700 transition-all active:scale-95"
+                className="w-full sm:w-auto bg-zinc-900 text-white px-8 py-4 text-base font-semibold rounded-xl hover:bg-zinc-700 transition-all active:scale-95"
               >
                 Start Free Trial
               </Link>
@@ -102,8 +105,14 @@ export default function Landing() {
 
                   <div className="flex-1 p-5 pt-4 flex flex-col">
                     <div className="flex items-center gap-4 mb-6">
-                      <div className="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center text-purple-700 font-bold text-xl">BG</div>
-                      <div>
+                      <Link to="/" className="flex items-center">
+      <img 
+        src="/fav-removebg.png" 
+        alt="BookNaija Logo" 
+        /* Changed h-14 to h-20 (80px) and added scale for extra pop */
+        className="h-20 w-auto object-contain" 
+      />
+    </Link><div>
                         <h3 className="font-bold text-zinc-900 leading-tight">Braid Gallery</h3>
                         <p className="text-xs text-zinc-500 font-medium">Lagos, Nigeria</p>
                       </div>
@@ -238,7 +247,7 @@ export default function Landing() {
                   </ul>
                   <Link 
                     to="/signup" 
-                    className="block w-full bg-zinc-900 text-white py-4 font-bold rounded-xl hover:bg-zinc-800 transition-all active:scale-95 text-center"
+                    className="block w-full bg-zinc-900 text-white py-4 font-bold rounded-xl hover:bg-zinc-700 transition-all active:scale-95 text-center"
                   >
                     Start Your Storefront
                   </Link>
@@ -258,7 +267,7 @@ export default function Landing() {
         {/* Steps Section */}
         <section className="py-24 border-t border-zinc-100">
           <div className="text-center mb-16 max-w-2xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-4 tracking-tight">Ready in minutes, not days</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-4 tracking-tight">Ready in 24 hours</h2>
             <p className="text-zinc-500 font-medium">We handle technical setup. You just handle the business.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 relative">
@@ -297,17 +306,18 @@ export default function Landing() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-zinc-100 pt-20 pb-12 px-6">
+      <footer className="bg-white  pt-20 pb-12 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-10 mb-16">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-6 h-6 bg-zinc-900 rounded text-white flex items-center justify-center font-bold text-[10px]">BN</div>
-                <span className="font-bold text-lg tracking-tight">BookNaija</span>
-              </div>
-              <p className="text-zinc-500 text-sm max-w-xs">
-                Built for Nigerian entrepreneurs to scale their services without the technical headache.
-              </p>
+            <div>{/* Logo Container */}
+    <Link to="/" className="flex items-center">
+      <img 
+        src="/fav-removebg.png" 
+        alt="BookNaija Logo" 
+        /* Changed h-14 to h-20 (80px) and added scale for extra pop */
+        className="h-20 w-auto object-contain" 
+      />
+    </Link>
             </div>
             
             <div className="flex gap-16">
