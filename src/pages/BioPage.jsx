@@ -83,7 +83,7 @@ const ReferralLink = ({ slug, accent }) => {
           Share your link <br /> Refer 3 friends = 1 Free Month
         </span>
 
-        {/* Interaction Area */}
+        {/* Interaction Areas */}
         <button
           onClick={handleCopy}
           className="group relative flex items-center gap-3 px-4 py-2 rounded-full bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition-all duration-300"
