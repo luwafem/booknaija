@@ -61,50 +61,45 @@ const GoogleAd = ({ slot, className = '' }) => {
 };
 
 // --- REFERRAL LINK COMPONENT ---
-const ReferralLink = ({ slug }) => {
-  const [copied, setCopied] = useState(false); 
-  
+const ReferralLink = ({ slug, accent }) => {
+  const [copied, setCopied] = useState(false);
   const referralUrl = `${window.location.origin}/signup?ref=${slug}`;
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(referralUrl);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000); // Reset feedback after 2s
+      setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy text: ', err);
     }
   };
 
   return (
-    <div className="mx-6 mt-4 md:mt-6">
-      <div className="flex items-center justify-between gap-4 rounded-xl bg-white/5 border border-white/5 p-3 px-4">
-        <div className="flex items-center gap-3 overflow-hidden">
-         
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-sm">
-               <span className="text-stone-300 truncate max-w-[200px]">
-                 {referralUrl}
-               </span>
-            </div>
-          </div>
-        </div>
+    <div className="mt-8 mb-4 px-4">
+      <div className="flex flex-col items-center justify-center gap-3">
+        {/* Label */}
+        <span className="text-[10px] text-stone-500 uppercase tracking-[0.2em] font-bold">
+          Share your link <br /> Refer 3 friends = 1 Free Month
+        </span>
 
+        {/* Interaction Area */}
         <button
           onClick={handleCopy}
-          className="text-xs font-semibold text-stone-300 hover:text-white whitespace-nowrap flex items-center gap-1.5 transition-colors bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded-lg"
+          className="group relative flex items-center gap-3 px-4 py-2 rounded-full bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition-all duration-300"
         >
-          {copied ? (
-             <>
-              
-               <span>Copied!</span>
-             </>
-          ) : (
-             <>
-              
-               <span>Copy Referral Link</span>
-             </>
-          )}
+          <span className="text-xs text-stone-400 font-medium truncate max-w-[180px] group-hover:text-stone-200 transition-colors">
+            {referralUrl.replace(/^https?:\/\//, '')}
+          </span>
+          
+          <div className="h-4 w-px bg-white/10" />
+
+          <span 
+            className="text-[11px] font-semibold transition-colors"
+            style={{ color: copied ? accent : '#a8a29e' }}
+          >
+            {copied ? 'Copied!' : 'Copy'}
+          </span>
         </button>
       </div>
     </div>
@@ -410,6 +405,9 @@ export default function BioPage() {
         {/* --- LEGAL & COMPLIANCE FOOTER --- */}
         {/* AdSense requires Privacy Policy and Terms of Service links */}
         <div className="px-6 pt-12 pb-8 text-center">
+          {/* MOVED: Referral Link now sits here, above the nav */}
+          {/* MOVED: Referral Link now sits here, above the nav */}
+          <ReferralLink slug={biz.slug} accent={accent} />
 
           <nav className="flex justify-center gap-6 mb-6">
             <a href="/privacy" className="text-[11px] text-stone-500 hover:text-stone-300 underline decoration-stone-700 hover:decoration-stone-500 underline-offset-4 transition-colors">
@@ -423,8 +421,7 @@ export default function BioPage() {
           <p className="text-[11px] text-stone-500 uppercase tracking-widest font-semibold">
             Secured by Paystack
           </p> 
-          {/* MOVED: Referral Link now sits here, above the nav */}
-          <ReferralLink slug={biz.slug} />
+          
         </div>
         {/* ----------------------------------- */}
       </div>
