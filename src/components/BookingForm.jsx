@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { XIcon, CalendarIcon } from './Icons';
 
 export default function BookingForm({ 
@@ -9,13 +9,21 @@ export default function BookingForm({
   onProductDeselect, 
   reference, 
   productVariants = {},
-  // NEW FOOD PROPS
+  // FOOD PROPS
   selectedFood = [],
   foodVariants = {},
-  onFoodDeselect 
+  onFoodDeselect,
+  // NEW CAR PROPS
+  selectedCar = null,
+  onCarDeselect
 }) {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
+  
+  // NEW: Car Rental States
+  const [rentalStart, setRentalStart] = useState('');
+  const [rentalEnd, setRentalEnd] = useState('');
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -30,47 +38,82 @@ export default function BookingForm({
   // Derive selections
   const svc = biz.services?.find((s) => s.id === selectedId);
   const selectedPrds = biz.products?.filter((p) => selectedProducts.includes(p.id)) || [];
-  // NEW: Derive Food Selections
   const selectedFd = biz.food?.filter((f) => selectedFood.includes(f.id)) || [];
 
   const isService = !!svc;
   const isProduct = selectedPrds.length > 0;
-  // NEW: Check if Food
   const isFood = selectedFd.length > 0;
+  const isCar = !!selectedCar;
   
-  const hasSelection = isService || isProduct || isFood;
+  const isRental = isCar && selectedCar.type === 'rent';
+  const isSale = isCar && selectedCar.type === 'sale';
+
+  const hasSelection = isService || isProduct || isFood || isCar;
 
   // Helper to get size/color for products
   const getProductVariant = (id) => productVariants[id] || {};
 
-  // Calculate dynamic totals
-  const totalAmount = isFood 
-    ? selectedFd.reduce((sum, f) => {
+  // --- TOTAL CALCULATION LOGIC (UPDATED FOR CARS) ---
+  const totalAmount = useMemo(() => {
+    if (isCar) {
+      if (isRental && rentalStart && rentalEnd) {
+        const start = new Date(rentalStart);
+        const end = new Date(rentalEnd);
+        const diffTime = Math.abs(end - start);
+        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        if (diffDays < 1) diffDays = 1; // Minimum 1 day
+        return selectedCar.price * diffDays;
+      } else if (isSale) {
+        // Viewing fee for sales (e.g., 5000 Naira to book appointment)
+        return 5000; 
+      }
+      return selectedCar.price;
+    }
+
+    if (isFood) {
+      return selectedFd.reduce((sum, f) => {
         const v = foodVariants[f.id];
-        return sum + (v ? v.finalPrice : 0); // FinalPrice includes Quantity + Addons
-      }, 0)
-    : isProduct 
-      ? selectedPrds.reduce((sum, p) => sum + p.price, 0) 
-      : svc?.price || 0;
+        return sum + (v ? v.finalPrice : 0);
+      }, 0);
+    }
+
+    if (isProduct) {
+      return selectedPrds.reduce((sum, p) => sum + p.price, 0);
+    }
+
+    return svc?.price || 0;
+  }, [isCar, selectedCar, isRental, rentalStart, rentalEnd, isSale, isFood, selectedFd, foodVariants, isProduct, selectedPrds, svc]);
 
   // Construct itemNames for Paystack/Database
-  const itemNames = isFood
-    ? selectedFd.map(f => {
+  const itemNames = useMemo(() => {
+    if (isCar) {
+      if (isRental) {
+        return `Rental: ${selectedCar.name} (${rentalStart} to ${rentalEnd})`;
+      }
+      return `Viewing: ${selectedCar.name}`;
+    }
+
+    if (isFood) {
+      return selectedFd.map(f => {
         const v = foodVariants[f.id];
         if (!v) return f.name;
-        // Construct a readable string e.g., "2x Burger (Extra Cheese, Chips)"
         const addonsList = Object.values(v.addons || {}).flat().filter(Boolean).map(a => a.name).join(', ');
         return `${v.quantity}x ${f.name}${addonsList ? ` (${addonsList})` : ''}`;
-      }).join('; ')
-    : isProduct 
-      ? selectedPrds.map(p => {
-          const v = getProductVariant(p.id);
-          const parts = [p.name];
-          if (v.size) parts.push(`Size: ${v.size}`);
-          if (v.color) parts.push(`Color: ${v.color}`);
-          return parts.join(', ');
-        }).join('; ')
-      : svc?.name || '';
+      }).join('; ');
+    }
+
+    if (isProduct) {
+      return selectedPrds.map(p => {
+        const v = getProductVariant(p.id);
+        const parts = [p.name];
+        if (v.size) parts.push(`Size: ${v.size}`);
+        if (v.color) parts.push(`Color: ${v.color}`);
+        return parts.join(', ');
+      }).join('; ');
+    }
+
+    return svc?.name || '';
+  }, [isCar, selectedCar, isRental, rentalStart, rentalEnd, isFood, selectedFd, foodVariants, isProduct, selectedPrds, svc]);
 
   useEffect(() => {
     if (!reference) return;
@@ -110,22 +153,38 @@ export default function BookingForm({
     if (!hasSelection) return;
     setLoading(true);
     setErr('');
+    
     try {
+      // Logic to handle Car specific payload
+      let bookingDate = date;
+      let bookingTime = time;
+      
+      if (isCar) {
+        if (isRental) {
+           bookingDate = rentalStart;
+           bookingTime = `Until: ${rentalEnd}`;
+        } else {
+           // Viewing
+           bookingDate = date;
+           bookingTime = time;
+        }
+      }
+
       const r = await fetch('/.netlify/functions/initialize-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           slug: biz.slug, 
-          serviceId: isFood ? selectedFood.join(',') : (isProduct ? selectedProducts.join(',') : selectedId), 
+          serviceId: isCar ? selectedCar.id : (isFood ? selectedFood.join(',') : (isProduct ? selectedProducts.join(',') : selectedId)), 
           serviceName: itemNames,
           amount: totalAmount,
-          // Only services need date/time
-          date: (isFood || isProduct) ? 'N/A' : date, 
-          time: (isFood || isProduct) ? 'N/A' : time,
+          // Date/Time Logic
+          date: (isProduct || isRental) ? 'N/A' : bookingDate, 
+          time: (isProduct || isRental) ? 'N/A' : bookingTime,
           // Type determination
-          type: isFood ? 'food' : (isProduct ? 'product' : 'service'),
-          // Address needed for Food/Products
-          address: (isFood || isProduct) ? address : 'N/A',
+          type: isCar ? (isRental ? 'car_rental' : 'car_viewing') : (isFood ? 'food' : (isProduct ? 'product' : 'service')),
+          // Address needed for Food/Products/Rentals
+          address: (isProduct || isFood || isRental) ? address : 'N/A',
           name, email, phone, calendarId: biz.calendarId,
         }),
       });
@@ -135,11 +194,11 @@ export default function BookingForm({
         try {
           localStorage.setItem('payCtx', JSON.stringify({
             amount: totalAmount,
-            type: isFood ? 'food' : (isProduct ? 'product' : 'service'),
+            type: isCar ? (isRental ? 'car_rental' : 'car_viewing') : (isFood ? 'food' : (isProduct ? 'product' : 'service')),
             serviceName: itemNames,
-            date: (isFood || isProduct) ? 'N/A' : date,
-            time: (isFood || isProduct) ? 'N/A' : time,
-            address: (isFood || isProduct) ? address : 'N/A',
+            date: (isProduct || isRental) ? 'N/A' : bookingDate,
+            time: (isProduct || isRental) ? 'N/A' : bookingTime,
+            address: (isProduct || isFood || isRental) ? address : 'N/A',
             customerName: name,
             customerEmail: email,
             customerPhone: phone,
@@ -147,16 +206,17 @@ export default function BookingForm({
               const v = getProductVariant(p.id);
               return { name: p.name, price: p.price, size: v.size || null, color: v.color || null };
             }) : [],
-            // NEW: Persist Food Data
             food: isFood ? selectedFd.map(f => {
               const v = foodVariants[f.id];
-              return { 
-                name: f.name, 
-                quantity: v.quantity, 
-                addons: v.addons, 
-                finalPrice: v.finalPrice 
-              };
+              return { name: f.name, quantity: v.quantity, addons: v.addons, finalPrice: v.finalPrice };
             }) : [],
+            // NEW: Persist Car Data
+            car: isCar ? {
+              name: selectedCar.name,
+              type: selectedCar.type,
+              price: selectedCar.price,
+              dates: isRental ? `${rentalStart} to ${rentalEnd}` : null
+            } : null,
           }));
         } catch {}
         window.location.href = d.authorization_url;
@@ -173,19 +233,22 @@ export default function BookingForm({
     })();
 
     const isProductOk = booking.type === 'product' || ctx.type === 'product';
-    // NEW: Check if Food
     const isFoodOk = booking.type === 'food' || ctx.type === 'food';
+    // NEW: Check if Car
+    const isCarOk = booking.type === 'car_rental' || booking.type === 'car_viewing' || ctx.type === 'car_rental' || ctx.type === 'car_viewing';
+    
     const paymentAmount = Number(booking.amount) || ctx.amount || 0;
 
     let calUrl = '#';
-    if (!isProductOk && !isFoodOk && booking.date && booking.time) {
+    // Calendar only for Services or Car Viewings
+    if (!isProductOk && !isFoodOk && !isCarOk && booking.date && booking.time) {
       const [h, min] = booking.time.split(':').map(Number);
       const end = `${String(Math.floor((h * 60 + min + 60) / 60)).padStart(2, '0')}:${String((h * 60 + min + 60) % 60).padStart(2, '0')}`;
       const gd = booking.date.replace(/-/g, '');
       calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(booking.serviceName)}+with+${encodeURIComponent(biz.name)}&dates=${gd}T${booking.time.replace(':', '')}00/${gd}T${end.replace(':', '')}00&ctz=Africa/Lagos`;
     }
 
-    let waMessage = `Hi ${biz.name}! 👋\n\nI just made a ${isFoodOk ? 'food order' : (isProductOk ? 'purchase' : 'booking')} on your page.\n\n`;
+    let waMessage = `Hi ${biz.name}! 👋\n\nI just made a ${isFoodOk ? 'food order' : (isProductOk ? 'purchase' : (isCarOk ? (ctx.car?.type === 'rent' ? 'car rental reservation' : 'car viewing appointment') : 'booking'))} on your page.\n\n`;
     
     // Customer Details
     waMessage += `*Customer Details:*\n`;
@@ -194,19 +257,32 @@ export default function BookingForm({
     waMessage += `Phone: ${booking.phone || ctx.customerPhone || phone}\n\n`;
 
     // Order/Booking Details
-    if (isFoodOk) {
+    if (isCarOk) {
+      const car = ctx.car || {};
+      waMessage += `*Car Details:*\n`;
+      waMessage += `Car: ${car.name}\n`;
+      if (car.type === 'rent') {
+        waMessage += `Dates: ${car.dates}\n`;
+      } else {
+        waMessage += `Viewing Date: ${booking.date || ctx.date}\n`;
+        waMessage += `Time: ${booking.time || ctx.time}\n`;
+      }
+      waMessage += `Total: ₦${paymentAmount.toLocaleString()}\n`;
+      if (car.type === 'rent') {
+        waMessage += `Pickup/Delivery Address: ${booking.address || ctx.address || address}\n`;
+      }
+    }
+    else if (isFoodOk) {
       waMessage += `*Food Order:*\n`;
       const storedFood = ctx.food || [];
       if (storedFood.length > 0) {
         storedFood.forEach((f) => {
-          // Format addons for WhatsApp
           const addonsString = Object.values(f.addons || {}).flat().map(a => a.name).join(', ');
           waMessage += `• ${f.quantity}x ${f.name}`;
           if (addonsString) waMessage += ` (${addonsString})`;
           waMessage += `\n`;
         });
       } else {
-        // Fallback
         waMessage += `• ${booking.serviceName}\n`;
       }
       waMessage += `\n*Total:* ₦${paymentAmount.toLocaleString()}\n`;
@@ -257,13 +333,15 @@ export default function BookingForm({
             style={{ background: `${accent}15`, color: accent, borderColor: `${accent}30`, boxShadow: `0 0 40px -10px ${accent}40` }}>
             ✓
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">{isFoodOk ? 'Order Placed!' : (isProductOk ? 'Order Confirmed!' : 'Booking Confirmed!')}</h2>
+          <h2 className="text-2xl font-bold tracking-tight">
+             {isCarOk ? (ctx.car?.type === 'rent' ? 'Rental Reserved!' : 'Viewing Scheduled!') : (isFoodOk ? 'Order Placed!' : (isProductOk ? 'Order Confirmed!' : 'Booking Confirmed!'))}
+          </h2>
           <p className="text-stone-400 mt-3 text-sm leading-relaxed">{booking.serviceName}</p>
           <p className="text-stone-600 mt-1.5 text-sm">Check your email for your Paystack receipt.</p>
           
           <div className="mt-8 flex flex-col items-center gap-3">
             {/* Google Calendar Button (Services Only) */}
-            {!isProductOk && !isFoodOk && (
+            {!isProductOk && !isFoodOk && !isCarOk && (
               <a href={calUrl} target="_blank" rel="noreferrer"
                 className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 rounded-xl text-sm font-medium transition-all hover:brightness-110"
                 style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}30` }}>
@@ -310,7 +388,7 @@ export default function BookingForm({
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.567-2.226m-2.51-2.225l.567 2.226m-2.51-2.225l2.51 2.225a.75.75 0 01-.554-.759l-1.285-5.137a3 3 0 00-1.794-2.187L2.77 5.313a.75.75 0 01.85-.748l7.4 2.246a3 3 0 011.75 2.187l1.78 7.127a.75.75 0 01-.851.748L12 14.5l-4.995 1.721a.75.75 0 01-.463-1.549z" />
          </svg>
       </div>
-      <p className="text-stone-500 text-sm">Select a service, product, or food item above to continue</p>
+      <p className="text-stone-500 text-sm">Select a service, product, food, or car above to continue</p>
     </div>
   );
 
@@ -320,6 +398,44 @@ export default function BookingForm({
   return (
     <form onSubmit={pay} className="space-y-5 mt-2">
       
+      {/* ── CAR SUMMARY SECTION (NEW) ── */}
+      {isCar && (
+        <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5" style={{ borderColor: `${accent}20` }}>
+          <div className="flex gap-4">
+            <img src={selectedCar.image || selectedCar.images?.[0]} className="w-20 h-20 rounded-lg object-cover bg-black border border-white/5" alt={selectedCar.name} />
+            <div className="flex-1">
+              <div className="flex justify-between items-start">
+                <h3 className="font-bold text-stone-200">{selectedCar.name}</h3>
+                <button type="button" onClick={onCarDeselect} className="text-stone-500 hover:text-red-400">
+                  <XIcon className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-stone-500 mt-1">{selectedCar.year} • {selectedCar.transmission}</p>
+              
+              {isRental ? (
+                <div className="mt-3 p-2 bg-white/5 rounded-lg flex justify-between items-center">
+                  <span className="text-xs text-stone-400">Rate</span>
+                  <span className="text-sm font-bold" style={{color: accent}}>₦{selectedCar.price.toLocaleString()} / day</span>
+                </div>
+              ) : (
+                <div className="mt-3 p-2 bg-white/5 rounded-lg flex justify-between items-center">
+                  <span className="text-xs text-stone-400">Viewing Fee</span>
+                  <span className="text-sm font-bold" style={{color: accent}}>₦5,000</span>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Live Rental Calculation */}
+          {isRental && rentalStart && rentalEnd && (
+             <div className="mt-3 pt-3 border-t border-white/5 text-right">
+               <span className="text-xs text-stone-400">Total for selected days:</span>
+               <div className="text-xl font-bold text-white">₦{totalAmount.toLocaleString()}</div>
+             </div>
+          )}
+        </div>
+      )}
+
       {/* ── SINGLE SERVICE SUMMARY ── */}
       {isService && (
         <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm"
@@ -461,28 +577,55 @@ export default function BookingForm({
         </div>
       )}
 
-      {/* ── DATE / TIME (Services Only) ── */}
-      {!isProduct && !isFood && (
+      {/* ── RENTAL DATES (Rentals Only) ── */}
+      {isRental && (
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className={labelStyle}>Date</label>
-            <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} 
-              className={inputBase} style={{ colorScheme: 'dark' }} />
+            <label className={labelStyle}>Pick-up Date</label>
+            <input required type="date" value={rentalStart} onChange={(e) => setRentalStart(e.target.value)} className={inputBase} style={{ colorScheme: 'dark' }} />
           </div>
           <div>
-            <label className={labelStyle}>Time</label>
-            <input required type="time" value={time} onChange={(e) => setTime(e.target.value)} 
-              className={inputBase} style={{ colorScheme: 'dark' }} />
+            <label className={labelStyle}>Return Date</label>
+            <input required type="date" value={rentalEnd} onChange={(e) => setRentalEnd(e.target.value)} className={inputBase} style={{ colorScheme: 'dark' }} />
           </div>
         </div>
       )}
 
-      {/* ── DELIVERY ADDRESS (Food & Products Only) ── */}
-      {(isProduct || isFood) && (
+      {/* ── VIEWING DATE (Car Sales Only) ── */}
+      {isSale && (
+         <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelStyle}>Viewing Date</label>
+            <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputBase} style={{ colorScheme: 'dark' }} />
+          </div>
+          <div>
+            <label className={labelStyle}>Time</label>
+            <input required type="time" value={time} onChange={(e) => setTime(e.target.value)} className={inputBase} style={{ colorScheme: 'dark' }} />
+          </div>
+        </div>
+      )}
+
+      {/* ── DATE / TIME (Services Only) ── */}
+      {!isProduct && !isFood && !isCar && (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelStyle}>Date</label>
+            <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputBase} style={{ colorScheme: 'dark' }} />
+          </div>
+          <div>
+            <label className={labelStyle}>Time</label>
+            <input required type="time" value={time} onChange={(e) => setTime(e.target.value)} className={inputBase} style={{ colorScheme: 'dark' }} />
+          </div>
+        </div>
+      )}
+
+      {/* ── ADDRESS (Rentals, Products, Food Only) ── */}
+      {(isProduct || isFood || isRental) && (
         <div>
-          <label className={labelStyle}>Delivery Address</label>
-          <textarea required placeholder="Enter your delivery address" value={address} onChange={(e) => setAddress(e.target.value)} 
-            className={`${inputBase} h-24 resize-none`} />
+          <label className={labelStyle}>
+            {isRental ? 'Pick-up / Delivery Location' : 'Delivery Address'}
+          </label>
+          <textarea required placeholder="Enter full address" value={address} onChange={(e) => setAddress(e.target.value)} className={`${inputBase} h-24 resize-none`} />
         </div>
       )}
 
@@ -511,7 +654,11 @@ export default function BookingForm({
           background: accent, 
           color: '#0a0a0a'
         }}>
-        {loading ? 'Processing…' : (isFood || isProduct) ? `Pay ₦${totalAmount.toLocaleString()}` : 'Pay & Book'}
+        {loading ? 'Processing…' : 
+         isCar 
+          ? (isRental ? `Pay ₦${totalAmount.toLocaleString()}` : 'Book Viewing')
+          : `Pay ₦${totalAmount.toLocaleString()}`
+        }
       </button>
     </form>
   );

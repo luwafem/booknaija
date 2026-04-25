@@ -6,7 +6,8 @@ import HeroSection from '../components/bio/HeroSection';
 import Gallery from '../components/bio/Gallery';
 import ServiceList from '../components/bio/ServiceList';
 import ProductList from '../components/bio/ProductList';
-import FoodList from '../components/bio/FoodList'; // NEW: Import FoodList
+import FoodList from '../components/bio/FoodList'; 
+import CarList from '../components/bio/CarList'; // NEW: Import CarList
 
 // --- ADSENSE CONFIGURATION (GLOBAL) ---
 // IMPORTANT: Replace these with your actual IDs from Google AdSense
@@ -61,50 +62,45 @@ const GoogleAd = ({ slot, className = '' }) => {
 };
 
 // --- REFERRAL LINK COMPONENT ---
-const ReferralLink = ({ slug }) => {
-  const [copied, setCopied] = useState(false); 
-  
+const ReferralLink = ({ slug, accent }) => {
+  const [copied, setCopied] = useState(false);
   const referralUrl = `${window.location.origin}/signup?ref=${slug}`;
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(referralUrl);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000); // Reset feedback after 2s
+      setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy text: ', err);
     }
   };
 
   return (
-    <div className="mx-6 mt-4 md:mt-6">
-      <div className="flex items-center justify-between gap-4 rounded-xl bg-white/5 border border-white/5 p-3 px-4">
-        <div className="flex items-center gap-3 overflow-hidden">
-         
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-sm">
-               <span className="text-stone-300 truncate max-w-[200px]">
-                 {referralUrl}
-               </span>
-            </div>
-          </div>
-        </div>
+    <div className="mt-8 mb-4 px-4">
+      <div className="flex flex-col items-center justify-center gap-3">
+        {/* Label */}
+        <span className="text-[10px] text-stone-500 uppercase tracking-[0.2em] font-bold">
+          Share your link <br /> Refer 3 friends = 1 Free Month
+        </span>
 
+        {/* Interaction Areas */}
         <button
           onClick={handleCopy}
-          className="text-xs font-semibold text-stone-300 hover:text-white whitespace-nowrap flex items-center gap-1.5 transition-colors bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded-lg"
+          className="group relative flex items-center gap-3 px-4 py-2 rounded-full bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition-all duration-300"
         >
-          {copied ? (
-             <>
-              
-               <span>Copied!</span>
-             </>
-          ) : (
-             <>
-              
-               <span>Copy Referral Link</span>
-             </>
-          )}
+          <span className="text-xs text-stone-400 font-medium truncate max-w-[180px] group-hover:text-stone-200 transition-colors">
+            {referralUrl.replace(/^https?:\/\//, '')}
+          </span>
+          
+          <div className="h-4 w-px bg-white/10" />
+
+          <span 
+            className="text-[11px] font-semibold transition-colors"
+            style={{ color: copied ? accent : '#a8a29e' }}
+          >
+            {copied ? 'Copied!' : 'Copy'}
+          </span>
         </button>
       </div>
     </div>
@@ -124,9 +120,12 @@ export default function BioPage() {
   // State for Product Variants (Size & Color)
   const [selectedProductVariants, setSelectedProductVariants] = useState({});
   
-  // NEW: State for Food Selection
+  // State for Food Selection
   const [selectedFood, setSelectedFood] = useState([]);
   const [selectedFoodVariants, setSelectedFoodVariants] = useState({});
+  
+  // NEW: State for Car Selection (Single Object)
+  const [selectedCar, setSelectedCar] = useState(null);
   
   const formRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
@@ -148,7 +147,7 @@ export default function BioPage() {
         // Check if form is already mostly visible in viewport
         const isVisible = rect.top >= 0 && rect.bottom <= windowHeight;
 
-        // Only scroll if the form is NOT currently visible
+        // Only scroll if form is NOT currently visible
         if (!isVisible) {
           el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -186,8 +185,9 @@ export default function BioPage() {
   const accent = biz.accent || '#c8a97e';
   const showServices = biz.servicesEnabled && biz.services?.length > 0;
   const showProducts = biz.productsEnabled && biz.products?.length > 0;
-  // NEW: Check for Food
   const showFood = biz.foodEnabled && biz.food?.length > 0;
+  // NEW: Check for Cars
+  const showCars = biz.carsEnabled && biz.cars?.length > 0;
   
   // --- ADSENSE POLICY COMPLIANCE LOGIC ---
   
@@ -195,11 +195,11 @@ export default function BioPage() {
   const adsEnabled = biz.adsEnabled !== false;
   
   // 2. Content Density Check (Prevent "Ad Cramming")
-  // UPDATED: Include food in totalItems count
-  const totalItems = (biz.services?.length || 0) + (biz.products?.length || 0) + (biz.food?.length || 0);
+  // UPDATED: Include cars in totalItems count
+  const totalItems = (biz.services?.length || 0) + (biz.products?.length || 0) + (biz.food?.length || 0) + (biz.cars?.length || 0);
   
-  // UPDATED: Include food in content check
-  const hasAnyContent = showServices || showProducts || showFood;
+  // UPDATED: Include cars in content check
+  const hasAnyContent = showServices || showProducts || showFood || showCars;
   
   // FIX: Define hasEnoughContent before using it
   const hasEnoughContent = totalItems >= 4;
@@ -220,7 +220,7 @@ export default function BioPage() {
       heroImages = biz.gallery.slice(0, 4);
   }
 
-  // Toggle single service: clears any selected products AND food
+  // Toggle single service: clears any selected products, food AND car
   function handleServiceSelect(id) {
     setSelectedId((prev) => {
       // Only trigger scroll if we are selecting something new (or toggling on)
@@ -230,14 +230,16 @@ export default function BioPage() {
       return prev === id ? '' : id;
     });
     setSelectedProducts([]); // Empty product cart
-    setSelectedFood([]);    // NEW: Empty food cart
+    setSelectedFood([]);    // Empty food cart
+    setSelectedCar(null);   // NEW: Empty car selection
   }
 
-  // Toggle multiple products: clears selected service AND food
+  // Toggle multiple products: clears selected service, food AND car
   // UPDATED: Now handles Size and Color
   function handleProductSelect(id, size, color) {
     setSelectedId(''); // Empty service selection
-    setSelectedFood([]); // NEW: Empty food selection
+    setSelectedFood([]); // Empty food selection
+    setSelectedCar(null); // NEW: Empty car selection
     const isAdding = !selectedProducts.includes(id);
     
     // 1. Manage Product IDs (Cart)
@@ -267,10 +269,11 @@ export default function BioPage() {
     }
   }
 
-  // NEW: Handler for Food Selection (Addons & Quantity)
+  // Handler for Food Selection (Addons & Quantity)
   function handleFoodSelect(id, variant) {
     setSelectedId(''); // Clear service
     setSelectedProducts([]); // Clear products
+    setSelectedCar(null); // NEW: Clear car selection
     
     // Check if item already exists
     const exists = selectedFood.includes(id);
@@ -301,7 +304,7 @@ export default function BioPage() {
     }
   }
 
-  // NEW: Handler for Food Deselect
+  // Handler for Food Deselect
   function handleFoodDeselect(id) {
     if (id === 'all') {
       setSelectedFood([]);
@@ -316,6 +319,20 @@ export default function BioPage() {
     }
   }
 
+  // NEW: Handler for Car Selection
+  function handleCarSelect(car) {
+    setSelectedId(''); // Clear service
+    setSelectedProducts([]); // Clear products
+    setSelectedFood([]); // Clear food
+    setSelectedCar(car); // Set car
+    scrollToForm();
+  }
+
+  // NEW: Handler for Car Deselect (passed to BookingForm)
+  function handleCarDeselect() {
+    setSelectedCar(null);
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white pb-12">
       <div className="max-w-lg mx-auto">
@@ -323,8 +340,7 @@ export default function BioPage() {
         {/* UPDATE: Pass logo prop */}
         <HeroSection biz={{ ...biz, logo: biz.logo }} />
 
-        {/* --- NEW: REFERRAL LINK --- */}
-        {/* Moved here based on request */}
+        {/* --- REFERRAL LINK --- */}
         {/* ----------------------------------- */}
 
         {biz.gallery?.length > 0 && (
@@ -363,13 +379,23 @@ export default function BioPage() {
           />
         )}
 
-        {/* --- NEW: FOOD LIST --- */}
+        {/* --- FOOD LIST --- */}
         {showFood && (
           <FoodList
             food={biz.food}
             selectedFood={selectedFood}
             foodVariants={selectedFoodVariants}
             onSelect={handleFoodSelect}
+            accent={accent}
+          />
+        )}
+
+        {/* --- NEW: CAR LIST --- */}
+        {showCars && (
+          <CarList
+            cars={biz.cars}
+            selectedCar={selectedCar}
+            onSelect={handleCarSelect}
             accent={accent}
           />
         )}
@@ -396,6 +422,9 @@ export default function BioPage() {
             onDeselect={() => setSelectedId('')}
             onProductDeselect={handleProductDeselect}
             onFoodDeselect={handleFoodDeselect}
+            // NEW: Pass Car Props
+            selectedCar={selectedCar}
+            onCarDeselect={handleCarDeselect}
           />
         </div>
 
@@ -410,6 +439,8 @@ export default function BioPage() {
         {/* --- LEGAL & COMPLIANCE FOOTER --- */}
         {/* AdSense requires Privacy Policy and Terms of Service links */}
         <div className="px-6 pt-12 pb-8 text-center">
+          {/* Referral Link */}
+          <ReferralLink slug={biz.slug} accent={accent} />
 
           <nav className="flex justify-center gap-6 mb-6">
             <a href="/privacy" className="text-[11px] text-stone-500 hover:text-stone-300 underline decoration-stone-700 hover:decoration-stone-500 underline-offset-4 transition-colors">
@@ -423,8 +454,7 @@ export default function BioPage() {
           <p className="text-[11px] text-stone-500 uppercase tracking-widest font-semibold">
             Secured by Paystack
           </p> 
-          {/* MOVED: Referral Link now sits here, above the nav */}
-          <ReferralLink slug={biz.slug} />
+          
         </div>
         {/* ----------------------------------- */}
       </div>
