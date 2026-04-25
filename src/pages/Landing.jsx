@@ -1,4 +1,7 @@
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import businesses from '../data/businesses';
+// import businesses from './businesses'; // <--- Ensure you import your data file here
 
 const steps = [
   { 
@@ -28,32 +31,54 @@ const features = [
 ];
 
 export default function Landing() {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter logic: Search by Name or Slug
+  const filteredBusinesses = useMemo(() => {
+    if (!searchQuery) return [];
+    const lowerQuery = searchQuery.toLowerCase();
+    
+    // Assuming 'businesses' is imported at the top of the file
+    // If you pasted the data object directly in this file, you can use the global variable
+    // For now, we will try to access it via window or assume it's imported.
+    // NOTE: Make sure you have: import businesses from './businesses';
+    
+    // Temporarily accessing via global if you haven't set up module imports yet:
+    const data = window.businessesData || businesses; 
+
+    if (!data) return [];
+
+    return Object.values(data).filter(b => 
+      b.name.toLowerCase().includes(lowerQuery) || 
+      b.slug.toLowerCase().includes(lowerQuery)
+    );
+  }, [searchQuery]);
+
   return (
     <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-zinc-100 selection:text-zinc-900">
       
       {/* Header */}
-<nav className="bg-white  sticky top-0 z-50 px-6">
-  <div className="max-w-7xl mx-auto py-3 flex justify-between items-center">
-    {/* Logo Container */}
-    <Link to="/" className="flex items-center">
-      <img 
-        src="/fav-removebg.png" 
-        alt="BookNaija Logo" 
-        /* Changed h-14 to h-20 (80px) and added scale for extra pop */
-        className="h-20 w-auto object-contain transition-transform hover:scale-105" 
-      />
-    </Link>
-    
-    <div className="flex items-center gap-4">
-      <Link 
-        to="/signup" 
-        className="bg-zinc-900 text-white px-6 py-2.5 text-sm font-semibold rounded-lg hover:bg-zinc-700 transition-all active:scale-95"
-      >
-        Get Started
-      </Link>
-    </div>
-  </div>
-</nav>
+      <nav className="bg-white sticky top-0 z-50 px-6">
+        <div className="max-w-7xl mx-auto py-3 flex justify-between items-center">
+          {/* Logo Container */}
+          <Link to="/" className="flex items-center">
+            <img 
+              src="/fav-removebg.png" 
+              alt="BookNaija Logo" 
+              className="h-20 w-auto object-contain transition-transform hover:scale-105" 
+            />
+          </Link>
+          
+          <div className="flex items-center gap-4">
+            <Link 
+              to="/signup" 
+              className="bg-zinc-900 text-white px-6 py-2.5 text-sm font-semibold rounded-lg hover:bg-zinc-700 transition-all active:scale-95"
+            >
+              Get Started
+            </Link>
+          </div>
+        </div>
+      </nav>
 
       <main className="max-w-7xl mx-auto px-6">
         
@@ -83,7 +108,60 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* ✅ Added Disclaimer under Start Free Trial */}
+            {/* ✅ NEW: Search Bar */}
+            <div className="mt-8 max-w-lg mx-auto lg:mx-0">
+              <label htmlFor="business-search" className="block text-sm font-medium text-zinc-700 mb-2">
+                Find a registered business
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-zinc-400 group-focus-within:text-purple-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  id="business-search"
+                  className="block w-full pl-10 pr-3 py-3 border border-zinc-300 rounded-lg leading-5 bg-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-600 sm:text-sm shadow-sm transition-all"
+                  placeholder="Search by name (e.g. Glamour) or slug..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              {/* ✅ NEW: Search Results Dropdown */}
+              {searchQuery && (
+                <div className="mt-4 bg-white border border-zinc-200 rounded-xl shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  {filteredBusinesses.length > 0 ? (
+                    <div className="max-h-64 overflow-y-auto">
+                      {filteredBusinesses.map((b) => (
+                        <Link 
+                          key={b.slug} 
+                          to={`/${b.slug}`} // Assumes your route is /:slug
+                          className="block px-4 py-3 hover:bg-zinc-50 transition-colors border-b border-zinc-100 last:border-0"
+                          onClick={() => setSearchQuery('')}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-semibold text-zinc-900">{b.name}</p>
+                              <p className="text-xs text-zinc-500 truncate max-w-[200px]">{b.tagline}</p>
+                            </div>
+                            <div className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded">
+                              Visit
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="px-4 py-6 text-center">
+                      <p className="text-sm text-zinc-500">No businesses found matching "{searchQuery}"</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <p className="mt-4 text-[11px] text-zinc-400 text-center lg:text-left max-w-sm mx-auto lg:mx-0 leading-relaxed">
               Earnings are paid directly to your bank via Paystack. Settlement takes up to 24 hours on business days (excludes weekends & public holidays).
             </p>
@@ -106,13 +184,13 @@ export default function Landing() {
                   <div className="flex-1 p-5 pt-4 flex flex-col">
                     <div className="flex items-center gap-4 mb-6">
                       <Link to="/" className="flex items-center">
-      <img 
-        src="/fav-removebg.png" 
-        alt="BookNaija Logo" 
-        /* Changed h-14 to h-20 (80px) and added scale for extra pop */
-        className="h-20 w-auto object-contain" 
-      />
-    </Link><div>
+                        <img 
+                          src="/fav-removebg.png" 
+                          alt="BookNaija Logo" 
+                          className="h-20 w-auto object-contain" 
+                        />
+                      </Link>
+                      <div>
                         <h3 className="font-bold text-zinc-900 leading-tight">Braid Gallery</h3>
                         <p className="text-xs text-zinc-500 font-medium">Lagos, Nigeria</p>
                       </div>
@@ -306,18 +384,17 @@ export default function Landing() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white  pt-20 pb-12 px-6">
+      <footer className="bg-white pt-20 pb-12 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-10 mb-16">
-            <div>{/* Logo Container */}
-    <Link to="/" className="flex items-center">
-      <img 
-        src="/fav-removebg.png" 
-        alt="BookNaija Logo" 
-        /* Changed h-14 to h-20 (80px) and added scale for extra pop */
-        className="h-20 w-auto object-contain" 
-      />
-    </Link>
+            <div>
+              <Link to="/" className="flex items-center">
+                <img 
+                  src="/fav-removebg.png" 
+                  alt="BookNaija Logo" 
+                  className="h-20 w-auto object-contain" 
+                />
+              </Link>
             </div>
             
             <div className="flex gap-16">
