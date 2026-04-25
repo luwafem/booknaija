@@ -429,8 +429,8 @@ const businesses = {
     ],
   },
 
-  // --- NEW CAR BUSINESS EXAMPLE ---
-    'lagos-auto': {
+  // --- CAR BUSINESS EXAMPLE ---
+  'lagos-auto': {
     name: 'Lagos Auto Deals',
     slug: 'lagos-auto',
     logo:'',
@@ -526,6 +526,110 @@ const businesses = {
             'https://picsum.photos/seed/corolla/800/450',
             'https://picsum.photos/seed/corolla1/800/450'
         ]
+      }
+    ]
+  },
+
+  // --- ALL-SECTIONS BUSINESS EXAMPLE ---
+  'palm-royal': {
+    name: 'The Palm Royal Hub',
+    slug: 'palm-royal',
+    logo:'',
+    tagline: 'Luxury Living, Dining & Travel in One',
+    bio: 'Lagos’ premier all-in-one destination. Enjoy 5-star dining, rent luxury cars for your events, shop exclusive gifts, and relax in our VIP spa lounge.',
+    phone: '+234 800 333 4444',
+    whatsapp: '2348003334444',
+    email: 'palmroyalhub@gmail.com',
+    location: 'Lekki-Epe Expressway, Lagos',
+    hours: '24 Hours',
+    accent: '#daa520', // Goldenrod
+    avatar: '',
+    hero: 'https://picsum.photos/seed/palm-hero/800/600',
+    gallery: [
+      { group: 'The Lounge', images: ['https://picsum.photos/seed/lounge1/600/600','https://picsum.photos/seed/lounge2/600/600'] },
+      { group: 'Exterior', images: ['https://picsum.photos/seed/park1/600/600','https://picsum.photos/seed/park2/600/600'] },
+    ],
+    socials: { instagram: 'https://instagram.com/palmroyalhub', tiktok: 'https://tiktok.com/@palmroyalhub' },
+    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+    subaccountCode: 'ACCT_palmroyal_code',
+    calendarId: 'palmroyalhub@gmail.com',
+    active: true,
+    // ALL FLAGS ENABLED
+    adsEnabled: true,
+    carsEnabled: true, 
+    servicesEnabled: true,
+    productsEnabled: true,
+    foodEnabled: true,
+    
+    services: [
+      {
+        id: 'vip-day', name: 'VIP Day Pass', duration: '1 Day', price: 50000, image: 'https://picsum.photos/seed/vip/200/200',
+        images: [], showDetails: true,
+        description: 'Access to the VIP lounge, private pool area, and complimentary cocktails.'
+      },
+      {
+        id: 'concierge', name: 'Event Concierge', duration: '4 hrs', price: 25000, image: 'https://picsum.photos/seed/concierge/200/200',
+        images: [], showDetails: true,
+        description: 'Personal assistance for event planning, guest management, and logistics coordination.'
+      }
+    ],
+
+    products: [
+      {
+        id: 'hamper', name: 'Royal Gift Hamper', price: 45000, image: 'https://picsum.photos/seed/hamper/400/400',
+        showDetails: true,
+        description: 'Luxury basket containing imported wines, chocolates, and spa essentials.'
+      },
+      {
+        id: 'robe', name: 'Luxury Turkish Robe', price: 18000, image: 'https://picsum.photos/seed/robe/400/400',
+        showDetails: true,
+        description: '100% Cotton terry cloth robe. Embroidered with the Palm Royal logo.'
+      }
+    ],
+
+    food: [
+      {
+        id: 'steak', name: 'Grilled Sirloin Steak', price: 18000, image: 'https://picsum.photos/seed/steak/400/400',
+        description: 'Premium cut steak grilled to perfection with herbs.',
+        addons: [
+          { 
+            id: 'doneness', label: 'Cooking', type: 'single', 
+            options: [{ name: 'Medium Rare', price: 0 }, { name: 'Well Done', price: 0 }] 
+          },
+          { 
+            id: 'sauce', label: 'Sauce', type: 'single', 
+            options: [{ name: 'Black Pepper', price: 0 }, { name: 'Mushroom', price: 1000 }] 
+          },
+          { 
+            id: 'sides', label: 'Add Sides', type: 'multi', 
+            options: [{ name: 'Mixed Veg', price: 1500 }, { name: 'Baked Potato', price: 1500 }] 
+          }
+        ]
+      },
+      {
+        id: 'seafood', name: 'Grilled Lobster Tail', price: 35000, image: 'https://picsum.photos/seed/lobster/400/400',
+        description: 'Fresh lobster tail grilled with garlic butter.',
+        addons: [
+          {
+            id: 'spice', label: 'Spice Level', type: 'single', 
+            options: [{ name: 'Mild', price: 0 }, { name: 'Spicy', price: 0 }]
+          }
+        ]
+      }
+    ],
+
+    cars: [
+      {
+        id: 'phantom', type: 'rent', name: 'Rolls Royce Phantom', year: 2023, price: 250000,
+        mileage: '5k km', transmission: 'Automatic', fuel: 'Petrol',
+        description: 'The ultimate luxury experience. Chauffeur service included.',
+        image: 'https://picsum.photos/seed/rolls/800/450', images: ['https://picsum.photos/seed/rolls/800/450']
+      },
+      {
+        id: 'g63', type: 'rent', name: 'Mercedes G63 AMG', year: 2023, price: 150000,
+        mileage: '10k km', transmission: 'Automatic', fuel: 'Petrol',
+        description: 'High-performance SUV for a bold arrival.',
+        image: 'https://picsum.photos/seed/g63/800/450', images: ['https://picsum.photos/seed/g63/800/450']
       }
     ]
   },
