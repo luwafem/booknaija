@@ -6,7 +6,8 @@ import HeroSection from '../components/bio/HeroSection';
 import Gallery from '../components/bio/Gallery';
 import ServiceList from '../components/bio/ServiceList';
 import ProductList from '../components/bio/ProductList';
-import FoodList from '../components/bio/FoodList'; // NEW: Import FoodList
+import FoodList from '../components/bio/FoodList'; 
+import CarList from '../components/bio/CarList'; // NEW: Import CarList
 
 // --- ADSENSE CONFIGURATION (GLOBAL) ---
 // IMPORTANT: Replace these with your actual IDs from Google AdSense
@@ -119,9 +120,12 @@ export default function BioPage() {
   // State for Product Variants (Size & Color)
   const [selectedProductVariants, setSelectedProductVariants] = useState({});
   
-  // NEW: State for Food Selection
+  // State for Food Selection
   const [selectedFood, setSelectedFood] = useState([]);
   const [selectedFoodVariants, setSelectedFoodVariants] = useState({});
+  
+  // NEW: State for Car Selection (Single Object)
+  const [selectedCar, setSelectedCar] = useState(null);
   
   const formRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
@@ -143,7 +147,7 @@ export default function BioPage() {
         // Check if form is already mostly visible in viewport
         const isVisible = rect.top >= 0 && rect.bottom <= windowHeight;
 
-        // Only scroll if the form is NOT currently visible
+        // Only scroll if form is NOT currently visible
         if (!isVisible) {
           el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -181,8 +185,9 @@ export default function BioPage() {
   const accent = biz.accent || '#c8a97e';
   const showServices = biz.servicesEnabled && biz.services?.length > 0;
   const showProducts = biz.productsEnabled && biz.products?.length > 0;
-  // NEW: Check for Food
   const showFood = biz.foodEnabled && biz.food?.length > 0;
+  // NEW: Check for Cars
+  const showCars = biz.carsEnabled && biz.cars?.length > 0;
   
   // --- ADSENSE POLICY COMPLIANCE LOGIC ---
   
@@ -190,11 +195,11 @@ export default function BioPage() {
   const adsEnabled = biz.adsEnabled !== false;
   
   // 2. Content Density Check (Prevent "Ad Cramming")
-  // UPDATED: Include food in totalItems count
-  const totalItems = (biz.services?.length || 0) + (biz.products?.length || 0) + (biz.food?.length || 0);
+  // UPDATED: Include cars in totalItems count
+  const totalItems = (biz.services?.length || 0) + (biz.products?.length || 0) + (biz.food?.length || 0) + (biz.cars?.length || 0);
   
-  // UPDATED: Include food in content check
-  const hasAnyContent = showServices || showProducts || showFood;
+  // UPDATED: Include cars in content check
+  const hasAnyContent = showServices || showProducts || showFood || showCars;
   
   // FIX: Define hasEnoughContent before using it
   const hasEnoughContent = totalItems >= 4;
@@ -215,7 +220,7 @@ export default function BioPage() {
       heroImages = biz.gallery.slice(0, 4);
   }
 
-  // Toggle single service: clears any selected products AND food
+  // Toggle single service: clears any selected products, food AND car
   function handleServiceSelect(id) {
     setSelectedId((prev) => {
       // Only trigger scroll if we are selecting something new (or toggling on)
@@ -225,14 +230,16 @@ export default function BioPage() {
       return prev === id ? '' : id;
     });
     setSelectedProducts([]); // Empty product cart
-    setSelectedFood([]);    // NEW: Empty food cart
+    setSelectedFood([]);    // Empty food cart
+    setSelectedCar(null);   // NEW: Empty car selection
   }
 
-  // Toggle multiple products: clears selected service AND food
+  // Toggle multiple products: clears selected service, food AND car
   // UPDATED: Now handles Size and Color
   function handleProductSelect(id, size, color) {
     setSelectedId(''); // Empty service selection
-    setSelectedFood([]); // NEW: Empty food selection
+    setSelectedFood([]); // Empty food selection
+    setSelectedCar(null); // NEW: Empty car selection
     const isAdding = !selectedProducts.includes(id);
     
     // 1. Manage Product IDs (Cart)
@@ -262,10 +269,11 @@ export default function BioPage() {
     }
   }
 
-  // NEW: Handler for Food Selection (Addons & Quantity)
+  // Handler for Food Selection (Addons & Quantity)
   function handleFoodSelect(id, variant) {
     setSelectedId(''); // Clear service
     setSelectedProducts([]); // Clear products
+    setSelectedCar(null); // NEW: Clear car selection
     
     // Check if item already exists
     const exists = selectedFood.includes(id);
@@ -296,7 +304,7 @@ export default function BioPage() {
     }
   }
 
-  // NEW: Handler for Food Deselect
+  // Handler for Food Deselect
   function handleFoodDeselect(id) {
     if (id === 'all') {
       setSelectedFood([]);
@@ -311,6 +319,20 @@ export default function BioPage() {
     }
   }
 
+  // NEW: Handler for Car Selection
+  function handleCarSelect(car) {
+    setSelectedId(''); // Clear service
+    setSelectedProducts([]); // Clear products
+    setSelectedFood([]); // Clear food
+    setSelectedCar(car); // Set car
+    scrollToForm();
+  }
+
+  // NEW: Handler for Car Deselect (passed to BookingForm)
+  function handleCarDeselect() {
+    setSelectedCar(null);
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white pb-12">
       <div className="max-w-lg mx-auto">
@@ -318,8 +340,7 @@ export default function BioPage() {
         {/* UPDATE: Pass logo prop */}
         <HeroSection biz={{ ...biz, logo: biz.logo }} />
 
-        {/* --- NEW: REFERRAL LINK --- */}
-        {/* Moved here based on request */}
+        {/* --- REFERRAL LINK --- */}
         {/* ----------------------------------- */}
 
         {biz.gallery?.length > 0 && (
@@ -358,13 +379,23 @@ export default function BioPage() {
           />
         )}
 
-        {/* --- NEW: FOOD LIST --- */}
+        {/* --- FOOD LIST --- */}
         {showFood && (
           <FoodList
             food={biz.food}
             selectedFood={selectedFood}
             foodVariants={selectedFoodVariants}
             onSelect={handleFoodSelect}
+            accent={accent}
+          />
+        )}
+
+        {/* --- NEW: CAR LIST --- */}
+        {showCars && (
+          <CarList
+            cars={biz.cars}
+            selectedCar={selectedCar}
+            onSelect={handleCarSelect}
             accent={accent}
           />
         )}
@@ -391,6 +422,9 @@ export default function BioPage() {
             onDeselect={() => setSelectedId('')}
             onProductDeselect={handleProductDeselect}
             onFoodDeselect={handleFoodDeselect}
+            // NEW: Pass Car Props
+            selectedCar={selectedCar}
+            onCarDeselect={handleCarDeselect}
           />
         </div>
 
@@ -405,8 +439,7 @@ export default function BioPage() {
         {/* --- LEGAL & COMPLIANCE FOOTER --- */}
         {/* AdSense requires Privacy Policy and Terms of Service links */}
         <div className="px-6 pt-12 pb-8 text-center">
-          {/* MOVED: Referral Link now sits here, above the nav */}
-          {/* MOVED: Referral Link now sits here, above the nav */}
+          {/* Referral Link */}
           <ReferralLink slug={biz.slug} accent={accent} />
 
           <nav className="flex justify-center gap-6 mb-6">

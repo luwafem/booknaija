@@ -304,7 +304,7 @@ const businesses = {
     ],
   },
 
-  // --- NEW FOOD BUSINESS EXAMPLE ---
+  // --- FOOD BUSINESS EXAMPLE ---
   'tasty-bites': {
     name: 'Tasty Bites Kitchen',
     slug: 'tasty-bites',
@@ -427,6 +427,107 @@ const businesses = {
         ]
       }
     ],
+  },
+
+  // --- NEW CAR BUSINESS EXAMPLE ---
+    'lagos-auto': {
+    name: 'Lagos Auto Deals',
+    slug: 'lagos-auto',
+    logo:'',
+    tagline: 'Premium Car Rentals & Sales in Lagos',
+    bio: 'Experience the best of Lagos with our fleet of luxury rental cars or browse our selection of certified pre-owned vehicles for sale.',
+    phone: '+234 911 000 0000',
+    whatsapp: '2349110000000',
+    email: 'lagosautodeals@gmail.com',
+    location: 'Victoria Island, Lagos',
+    hours: 'Mon–Sun, 8 AM – 8 PM',
+    accent: '#3b82f6', // Blue
+    avatar: '',
+    hero: 'https://picsum.photos/seed/car-hero/800/600',
+    gallery: [
+      { group: 'Our Fleet', images: ['https://picsum.photos/seed/fleet1/600/600','https://picsum.photos/seed/fleet2/600/600','https://picsum.photos/seed/fleet3/600/600'] },
+      { group: 'Happy Clients', images: ['https://picsum.photos/seed/client1/600/600','https://picsum.photos/seed/client2/600/600'] },
+    ],
+    socials: { instagram: 'https://instagram.com/lagosautodeals', tiktok: 'https://tiktok.com/@lagosautodeals' },
+    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+    subaccountCode: 'ACCT_xytowrok4iymzgs',
+    calendarId: 'lagosautodeals@gmail.com',
+    active: true,
+    adsEnabled: true,
+    carsEnabled: true, 
+    servicesEnabled: false,
+    productsEnabled: false,
+    foodEnabled: false,
+    cars: [
+      {
+        id: 'lexus-rx',
+        type: 'rent',
+        name: 'Lexus RX 350',
+        year: 2022,
+        price: 45000,
+        mileage: '25k km',
+        transmission: 'Automatic',
+        fuel: 'Petrol',
+        description: 'A pristine condition Lexus RX 350 featuring leather seats, panoramic sunroof, and premium sound system. Perfect for business trips or family outings around Lagos.',
+        image: 'https://picsum.photos/seed/lexus/800/450',
+        images: [
+            'https://picsum.photos/seed/lexus/800/450',
+            'https://picsum.photos/seed/lexus1/800/450',
+            'https://picsum.photos/seed/lexus2/800/450'
+        ]
+      },
+      {
+        id: 'g-wagon',
+        type: 'rent',
+        name: 'Mercedes Benz G-Wagon',
+        year: 2021,
+        price: 75000,
+        mileage: '15k km',
+        transmission: 'Automatic',
+        fuel: 'Petrol',
+        description: 'Stand out in Lagos with this luxury Mercedes G-Wagon. Comes with full air conditioning, alloy wheels, and a powerful V8 engine. Driver included upon request.',
+        image: 'https://picsum.photos/seed/gwagon/800/450',
+        images: [
+            'https://picsum.photos/seed/gwagon/800/450',
+            'https://picsum.photos/seed/gwagon1/800/450',
+            'https://picsum.photos/seed/gwagon2/800/450'
+        ]
+      },
+      {
+        id: 'camry',
+        type: 'sale',
+        name: 'Toyota Camry 2020 Muscle',
+        year: 2020,
+        price: 15000000,
+        mileage: '60k km',
+        transmission: 'Automatic',
+        fuel: 'Petrol',
+        description: 'Toyota "Muscle" in excellent mechanical condition. First body, clean interior, and AC freezing cold. This car has never been painted and has full service history available.',
+        image: 'https://picsum.photos/seed/camry/800/450',
+        images: [
+            'https://picsum.photos/seed/camry/800/450', 
+            'https://picsum.photos/seed/camry1/800/450',
+            'https://picsum.photos/seed/camry2/800/450',
+            'https://picsum.photos/seed/camry3/800/450'
+        ]
+      },
+      {
+        id: 'corolla',
+        type: 'rent',
+        name: 'Toyota Corolla',
+        year: 2023,
+        price: 25000,
+        mileage: '10k km',
+        transmission: 'Automatic',
+        fuel: 'Hybrid',
+        description: 'Fuel-efficient and very reliable Toyota Corolla Hybrid. Great fuel economy for city driving. Features Apple CarPlay and reverse camera.',
+        image: 'https://picsum.photos/seed/corolla/800/450',
+        images: [
+            'https://picsum.photos/seed/corolla/800/450',
+            'https://picsum.photos/seed/corolla1/800/450'
+        ]
+      }
+    ]
   },
 };
 
