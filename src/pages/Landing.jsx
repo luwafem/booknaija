@@ -123,7 +123,7 @@ export default function Landing() {
                   type="text"
                   id="business-search"
                   className="block w-full pl-10 pr-3 py-3 border border-zinc-300 rounded-lg leading-5 bg-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-600 sm:text-sm shadow-sm transition-all"
-                  placeholder="Search by name (e.g. Glamour) or slug..."
+                  placeholder="Search by name"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />

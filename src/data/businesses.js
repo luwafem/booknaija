@@ -632,6 +632,112 @@ const businesses = {
         image: 'https://picsum.photos/seed/g63/800/450', images: ['https://picsum.photos/seed/g63/800/450']
       }
     ]
+  },// --- ALL-SECTIONS BUSINESS EXAMPLE ---
+  'aether-labs': {
+name: 'Aether labs',
+slug: 'aether-labs',
+logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777156366/fsxf5evu2peybvplbodq.png',
+tagline: 'A professional Nail Technician in Lagos',
+bio: 'this is the main test',
+phone: '09034593171',
+whatsapp: '08023381785',
+email: 'oluwafemiemmanuelayedogbon@gmail.com',
+location: '10 olufemi ojo street abestos busstop',
+hours: 'Mon–Sun, 9 AM – 6 PM',
+accent: '#a34d9c',
+avatar: '',
+hero: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777156467/phddc6yldhwupq7ltyqo.jpg',
+gallery: [
+{ group: 'Gallery', images: [
+'https://res.cloudinary.com/deexaiik4/image/upload/v1777156407/mlseq2m0f44xvgjcxjj7.jpg',
+'https://res.cloudinary.com/deexaiik4/image/upload/v1777156409/jwftp38zg6xfis3l5tfn.jpg'
+] }
+],
+socials: {
+instagram: 'wrurw',
+tiktok: 'wedub'
+},
+paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+subaccountCode: 'ACCT_PENDING',
+calendarId: 'oluwafemiemmanuelayedogbon@gmail.com',
+active: true,
+adsEnabled: true,
+carsEnabled: false,
+servicesEnabled: true,
+productsEnabled: true,
+foodEnabled: false,
+    
+    services: [
+      {
+        id: 'vip-day', name: 'VIP Day Pass', duration: '1 Day', price: 50000, image: 'https://picsum.photos/seed/vip/200/200',
+        images: [], showDetails: true,
+        description: 'Access to the VIP lounge, private pool area, and complimentary cocktails.'
+      },
+      {
+        id: 'concierge', name: 'Event Concierge', duration: '4 hrs', price: 25000, image: 'https://picsum.photos/seed/concierge/200/200',
+        images: [], showDetails: true,
+        description: 'Personal assistance for event planning, guest management, and logistics coordination.'
+      }
+    ],
+
+    products: [
+      {
+        id: 'hamper', name: 'Royal Gift Hamper', price: 45000, image: 'https://picsum.photos/seed/hamper/400/400',
+        showDetails: true,
+        description: 'Luxury basket containing imported wines, chocolates, and spa essentials.'
+      },
+      {
+        id: 'robe', name: 'Luxury Turkish Robe', price: 18000, image: 'https://picsum.photos/seed/robe/400/400',
+        showDetails: true,
+        description: '100% Cotton terry cloth robe. Embroidered with the Palm Royal logo.'
+      }
+    ],
+
+    food: [
+      {
+        id: 'steak', name: 'Grilled Sirloin Steak', price: 18000, image: 'https://picsum.photos/seed/steak/400/400',
+        description: 'Premium cut steak grilled to perfection with herbs.',
+        addons: [
+          { 
+            id: 'doneness', label: 'Cooking', type: 'single', 
+            options: [{ name: 'Medium Rare', price: 0 }, { name: 'Well Done', price: 0 }] 
+          },
+          { 
+            id: 'sauce', label: 'Sauce', type: 'single', 
+            options: [{ name: 'Black Pepper', price: 0 }, { name: 'Mushroom', price: 1000 }] 
+          },
+          { 
+            id: 'sides', label: 'Add Sides', type: 'multi', 
+            options: [{ name: 'Mixed Veg', price: 1500 }, { name: 'Baked Potato', price: 1500 }] 
+          }
+        ]
+      },
+      {
+        id: 'seafood', name: 'Grilled Lobster Tail', price: 35000, image: 'https://picsum.photos/seed/lobster/400/400',
+        description: 'Fresh lobster tail grilled with garlic butter.',
+        addons: [
+          {
+            id: 'spice', label: 'Spice Level', type: 'single', 
+            options: [{ name: 'Mild', price: 0 }, { name: 'Spicy', price: 0 }]
+          }
+        ]
+      }
+    ],
+
+    cars: [
+      {
+        id: 'phantom', type: 'rent', name: 'Rolls Royce Phantom', year: 2023, price: 250000,
+        mileage: '5k km', transmission: 'Automatic', fuel: 'Petrol',
+        description: 'The ultimate luxury experience. Chauffeur service included.',
+        image: 'https://picsum.photos/seed/rolls/800/450', images: ['https://picsum.photos/seed/rolls/800/450']
+      },
+      {
+        id: 'g63', type: 'rent', name: 'Mercedes G63 AMG', year: 2023, price: 150000,
+        mileage: '10k km', transmission: 'Automatic', fuel: 'Petrol',
+        description: 'High-performance SUV for a bold arrival.',
+        image: 'https://picsum.photos/seed/g63/800/450', images: ['https://picsum.photos/seed/g63/800/450']
+      }
+    ]
   },
 };
 

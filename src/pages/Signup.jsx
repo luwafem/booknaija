@@ -7,10 +7,10 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [banks, setBanks] = useState([]);
   const [banksLoading, setBanksLoading] = useState(true);
-  const [subaccountCode, setSubaccountCode] = useState(null);
+  const [subaccountCode, setSubaccountCode] = useState(null); // State for UI display
   const [error, setError] = useState('');
   const [consent, setConsent] = useState(false);
-  const [brandColor, setBrandColor] = useState('#c8a97e'); // State for color picker
+  const [brandColor, setBrandColor] = useState('#c8a97e');
 
   const [params] = useSearchParams();
   const referralParam = params.get('ref');
@@ -39,9 +39,9 @@ export default function Signup() {
       .toString()
       .toLowerCase()
       .trim()
-      .replace(/\s+/g, '-')     // Replace spaces with -
-      .replace(/[^\w\-]+/g, '') // Remove all non-word chars
-      .replace(/\-\-+/g, '-');  // Replace multiple - with single -
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-');
   };
 
   // ──── Handle form submission ────
@@ -62,21 +62,55 @@ export default function Signup() {
     const settlementBank = formData.get('settlement_bank');
     const accountNumber = formData.get('account_number');
     const accountName = formData.get('account_name');
-    // Get color from state (which is synced to the hidden/text input)
-    const colorToUse = brandColor || '#c8a97e'; 
+    const colorToUse = brandColor || '#c8a97e';
     
-    // 2. Determine Enabled Flags based on selection
+    // 2. Determine Enabled Flags
     const hasProducts = formData.get('has_products') === 'Yes';
     const numServices = formData.get('num_services');
-    
-    // If numServices is empty (because user didn't fill it), default to false
     const isServiceEnabled = numServices === '1-2' || numServices === '3-5' || numServices === '6-10' || numServices === '10+';
     
-    // 3. Create Business JS Config Data
     const businessSlug = generateSlug(businessName);
-    const subAccCode = subaccountCode || 'ACCT_PENDING';
 
-    // Generate the "Paste-Ready" Header
+    // ──── FIX: Local variable to hold the code for THIS submission ────
+    let finalSubaccountCode = null;
+
+    // 3. Try to create Paystack Subaccount FIRST
+    try {
+      const subaccountRes = await fetch('/.netlify/functions/create-subaccount', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          business_name: businessName,
+          settlement_bank: settlementBank,
+          account_number: accountNumber,
+          percentage_charge: 5,
+          primary_contact_name: accountName || businessName,
+          primary_contact_email: email,
+          primary_contact_phone: phone,
+        }),
+      });
+
+      const subaccountData = await subaccountRes.json();
+
+      if (!subaccountRes.ok || !subaccountData.subaccount_code) {
+        console.error('Subaccount creation failed:', subaccountData.error);
+        setError(subaccountData.error || 'Could not verify bank details. Your application will still be reviewed.');
+        // finalSubaccountCode remains null here
+      } else {
+        // SUCCESS: Update local variable immediately
+        finalSubaccountCode = subaccountData.subaccount_code;
+        // Also update state so the UI (Success screen) shows it
+        setSubaccountCode(finalSubaccountCode);
+      }
+    } catch (err) {
+      console.error("Error creating subaccount", err);
+      // finalSubaccountCode remains null here
+    }
+
+    // ──── 4. Prepare Business JS Config Data NOW (After API call) ────
+    // Use the local variable 'finalSubaccountCode'. If null, fallback to PENDING.
+    const codeForHeader = finalSubaccountCode || 'ACCT_PENDING';
+
     const headerBlock = `
   '${businessSlug}': {
     name: '${businessName}',
@@ -100,7 +134,7 @@ export default function Signup() {
       tiktok: '${formData.get('tiktok_link')}' 
     },
     paystackPublicKey: PLATFORM_PAYSTACK_KEY,
-    subaccountCode: '${subAccCode}',
+    subaccountCode: '${codeForHeader}',
     calendarId: '${email}',
     active: true,
     adsEnabled: true,
@@ -110,34 +144,6 @@ export default function Signup() {
     foodEnabled: false,
 `;
 
-    // 4. Try to create Paystack Subaccount
-    try {
-      const subaccountRes = await fetch('/.netlify/functions/create-subaccount', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          business_name: businessName,
-          settlement_bank: settlementBank,
-          account_number: accountNumber,
-          percentage_charge: 5,
-          primary_contact_name: accountName || businessName,
-          primary_contact_email: email,
-          primary_contact_phone: phone,
-        }),
-      });
-
-      const subaccountData = await subaccountRes.json();
-
-      if (!subaccountRes.ok || !subaccountData.subaccount_code) {
-        console.error('Subaccount creation failed:', subaccountData.error);
-        setError(subaccountData.error || 'Could not verify bank details. Your application will still be reviewed.');
-      } else {
-        setSubaccountCode(subaccountData.subaccount_code);
-      }
-    } catch (err) {
-      console.error("Error creating subaccount", err);
-    }
-
     // 5. Append Business.js fields to Formspree Data
     formData.append('business_js_header', headerBlock);
     formData.append('business_js_services_note', "// Provide details below based on selection: " + numServices);
@@ -146,8 +152,9 @@ export default function Signup() {
     formData.set('whatsapp', formData.get('whatsapp_number'));
     formData.set('location', formData.get('business_address'));
 
-    if (subaccountCode) {
-        formData.append('subaccount_code', subaccountCode);
+    // Use the local variable 'finalSubaccountCode' for Formspree as well
+    if (finalSubaccountCode) {
+        formData.append('subaccount_code', finalSubaccountCode);
     } else {
         formData.append('subaccount_code', 'PENDING_VERIFICATION');
     }
@@ -318,7 +325,6 @@ export default function Signup() {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="relative">
-              {/* ✅ REMOVED: 'required' attribute */}
               <select name="num_services" defaultValue="" className={selectBase}>
                 <option value="" disabled>Services (Optional)</option>
                 <option value="1-2">1 - 2</option>
@@ -334,7 +340,6 @@ export default function Signup() {
             </div>
 
             <div className="relative">
-              {/* ✅ REMOVED: 'required' attribute */}
               <select name="has_products" defaultValue="" className={selectBase}>
                 <option value="" disabled>Products (Optional)</option>
                 <option value="Yes">Yes, I sell products</option>
