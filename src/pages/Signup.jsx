@@ -7,9 +7,10 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [banks, setBanks] = useState([]);
   const [banksLoading, setBanksLoading] = useState(true);
-  const [subaccountCode, setSubaccountCode] = useState(null);
+  const [subaccountCode, setSubaccountCode] = useState(null); // State for UI display
   const [error, setError] = useState('');
-  const [consent, setConsent] = useState(false); // ✅ Added state for checkbox
+  const [consent, setConsent] = useState(false);
+  const [brandColor, setBrandColor] = useState('#c8a97e');
 
   const [params] = useSearchParams();
   const referralParam = params.get('ref');
@@ -32,6 +33,17 @@ export default function Signup() {
     fetchBanks();
   }, []);
 
+  // ──── Helper to generate slug ────
+  const generateSlug = (text) => {
+    return text
+      .toString()
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-');
+  };
+
   // ──── Handle form submission ────
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,6 +53,7 @@ export default function Signup() {
     const form = e.target;
     const formData = new FormData(form);
 
+    // 1. Extract Basic Data
     const businessName = formData.get('business_name');
     const email = formData.get('email');
     const phone = formData.get('phone');
@@ -49,7 +62,19 @@ export default function Signup() {
     const settlementBank = formData.get('settlement_bank');
     const accountNumber = formData.get('account_number');
     const accountName = formData.get('account_name');
+    const colorToUse = brandColor || '#c8a97e';
+    
+    // 2. Determine Enabled Flags
+    const hasProducts = formData.get('has_products') === 'Yes';
+    const numServices = formData.get('num_services');
+    const isServiceEnabled = numServices === '1-2' || numServices === '3-5' || numServices === '6-10' || numServices === '10+';
+    
+    const businessSlug = generateSlug(businessName);
 
+    // ──── FIX: Local variable to hold the code for THIS submission ────
+    let finalSubaccountCode = null;
+
+    // 3. Try to create Paystack Subaccount FIRST
     try {
       const subaccountRes = await fetch('/.netlify/functions/create-subaccount', {
         method: 'POST',
@@ -70,29 +95,84 @@ export default function Signup() {
       if (!subaccountRes.ok || !subaccountData.subaccount_code) {
         console.error('Subaccount creation failed:', subaccountData.error);
         setError(subaccountData.error || 'Could not verify bank details. Your application will still be reviewed.');
+        // finalSubaccountCode remains null here
       } else {
-        setSubaccountCode(subaccountData.subaccount_code);
+        // SUCCESS: Update local variable immediately
+        finalSubaccountCode = subaccountData.subaccount_code;
+        // Also update state so the UI (Success screen) shows it
+        setSubaccountCode(finalSubaccountCode);
       }
+    } catch (err) {
+      console.error("Error creating subaccount", err);
+      // finalSubaccountCode remains null here
+    }
 
-      if (subaccountCode || subaccountData.subaccount_code) {
-        formData.append('subaccount_code', subaccountData.subaccount_code || subaccountCode);
-      }
-      formData.append('bank_name', banks.find(b => b.code === settlementBank)?.name || settlementBank);
+    // ──── 4. Prepare Business JS Config Data NOW (After API call) ────
+    // Use the local variable 'finalSubaccountCode'. If null, fallback to PENDING.
+    const codeForHeader = finalSubaccountCode || 'ACCT_PENDING';
 
-      try {
-        await fetch('https://formspree.io/f/xyklbbqy', {
-          method: 'POST',
-          body: formData,
-          headers: { 'Accept': 'application/json' },
-        });
-      } catch (formspreeErr) {
-        console.error('Formspree failed:', formspreeErr);
-      }
+    const headerBlock = `
+  '${businessSlug}': {
+    name: '${businessName}',
+    slug: '${businessSlug}',
+    logo:'',
+    tagline: 'A professional ${businessType} in Lagos', 
+    bio: '${formData.get('business_description')}',
+    phone: '${phone}',
+    whatsapp: '${formData.get('whatsapp_number')}',
+    email: '${email}',
+    location: '${formData.get('business_address')}',
+    hours: 'Mon–Sun, 9 AM – 6 PM', 
+    accent: '${colorToUse}',
+    avatar: '',
+    hero: 'https://picsum.photos/seed/${businessSlug}/800/600',
+    gallery: [
+      { group: 'Gallery', images: [] } 
+    ],
+    socials: { 
+      instagram: '${formData.get('instagram_link')}', 
+      tiktok: '${formData.get('tiktok_link')}' 
+    },
+    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+    subaccountCode: '${codeForHeader}',
+    calendarId: '${email}',
+    active: true,
+    adsEnabled: true,
+    carsEnabled: false, 
+    servicesEnabled: ${isServiceEnabled},
+    productsEnabled: ${hasProducts},
+    foodEnabled: false,
+`;
 
+    // 5. Append Business.js fields to Formspree Data
+    formData.append('business_js_header', headerBlock);
+    formData.append('business_js_services_note', "// Provide details below based on selection: " + numServices);
+    formData.append('business_js_products_note', "// Provide product details below if selling products.");
+    
+    formData.set('whatsapp', formData.get('whatsapp_number'));
+    formData.set('location', formData.get('business_address'));
+
+    // Use the local variable 'finalSubaccountCode' for Formspree as well
+    if (finalSubaccountCode) {
+        formData.append('subaccount_code', finalSubaccountCode);
+    } else {
+        formData.append('subaccount_code', 'PENDING_VERIFICATION');
+    }
+    
+    formData.append('bank_name', banks.find(b => b.code === settlementBank)?.name || settlementBank);
+
+    // 6. Send to Formspree
+    try {
+      await fetch('https://formspree.io/f/xyklbbqy', {
+        method: 'POST',
+        body: formData,
+        headers: { 'Accept': 'application/json' },
+      });
       setDone(true);
-    } catch (error) {
-      console.error('An error occurred:', error);
-      setError('Something went wrong. Please try again.');
+    } catch (formspreeErr) {
+      console.error('Formspree failed:', formspreeErr);
+      setError('Application submitted, but email confirmation failed. We will reach out to you.');
+      setDone(true);
     } finally {
       setLoading(false);
     }
@@ -168,6 +248,8 @@ export default function Signup() {
               <option value="Nail Technician">Nail Technician</option>
               <option value="Skin Care">Skin Care / Facialist</option>
               <option value="Fashion">Fashion / Boutique</option>
+              <option value="Restaurant">Restaurant / Food</option>
+              <option value="Auto">Auto Dealer / Rental</option>
               <option value="Other">Other</option>
             </select>
             <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-zinc-400">
@@ -187,16 +269,64 @@ export default function Signup() {
           <input required name="business_address" placeholder="Business address (e.g. Lekki Phase 1, Lagos)" className={inputBase} />
           <input required name="whatsapp_number" placeholder="WhatsApp number (e.g. 2348012345678)" className={inputBase} />
 
-          {/* ──── 3. Services & Products ──── */}
+          {/* ✅ UPDATED: Brand Color Picker with Hex Input & Preview */}
+          <div className="pt-2">
+            <p className={sectionTitle}>Brand Aesthetics</p>
+            <p className={sectionDesc}>Choose your brand color or paste a Hex code.</p>
+          </div>
+          
+          <div 
+            className={`flex items-center border-2 rounded-xl p-1.5 transition-all duration-200 focus-within:ring-2 focus-within:ring-offset-1 focus-within:ring-zinc-100 bg-white`}
+            style={{ borderColor: brandColor }}
+          >
+            {/* Left: Color Picker Trigger (Swatch) */}
+            <div className="relative w-12 h-10 rounded-lg overflow-hidden cursor-pointer shrink-0 shadow-sm border border-zinc-200 ml-1">
+               {/* Native color input is invisible but overlayed to cover the div */}
+               <input
+                  type="color"
+                  value={brandColor}
+                  onChange={(e) => setBrandColor(e.target.value)}
+                  className="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] cursor-pointer p-0 border-0"
+               />
+               {/* This ensures there's a color even if the input is transparent in some browsers */}
+               <div className="w-full h-full pointer-events-none" style={{ backgroundColor: brandColor }}></div>
+            </div>
+
+            {/* Right: Hex Text Input */}
+            <div className="relative flex-1 mx-2">
+               
+               <input
+                  type="text"
+                  name="brand_color"
+                  value={brandColor}
+                  onChange={(e) => {
+                    let val = e.target.value;
+                    // Auto-prepend # if missing
+                    if (!val.startsWith('#') && val.length > 0) {
+                        val = '#' + val;
+                    }
+                    // Validate Hex length (simple check)
+                    if (/^#([0-9A-F]{0,6})$/i.test(val)) {
+                        setBrandColor(val);
+                    }
+                  }}
+                  maxLength="7"
+                  placeholder="RRGGBB"
+                  className="w-full h-10 bg-transparent text-sm font-mono font-bold text-zinc-800 focus:outline-none uppercase placeholder-zinc-400"
+               />
+            </div>
+          </div>
+
+          {/* ──── 3. Services & Products (OPTIONAL) ──── */}
           <div className="pt-2">
             <p className={sectionTitle}>Services & Products</p>
-            <p className={sectionDesc}>Help us structure your booking page.</p>
+            <p className={sectionDesc}>If applicable, tell us what you offer.</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="relative">
-              <select required name="num_services" defaultValue="" className={selectBase}>
-                <option value="" disabled>Services?</option>
+              <select name="num_services" defaultValue="" className={selectBase}>
+                <option value="" disabled>Services (Optional)</option>
                 <option value="1-2">1 - 2</option>
                 <option value="3-5">3 - 5</option>
                 <option value="6-10">6 - 10</option>
@@ -210,8 +340,8 @@ export default function Signup() {
             </div>
 
             <div className="relative">
-              <select required name="has_products" defaultValue="" className={selectBase}>
-                <option value="" disabled>Products?</option>
+              <select name="has_products" defaultValue="" className={selectBase}>
+                <option value="" disabled>Products (Optional)</option>
                 <option value="Yes">Yes, I sell products</option>
                 <option value="No">No, services only</option>
               </select>
@@ -299,7 +429,6 @@ export default function Signup() {
             </div>
             
             <label className="flex items-start gap-2 mt-3 cursor-pointer group">
-              {/* ✅ Controlled checkbox */}
               <input 
                 type="checkbox" 
                 checked={consent} 
@@ -320,7 +449,7 @@ export default function Signup() {
             </div>
           )}
 
-          {/* ✅ Submit Button - Greyed out until consent is checked */}
+          {/* ✅ Submit Button */}
           <button 
             type="submit" 
             disabled={loading || !consent} 
