@@ -1,5 +1,4 @@
 // /.netlify/functions/save-business.js
-
 const https = require('https');
 
 function githubRequest(path, method, body, token) {
@@ -21,82 +20,96 @@ function githubRequest(path, method, body, token) {
       let chunks = [];
       res.on('data', function(chunk) { chunks.push(chunk); });
       res.on('end', function() {
+        const rawData = Buffer.concat(chunks).toString();
+        console.log('GitHub Response Status:', res.statusCode);
         try {
-          resolve(JSON.parse(Buffer.concat(chunks).toString()));
+          resolve(JSON.parse(rawData));
         } catch (e) {
+          console.error('GitHub Response Parse Error:', rawData.substring(0, 200));
           reject(new Error('Invalid GitHub response'));
         }
       });
     });
 
-    req.on('error', reject);
+    req.on('error', function(err) {
+      console.error('GitHub Request Network Error:', err.message);
+      reject(err);
+    });
+    
     if (data) req.write(data);
     req.end();
   });
 }
 
 exports.handler = async function(event) {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'POST only' }) };
-  }
-
+  console.log('=== SAVE-BUSINESS FUNCTION STARTED ===');
+  
   try {
     const { slug, config } = JSON.parse(event.body);
+    console.log('Received Slug:', slug);
+    console.log('Config Length:', config ? config.length : 0, 'characters');
 
     if (!slug || !config) {
+      console.error('ERROR: Missing slug or config');
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing slug or config' }) };
-    }
-
-    // Validate slug format
-    if (!/^[a-z0-9-]+$/.test(slug)) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Invalid slug format' }) };
     }
 
     const token = process.env.GITHUB_TOKEN;
     const repo = process.env.GITHUB_REPO;
     const branch = process.env.GITHUB_BRANCH || 'main';
 
+    // DEBUG: Check if env vars exist
+    console.log('GITHUB_TOKEN set:', token ? 'YES (' + token.substring(0, 7) + '...)' : 'NO!!!');
+    console.log('GITHUB_REPO set:', repo ? 'YES (' + repo + ')' : 'NO!!!');
+    console.log('GITHUB_BRANCH set:', branch ? 'YES (' + branch + ')' : 'NO!!!');
+
     if (!token || !repo) {
-      return { statusCode: 500, body: JSON.stringify({ error: 'Server not configured' }) };
+      console.error('ERROR: Missing environment variables');
+      return { statusCode: 500, body: JSON.stringify({ error: 'Server not configured. Check GITHUB_TOKEN and GITHUB_REPO in Netlify Env Vars.' }) };
     }
 
-    // 1. Get the current file SHA
-    const fileRes = await githubRequest(
-      '/repos/' + repo + '/contents/src/data/businesses.js?ref=' + branch,
-      'GET',
-      null,
-      token
-    );
+    // IMPORTANT: Make sure this path exactly matches where your file lives in GitHub!
+    const filePath = 'src/data/businesses.js'; 
+    const apiPath = '/repos/' + repo + '/contents/' + filePath + '?ref=' + branch;
+    console.log('Fetching file from GitHub path:', apiPath);
+
+    // 1. Get current file
+    const fileRes = await githubRequest(apiPath, 'GET', null, token);
 
     if (!fileRes.sha) {
-      return { statusCode: 500, body: JSON.stringify({ error: 'Could not find businesses.js' }) };
+      console.error('ERROR: Could not find file. GitHub responded with:', JSON.stringify(fileRes).substring(0, 300));
+      return { statusCode: 500, body: JSON.stringify({ error: 'Could not find ' + filePath + '. Check GITHUB_REPO and file path in function code.' }) };
     }
 
     const currentContent = Buffer.from(fileRes.content, 'base64').toString('utf8');
     const sha = fileRes.sha;
+    console.log('File found! Current size:', currentContent.length, 'characters. SHA:', sha);
 
-    // 2. Check if slug already exists
+    // 2. Check for duplicate
     if (currentContent.indexOf("'" + slug + "'") !== -1) {
+      console.error('ERROR: Slug already exists!');
       return { statusCode: 409, body: JSON.stringify({ error: 'Business slug already exists' }) };
     }
 
-    // 3. Insert the new config before the closing };
-    // Find the last `},` before the final `};`
+    // 3. Insert new config
     const insertionPoint = currentContent.lastIndexOf('},');
-    
     if (insertionPoint === -1) {
+      console.error('ERROR: Could not find insertion point `},` in file');
       return { statusCode: 500, body: JSON.stringify({ error: 'Could not find insertion point in file' }) };
     }
 
-    // Insert after the last `},`
     const newContent = currentContent.slice(0, insertionPoint + 2) + 
       '\n\n  // Added by onboarding ' + new Date().toISOString() + '\n' +
       config + '\n' +
       currentContent.slice(insertionPoint + 2);
 
-    // 4. Commit the change
+    console.log('New file size:', newContent.length, 'characters');
+    console.log('Base64 size:', Buffer.from(newContent).toString('base64').length, 'characters');
+
+    // 4. Commit
+    console.log('Committing to GitHub...');
     const commitRes = await githubRequest(
-      '/repos/' + repo + '/contents/src/data/businesses.js',
+      '/repos/' + repo + '/contents/' + filePath,
       'PUT',
       {
         message: 'Add new business: ' + slug,
@@ -108,20 +121,20 @@ exports.handler = async function(event) {
     );
 
     if (!commitRes.commit) {
-      return { statusCode: 500, body: JSON.stringify({ error: 'Git commit failed', details: commitRes }) };
+      console.error('ERROR: Git commit failed. Response:', JSON.stringify(commitRes).substring(0, 500));
+      return { statusCode: 500, body: JSON.stringify({ error: 'Git commit failed', details: commitRes.message }) };
     }
 
+    console.log('=== SUCCESS ===');
     return {
       statusCode: 200,
-      body: JSON.stringify({ 
-        ok: true, 
-        slug: slug,
-        message: 'Business added. Site will rebuild in ~60 seconds.'
-      })
+      body: JSON.stringify({ ok: true, slug: slug, message: 'Business added!' })
     };
 
   } catch (err) {
-    console.error('Save business error:', err);
+    console.error('=== UNCAUGHT ERROR ===');
+    console.error(err.message);
+    console.error(err.stack);
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };
