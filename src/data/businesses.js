@@ -921,6 +921,48 @@ cars: [],
 food: []
 },
 
+  // Added by onboarding 2026-04-27T16:24:14.143Z
+  'shoe-lash': {
+    name: 'shoe lash',
+    slug: 'shoe-lash',
+    logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777306916/nah2njggabas7burodlw.jpg',
+    tagline: 'A professional Lash Artist in Lagos',
+    bio: 'this is the way',
+    phone: '09034593171',
+    whatsapp: '08023381785',
+    email: 'oghenevokemi@gmail.com',
+    location: '10 olufemi ojo street abestos busstop',
+    hours: 'Mon–Sun, 9 AM – 6 PM',
+    accent: '#cacecd',
+    avatar: '',
+    hero: 'https://picsum.photos/seed/shoe-lash/800/600',
+    gallery: [
+      { group: 'my work', images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777306968/sh6thbyh3mm0ujttjbw8.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777306969/ez5tog3kzgmekbqgs0yl.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777306969/n63kbthuvydae9ctlgvc.jpg'] },
+    ],
+    socials: { instagram: 'wrurw', tiktok: 'wedub' },
+    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+    subaccountCode: 'ACCT_4h48g7dv3596t3d',
+    calendarId: 'oghenevokemi@gmail.com',
+    active: true,
+    adsEnabled: true,
+    carsEnabled: false,
+    servicesEnabled: true,
+    productsEnabled: true,
+    foodEnabled: false,
+    services: [
+      {
+        id: 'shoe-lash-1', name: 'lash install', duration: '1 hour', price: 19000, image: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777307012/mqpjmzatlkiyagydjdei.jpg',
+        images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777307012/mqpjmzatlkiyagydjdei.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777307028/sarwfmodjcsgtcyiuzzy.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777307048/k7wwubdytm2w8ha9nuuv.jpg'],
+        showDetails: true,
+        description: 'this is lash install'
+      }
+    ],
+    products: [],
+    cars: [],
+    food: []
+  },
+
+
 
 };
 
