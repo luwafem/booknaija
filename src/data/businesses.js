@@ -636,35 +636,32 @@ const businesses = {
   'aether-labs': {
 name: 'Aether labs',
 slug: 'aether-labs',
-logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777156366/fsxf5evu2peybvplbodq.png',
-tagline: 'A professional Nail Technician in Lagos',
-bio: 'this is the main test',
+logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777208301/gm1zwoorewxxq84cagcn.png', // ✅ UPDATED: Uses the uploaded logo URL or empty string
+tagline: 'A professional Lash Artist in Lagos',
+bio: 'wfube ewjnw 1',
 phone: '09034593171',
 whatsapp: '08023381785',
-email: 'oluwafemiemmanuelayedogbon@gmail.com',
-location: '10 olufemi ojo street abestos busstop',
+email: 'oghenevokemi@gmail.com',
+location: '4 Adebomi Edun street alimosho iyana ipaja lagos',
 hours: 'Mon–Sun, 9 AM – 6 PM',
-accent: '#a34d9c',
+accent: '#8459a1',
 avatar: '',
-hero: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777156467/phddc6yldhwupq7ltyqo.jpg',
+hero: 'https://picsum.photos/seed/aether-labs/800/600',
 gallery: [
-{ group: 'Gallery', images: [
-'https://res.cloudinary.com/deexaiik4/image/upload/v1777156407/mlseq2m0f44xvgjcxjj7.jpg',
-'https://res.cloudinary.com/deexaiik4/image/upload/v1777156409/jwftp38zg6xfis3l5tfn.jpg'
-] }
+{ group: 'Gallery', images: [] }
 ],
 socials: {
 instagram: 'wrurw',
 tiktok: 'wedub'
 },
 paystackPublicKey: PLATFORM_PAYSTACK_KEY,
-subaccountCode: 'ACCT_PENDING',
-calendarId: 'oluwafemiemmanuelayedogbon@gmail.com',
+subaccountCode: 'ACCT_9efd9o1f2iz0kdl',
+calendarId: 'oghenevokemi@gmail.com',
 active: true,
 adsEnabled: true,
 carsEnabled: false,
 servicesEnabled: true,
-productsEnabled: true,
+productsEnabled: false,
 foodEnabled: false,
     
     services: [
@@ -738,7 +735,193 @@ foodEnabled: false,
         image: 'https://picsum.photos/seed/g63/800/450', images: ['https://picsum.photos/seed/g63/800/450']
       }
     ]
-  },
+  },'yoda': {
+name: 'yoda',
+slug: 'yoda',
+logo: '',
+tagline: 'A professional Auto in Lagos',
+bio: '...',
+phone: '',
+whatsapp: 'oluwafemiemmanuelayedogbon@gmail.com',
+email: 'oluwafemiemmanuelayedogbon@gmail.com',
+location: '...',
+hours: 'Mon–Sun, 9 AM – 6 PM',
+accent: '#3e9882',
+avatar: '',
+hero: 'https://picsum.photos/seed/yoda/800/600',
+gallery: [
+{
+"group": "Gallery",
+"images": []
+}
+],
+socials: { instagram: '...', tiktok: '...' },
+paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+subaccountCode: 'ACCT_68pqilzbk4locbw',
+calendarId: 'oluwafemiemmanuelayedogbon@gmail.com',
+active: true,
+adsEnabled: true,
+carsEnabled: true,
+servicesEnabled: false, // Disable services if Auto
+productsEnabled: false,
+foodEnabled: false,
+
+// Inventory Data
+services: [],
+products: [],
+cars: [
+{
+"id": "yoda-1777216208144",
+"name": "konigsegg",
+"type": "rent",
+"year": 2022,
+"price": 1000000,
+"mileage": "132312",
+"transmission": "amt",
+"fuel": "fuel",
+"description": "weinfienwfqienw",
+"image": "https://res.cloudinary.com/deexaiik4/image/upload/v1777216326/bddnvbipdvsynz8ktoa6.jpg",
+"images": [
+"https://res.cloudinary.com/deexaiik4/image/upload/v1777216326/bddnvbipdvsynz8ktoa6.jpg",
+"https://res.cloudinary.com/deexaiik4/image/upload/v1777216343/pqkseziuwwrwyituqezb.jpg",
+"https://res.cloudinary.com/deexaiik4/image/upload/v1777216358/zziwub0c4z41bbafm9it.jpg"
+]
+}
+],
+food: []
+},'shinobi': {
+name: 'shinobi',
+slug: 'shinobi',
+logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777217435/tqlncptwaa2iybyeggdj.jpg',
+tagline: 'A professional Restaurant in Lagos',
+bio: 'shinobi',
+phone: '07081793436',
+whatsapp: '08023381785',
+email: 'heelhieddev@gmail.com',
+location: '10 olufemi ojo street abestos busstop',
+hours: 'Mon–Sun, 9 AM – 6 PM',
+accent: '#2cd6ed',
+avatar: '',
+hero: 'https://picsum.photos/seed/shinobi/800/600',
+gallery: [
+{
+"group": "Gallery",
+"images": []
+}
+],
+socials: {
+instagram: 'wrurw',
+tiktok: 'wedub'
+},
+paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+subaccountCode: 'ACCT_95m7bncprwsodc8',
+calendarId: 'heelhieddev@gmail.com',
+active: true,
+adsEnabled: true,
+carsEnabled: false,
+servicesEnabled: true,
+productsEnabled: true,
+foodEnabled: true,
+
+// Inventory Data
+services: [],
+products: [],
+cars: [],
+food: [
+{
+"id": "shinobi-1777217589277",
+"name": "shawarma",
+"price": 2500,
+"description": "extra hot dog",
+"image": "https://res.cloudinary.com/deexaiik4/image/upload/v1777217606/liywtgujaxq122p7fa00.jpg"
+}
+]
+},'pro-pro': {
+name: 'pro pro',
+slug: 'pro-pro',
+logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292185/p0vcg4gqjgctl0pk6i21.jpg',
+tagline: 'A professional Auto in Lagos',
+bio: 'this is a car dealer',
+phone: '08023381785',
+whatsapp: '08023381785',
+email: 'oghenevokemi@gmail.com',
+location: 'araokanmi',
+hours: 'Mon–Sun, 9 AM – 6 PM',
+accent: '#024fa8',
+avatar: '',
+hero: 'https://picsum.photos/seed/pro-pro/800/600',
+gallery: [
+{ group: 'our fleet', images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777292272/qefdrdfqe4gpg33ofqai.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292273/c3sv9g4xoncm5raarlgn.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292273/so3ltmbxh0bsam5ujtii.jpg'] },
+],
+socials: { instagram: 'wrurw', tiktok: 'wedub' },
+paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+subaccountCode: 'ACCT_m0vrbgnhs9bi0hr',
+calendarId: 'oghenevokemi@gmail.com',
+active: true,
+adsEnabled: true,
+carsEnabled: true,
+servicesEnabled: false,
+productsEnabled: false,
+foodEnabled: false,
+services: [],
+products: [],
+cars: [
+{
+id: 'pro-pro-1777292291144',
+type: 'rent',
+name: 'toyota prado',
+year: 2015,
+price: 150000,
+mileage: '',
+transmission: 'automatic',
+fuel: 'petrol',
+description: 'red toyota prado',
+image: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292346/e6tskpmzobzef0c9axir.jpg',
+images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777292346/e6tskpmzobzef0c9axir.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292362/swnkzy8ju5o77wtquzdx.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292385/j1tcmoyoiellmmg8at1s.jpg']
+}
+],
+food: []
+},'lash-by-tife': {
+name: 'lash by tife',
+slug: 'lash-by-tife',
+logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294087/kku24lkxafdmmgla0ij8.jpg',
+tagline: 'A professional Lash Artist in Lagos',
+bio: 'lash by tife beauty',
+phone: '09160625497',
+whatsapp: '08023381785',
+email: 'oghenevokemi@gmail.com',
+location: 'araokanmi',
+hours: 'Mon–Sun, 9 AM – 6 PM',
+accent: '#cb7271',
+avatar: '',
+hero: 'https://picsum.photos/seed/lash-by-tife/800/600',
+gallery: [
+{ group: 'my work', images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777294159/lbr193w1iygjuktqmdkh.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294160/soadb2uk9yhtqtddqkgh.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294160/y3cafqbmehhesspofwc8.jpg'] },
+],
+socials: { instagram: 'wrurw', tiktok: 'wedub' },
+paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+subaccountCode: 'ACCT_gmjsurrbbzj3ugl',
+calendarId: 'oghenevokemi@gmail.com',
+active: true,
+adsEnabled: true,
+carsEnabled: false,
+servicesEnabled: true,
+productsEnabled: true,
+foodEnabled: false,
+services: [
+{
+id: 'lash-by-tife-1', name: 'lash install', duration: '1 hour', price: 4500, image: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294237/pnobggmhvqvytulkffp0.jpg',
+images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777294237/pnobggmhvqvytulkffp0.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294255/epdhgzl4lpievm4tkwam.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294271/tzjongy49fctjjbgibcz.jpg'],
+showDetails: true,
+description: 'cat eyes lash install'
+}
+],
+products: [],
+cars: [],
+food: []
+},
+
+
 };
 
 export default businesses;
