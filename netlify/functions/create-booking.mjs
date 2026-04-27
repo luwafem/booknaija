@@ -88,9 +88,16 @@ export const handler = async (event) => {
               description: `Phone: ${m.customerPhone}\nEmail: ${vd.data.customer.email}\nRef: ${reference}`,
               start: { dateTime: `${date}T${time}:00`, timeZone: 'Africa/Lagos' },
               end: { dateTime: `${date}T${endTime}:00`, timeZone: 'Africa/Lagos' },
+              reminders: {
+                useDefault: false,
+                overrides: [
+                  { method: 'popup', minutes: 60 },
+                  { method: 'email', minutes: 60 }
+                ]
+              }
             },
           });
-          console.log('📅 Calendar event created');
+          console.log('📅 Calendar event created with 1hr reminder');
         } catch (calErr) {
           console.error('⚠️ Calendar error (non-fatal):', calErr.message);
           // Don't fail the whole booking if calendar fails
