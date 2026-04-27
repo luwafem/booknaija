@@ -104,7 +104,7 @@ exports.handler = async function(event) {
         config + '\n' +
         currentContent.slice(insertionPoint + 2);
 
-      // 4. Commit
+      // 4. Commit now
       console.log('Committing to ' + branch + '...');
       const commitRes = await githubRequest(
         '/repos/' + repo + '/contents/' + filePath,
