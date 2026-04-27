@@ -55,14 +55,8 @@ export default function HeroSection({ biz }) {
         
         {/* Unified Logo/Avatar Branding */}
         <div className="flex flex-col items-center text-center mb-8 animate-fade-in-up">
-          <div className="relative mb-8 group">
-             {/* Dynamic Accent Glow */}
-             <div 
-                className="absolute blur-3xl inset-0 opacity-20 rounded-[3rem] scale-150 transition-transform group-hover:scale-[1.8] duration-1000"
-                style={{ backgroundColor: accent }} 
-             />
-             
-             <div className="relative w-32 h-32 bg-black/60 backdrop-blur-2xl rounded-[2.5rem] border border-white/10 overflow-hidden flex items-center justify-center shadow-2xl">
+          <div className="relative mb-8">
+             <div className="relative w-32 h-32   overflow-hidden flex items-center justify-center shadow-2xl">
                 {biz.logo || biz.avatar ? (
                   <img 
                     src={biz.logo || biz.avatar} 
