@@ -921,6 +921,48 @@ cars: [],
 food: []
 },
 
+  // Added by onboarding 2026-04-28T12:09:27.366Z
+  'crv': {
+    name: 'crv',
+    slug: 'crv',
+    logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777377578/qrergixiq4s9axztdpv6.jpg',
+    tagline: 'A professional Hair Stylist in Lagos',
+    bio: 'this is a hair stylist',
+    phone: '09034593171',
+    whatsapp: '08023381785',
+    email: 'oghenevokemi@gmail.com',
+    location: 'araokanmi',
+    hours: 'Mon–Sun, 9 AM – 6 PM',
+    accent: '#d27578',
+    avatar: '',
+    hero: 'https://picsum.photos/seed/crv/800/600',
+    gallery: [
+      { group: 'pro', images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777378051/goamjnhp6otmdm6wdtel.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777378051/xw04izwn4kadd1kbwhm1.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777378052/auwghs10ukbj38bykhzn.jpg'] },
+    ],
+    socials: { instagram: 'wrurw', tiktok: 'wedub' },
+    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+    subaccountCode: 'ACCT_od7jhceqzvwhtve',
+    calendarId: 'oghenevokemi@gmail.com',
+    active: true,
+    adsEnabled: true,
+    carsEnabled: false,
+    servicesEnabled: true,
+    productsEnabled: true,
+    foodEnabled: false,
+    services: [
+      {
+        id: 'crv-1', name: 'tech', duration: '1 hour', price: 24000, image: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777378102/n8erwddzdaxlrvgkspdg.jpg',
+        images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777378102/n8erwddzdaxlrvgkspdg.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777378126/alqrlfedjii8kqgftakg.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777378162/guwgrjgejl9emnmmzhce.jpg'],
+        showDetails: true,
+        description: 'this is the tech'
+      }
+    ],
+    products: [],
+    cars: [],
+    food: []
+  },
+
+
 
 };
 
