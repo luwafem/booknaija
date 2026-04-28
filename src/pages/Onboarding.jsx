@@ -458,202 +458,138 @@ export default function Onboarding() {
       return;
     }
 
-    function clean(val) {
+    function cleanPrice(val) {
       if (!val) return 0;
-      var str = val.toString();
-      var cleaned = str.replace(/,/g, '');
-      return parseInt(cleaned) || 0;
+      return parseInt(String(val).replace(/,/g, '')) || 0;
     }
 
-    // ─── JS Object Literal Formatters ───
-    function esc(val) {
-      if (val === undefined || val === null) return '';
-      return String(val).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-    }
+    // ─── Build clean JSON arrays ───
 
-    function q(val) {
-      return "'" + esc(val) + "'";
-    }
+    var servicesData = services.filter(function(s) { return s.name; }).map(function(s) {
+      return {
+        id: businessSlug + '-' + s.id,
+        name: s.name,
+        duration: s.duration,
+        price: cleanPrice(s.price),
+        image: s.image || '',
+        images: s.images || [],
+        showDetails: true,
+        description: s.description || ''
+      };
+    });
 
-    function strArr(arr) {
-      if (!arr || arr.length === 0) return '[]';
-      return '[' + arr.map(function(s) { return q(s); }).join(', ') + ']';
-    }
+    var productsData = products.filter(function(p) { return p.name; }).map(function(p) {
+      return {
+        id: businessSlug + '-' + p.id,
+        name: p.name,
+        price: cleanPrice(p.price),
+        image: p.image || '',
+        images: p.images || [],
+        showDetails: true,
+        description: p.description || ''
+      };
+    });
 
-    function galleryStr(arr) {
-      if (!arr || arr.length === 0) return '[]';
-      var items = arr.map(function(g) {
-        return '{ group: ' + q(g.group) + ', images: ' + strArr(g.images) + ' }';
-      });
-      return '[\n      ' + items.join(',\n      ') + ',\n    ]';
-    }
+    var carsData = (isAutoBusiness ? cars : []).filter(function(c) { return c.name; }).map(function(c) {
+      return {
+        id: businessSlug + '-' + c.id,
+        type: c.type,
+        name: c.name,
+        year: parseInt(c.year) || new Date().getFullYear(),
+        price: cleanPrice(c.price),
+        mileage: c.mileage || '',
+        transmission: c.transmission || '',
+        fuel: c.fuel || '',
+        description: c.description || '',
+        image: (c.images || [])[0] || '',
+        images: c.images || []
+      };
+    });
 
-    function serviceStr(s, slug) {
-      return '      {\n' +
-        '        id: ' + q(slug + '-' + s.id) + ', name: ' + q(s.name) + ', duration: ' + q(s.duration) + ', price: ' + clean(s.price) + ', image: ' + q(s.image) + ',\n' +
-        '        images: ' + strArr(s.images || []) + ',\n' +
-        '        showDetails: true,\n' +
-        '        description: ' + q(s.description) + '\n' +
-        '      }';
-    }
-
-    function productStr(p, slug) {
-      return '      {\n' +
-        '        id: ' + q(slug + '-' + p.id) + ', name: ' + q(p.name) + ', price: ' + clean(p.price) + ', image: ' + q(p.image) + ',\n' +
-        '        showDetails: true,\n' +
-        '        description: ' + q(p.description) + '\n' +
-        '      }';
-    }
-
-    function carStr(c, slug) {
-      var img = c.images && c.images.length > 0 ? c.images[0] : '';
-      return '      {\n' +
-        '        id: ' + q(slug + '-' + c.id) + ',\n' +
-        '        type: ' + q(c.type) + ',\n' +
-        '        name: ' + q(c.name) + ',\n' +
-        '        year: ' + (parseInt(c.year) || new Date().getFullYear()) + ',\n' +
-        '        price: ' + clean(c.price) + ',\n' +
-        '        mileage: ' + q(c.mileage) + ',\n' +
-        '        transmission: ' + q(c.transmission) + ',\n' +
-        '        fuel: ' + q(c.fuel) + ',\n' +
-        '        description: ' + q(c.description) + ',\n' +
-        '        image: ' + q(img) + ',\n' +
-        '        images: ' + strArr(c.images || []) + '\n' +
-        '      }';
-    }
-
-    function foodStr(f, slug) {
-      var parts = [];
-      parts.push('id: ' + q(slug + '-' + f.id));
-      parts.push('name: ' + q(f.name));
-      parts.push('price: ' + clean(f.price));
-      parts.push('image: ' + q(f.image));
-      parts.push('description: ' + q(f.description));
-
+    var foodsData = (isFoodBusiness ? foods : []).filter(function(f) { return f.name; }).map(function(f) {
+      var cleanAddons = [];
       if (f.addons && f.addons.length > 0) {
-        var validAddons = [];
         for (var i = 0; i < f.addons.length; i++) {
           var a = f.addons[i];
-          if (a.label.trim() && a.options && a.options.length > 0) {
-            var optArr = [];
+          if (!a.label || !a.label.trim()) continue;
+          var cleanOpts = [];
+          if (a.options) {
             for (var j = 0; j < a.options.length; j++) {
-              if (a.options[j].name.trim()) {
-                optArr.push({ name: a.options[j].name.trim(), price: clean(a.options[j].price) });
+              if (a.options[j].name && a.options[j].name.trim()) {
+                cleanOpts.push({
+                  name: a.options[j].name.trim(),
+                  price: cleanPrice(a.options[j].price)
+                });
               }
             }
-            if (optArr.length > 0) {
-              validAddons.push({ id: a.id, label: a.label.trim(), type: a.type, options: optArr });
-            }
           }
-        }
-        if (validAddons.length > 0) {
-          var addonLines = validAddons.map(function(a) {
-            var optStrs = a.options.map(function(o) {
-              return '{ name: ' + q(o.name) + ', price: ' + o.price + ' }';
+          if (cleanOpts.length > 0) {
+            cleanAddons.push({
+              id: a.id,
+              label: a.label.trim(),
+              type: a.type,
+              options: cleanOpts
             });
-            return '          {\n' +
-              '            id: ' + q(a.id) + ',\n' +
-              '            label: ' + q(a.label) + ',\n' +
-              '            type: ' + q(a.type) + ', \n' +
-              '            options: [\n              ' + optStrs.join(',\n              ') + '\n            ]\n' +
-              '          }';
-          });
-          parts.push('addons: [\n' + addonLines.join(',\n') + '\n        ]');
+          }
         }
       }
 
-      var propsStr = parts.map(function(p, idx) {
-        var comma = idx < parts.length - 1 ? ',' : '';
-        return '        ' + p + comma;
-      }).join('\n');
+      return {
+        id: businessSlug + '-' + f.id,
+        name: f.name,
+        price: cleanPrice(f.price),
+        image: f.image || '',
+        description: f.description || '',
+        addons: cleanAddons
+      };
+    });
 
-      return '      {\n' + propsStr + '\n      }';
-    }
-
-    // ─── Build the data ───
-
-    var servicesData = services.filter(function(s) { return s.name; });
-    var productsData = products.filter(function(p) { return p.name; });
-    var carsData = isAutoBusiness ? cars.filter(function(c) { return c.name; }) : [];
-    var foodsData = isFoodBusiness ? foods.filter(function(f) { return f.name; }) : [];
-
-    var galleryJson = gallery
+    var galleryData = gallery
       .filter(function(g) { return g.group.trim() && g.images.length > 0; })
       .map(function(g) { return { group: g.group.trim(), images: g.images }; });
-    var finalGallery = galleryJson.length > 0 ? galleryJson : [{ group: 'Gallery', images: [] }];
 
-    // ─── Build the JS object literal block ───
+    var finalGallery = galleryData.length > 0
+      ? galleryData
+      : [{ group: 'Gallery', images: [] }];
 
-    var lines = [];
-    lines.push("  '" + esc(businessSlug) + "': {");
-    lines.push('    name: ' + q(businessName) + ',');
-    lines.push('    slug: ' + q(businessSlug) + ',');
-    lines.push('    logo: ' + q(logoUrl) + ',');
-    lines.push('    tagline: ' + q('A professional ' + businessType + ' in Lagos') + ',');
-    lines.push('    bio: ' + q(bio) + ',');
-    lines.push('    phone: ' + q(phone) + ',');
-    lines.push('    whatsapp: ' + q(whatsapp) + ',');
-    lines.push('    email: ' + q(email) + ',');
-    lines.push('    location: ' + q(locationAddr) + ',');
-    lines.push("    hours: 'Mon\u2013Sun, 9 AM \u2013 6 PM',");
-    lines.push('    accent: ' + q(brandColor) + ',');
-    lines.push("    avatar: '',");
-    lines.push('    hero: ' + q('https://picsum.photos/seed/' + businessSlug + '/800/600') + ',');
-    lines.push('    gallery: ' + galleryStr(finalGallery) + ',');
-    lines.push('    socials: { instagram: ' + q(instagram) + ', tiktok: ' + q(tiktok) + ' },');
-    lines.push('    paystackPublicKey: PLATFORM_PAYSTACK_KEY,');
-    lines.push('    subaccountCode: ' + q(subaccountCode) + ',');
-    lines.push('    calendarId: ' + q(email) + ',');
-    lines.push('    active: true,');
-    lines.push('    adsEnabled: true,');
-    lines.push('    carsEnabled: ' + isAutoBusiness + ',');
-    lines.push('    servicesEnabled: ' + !isAutoBusiness + ',');
-    lines.push('    productsEnabled: ' + !isAutoBusiness + ',');
-    lines.push('    foodEnabled: ' + isFoodBusiness + ',');
+    // ─── Build the full JSON payload for Supabase ───
 
-    if (servicesData.length > 0) {
-      lines.push('    services: [');
-      lines.push(servicesData.map(function(s) { return serviceStr(s, businessSlug); }).join(',\n'));
-      lines.push('    ],');
-    } else {
-      lines.push('    services: [],');
-    }
+    var payload = {
+      slug: businessSlug,
+      name: businessName,
+      logo: logoUrl,
+      tagline: 'A professional ' + businessType + ' in Lagos',
+      bio: bio,
+      phone: phone,
+      whatsapp: whatsapp,
+      email: email,
+      location: locationAddr,
+      hours: 'Mon\u2013Sun, 9 AM \u2013 6 PM',
+      accent: brandColor,
+      hero: 'https://picsum.photos/seed/' + businessSlug + '/800/600',
+      socials: { instagram: instagram, tiktok: tiktok },
+      paystackPublicKey: 'pk_test_129628160c0fdb0e1e837751e5ff0233872676b8',
+      subaccountCode: subaccountCode,
+      calendarId: email,
+      adsEnabled: true,
+      carsEnabled: isAutoBusiness,
+      servicesEnabled: !isAutoBusiness,
+      productsEnabled: !isAutoBusiness,
+      foodEnabled: isFoodBusiness,
+      gallery: finalGallery,
+      services: servicesData,
+      products: productsData,
+      cars: carsData,
+      food: foodsData
+    };
 
-    if (productsData.length > 0) {
-      lines.push('    products: [');
-      lines.push(productsData.map(function(p) { return productStr(p, businessSlug); }).join(',\n'));
-      lines.push('    ],');
-    } else {
-      lines.push('    products: [],');
-    }
-
-    if (carsData.length > 0) {
-      lines.push('    cars: [');
-      lines.push(carsData.map(function(c) { return carStr(c, businessSlug); }).join(',\n'));
-      lines.push('    ],');
-    } else {
-      lines.push('    cars: [],');
-    }
-
-    if (foodsData.length > 0) {
-      lines.push('    food: [');
-      lines.push(foodsData.map(function(f) { return foodStr(f, businessSlug); }).join(',\n'));
-      lines.push('    ]');
-    } else {
-      lines.push('    food: []');
-    }
-
-    lines.push('  },');
-
-    var completeHeaderBlock = lines.join('\n');
-
-    // ─── Build FormData (Summary ONLY for email notification) ───
+    // ─── Build FormData (summary only for email notification) ───
     var formData = new FormData();
 
     formData.append('_subject', 'New Business Setup: ' + businessName);
     formData.append('_replyto', email);
     formData.append('_gotcha', '');
-    
+
     formData.append('business_name', businessName);
     formData.append('business_slug', businessSlug);
     formData.append('business_type', businessType);
@@ -667,31 +603,26 @@ export default function Onboarding() {
     formData.append('cars_count', String(carsData.length));
     formData.append('food_count', String(foodsData.length));
 
-    // ─── Send Both Requests Concurrently ───
+    // ─── Send both requests concurrently ───
     Promise.all([
-      // 1. Send lightweight summary to Formspree (won't trigger spam filters)
+      // 1. Email notification (lightweight summary)
       fetch('https://formspree.io/f/xyklbbqy', {
         method: 'POST',
         body: formData,
         headers: { 'Accept': 'application/json' }
       }).catch(function(err) {
-        // Don't crash if email fails, just log it
         console.warn('Formspree email notification failed:', err);
-        return { ok: true }; 
+        return { ok: true };
       }),
 
-      // 2. Send full config to Netlify Function to commit to GitHub
+      // 2. Save to Supabase via Netlify function
       fetch('/.netlify/functions/save-business', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          slug: businessSlug,
-          config: completeHeaderBlock
-        })
+        body: JSON.stringify(payload)
       })
     ])
     .then(function(results) {
-      // We only care if the GitHub save (index 1) succeeded
       return results[1].json();
     })
     .then(function(data) {
