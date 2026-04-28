@@ -1,6 +1,6 @@
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
-import businesses from '../data/businesses';
+import { useBusiness } from '../hooks/useBusiness';
 import BookingForm from '../components/BookingForm';
 import HeroSection from '../components/bio/HeroSection';
 import Gallery from '../components/bio/Gallery';
@@ -10,62 +10,48 @@ import FoodList from '../components/bio/FoodList';
 import CarList from '../components/bio/CarList';
 
 // --- ADSENSE CONFIGURATION (GLOBAL) ---
-// IMPORTANT: Replace these with your actual IDs from Google AdSense
 const ADSENSE_CLIENT = 'ca-pub-XXXXXXXXXXXXXXXX';
 const AD_SLOT_PRIMARY = '1234567890';
 const AD_SLOT_SECONDARY = '1111111111';
 const AD_SLOT_FOOTER = '0987654321';
 
-// --- Track if AdSense script has been loaded globally ---
 let adsenseScriptLoaded = false;
 let adsenseScriptLoading = false;
 
-// --- GOOGLE ADSENSE COMPONENT (IMPROVED) ---
 const GoogleAd = ({ slot, className = '' }) => {
   const adRef = useRef(null);
   const hasPushed = useRef(false);
 
   useEffect(() => {
-    // Prevent duplicate pushes for same slot
     if (hasPushed.current) return;
     hasPushed.current = true;
 
     const pushAd = () => {
       if (!adRef.current) return;
-      
       try {
-        // Only push if adsbygoogle is available (not blocked)
         if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
           window.adsbygoogle.push({});
         }
-      } catch (e) {
-        // Silently fail - ad blockers or invalid slots cause this
-      }
+      } catch (e) {}
     };
 
-    // If script already loaded, just push the ad
     if (adsenseScriptLoaded) {
       const timer = setTimeout(pushAd, 150);
       return () => clearTimeout(timer);
     }
 
-    // If script is currently loading, wait for it
     if (adsenseScriptLoading) {
-      // Poll until loaded (max 2 seconds)
       let attempts = 0;
       const interval = setInterval(() => {
         attempts++;
         if (adsenseScriptLoaded || attempts > 20) {
           clearInterval(interval);
-          if (adsenseScriptLoaded) {
-            pushAd();
-          }
+          if (adsenseScriptLoaded) pushAd();
         }
       }, 100);
       return () => clearInterval(interval);
     }
 
-    // Load the script
     adsenseScriptLoading = true;
     const script = document.createElement('script');
     script.async = true;
@@ -76,22 +62,17 @@ const GoogleAd = ({ slot, className = '' }) => {
       adsenseScriptLoaded = true;
       adsenseScriptLoading = false;
       const timer = setTimeout(pushAd, 100);
-      // Store cleanup for the timer
       script._timerCleanup = () => clearTimeout(timer);
     };
 
-    // ✅ SILENTLY handle ad blocker blocking - no console error
     script.onerror = () => {
       adsenseScriptLoading = false;
-      // Do nothing - ad blocker blocked the request, this is expected
     };
 
     document.head.appendChild(script);
 
     return () => {
-      if (script._timerCleanup) {
-        script._timerCleanup();
-      }
+      if (script._timerCleanup) script._timerCleanup();
     };
   }, [slot]);
 
@@ -105,14 +86,12 @@ const GoogleAd = ({ slot, className = '' }) => {
         data-ad-slot={slot}
         data-ad-format="auto"
         data-full-width-responsive="true"
-        // REMOVE 'data-ad-test' when going live to show real ads
         data-ad-test="on"
       />
     </div>
   );
 };
 
-// --- REFERRAL LINK COMPONENT ---
 const ReferralLink = ({ slug, accent }) => {
   const [copied, setCopied] = useState(false);
   const referralUrl = `${window.location.origin}/signup?ref=${slug}`;
@@ -123,7 +102,6 @@ const ReferralLink = ({ slug, accent }) => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      // Fallback for older browsers
       const textArea = document.createElement('textarea');
       textArea.value = referralUrl;
       document.body.appendChild(textArea);
@@ -141,7 +119,6 @@ const ReferralLink = ({ slug, accent }) => {
         <span className="text-[10px] text-stone-500 uppercase tracking-[0.2em] font-bold">
           Share your link <br /> Refer 3 friends = 1 Free Month
         </span>
-
         <button
           onClick={handleCopy}
           className="group relative flex items-center gap-3 px-4 py-2 rounded-full bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition-all duration-300"
@@ -149,9 +126,7 @@ const ReferralLink = ({ slug, accent }) => {
           <span className="text-xs text-stone-400 font-medium truncate max-w-[180px] group-hover:text-stone-200 transition-colors">
             {referralUrl.replace(/^https?:\/\//, '')}
           </span>
-          
           <div className="h-4 w-px bg-white/10" />
-
           <span 
             className="text-[11px] font-semibold transition-colors"
             style={{ color: copied ? accent : '#a8a29e' }}
@@ -168,7 +143,9 @@ export default function BioPage() {
   const { slug } = useParams();
   const [params] = useSearchParams();
   const ref = params.get('reference') || params.get('trxref');
-  const biz = businesses[slug];
+
+  // ✅ NOW FETCHES FROM SUPABASE INSTEAD OF businesses.js
+  const { business: biz, loading, error } = useBusiness(slug);
 
   const [selectedId, setSelectedId] = useState('');
   const [selectedProducts, setSelectedProducts] = useState([]);
@@ -181,24 +158,31 @@ export default function BioPage() {
   const scrollTimeoutRef = useRef(null);
 
   const scrollToForm = () => {
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
-    }
-
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
     scrollTimeoutRef.current = setTimeout(() => {
       const el = formRef.current;
       if (el) {
         const rect = el.getBoundingClientRect();
         const windowHeight = window.innerHeight;
         const isVisible = rect.top >= 0 && rect.bottom <= windowHeight;
-
-        if (!isVisible) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        if (!isVisible) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }, 100);
   };
 
+  // ✅ LOADING STATE
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-6">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-stone-700 border-t-stone-400 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-stone-500 text-sm font-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ NOT FOUND / INACTIVE STATE
   if (!biz || !biz.active) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-6">
@@ -211,6 +195,7 @@ export default function BioPage() {
     );
   }
 
+  // ✅ PAYMENT CALLBACK — render booking form with reference
   if (ref) {
     return (
       <BookingForm 
@@ -230,7 +215,6 @@ export default function BioPage() {
   const showFood = biz.foodEnabled && biz.food?.length > 0;
   const showCars = biz.carsEnabled && biz.cars?.length > 0;
   
-  // AdSense policy compliance
   const adsEnabled = biz.adsEnabled !== false;
   const totalItems = (biz.services?.length || 0) + (biz.products?.length || 0) + (biz.food?.length || 0) + (biz.cars?.length || 0);
   const hasAnyContent = showServices || showProducts || showFood || showCars;
@@ -241,20 +225,17 @@ export default function BioPage() {
   const showSecondaryAd = showAds && hasEnoughContent;
   const showFooterAd = showAds;
 
-  // Handle both Flat and Grouped gallery structures
   const isGrouped = biz.gallery?.length > 0 && typeof biz.gallery[0] === 'object' && biz.gallery[0].images;
   let heroImages = [];
   if (isGrouped) {
-    heroImages = biz.gallery.flatMap(g => g.images).slice(0, 4);
+    heroImages = biz.gallery.flatMap(function(g) { return g.images; }).slice(0, 4);
   } else if (biz.gallery) {
     heroImages = biz.gallery.slice(0, 4);
   }
 
   function handleServiceSelect(id) {
-    setSelectedId((prev) => {
-      if (prev !== id) {
-        scrollToForm();
-      }
+    setSelectedId(function(prev) {
+      if (prev !== id) scrollToForm();
       return prev === id ? '' : id;
     });
     setSelectedProducts([]);
@@ -266,43 +247,49 @@ export default function BioPage() {
     setSelectedId('');
     setSelectedFood([]);
     setSelectedCar(null);
-    const isAdding = !selectedProducts.includes(id);
+    var isAdding = !selectedProducts.includes(id);
     
-    setSelectedProducts((prev) => {
-      if (prev.includes(id)) return prev.filter(p => p !== id);
-      return [...prev, id];
+    setSelectedProducts(function(prev) {
+      if (prev.includes(id)) return prev.filter(function(p) { return p !== id; });
+      return prev.concat([id]);
     });
 
     if (isAdding && (size || color)) {
-      setSelectedProductVariants(prev => ({
-        ...prev,
-        [id]: { size, color }
-      }));
+      setSelectedProductVariants(function(prev) {
+        var next = Object.assign({}, prev);
+        next[id] = { size: size, color: color };
+        return next;
+      });
     } else if (!isAdding) {
-      setSelectedProductVariants(prev => {
-        const next = { ...prev };
+      setSelectedProductVariants(function(prev) {
+        var next = Object.assign({}, prev);
         delete next[id];
         return next;
       });
     }
 
-    if (isAdding) {
-      scrollToForm();
-    }
+    if (isAdding) scrollToForm();
   }
 
   function handleFoodSelect(id, variant) {
     setSelectedId('');
     setSelectedProducts([]);
     setSelectedCar(null);
-    
-    const exists = selectedFood.includes(id);
+    var exists = selectedFood.includes(id);
     
     if (exists) {
-      setSelectedFoodVariants(prev => ({ ...prev, [id]: variant }));
+      setSelectedFoodVariants(function(prev) {
+        var next = Object.assign({}, prev);
+        next[id] = variant;
+        return next;
+      });
     } else {
-      setSelectedFood(prev => [...prev, id]);
-      setSelectedFoodVariants(prev => ({ ...prev, [id]: variant }));
+      setSelectedFood(function(prev) { return prev.concat([id]); });
+      setSelectedFoodVariants(function(prev) {
+        var next = Object.assign({}, prev);
+        next[id] = variant;
+        return next;
+      });
     }
     scrollToForm();
   }
@@ -312,11 +299,11 @@ export default function BioPage() {
       setSelectedProducts([]);
       setSelectedProductVariants({});
     } else {
-      setSelectedProducts(prev => prev.filter(p => p !== id));
-      setSelectedProductVariants(prev => { 
-        const next = { ...prev }; 
-        delete next[id]; 
-        return next; 
+      setSelectedProducts(function(prev) { return prev.filter(function(p) { return p !== id; }); });
+      setSelectedProductVariants(function(prev) {
+        var next = Object.assign({}, prev);
+        delete next[id];
+        return next;
       });
     }
   }
@@ -326,9 +313,9 @@ export default function BioPage() {
       setSelectedFood([]);
       setSelectedFoodVariants({});
     } else {
-      setSelectedFood(prev => prev.filter(f => f !== id));
-      setSelectedFoodVariants(prev => {
-        const next = { ...prev };
+      setSelectedFood(function(prev) { return prev.filter(function(f) { return f !== id; }); });
+      setSelectedFoodVariants(function(prev) {
+        var next = Object.assign({}, prev);
         delete next[id];
         return next;
       });
@@ -351,15 +338,14 @@ export default function BioPage() {
     <div className="min-h-screen bg-[#0a0a0a] text-white pb-12">
       <div className="max-w-lg mx-auto">
 
-        <HeroSection biz={{ ...biz, logo: biz.logo }} />
+        <HeroSection biz={{ logo: biz.logo, name: biz.name, slug: biz.slug, tagline: biz.tagline, bio: biz.bio, phone: biz.phone, whatsapp: biz.whatsapp, location: biz.location, hours: biz.hours, accent: biz.accent, avatar: biz.avatar, hero: biz.hero, gallery: biz.gallery, socials: biz.socials }} />
 
-        {biz.gallery?.length > 0 && (
+        {biz.gallery && biz.gallery.length > 0 && (
           <Gallery gallery={biz.gallery} accent={accent} />
         )}
 
         <div className="mx-6 mt-12 border-t border-white/[0.04]" />
 
-        {/* AD PLACEMENT 1: THE BRIDGE */}
         {showPrimaryAd && (
           <div className="mx-6 mt-6">
             <div className="rounded-xl bg-stone-900/50 border border-white/5 p-4 flex flex-col items-center">
@@ -407,7 +393,6 @@ export default function BioPage() {
           />
         )}
 
-        {/* AD PLACEMENT 2: PRE-BOOKING */}
         {showSecondaryAd && (
           <div className="mx-6 mt-8 mb-6">
             <div className="rounded-xl bg-stone-900/50 border border-white/5 p-4 flex flex-col items-center">
@@ -425,7 +410,7 @@ export default function BioPage() {
             productVariants={selectedProductVariants}
             selectedFood={selectedFood}
             foodVariants={selectedFoodVariants}
-            onDeselect={() => setSelectedId('')}
+            onDeselect={function() { setSelectedId(''); }}
             onProductDeselect={handleProductDeselect}
             onFoodDeselect={handleFoodDeselect}
             selectedCar={selectedCar}
@@ -433,16 +418,24 @@ export default function BioPage() {
           />
         </div>
 
-        {/* AD PLACEMENT 3: FOOTER */}
         {showFooterAd && (
           <div className="mt-8 border-t border-white/[0.04] pt-6">
             <GoogleAd slot={AD_SLOT_FOOTER} />
           </div>
         )}
 
-        {/* LEGAL & COMPLIANCE FOOTER */}
         <div className="px-6 pt-12 pb-8 text-center">
           <ReferralLink slug={biz.slug} accent={accent} />
+          <a 
+  href={"/dashboard/" + biz.slug} 
+  className="inline-flex items-center gap-1.5 text-[11px] text-stone-500 hover:text-stone-300 transition-colors mb-4"
+>
+  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c-1.756.426-1.756 2.924 0 3.35a1.724 1.724 0 00-2.573 1.066c-.94 1.543.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c1.756-.426 1.756-2.924 0-3.35a1.724 1.724 0 002.573-1.066c.94-1.543-.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+  Manage Business
+</a>
 
           <nav className="flex justify-center gap-6 mb-6">
             <a href="/privacy" className="text-[11px] text-stone-500 hover:text-stone-300 underline decoration-stone-700 hover:decoration-stone-500 underline-offset-4 transition-colors">

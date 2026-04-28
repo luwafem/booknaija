@@ -1,140 +1,167 @@
-// /.netlify/functions/save-business.js
-const https = require('https');
+const { createClient } = require('@supabase/supabase-js');
 
-function githubRequest(path, method, body, token) {
-  return new Promise((resolve, reject) => {
-    const data = body ? JSON.stringify(body) : '';
-    const options = {
-      hostname: 'api.github.com',
-      path: path,
-      method: method,
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'User-Agent': 'Netlify-Function',
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.github.v3+json'
-      }
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+exports.handler = async function (event) {
+  console.log('=== SAVE-BUSINESS TO SUPABASE ===');
+
+  try {
+    var d = JSON.parse(event.body);
+    console.log('Slug:', d.slug);
+
+    if (!d.slug || !d.name) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'Missing slug or name' }) };
+    }
+
+    // 1. Upsert the business row
+    var bizPayload = {
+      slug: d.slug,
+      name: d.name,
+      logo: d.logo || '',
+      tagline: d.tagline || '',
+      bio: d.bio || '',
+      phone: d.phone || '',
+      whatsapp: d.whatsapp || '',
+      email: d.email || '',
+      location: d.location || '',
+      hours: d.hours || '',
+      accent: d.accent || '#c8a97e',
+      avatar: '',
+      hero: d.hero || '',
+      paystack_public_key: d.paystackPublicKey || 'pk_test_129628160c0fdb0e1e837751e5ff0233872676b8',
+      subaccount_code: d.subaccountCode || '',
+      calendar_id: d.calendarId || '',
+      active: true,
+      ads_enabled: d.adsEnabled !== false,
+      cars_enabled: d.carsEnabled === true,
+      services_enabled: d.servicesEnabled !== false,
+      products_enabled: d.productsEnabled !== false,
+      food_enabled: d.foodEnabled === true,
+      socials: d.socials || {},
+      gallery: d.gallery || []
     };
 
-    const req = https.request(options, function(res) {
-      let chunks = [];
-      res.on('data', function(chunk) { chunks.push(chunk); });
-      res.on('end', function() {
-        const rawData = Buffer.concat(chunks).toString();
-        console.log('GitHub Response Status:', res.statusCode);
-        try {
-          resolve(JSON.parse(rawData));
-        } catch (e) {
-          console.error('GitHub Response Parse Error:', rawData.substring(0, 200));
-          reject(new Error('Invalid GitHub response'));
-        }
+    var { data: bizRow, error: bizErr } = await supabase
+      .from('businesses')
+      .upsert(bizPayload, { onConflict: 'slug' })
+      .select()
+      .single();
+
+    if (bizErr) {
+      console.error('Business upsert error:', bizErr);
+      throw bizErr;
+    }
+
+    var businessId = bizRow.id;
+    console.log('Business ID:', businessId);
+
+    // 2. Clear old related data
+    await supabase.from('business_services').delete().eq('business_id', businessId);
+    await supabase.from('business_products').delete().eq('business_id', businessId);
+    await supabase.from('business_cars').delete().eq('business_id', businessId);
+    await supabase.from('business_food').delete().eq('business_id', businessId);
+
+    // 3. Insert services
+    if (d.services && d.services.length > 0) {
+      var serviceRows = d.services.map(function (s, i) {
+        return {
+          business_id: businessId,
+          service_id: s.id,
+          name: s.name,
+          duration: s.duration || '',
+          price: parseInt(String(s.price).replace(/,/g, '')) || 0,
+          image: s.image || '',
+          images: s.images || [],
+          show_details: s.showDetails !== false,
+          description: s.description || '',
+          sort_order: i
+        };
       });
-    });
-
-    req.on('error', function(err) {
-      console.error('GitHub Request Network Error:', err.message);
-      reject(err);
-    });
-    
-    if (data) req.write(data);
-    req.end();
-  });
-}
-
-exports.handler = async function(event) {
-  console.log('=== SAVE-BUSINESS FUNCTION STARTED ===');
-  
-  try {
-    const { slug, config } = JSON.parse(event.body);
-    console.log('Received Slug:', slug);
-    console.log('Config Length:', config ? config.length : 0, 'characters');
-
-    if (!slug || !config) {
-      console.error('ERROR: Missing slug or config');
-      return { statusCode: 400, body: JSON.stringify({ error: 'Missing slug or config' }) };
+      var { error: sErr } = await supabase.from('business_services').insert(serviceRows);
+      if (sErr) console.error('Services error:', sErr);
     }
 
-    const token = process.env.GITHUB_TOKEN;
-    const repo = process.env.GITHUB_REPO;
-
-    console.log('GITHUB_TOKEN set:', token ? 'YES (' + token.substring(0, 7) + '...)' : 'NO!!!');
-    console.log('GITHUB_REPO set:', repo ? 'YES (' + repo + ')' : 'NO!!!');
-
-    if (!token || !repo) {
-      console.error('ERROR: Missing environment variables');
-      return { statusCode: 500, body: JSON.stringify({ error: 'Server not configured.' }) };
+    // 4. Insert products
+    if (d.products && d.products.length > 0) {
+      var productRows = d.products.map(function (p, i) {
+        return {
+          business_id: businessId,
+          product_id: p.id,
+          name: p.name,
+          price: parseInt(String(p.price).replace(/,/g, '')) || 0,
+          image: p.image || '',
+          images: p.images || [],
+          sizes: p.sizes || [],
+          colors: p.colors || [],
+          layout: p.layout || '',
+          show_details: p.showDetails !== false,
+          description: p.description || '',
+          sort_order: i
+        };
+      });
+      var { error: pErr } = await supabase.from('business_products').insert(productRows);
+      if (pErr) console.error('Products error:', pErr);
     }
 
-    const filePath = 'src/data/businesses.js'; 
-    const branchesToSync = ['main']; // ✅ Removed 'test' since it was deleted
-
-    for (let i = 0; i < branchesToSync.length; i++) {
-      const branch = branchesToSync[i];
-      console.log('\n--- Syncing to branch: ' + branch + ' ---');
-      
-      const apiPath = '/repos/' + repo + '/contents/' + filePath + '?ref=' + branch;
-
-      // 1. Get current file
-      const fileRes = await githubRequest(apiPath, 'GET', null, token);
-
-      if (!fileRes.sha) {
-        console.error('ERROR: Could not find file on ' + branch + '. Response:', JSON.stringify(fileRes).substring(0, 300));
-        continue; // Skip to next branch instead of crashing
-      }
-
-      const currentContent = Buffer.from(fileRes.content, 'base64').toString('utf8');
-      const sha = fileRes.sha;
-      console.log('File found on ' + branch + '! Size:', currentContent.length, 'characters.');
-
-      // 2. Skip if business already exists on this branch
-      if (currentContent.indexOf("'" + slug + "'") !== -1) {
-        console.log('Slug already exists on ' + branch + '. Skipping.');
-        continue;
-      }
-
-      // 3. Insert new config
-      const insertionPoint = currentContent.lastIndexOf('},');
-      if (insertionPoint === -1) {
-        console.error('ERROR: Could not find insertion point on ' + branch);
-        continue;
-      }
-
-      const newContent = currentContent.slice(0, insertionPoint + 2) + 
-        '\n\n  // Added by onboarding ' + new Date().toISOString() + '\n' +
-        config + '\n' +
-        currentContent.slice(insertionPoint + 2);
-
-      // 4. Commit now
-      console.log('Committing to ' + branch + '...');
-      const commitRes = await githubRequest(
-        '/repos/' + repo + '/contents/' + filePath,
-        'PUT',
-        {
-          message: 'Add new business: ' + slug,
-          content: Buffer.from(newContent).toString('base64'),
-          sha: sha,
-          branch: branch
-        },
-        token
-      );
-
-      if (!commitRes.commit) {
-        console.error('ERROR: Commit failed on ' + branch + '. Response:', JSON.stringify(commitRes).substring(0, 500));
-      } else {
-        console.log('SUCCESS on ' + branch + '!');
-      }
+    // 5. Insert cars
+    if (d.cars && d.cars.length > 0) {
+      var carRows = d.cars.map(function (c, i) {
+        var img = c.images && c.images.length > 0 ? c.images[0] : (c.image || '');
+        return {
+          business_id: businessId,
+          car_id: c.id,
+          type: c.type || 'rent',
+          name: c.name,
+          year: parseInt(c.year) || new Date().getFullYear(),
+          price: parseInt(String(c.price).replace(/,/g, '')) || 0,
+          mileage: c.mileage || '',
+          transmission: c.transmission || '',
+          fuel: c.fuel || '',
+          description: c.description || '',
+          image: img,
+          images: c.images || [],
+          sort_order: i
+        };
+      });
+      var { error: cErr } = await supabase.from('business_cars').insert(carRows);
+      if (cErr) console.error('Cars error:', cErr);
     }
 
-    console.log('\n=== ALL BRANCHES SYNCED ===');
+    // 6. Insert food items
+    if (d.food && d.food.length > 0) {
+      var foodRows = d.food.map(function (f, i) {
+        return {
+          business_id: businessId,
+          food_id: f.id,
+          name: f.name,
+          price: parseInt(String(f.price).replace(/,/g, '')) || 0,
+          image: f.image || '',
+          images: f.images || [],
+          description: f.description || '',
+          addons: f.addons || [],
+          sort_order: i
+        };
+      });
+      var { error: fErr } = await supabase.from('business_food').insert(foodRows);
+      if (fErr) console.error('Food error:', fErr);
+    }
+
+    console.log('=== DONE: ' + d.slug + ' ===');
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ ok: true, slug: slug, message: 'Business added to all branches!' })
+      body: JSON.stringify({ ok: true, slug: d.slug })
     };
 
   } catch (err) {
     console.error('=== UNCAUGHT ERROR ===');
     console.error(err.message);
-    console.error(err.stack);
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: err.message })
+    };
   }
 };

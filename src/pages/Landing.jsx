@@ -1,7 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import businesses from '../data/businesses';
-// import businesses from './businesses'; // <--- Ensure you import your data file here
+import { supabase } from '../lib/supabase';
 
 const steps = [
   { 
@@ -32,26 +31,62 @@ const features = [
 
 export default function Landing() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const debounceTimer = useRef(null);
 
-  // Filter logic: Search by Name or Slug
-  const filteredBusinesses = useMemo(() => {
-    if (!searchQuery) return [];
-    const lowerQuery = searchQuery.toLowerCase();
-    
-    // Assuming 'businesses' is imported at the top of the file
-    // If you pasted the data object directly in this file, you can use the global variable
-    // For now, we will try to access it via window or assume it's imported.
-    // NOTE: Make sure you have: import businesses from './businesses';
-    
-    // Temporarily accessing via global if you haven't set up module imports yet:
-    const data = window.businessesData || businesses; 
+  // Debounced Supabase search
+  useEffect(function () {
+    // Clear previous timer
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
 
-    if (!data) return [];
+    // If query is empty, reset state
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      setHasSearched(false);
+      return;
+    }
 
-    return Object.values(data).filter(b => 
-      b.name.toLowerCase().includes(lowerQuery) || 
-      b.slug.toLowerCase().includes(lowerQuery)
-    );
+    // Show loading state immediately
+    setIsSearching(true);
+
+    // Debounce: wait 300ms before hitting Supabase
+    debounceTimer.current = setTimeout(async function () {
+      try {
+        var query = searchQuery.trim().toLowerCase();
+        
+        var { data, error } = await supabase
+          .from('businesses')
+          .select('slug, name, tagline, logo, accent')
+          .eq('active', true)
+          .or('name.ilike.%' + query + '%,slug.ilike.%' + query + '%')
+          .limit(8);
+
+        if (error) {
+          console.error('Search error:', error);
+          setSearchResults([]);
+        } else {
+          setSearchResults(data || []);
+        }
+      } catch (err) {
+        console.error('Search exception:', err);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+        setHasSearched(true);
+      }
+    }, 300);
+
+    // Cleanup on unmount or query change
+    return function () {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
   }, [searchQuery]);
 
   return (
@@ -60,7 +95,6 @@ export default function Landing() {
       {/* Header */}
       <nav className="bg-white sticky top-0 z-50 px-6">
         <div className="max-w-7xl mx-auto py-3 flex justify-between items-center">
-          {/* Logo Container */}
           <Link to="/" className="flex items-center">
             <img 
               src="/fav-removebg.png" 
@@ -108,7 +142,7 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* ✅ NEW: Search Bar */}
+            {/* Search Bar */}
             <div className="mt-8 max-w-lg mx-auto lg:mx-0">
               <label htmlFor="business-search" className="block text-sm font-medium text-zinc-700 mb-2">
                 Find a registered business
@@ -125,39 +159,67 @@ export default function Landing() {
                   className="block w-full pl-10 pr-3 py-3 border border-zinc-300 rounded-lg leading-5 bg-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-600 sm:text-sm shadow-sm transition-all"
                   placeholder="Search by name"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={function(e) { setSearchQuery(e.target.value); }}
                 />
+                {isSearching && (
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <svg className="animate-spin h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  </div>
+                )}
               </div>
 
-              {/* ✅ NEW: Search Results Dropdown */}
-              {searchQuery && (
-                <div className="mt-4 bg-white border border-zinc-200 rounded-xl shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                  {filteredBusinesses.length > 0 ? (
-                    <div className="max-h-64 overflow-y-auto">
-                      {filteredBusinesses.map((b) => (
-                        <Link 
-                          key={b.slug} 
-                          to={`/${b.slug}`} // Assumes your route is /:slug
-                          className="block px-4 py-3 hover:bg-zinc-50 transition-colors border-b border-zinc-100 last:border-0"
-                          onClick={() => setSearchQuery('')}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-semibold text-zinc-900">{b.name}</p>
-                              <p className="text-xs text-zinc-500 truncate max-w-[200px]">{b.tagline}</p>
-                            </div>
-                            <div className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded">
-                              Visit
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
+              {/* Search Results Dropdown */}
+              {searchQuery.trim() && (
+                <div className="mt-2 bg-white border border-zinc-200 rounded-xl shadow-lg overflow-hidden">
+                  {isSearching ? (
+                    <div className="px-4 py-6 text-center">
+                      <p className="text-sm text-zinc-400">Searching...</p>
                     </div>
-                  ) : (
+                  ) : searchResults.length > 0 ? (
+                    <div className="max-h-72 overflow-y-auto">
+                      {searchResults.map(function (b) {
+                        return (
+                          <Link 
+                            key={b.slug} 
+                            to={'/' + b.slug}
+                            className="block px-4 py-3 hover:bg-zinc-50 transition-colors border-b border-zinc-100 last:border-0"
+                            onClick={function() { setSearchQuery(''); }}
+                          >
+                            <div className="flex items-center gap-3">
+                              {b.logo ? (
+                                <img 
+                                  src={b.logo} 
+                                  alt="" 
+                                  className="w-9 h-9 rounded-lg object-contain bg-zinc-50 border border-zinc-100 flex-shrink-0 p-1"
+                                />
+                              ) : (
+                                <div 
+                                  className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                                  style={{ backgroundColor: b.accent || '#c8a97e' }}
+                                >
+                                  {b.name ? b.name.split(' ').map(function(w) { return w[0]; }).join('').substring(0, 2).toUpperCase() : '??'}
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-zinc-900 truncate">{b.name}</p>
+                                <p className="text-xs text-zinc-500 truncate">{b.tagline}</p>
+                              </div>
+                              <div className="text-xs font-medium text-purple-600 bg-purple-50 px-2.5 py-1 rounded-md flex-shrink-0">
+                                Visit
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ) : hasSearched ? (
                     <div className="px-4 py-6 text-center">
                       <p className="text-sm text-zinc-500">No businesses found matching "{searchQuery}"</p>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               )}
             </div>
@@ -273,14 +335,16 @@ export default function Landing() {
                  Stop losing sales to missed DMs. Your BookNaija link is a 24/7 storefront that handles bookings, product sales, and payments automatically.
                </p>
                <ul className="space-y-4">
-                 {['Custom business URL', 'Secure Paystack Integration', 'Real-time availability', 'Sell services & products'].map((item) => (
-                   <li key={item} className="flex items-center gap-3 text-sm font-medium text-zinc-700">
-                     <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
-                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                     </div>
-                     {item}
-                   </li>
-                 ))}
+                 {['Custom business URL', 'Secure Paystack Integration', 'Real-time availability', 'Sell services & products'].map(function (item) {
+                   return (
+                     <li key={item} className="flex items-center gap-3 text-sm font-medium text-zinc-700">
+                       <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
+                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                       </div>
+                       {item}
+                     </li>
+                   );
+                 })}
                </ul>
              </div>
            </div>
@@ -297,12 +361,14 @@ export default function Landing() {
                 For the price of a small lunch, you get a complete booking engine and e-commerce store. We don't take a cut of your earnings.
               </p>
               <div className="grid grid-cols-2 gap-y-6 gap-x-8">
-                {['No commissions', 'Unlimited bookings', 'Priority WhatsApp support', 'Auto-reminders', 'Product inventory', 'Refer & Earn'].map((item) => (
-                  <div key={item} className="flex items-center gap-3 text-sm font-semibold text-zinc-800">
-                    <div className="w-1.5 h-1.5 bg-purple-600 rounded-full"></div>
-                    {item}
-                  </div>
-                ))}
+                {['No commissions', 'Unlimited bookings', 'Priority WhatsApp support', 'Auto-reminders', 'Product inventory', 'Refer & Earn'].map(function (item) {
+                  return (
+                    <div key={item} className="flex items-center gap-3 text-sm font-semibold text-zinc-800">
+                      <div className="w-1.5 h-1.5 bg-purple-600 rounded-full"></div>
+                      {item}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -351,15 +417,17 @@ export default function Landing() {
           <div className="grid md:grid-cols-3 gap-8 relative">
             <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-0.5 bg-zinc-100 -z-10"></div>
             
-            {steps.map((s) => (
-              <div key={s.n} className="relative p-8 rounded-2xl bg-white border border-zinc-100 hover:border-purple-200 transition-all">
-                <div className="w-10 h-10 bg-white border border-zinc-200 text-zinc-900 rounded-full flex items-center justify-center font-bold mb-6 relative z-10">
+            {steps.map(function (s) {
+              return (
+                <div key={s.n} className="relative p-8 rounded-2xl bg-white border border-zinc-100 hover:border-purple-200 transition-all">
+                  <div className="w-10 h-10 bg-white border border-zinc-200 text-zinc-900 rounded-full flex items-center justify-center font-bold mb-6 relative z-10">
                     {s.n}
+                  </div>
+                  <h4 className="text-lg font-bold mb-3 text-zinc-900">{s.t}</h4>
+                  <p className="text-zinc-500 text-sm leading-relaxed font-medium">{s.d}</p>
                 </div>
-                <h4 className="text-lg font-bold mb-3 text-zinc-900">{s.t}</h4>
-                <p className="text-zinc-500 text-sm leading-relaxed font-medium">{s.d}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
@@ -370,15 +438,17 @@ export default function Landing() {
             <p className="text-zinc-500 text-lg font-medium">Everything you need to run your business from your phone.</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((f) => (
-              <div key={f.t} className="p-6 bg-white border border-zinc-200 rounded-2xl hover:-translate-y-1 transition-transform duration-200">
-                 <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center mb-4">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">{f.icon}</svg>
-                 </div>
-                 <h4 className="text-base font-bold mb-2 text-zinc-900 tracking-tight">{f.t}</h4>
-                 <p className="text-zinc-500 text-sm font-medium leading-relaxed">{f.d}</p>
-              </div>
-            ))}
+            {features.map(function (f) {
+              return (
+                <div key={f.t} className="p-6 bg-white border border-zinc-200 rounded-2xl hover:-translate-y-1 transition-transform duration-200">
+                   <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center mb-4">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">{f.icon}</svg>
+                   </div>
+                   <h4 className="text-base font-bold mb-2 text-zinc-900 tracking-tight">{f.t}</h4>
+                   <p className="text-zinc-500 text-sm font-medium leading-relaxed">{f.d}</p>
+                </div>
+              );
+            })}
           </div>
         </section>
       </main>
