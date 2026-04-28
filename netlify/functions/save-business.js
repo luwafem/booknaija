@@ -66,7 +66,7 @@ exports.handler = async function(event) {
     }
 
     const filePath = 'src/data/businesses.js'; 
-    const branchesToSync = ['main', 'test'];
+    const branchesToSync = ['main']; // ✅ Removed 'test' since it was deleted
 
     for (let i = 0; i < branchesToSync.length; i++) {
       const branch = branchesToSync[i];
