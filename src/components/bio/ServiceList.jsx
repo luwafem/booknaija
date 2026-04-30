@@ -24,8 +24,13 @@ export default function ServiceList({ services, selectedId, onSelect, accent }) 
 function ServiceCard({ service, active, accent, onClick }) {
   const [openDetails, setOpenDetails] = useState(false);
   
-  // Determine if details toggle should show
   const canShowDetails = service.showDetails !== false && (service.description || (service.images && service.images.length > 0));
+
+  // NEW: Discount calculation
+  const hasDiscount = service.discount_enabled && service.discount_price > 0;
+  const originalPrice = service.price;
+  const discountPrice = hasDiscount ? service.discount_price : originalPrice;
+  const discountPercentage = hasDiscount ? Math.round(((originalPrice - discountPrice) / originalPrice) * 100) : 0;
 
   return (
     <div
@@ -67,19 +72,34 @@ function ServiceCard({ service, active, accent, onClick }) {
           </div>
         ) : (
           <div className="w-16 h-16 rounded-xl bg-black border border-white/5 flex-shrink-0 flex items-center justify-center">
-             {/* Optional: Placeholder icon or initial */}
           </div>
         )}
         
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           <div className="flex items-center justify-between mb-1">
-            <p className={`text-sm font-semibold truncate transition-colors ${active ? 'text-white' : 'text-stone-300'}`}>
-              {service.name}
-            </p>
-            <div className="text-right flex-shrink-0">
-              <p className={`text-sm font-bold tabular-nums transition-colors ${active ? 'text-white' : ''}`} style={{ color: accent }}>
-                ₦{service.price.toLocaleString()}
+            <div className="flex items-center gap-2">
+              <p className={`text-sm font-semibold truncate transition-colors ${active ? 'text-white' : 'text-stone-300'}`}>
+                {service.name}
               </p>
+              {/* NEW: Discount Badge */}
+              {hasDiscount && (
+                <span className="bg-red-500/20 text-red-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-red-500/30">
+                  -{discountPercentage}%
+                </span>
+              )}
+            </div>
+            <div className="text-right flex-shrink-0">
+              {/* NEW: Price Display with Discount */}
+              <div className="flex items-center gap-1.5">
+                <p className={`text-sm font-bold tabular-nums transition-colors ${active ? 'text-white' : ''}`} style={{ color: accent }}>
+                  ₦{discountPrice.toLocaleString()}
+                </p>
+                {hasDiscount && (
+                  <p className="text-[10px] text-stone-600 line-through tabular-nums">
+                    ₦{originalPrice.toLocaleString()}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
           <p className="text-xs text-stone-400">{service.duration}</p>
@@ -90,7 +110,7 @@ function ServiceCard({ service, active, accent, onClick }) {
       {canShowDetails && (
         <button
           onClick={(e) => {
-            e.stopPropagation(); // Prevent triggering parent select action
+            e.stopPropagation();
             setOpenDetails(!openDetails);
           }}
           className="mt-3 text-[11px] font-medium text-stone-500 hover:text-white transition-colors flex items-center gap-2 group/btn"

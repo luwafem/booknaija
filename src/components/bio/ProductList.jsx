@@ -7,11 +7,6 @@ export default function ProductList({ products, selectedProducts, onSelect, acce
         {label}
       </h2>
       
-      {/* 
-        Grid Layout:
-        Standard items take 1 column (2 per row).
-        Wide items take 2 columns (1 per row).
-      */}
       <div className="grid grid-cols-2 gap-3">
         {products.map((p) => (
           <ProductCard
@@ -19,7 +14,6 @@ export default function ProductList({ products, selectedProducts, onSelect, acce
             product={p}
             active={selectedProducts.includes(p.id)}
             accent={accent}
-            // UPDATED: Pass a wrapper function that captures Size & Color
             onClick={(id, size, color) => onSelect(id, size, color)}
           />
         ))}
@@ -43,6 +37,12 @@ function ProductCard({ product, active, accent, onClick }) {
   const allImages = product.images || (product.image ? [product.image] : []);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
 
+  // NEW: Discount calculation
+  const hasDiscount = product.discount_enabled && product.discount_price > 0;
+  const originalPrice = product.price;
+  const discountPrice = hasDiscount ? product.discount_price : originalPrice;
+  const discountPercentage = hasDiscount ? Math.round(((originalPrice - discountPrice) / originalPrice) * 100) : 0;
+
   const nextImage = (e) => {
     e.stopPropagation();
     if (allImages.length > 1) {
@@ -51,12 +51,12 @@ function ProductCard({ product, active, accent, onClick }) {
   };
 
   const handleSizeClick = (size) => (e) => {
-    e.stopPropagation(); // Prevent card selection when picking a size
+    e.stopPropagation();
     setSelectedSize(size);
   };
 
   const handleColorClick = (color) => (e) => {
-    e.stopPropagation(); // Prevent card selection when picking a color
+    e.stopPropagation();
     setSelectedColor(color);
   };
 
@@ -65,7 +65,6 @@ function ProductCard({ product, active, accent, onClick }) {
 
   return (
     <div
-      // UPDATED: Capture current size/color state when clicking the main card
       onClick={() => onClick(product.id, selectedSize, selectedColor)}
       className={`
         w-full text-left rounded-2xl border transition-all duration-300 group relative overflow-hidden flex flex-col cursor-pointer
@@ -103,6 +102,20 @@ function ProductCard({ product, active, accent, onClick }) {
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1">
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
             </svg>
+          </div>
+        )}
+
+        {/* NEW: Discount Badge */}
+        {hasDiscount && (
+          <div className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-lg">
+            -{discountPercentage}%
+          </div>
+        )}
+
+        {/* NEW: Product Code Badge */}
+        {product.product_code && (
+          <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white text-[9px] font-mono px-2 py-1 rounded border border-white/10">
+            {product.product_code}
           </div>
         )}
 
@@ -197,7 +210,6 @@ function ProductCard({ product, active, accent, onClick }) {
                   `}
                   style={{
                     backgroundColor: color,
-                    // Ring effect for selected color
                     boxShadow: selectedColor === color 
                       ? `0 0 0 2px #0a0a0a, 0 0 0 4px ${accent}` 
                       : 'none',
@@ -238,13 +250,24 @@ function ProductCard({ product, active, accent, onClick }) {
           )}
         </div>
 
-        <p className={`
-          font-bold tabular-nums mt-2 transition-colors
-          ${isWide ? 'text-2xl' : 'text-sm'}
-          ${active ? 'text-white' : ''}
-        `} style={{ color: accent }}>
-          ₦{product.price.toLocaleString()}
-        </p>
+        {/* NEW: Price Display with Discount */}
+        <div className="flex items-center gap-2">
+          <p className={`
+            font-bold tabular-nums transition-colors
+            ${isWide ? 'text-2xl' : 'text-sm'}
+            ${active ? 'text-white' : ''}
+          `} style={{ color: accent }}>
+            ₦{discountPrice.toLocaleString()}
+          </p>
+          {hasDiscount && (
+            <p className={`
+              text-stone-500 line-through tabular-nums
+              ${isWide ? 'text-base' : 'text-xs'}
+            `}>
+              ₦{originalPrice.toLocaleString()}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

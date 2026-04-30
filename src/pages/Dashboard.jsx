@@ -41,12 +41,10 @@ export default function Dashboard() {
   var clickCountArr = useRef(0);
   var clickTimerArr = useRef(null);
 
-  // Referral copy state
   var copiedArr = useState(false);
   var copied = copiedArr[0];
   var setCopied = copiedArr[1];
 
-  // ─── SESSION AUTH CHECK ───
   useEffect(function () {
     if (!loading && biz) {
       var authStatus = sessionStorage.getItem('biz_auth_' + slug);
@@ -56,7 +54,6 @@ export default function Dashboard() {
     }
   }, [loading, biz, slug, navigate]);
 
-  // Load business data into editable state
   useEffect(function () {
     if (initialBiz) {
       setBiz(JSON.parse(JSON.stringify(initialBiz)));
@@ -66,7 +63,6 @@ export default function Dashboard() {
     }
   }, [initialBiz]);
 
-  // ─── Cloudinary Upload ───
   useEffect(function () {
     if (!window.cloudinary) {
       var s = document.createElement('script');
@@ -76,7 +72,6 @@ export default function Dashboard() {
     }
   }, []);
 
-  // ─── Triple Click Handler ───
   function handleNameClick() {
     clickCountArr.current++;
     if (clickTimerArr.current) clearTimeout(clickTimerArr.current);
@@ -91,14 +86,12 @@ export default function Dashboard() {
     }
   }
 
-  // ─── Copy Referral Link ───
   function handleCopyReferralLink() {
     var referralUrl = window.location.origin + '/signup?ref=' + biz.slug;
     navigator.clipboard.writeText(referralUrl).then(function () {
       setCopied(true);
       setTimeout(function () { setCopied(false); }, 2500);
     }).catch(function () {
-      // Fallback for older browsers
       var textArea = document.createElement('textarea');
       textArea.value = referralUrl;
       document.body.appendChild(textArea);
@@ -110,12 +103,11 @@ export default function Dashboard() {
     });
   }
 
-  // ─── Get visible tabs based on enabled features ───
   function getVisibleTabs() {
     if (!biz) return [];
     var tabs = [
       { id: 'info', label: 'Info' },
-      { id: 'security', label: 'Security' }, // NEW TAB
+      { id: 'security', label: 'Security' },
       { id: 'gallery', label: 'Gallery' }
     ];
     if (biz.servicesEnabled) tabs.push({ id: 'services', label: 'Services' });
@@ -153,7 +145,6 @@ export default function Dashboard() {
     widget.open();
   }
 
-  // ─── State Helpers ───
   function setField(field, value) {
     setBiz(function (p) { var n = Object.assign({}, p); n[field] = value; return n; });
   }
@@ -180,7 +171,6 @@ export default function Dashboard() {
     });
   }
 
-  // ─── Gallery Helpers ───
   function addGalleryGroup() {
     addItem('gallery', { id: 'g-' + Date.now(), group: '', images: [] });
   }
@@ -203,7 +193,6 @@ export default function Dashboard() {
     });
   }
 
-  // ─── Service Image Helpers ───
   function addServiceImage(svc) {
     uploadImage(function (url) {
       var imgs = (svc.images || []).concat([url]);
@@ -224,7 +213,6 @@ export default function Dashboard() {
     });
   }
 
-  // ─── Product Image Helpers ───
   function addProductImage(prod) {
     uploadImage(function (url) {
       var imgs = (prod.images || []).concat([url]);
@@ -245,7 +233,6 @@ export default function Dashboard() {
     });
   }
 
-  // ─── Car Image Helpers ───
   function addCarImage(car) {
     uploadImage(function (url) {
       var imgs = (car.images || []).concat([url]);
@@ -266,7 +253,6 @@ export default function Dashboard() {
     });
   }
 
-  // ─── Food Image Helpers ───
   function addFoodImage(food) {
     uploadImage(function (url) {
       var imgs = (food.images || []).concat([url]);
@@ -287,7 +273,6 @@ export default function Dashboard() {
     });
   }
 
-  // ─── Food Addon Helpers ───
   function addAddonGroup(foodId) {
     setBiz(function (p) {
       return Object.assign({}, p, {
@@ -364,12 +349,10 @@ export default function Dashboard() {
     });
   }
 
-  // ─── Logo Upload ───
   function handleLogoUpload() {
     uploadImage(function (url) { setField('logo', url); });
   }
 
-  // ─── Save ───
   async function handleSave(e) {
     e.preventDefault();
     setSaving(true);
@@ -396,7 +379,6 @@ export default function Dashboard() {
     }
   }
 
-  // ─── Loading ───
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
@@ -405,7 +387,6 @@ export default function Dashboard() {
     );
   }
 
-  // ─── Not Found ───
   if (!biz) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center px-4">
@@ -418,7 +399,6 @@ export default function Dashboard() {
     );
   }
 
-  // ─── Style vars ───
   var inp = "w-full bg-white border border-zinc-200 text-zinc-900 text-sm rounded-xl px-4 py-3 placeholder-zinc-400 focus:outline-none focus:border-purple-600 transition-all";
   var sel = "w-full appearance-none bg-white border border-zinc-200 text-zinc-900 text-sm rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-purple-600 transition-all cursor-pointer";
   var lbl = "block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5";
@@ -431,8 +411,6 @@ export default function Dashboard() {
     );
   }
 
-  // ─── Tab Content Renderers ───
-
   function renderInfoTab() {
     var referralCount = biz.referralCount || 0;
     var freeMonthsEarned = Math.floor(referralCount / 3);
@@ -441,7 +419,6 @@ export default function Dashboard() {
 
     return (
       <div className="space-y-6">
-        {/* ─── REFERRAL PROGRAM CARD ─── */}
         <div className="bg-white border border-zinc-100 rounded-2xl p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -456,7 +433,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Progress to next free month */}
           <div className="mb-4">
             <div className="flex justify-between items-center mb-1.5">
               <span className="text-xs font-medium text-zinc-600">
@@ -481,10 +457,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Referral Link */}
           <div className="bg-white rounded-xl border border-zinc-200 p-3">
             <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-bold mb-2">Your Referral Link</p>
-            <div className="flex items-center gap-2">
+            <div className=" items-center gap-2">
               <div className="flex-1 bg-zinc-50 rounded-lg px-3 py-2 border border-zinc-100">
                 <p className="text-xs text-zinc-600 font-mono truncate">{referralUrl}</p>
               </div>
@@ -511,23 +486,22 @@ export default function Dashboard() {
             </p>
           </div>
 
-          {/* How it works */}
           <div className="mt-4 pt-4 border-t border-zinc-200">
             <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-bold mb-2">How It Works</p>
             <div className="grid grid-cols-3 gap-3">
-              <div className="text-center">
+              <div key="step-1" className="text-center">
                 <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-1.5">
                   <span className="text-xs font-bold text-zinc-600">1</span>
                 </div>
                 <p className="text-[10px] text-zinc-600 font-medium">Share your link</p>
               </div>
-              <div className="text-center">
+              <div key="step-2" className="text-center">
                 <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-1.5">
                   <span className="text-xs font-bold text-zinc-600">2</span>
                 </div>
                 <p className="text-[10px] text-zinc-600 font-medium">Friend signs up</p>
               </div>
-              <div className="text-center">
+              <div key="step-3" className="text-center">
                 <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-1.5">
                   <span className="text-xs font-bold text-zinc-600">3</span>
                 </div>
@@ -537,7 +511,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Logo */}
         <div>
           <label className={lbl}>Logo</label>
           <div className="flex items-center gap-4">
@@ -555,7 +528,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Basic Info */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><label className={lbl}>Business Name</label><input className={inp} value={biz.name} onChange={function (e) { setField('name', e.target.value); }} /></div>
           <div><label className={lbl}>Accent Color</label><div className="flex gap-2"><input type="color" value={biz.accent} onChange={function (e) { setField('accent', e.target.value); }} className="w-12 h-11 rounded-lg border border-zinc-200 cursor-pointer p-1" /><input className={inp + " flex-1"} value={biz.accent} onChange={function (e) { setField('accent', e.target.value); }} /></div></div>
@@ -563,7 +535,6 @@ export default function Dashboard() {
         <div><label className={lbl}>Tagline</label><input className={inp} value={biz.tagline} onChange={function (e) { setField('tagline', e.target.value); }} /></div>
         <div><label className={lbl}>Bio</label><textarea className={inp + " h-24 resize-none"} value={biz.bio} onChange={function (e) { setField('bio', e.target.value); }} /></div>
 
-        {/* Contact */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><label className={lbl}>Phone</label><input className={inp} value={biz.phone} onChange={function (e) { setField('phone', e.target.value); }} /></div>
           <div><label className={lbl}>WhatsApp</label><input className={inp} value={biz.whatsapp} onChange={function (e) { setField('whatsapp', e.target.value); }} /></div>
@@ -572,16 +543,13 @@ export default function Dashboard() {
           <div><label className={lbl}>Hours</label><input className={inp} value={biz.hours} onChange={function (e) { setField('hours', e.target.value); }} /></div>
         </div>
 
-        {/* Socials */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><label className={lbl}>Instagram URL</label><input className={inp} value={(biz.socials || {}).instagram || ''} onChange={function (e) { setField('socials', Object.assign({}, biz.socials, { instagram: e.target.value })); }} placeholder="https://instagram.com/..." /></div>
           <div><label className={lbl}>TikTok URL</label><input className={inp} value={(biz.socials || {}).tiktok || ''} onChange={function (e) { setField('socials', Object.assign({}, biz.socials, { tiktok: e.target.value })); }} placeholder="https://tiktok.com/..." /></div>
         </div>
 
-        {/* Calendar ID only */}
         <div><label className={lbl}>Calendar ID (Email)</label><input className={inp} value={biz.calendarId} onChange={function (e) { setField('calendarId', e.target.value); }} /></div>
 
-        {/* Feature Toggles — HIDDEN BY DEFAULT, triple-click name to show */}
         {showToggles && (
           <div className="bg-white p-6 rounded-2xl border border-zinc-100 space-y-4">
             <div className="flex items-center justify-between">
@@ -611,7 +579,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Preview Link */}
         <div className="bg-white p-6 rounded-2xl border border-zinc-100 text-center">
           <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Your Live Page</p>
           <a href={'/' + biz.slug} target="_blank" rel="noreferrer" className="text-purple-600 font-semibold text-sm hover:underline">
@@ -622,7 +589,6 @@ export default function Dashboard() {
     );
   }
 
-  // ─── SECURITY TAB RENDERER ───
   function renderSecurityTab() {
     var isSetupRequired = sessionStorage.getItem('biz_auth_' + slug) === 'setup_required';
 
@@ -761,7 +727,7 @@ export default function Dashboard() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h3 className="text-sm font-bold text-zinc-800">Services ({(biz.services || []).length})</h3>
-          <button type="button" onClick={function () { addItem('services', { id: Date.now(), name: '', duration: '', price: '', description: '', image: '', images: [], showDetails: true }); }} className="text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-3 py-2 rounded-lg font-medium">+ Add</button>
+          <button type="button" onClick={function () { addItem('services', { id: Date.now(), name: '', duration: '', price: '', description: '', image: '', images: [], showDetails: true, discount_enabled: false, discount_price: 0 }); }} className="text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-3 py-2 rounded-lg font-medium">+ Add</button>
         </div>
         {(biz.services || []).map(function (s) {
           return (
@@ -772,6 +738,35 @@ export default function Dashboard() {
                 <input className={inp} placeholder="Price" type="number" value={s.price} onChange={function (e) { setNested('services', s.id, { price: parseInt(e.target.value) || 0 }); }} />
                 <input className={inp} placeholder="Duration" value={s.duration} onChange={function (e) { setNested('services', s.id, { duration: e.target.value }); }} />
               </div>
+              
+              {/* NEW: Discount Fields */}
+              <div className="border-t border-zinc-200 pt-3 mt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-zinc-600 uppercase tracking-wider">Discount Settings</span>
+                  <Toggle 
+                    checked={s.discount_enabled || false} 
+                    onChange={function () { setNested('services', s.id, { discount_enabled: !s.discount_enabled }); }} 
+                  />
+                </div>
+                {s.discount_enabled && (
+                  <div className="space-y-2">
+                    <input 
+                      className={inp} 
+                      placeholder="Discounted Price" 
+                      type="number" 
+                      value={s.discount_price || ''} 
+                      onChange={function (e) { setNested('services', s.id, { discount_price: parseInt(e.target.value) || 0 }); }} 
+                    />
+                    {s.discount_price > 0 && s.price > 0 && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-xs text-green-700">
+                        <span className="font-semibold">Discount: {Math.round(((s.price - s.discount_price) / s.price) * 100)}% off</span>
+                        <span className="block mt-0.5">Customers will pay ₦{s.discount_price.toLocaleString()} instead of ₦{s.price.toLocaleString()}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
               <textarea className={inp + " h-16 resize-none"} placeholder="Description" value={s.description} onChange={function (e) { setNested('services', s.id, { description: e.target.value }); }} />
               <div className="grid grid-cols-3 gap-2">
                 {(s.images || []).map(function (img, idx) {
@@ -798,14 +793,70 @@ export default function Dashboard() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h3 className="text-sm font-bold text-zinc-800">Products ({(biz.products || []).length})</h3>
-          <button type="button" onClick={function () { addItem('products', { id: Date.now(), name: '', price: '', description: '', image: '', images: [], showDetails: true }); }} className="text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-3 py-2 rounded-lg font-medium">+ Add</button>
+          <button type="button" onClick={function () { addItem('products', { id: Date.now(), name: '', price: '', description: '', image: '', images: [], showDetails: true, product_code: '', discount_enabled: false, discount_price: 0 }); }} className="text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-3 py-2 rounded-lg font-medium">+ Add</button>
         </div>
         {(biz.products || []).map(function (p) {
           return (
             <div key={p.id} className="relative p-4 rounded-xl border border-zinc-100 bg-zinc-50 space-y-2">
               <button type="button" onClick={function () { removeItem('products', p.id); }} className="absolute top-2 right-2 text-zinc-400 hover:text-red-500">&times;</button>
               <input className={inp} placeholder="Name" value={p.name} onChange={function (e) { setNested('products', p.id, { name: e.target.value }); }} />
+              
+              {/* NEW: Product Code Field */}
+              <div>
+                <label className={lbl}>Product Code</label>
+                <div className="flex gap-2">
+                  <input 
+                    className={inp + " flex-1 font-mono"} 
+                    placeholder="e.g., ABC123" 
+                    value={p.product_code || ''} 
+                    onChange={function (e) { setNested('products', p.id, { product_code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') }); }} 
+                  />
+                  {p.product_code && (
+                    <div className="flex items-center gap-1.5 px-3 bg-blue-50 border border-blue-200 rounded-xl">
+                      <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-[10px] text-blue-700 font-medium">Shareable Link</span>
+                    </div>
+                  )}
+                </div>
+                {p.product_code && (
+                  <p className="text-[10px] text-zinc-500 mt-1">
+                    Share this link with customers: <span className="font-mono bg-zinc-100 px-1.5 py-0.5 rounded">/{biz.slug}?code={p.product_code}</span>
+                  </p>
+                )}
+              </div>
+              
               <input className={inp} placeholder="Price" type="number" value={p.price} onChange={function (e) { setNested('products', p.id, { price: parseInt(e.target.value) || 0 }); }} />
+              
+              {/* NEW: Discount Fields */}
+              <div className="border-t border-zinc-200 pt-3 mt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-zinc-600 uppercase tracking-wider">Discount Settings</span>
+                  <Toggle 
+                    checked={p.discount_enabled || false} 
+                    onChange={function () { setNested('products', p.id, { discount_enabled: !p.discount_enabled }); }} 
+                  />
+                </div>
+                {p.discount_enabled && (
+                  <div className="space-y-2">
+                    <input 
+                      className={inp} 
+                      placeholder="Discounted Price" 
+                      type="number" 
+                      value={p.discount_price || ''} 
+                      onChange={function (e) { setNested('products', p.id, { discount_price: parseInt(e.target.value) || 0 }); }} 
+                    />
+                    {p.discount_price > 0 && p.price > 0 && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-xs text-green-700">
+                        <span className="font-semibold">Discount: {Math.round(((p.price - p.discount_price) / p.price) * 100)}% off</span>
+                        <span className="block mt-0.5">Customers will pay ₦{p.discount_price.toLocaleString()} instead of ₦{p.price.toLocaleString()}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
               <textarea className={inp + " h-16 resize-none"} placeholder="Description" value={p.description} onChange={function (e) { setNested('products', p.id, { description: e.target.value }); }} />
               <div className="grid grid-cols-3 gap-2">
                 {(p.images || []).map(function (img, idx) {
@@ -896,7 +947,6 @@ export default function Dashboard() {
                   <button type="button" onClick={function () { addFoodImage(f); }} className="aspect-square bg-zinc-100 border-2 border-dashed border-zinc-300 flex items-center justify-center text-zinc-400 hover:border-purple-500 hover:text-purple-500 transition-all text-sm">+</button>
                 )}
               </div>
-              {/* Addons */}
               <div className="pt-3 border-t border-zinc-200 space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Addons</span>
@@ -940,7 +990,7 @@ export default function Dashboard() {
   function renderTabContent() {
     switch (activeTab) {
       case 'info': return renderInfoTab();
-      case 'security': return renderSecurityTab(); // NEW CASE
+      case 'security': return renderSecurityTab();
       case 'gallery': return renderGalleryTab();
       case 'services': return renderServicesTab();
       case 'products': return renderProductsTab();
@@ -952,10 +1002,8 @@ export default function Dashboard() {
 
   var visibleTabs = getVisibleTabs();
 
-  // ─── MAIN RENDER ───
   return (
     <div className="min-h-screen bg-[#f8fafc] text-zinc-900">
-      {/* Header */}
       <div className="bg-white border-b border-zinc-100 px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -963,7 +1011,6 @@ export default function Dashboard() {
               <img src="/fav-removebg.png" alt="BookNaija" className="h-10 w-auto object-contain" />
             </a>
             <div className="h-6 w-px bg-zinc-200"></div>
-            {/* Triple-click the name to show toggles */}
             <div onClick={handleNameClick} className="cursor-default select-none">
               <h1 className="text-sm font-bold text-zinc-900 leading-tight">{biz.name}</h1>
               <p className="text-xs text-zinc-400">booknaija.com/{biz.slug}</p>
@@ -975,7 +1022,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Tab Bar — only shows enabled tabs */}
       <div className="bg-white border-b border-zinc-100 px-6">
         <div className="max-w-4xl mx-auto flex gap-1 overflow-x-auto">
           {visibleTabs.map(function (tab) {
@@ -994,13 +1040,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Content */}
       <form onSubmit={handleSave}>
         <div className="max-w-4xl mx-auto px-6 py-8">
           {renderTabContent()}
         </div>
 
-        {/* Sticky Save Button */}
         <div className="sticky bottom-0 bg-white border-t border-zinc-100 px-6 py-4 z-10">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             {errorMsg && <p className="text-xs text-red-500">{errorMsg}</p>}

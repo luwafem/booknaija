@@ -42,13 +42,11 @@ exports.handler = async function (event) {
       food_enabled: d.foodEnabled === true,
       socials: d.socials || {},
       gallery: d.gallery || [],
-      // ─── NEW SECURITY FIELDS ───
       security_code: d.securityCode || '',
       security_question_1: d.securityQuestion1 || '',
       security_answer_1: (d.securityAnswer1 || '').toLowerCase().trim(),
       security_question_2: d.securityQuestion2 || '',
       security_answer_2: (d.securityAnswer2 || '').toLowerCase().trim()
-      // ─── END SECURITY FIELDS ───
     };
 
     var { data: bizRow, error: bizErr } = await supabase
@@ -66,12 +64,10 @@ exports.handler = async function (event) {
     console.log('Business ID:', businessId);
 
     // ─── REFERRAL TRACKING ───
-    // Check if this user was referred, and make sure they aren't referring themselves
     if (d.referredBy && d.referredBy !== d.slug) {
       try {
         console.log('Processing referral from slug:', d.referredBy);
         
-        // Find the referring business
         const { data: referrer, error: refErr } = await supabase
           .from('businesses')
           .select('id, referral_count')
@@ -79,7 +75,6 @@ exports.handler = async function (event) {
           .single();
 
         if (!refErr && referrer) {
-          // Increment their count (fallback to 0 if null)
           const newCount = (referrer.referral_count || 0) + 1;
           
           const { error: updateRefErr } = await supabase
@@ -96,7 +91,6 @@ exports.handler = async function (event) {
           console.log('Referrer not found in database. Ignoring referral code.');
         }
       } catch (refCatchErr) {
-        // Don't let a referral error crash the whole signup
         console.error('Referral processing error:', refCatchErr.message);
       }
     }
@@ -107,7 +101,7 @@ exports.handler = async function (event) {
     await supabase.from('business_cars').delete().eq('business_id', businessId);
     await supabase.from('business_food').delete().eq('business_id', businessId);
 
-    // 3. Insert services
+    // 3. Insert services (UPDATED WITH DISCOUNTS)
     if (d.services && d.services.length > 0) {
       var serviceRows = d.services.map(function (s, i) {
         return {
@@ -116,6 +110,8 @@ exports.handler = async function (event) {
           name: s.name,
           duration: s.duration || '',
           price: parseInt(String(s.price).replace(/,/g, '')) || 0,
+          discount_enabled: s.discount_enabled === true,           // NEW
+          discount_price: parseInt(String(s.discount_price).replace(/,/g, '')) || 0, // NEW
           image: s.image || '',
           images: s.images || [],
           show_details: s.showDetails !== false,
@@ -127,7 +123,7 @@ exports.handler = async function (event) {
       if (sErr) console.error('Services error:', sErr);
     }
 
-    // 4. Insert products
+    // 4. Insert products (UPDATED WITH CODE & DISCOUNTS)
     if (d.products && d.products.length > 0) {
       var productRows = d.products.map(function (p, i) {
         return {
@@ -135,6 +131,9 @@ exports.handler = async function (event) {
           product_id: p.id,
           name: p.name,
           price: parseInt(String(p.price).replace(/,/g, '')) || 0,
+          product_code: (p.product_code || '').toUpperCase().trim(), // NEW
+          discount_enabled: p.discount_enabled === true,               // NEW
+          discount_price: parseInt(String(p.discount_price).replace(/,/g, '')) || 0, // NEW
           image: p.image || '',
           images: p.images || [],
           sizes: p.sizes || [],

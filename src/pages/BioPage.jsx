@@ -143,10 +143,13 @@ export default function BioPage() {
   const { slug } = useParams();
   const [params] = useSearchParams();
   const ref = params.get('reference') || params.get('trxref');
+  const codeParam = params.get('code') || '';
 
-  // ✅ NOW FETCHES FROM SUPABASE INSTEAD OF businesses.js
   const { business: biz, loading, error } = useBusiness(slug);
 
+  const [searchQuery, setSearchQuery] = useState(codeParam);
+  const [isSearchActive, setIsSearchActive] = useState(!!codeParam);
+  
   const [selectedId, setSelectedId] = useState('');
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [selectedProductVariants, setSelectedProductVariants] = useState({});
@@ -170,7 +173,36 @@ export default function BioPage() {
     }, 100);
   };
 
-  // ✅ LOADING STATE
+  // FIXED: Added optional chaining (?.) to prevent null crash during initial load
+  const filteredProducts = searchQuery 
+    ? (biz?.products || []).filter(p => 
+        (p.product_code && p.product_code.toLowerCase() === searchQuery.toLowerCase()) ||
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : (biz?.products || []);
+
+  const filteredServices = searchQuery
+    ? (biz?.services || []).filter(s =>
+        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.description && s.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : (biz?.services || []);
+
+  const filteredFood = searchQuery
+    ? (biz?.food || []).filter(f =>
+        f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (f.description && f.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : (biz?.food || []);
+
+  const filteredCars = searchQuery
+    ? (biz?.cars || []).filter(c =>
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.description && c.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : (biz?.cars || []);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-6">
@@ -182,7 +214,6 @@ export default function BioPage() {
     );
   }
 
-  // ✅ NOT FOUND / INACTIVE STATE
   if (!biz || !biz.active) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-6">
@@ -195,7 +226,6 @@ export default function BioPage() {
     );
   }
 
-  // ✅ PAYMENT CALLBACK — render booking form with reference
   if (ref) {
     return (
       <BookingForm 
@@ -210,20 +240,22 @@ export default function BioPage() {
   }
 
   const accent = biz.accent || '#c8a97e';
-  const showServices = biz.servicesEnabled && biz.services?.length > 0;
-  const showProducts = biz.productsEnabled && biz.products?.length > 0;
-  const showFood = biz.foodEnabled && biz.food?.length > 0;
-  const showCars = biz.carsEnabled && biz.cars?.length > 0;
+  const showServices = biz.servicesEnabled && filteredServices.length > 0;
+  const showProducts = biz.productsEnabled && filteredProducts.length > 0;
+  const showFood = biz.foodEnabled && filteredFood.length > 0;
+  const showCars = biz.carsEnabled && filteredCars.length > 0;
   
+  // UPDATED: Better ad-to-content ratio logic
   const adsEnabled = biz.adsEnabled !== false;
-  const totalItems = (biz.services?.length || 0) + (biz.products?.length || 0) + (biz.food?.length || 0) + (biz.cars?.length || 0);
+  const totalItems = filteredServices.length + filteredProducts.length + filteredFood.length + filteredCars.length;
   const hasAnyContent = showServices || showProducts || showFood || showCars;
-  const hasEnoughContent = totalItems >= 4;
-
-  const showAds = adsEnabled && hasAnyContent;
-  const showPrimaryAd = showAds;
-  const showSecondaryAd = showAds && hasEnoughContent;
-  const showFooterAd = showAds;
+  
+  // Only show primary ad if enabled, has content, and not searching
+  const showPrimaryAd = adsEnabled && hasAnyContent && !isSearchActive;
+  // Only show secondary ad if enabled, has content, AND at least 6 items (so it stays far away from primary ad)
+  const showSecondaryAd = adsEnabled && hasAnyContent && !isSearchActive && totalItems >= 6;
+  // Footer ad shows if enabled, has content, and at least 4 items
+  const showFooterAd = adsEnabled && hasAnyContent && !isSearchActive && totalItems >= 4;
 
   const isGrouped = biz.gallery?.length > 0 && typeof biz.gallery[0] === 'object' && biz.gallery[0].images;
   let heroImages = [];
@@ -232,6 +264,20 @@ export default function BioPage() {
   } else if (biz.gallery) {
     heroImages = biz.gallery.slice(0, 4);
   }
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setIsSearchActive(true);
+    } else {
+      setIsSearchActive(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setIsSearchActive(false);
+  };
 
   function handleServiceSelect(id) {
     setSelectedId(function(prev) {
@@ -344,7 +390,49 @@ export default function BioPage() {
           <Gallery gallery={biz.gallery} accent={accent} />
         )}
 
-        <div className="mx-6 mt-12 border-t border-white/[0.04]" />
+        <div className="px-6 mt-6">
+          <form onSubmit={handleSearch} className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg className="w-4 h-4 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by name, code, or description..."
+              className="w-full bg-white/[0.03] border border-white/10 rounded-xl pl-11 pr-10 py-3 text-sm text-white placeholder-stone-600 focus:outline-none focus:border-white/30 transition-colors"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-stone-500 hover:text-white transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </form>
+          
+          {isSearchActive && searchQuery && (
+            <div className="mt-2 flex items-center justify-between">
+              <p className="text-[11px] text-stone-500">
+                Showing results for "{searchQuery}"
+              </p>
+              <button
+                onClick={clearSearch}
+                className="text-[11px] text-stone-400 hover:text-white transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="mx-6 mt-6 border-t border-white/[0.04]" />
 
         {showPrimaryAd && (
           <div className="mx-6 mt-6">
@@ -355,9 +443,27 @@ export default function BioPage() {
           </div>
         )}
 
+        {isSearchActive && !hasAnyContent && (
+          <div className="px-6 mt-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-stone-900 border border-stone-800 mx-auto mb-4 flex items-center justify-center">
+              <svg className="w-6 h-6 text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <p className="text-stone-400 text-sm font-medium">No results found</p>
+            <p className="text-stone-600 text-xs mt-1">Try a different search term</p>
+            <button
+              onClick={clearSearch}
+              className="mt-4 px-4 py-2 rounded-lg text-xs font-medium text-stone-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+            >
+              View all items
+            </button>
+          </div>
+        )}
+
         {showServices && (
           <ServiceList
-            services={biz.services}
+            services={filteredServices}
             selectedId={selectedId}
             onSelect={handleServiceSelect}
             accent={accent}
@@ -366,7 +472,7 @@ export default function BioPage() {
 
         {showProducts && (
           <ProductList
-            products={biz.products}
+            products={filteredProducts}
             selectedProducts={selectedProducts}
             onSelect={handleProductSelect}
             accent={accent}
@@ -376,7 +482,7 @@ export default function BioPage() {
 
         {showFood && (
           <FoodList
-            food={biz.food}
+            food={filteredFood}
             selectedFood={selectedFood}
             foodVariants={selectedFoodVariants}
             onSelect={handleFoodSelect}
@@ -386,7 +492,7 @@ export default function BioPage() {
 
         {showCars && (
           <CarList
-            cars={biz.cars}
+            cars={filteredCars}
             selectedCar={selectedCar}
             onSelect={handleCarSelect}
             accent={accent}
@@ -427,15 +533,15 @@ export default function BioPage() {
         <div className="px-6 pt-12 pb-8 text-center">
           <ReferralLink slug={biz.slug} accent={accent} />
           <a 
-  href={"/dashboard/" + biz.slug} 
-  className="inline-flex items-center gap-1.5 text-[11px] text-stone-500 hover:text-stone-300 transition-colors mb-4"
->
-  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c-1.756.426-1.756 2.924 0 3.35a1.724 1.724 0 00-2.573 1.066c-.94 1.543.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c1.756-.426 1.756-2.924 0-3.35a1.724 1.724 0 002.573-1.066c.94-1.543-.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-  </svg>
-  Manage Business
-</a>
+            href={"/dashboard/" + biz.slug} 
+            className="inline-flex items-center gap-1.5 text-[11px] text-stone-500 hover:text-stone-300 transition-colors mb-4"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c-1.756.426-1.756 2.924 0 3.35a1.724 1.724 0 00-2.573 1.066c-.94 1.543.826 3.31-2.37 2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c1.756-.426 1.756-2.924 0-3.35a1.724 1.724 0 002.573-1.066c.94-1.543-.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Manage Business
+          </a>
 
           <nav className="flex justify-center gap-6 mb-6">
             <a href="/privacy" className="text-[11px] text-stone-500 hover:text-stone-300 underline decoration-stone-700 hover:decoration-stone-500 underline-offset-4 transition-colors">

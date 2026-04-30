@@ -9,18 +9,15 @@ export default function BookingForm({
   onProductDeselect, 
   reference, 
   productVariants = {},
-  // FOOD PROPS
   selectedFood = [],
   foodVariants = {},
   onFoodDeselect,
-  // NEW CAR PROPS
   selectedCar = null,
   onCarDeselect
 }) {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   
-  // NEW: Car Rental States
   const [rentalStart, setRentalStart] = useState('');
   const [rentalEnd, setRentalEnd] = useState('');
 
@@ -35,7 +32,6 @@ export default function BookingForm({
 
   const accent = biz.accent || '#c8a97e';
   
-  // Derive selections
   const svc = biz.services?.find((s) => s.id === selectedId);
   const selectedPrds = biz.products?.filter((p) => selectedProducts.includes(p.id)) || [];
   const selectedFd = biz.food?.filter((f) => selectedFood.includes(f.id)) || [];
@@ -50,10 +46,9 @@ export default function BookingForm({
 
   const hasSelection = isService || isProduct || isFood || isCar;
 
-  // Helper to get size/color for products
   const getProductVariant = (id) => productVariants[id] || {};
 
-  // --- TOTAL CALCULATION LOGIC (UPDATED FOR CARS) ---
+  // --- TOTAL CALCULATION LOGIC (UPDATED FOR DISCOUNTS) ---
   const totalAmount = useMemo(() => {
     if (isCar) {
       if (isRental && rentalStart && rentalEnd) {
@@ -61,10 +56,9 @@ export default function BookingForm({
         const end = new Date(rentalEnd);
         const diffTime = Math.abs(end - start);
         let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-        if (diffDays < 1) diffDays = 1; // Minimum 1 day
+        if (diffDays < 1) diffDays = 1;
         return selectedCar.price * diffDays;
       } else if (isSale) {
-        // Viewing fee for sales (e.g., 5000 Naira to book appointment)
         return 5000; 
       }
       return selectedCar.price;
@@ -78,13 +72,23 @@ export default function BookingForm({
     }
 
     if (isProduct) {
-      return selectedPrds.reduce((sum, p) => sum + p.price, 0);
+      // NEW: Use discount price if available
+      return selectedPrds.reduce((sum, p) => {
+        const hasDiscount = p.discount_enabled && p.discount_price > 0;
+        const price = hasDiscount ? p.discount_price : p.price;
+        return sum + price;
+      }, 0);
     }
 
-    return svc?.price || 0;
+    // NEW: Use discount price for services if available
+    if (svc) {
+      const hasDiscount = svc.discount_enabled && svc.discount_price > 0;
+      return hasDiscount ? svc.discount_price : svc.price;
+    }
+
+    return 0;
   }, [isCar, selectedCar, isRental, rentalStart, rentalEnd, isSale, isFood, selectedFd, foodVariants, isProduct, selectedPrds, svc]);
 
-  // Construct itemNames for Paystack/Database
   const itemNames = useMemo(() => {
     if (isCar) {
       if (isRental) {
@@ -108,11 +112,19 @@ export default function BookingForm({
         const parts = [p.name];
         if (v.size) parts.push(`Size: ${v.size}`);
         if (v.color) parts.push(`Color: ${v.color}`);
+        // NEW: Add discount info to name
+        const hasDiscount = p.discount_enabled && p.discount_price > 0;
+        if (hasDiscount) parts.push(`Discount Applied`);
         return parts.join(', ');
       }).join('; ');
     }
 
-    return svc?.name || '';
+    if (svc) {
+      const hasDiscount = svc.discount_enabled && svc.discount_price > 0;
+      return hasDiscount ? `${svc.name} (Discount Applied)` : svc.name;
+    }
+
+    return '';
   }, [isCar, selectedCar, isRental, rentalStart, rentalEnd, isFood, selectedFd, foodVariants, isProduct, selectedPrds, svc]);
 
   useEffect(() => {
@@ -155,7 +167,6 @@ export default function BookingForm({
     setErr('');
     
     try {
-      // Logic to handle Car specific payload
       let bookingDate = date;
       let bookingTime = time;
       
@@ -164,7 +175,6 @@ export default function BookingForm({
            bookingDate = rentalStart;
            bookingTime = `Until: ${rentalEnd}`;
         } else {
-           // Viewing
            bookingDate = date;
            bookingTime = time;
         }
@@ -178,19 +188,15 @@ export default function BookingForm({
           serviceId: isCar ? selectedCar.id : (isFood ? selectedFood.join(',') : (isProduct ? selectedProducts.join(',') : selectedId)), 
           serviceName: itemNames,
           amount: totalAmount,
-          // Date/Time Logic
           date: (isProduct || isRental) ? 'N/A' : bookingDate, 
           time: (isProduct || isRental) ? 'N/A' : bookingTime,
-          // Type determination
           type: isCar ? (isRental ? 'car_rental' : 'car_viewing') : (isFood ? 'food' : (isProduct ? 'product' : 'service')),
-          // Address needed for Food/Products/Rentals
           address: (isProduct || isFood || isRental) ? address : 'N/A',
           name, email, phone, calendarId: biz.calendarId,
         }),
       });
       const d = await r.json();
       if (d.authorization_url) {
-        // Persist payment context
         try {
           localStorage.setItem('payCtx', JSON.stringify({
             amount: totalAmount,
@@ -204,13 +210,20 @@ export default function BookingForm({
             customerPhone: phone,
             products: isProduct ? selectedPrds.map(p => {
               const v = getProductVariant(p.id);
-              return { name: p.name, price: p.price, size: v.size || null, color: v.color || null };
+              const hasDiscount = p.discount_enabled && p.discount_price > 0;
+              return { 
+                name: p.name, 
+                price: hasDiscount ? p.discount_price : p.price, 
+                originalPrice: hasDiscount ? p.price : null,
+                size: v.size || null, 
+                color: v.color || null,
+                productCode: p.product_code || null
+              };
             }) : [],
             food: isFood ? selectedFd.map(f => {
               const v = foodVariants[f.id];
               return { name: f.name, quantity: v.quantity, addons: v.addons, finalPrice: v.finalPrice };
             }) : [],
-            // NEW: Persist Car Data
             car: isCar ? {
               name: selectedCar.name,
               type: selectedCar.type,
@@ -234,13 +247,11 @@ export default function BookingForm({
 
     const isProductOk = booking.type === 'product' || ctx.type === 'product';
     const isFoodOk = booking.type === 'food' || ctx.type === 'food';
-    // NEW: Check if Car
     const isCarOk = booking.type === 'car_rental' || booking.type === 'car_viewing' || ctx.type === 'car_rental' || ctx.type === 'car_viewing';
     
     const paymentAmount = Number(booking.amount) || ctx.amount || 0;
 
     let calUrl = '#';
-    // Calendar only for Services or Car Viewings
     if (!isProductOk && !isFoodOk && !isCarOk && booking.date && booking.time) {
       const [h, min] = booking.time.split(':').map(Number);
       const end = `${String(Math.floor((h * 60 + min + 60) / 60)).padStart(2, '0')}:${String((h * 60 + min + 60) % 60).padStart(2, '0')}`;
@@ -250,13 +261,11 @@ export default function BookingForm({
 
     let waMessage = `Hi ${biz.name}! 👋\n\nI just made a ${isFoodOk ? 'food order' : (isProductOk ? 'purchase' : (isCarOk ? (ctx.car?.type === 'rent' ? 'car rental reservation' : 'car viewing appointment') : 'booking'))} on your page.\n\n`;
     
-    // Customer Details
     waMessage += `*Customer Details:*\n`;
     waMessage += `Name: ${booking.name || ctx.customerName || name}\n`;
     waMessage += `Email: ${booking.email || ctx.customerEmail || email}\n`;
     waMessage += `Phone: ${booking.phone || ctx.customerPhone || phone}\n\n`;
 
-    // Order/Booking Details
     if (isCarOk) {
       const car = ctx.car || {};
       waMessage += `*Car Details:*\n`;
@@ -296,7 +305,11 @@ export default function BookingForm({
           let itemLine = `• ${p.name}`;
           if (p.size) itemLine += ` | Size: ${p.size}`;
           if (p.color) itemLine += ` | Color: ${p.color}`;
+          if (p.productCode) itemLine += ` | Code: ${p.productCode}`;
           itemLine += ` - ₦${p.price.toLocaleString()}`;
+          if (p.originalPrice) {
+            itemLine += ` (Was: ₦${p.originalPrice.toLocaleString()})`;
+          }
           waMessage += `${itemLine}\n`;
         });
       } else {
@@ -340,7 +353,6 @@ export default function BookingForm({
           <p className="text-stone-600 mt-1.5 text-sm">Check your email for your Paystack receipt.</p>
           
           <div className="mt-8 flex flex-col items-center gap-3">
-            {/* Google Calendar Button (Services Only) */}
             {!isProductOk && !isFoodOk && !isCarOk && (
               <a href={calUrl} target="_blank" rel="noreferrer"
                 className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 rounded-xl text-sm font-medium transition-all hover:brightness-110"
@@ -398,7 +410,6 @@ export default function BookingForm({
   return (
     <form onSubmit={pay} className="space-y-5 mt-2">
       
-      {/* ── CAR SUMMARY SECTION (NEW) ── */}
       {isCar && (
         <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5" style={{ borderColor: `${accent}20` }}>
           <div className="flex gap-4">
@@ -426,7 +437,6 @@ export default function BookingForm({
             </div>
           </div>
           
-          {/* Live Rental Calculation */}
           {isRental && rentalStart && rentalEnd && (
              <div className="mt-3 pt-3 border-t border-white/5 text-right">
                <span className="text-xs text-stone-400">Total for selected days:</span>
@@ -436,16 +446,27 @@ export default function BookingForm({
         </div>
       )}
 
-      {/* ── SINGLE SERVICE SUMMARY ── */}
       {isService && (
         <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm"
           style={{ borderColor: `${accent}20` }}>
           <div className="min-w-0">
-            <p className="text-sm font-semibold truncate text-stone-200">{svc.name}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold truncate text-stone-200">{svc.name}</p>
+              {svc.discount_enabled && svc.discount_price > 0 && (
+                <span className="bg-red-500/20 text-red-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-red-500/30">
+                  DISCOUNT
+                </span>
+              )}
+            </div>
             <p className="text-xs text-stone-500 mt-1">{svc.duration}</p>
           </div>
           <div className="flex items-center gap-4 flex-shrink-0 ml-3">
-            <p className="text-sm font-bold tabular-nums" style={{ color: accent }}>₦{svc.price.toLocaleString()}</p>
+            <div className="text-right">
+              <p className="text-sm font-bold tabular-nums" style={{ color: accent }}>₦{totalAmount.toLocaleString()}</p>
+              {svc.discount_enabled && svc.discount_price > 0 && (
+                <p className="text-[10px] text-stone-600 line-through tabular-nums">₦{svc.price.toLocaleString()}</p>
+              )}
+            </div>
             <button type="button" onClick={onDeselect} className="text-stone-500 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded-lg">
               <XIcon className="w-4 h-4" />
             </button>
@@ -453,7 +474,6 @@ export default function BookingForm({
         </div>
       )}
 
-      {/* ── MULTIPLE PRODUCTS SUMMARY (CART VIEW) ── */}
       {isProduct && (
         <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm space-y-3" style={{ borderColor: `${accent}20` }}>
           <div className="flex items-center justify-between">
@@ -470,6 +490,9 @@ export default function BookingForm({
           <div className="space-y-3">
             {selectedPrds.map((p) => {
               const variant = getProductVariant(p.id);
+              const hasDiscount = p.discount_enabled && p.discount_price > 0;
+              const itemPrice = hasDiscount ? p.discount_price : p.price;
+              
               return (
                 <div key={p.id} className="flex items-start justify-between">
                   <div className="min-w-0 flex items-center gap-3">
@@ -477,8 +500,15 @@ export default function BookingForm({
                       <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-white/5" />
                     )}
                     <div className="flex flex-col">
-                      <p className="text-sm text-stone-300">{p.name}</p>
-                      {(variant.size || variant.color) && (
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-stone-300">{p.name}</p>
+                        {hasDiscount && (
+                          <span className="bg-red-500/20 text-red-400 text-[8px] font-bold px-1 py-0.5 rounded">
+                            -{Math.round(((p.price - p.discount_price) / p.price) * 100)}%
+                          </span>
+                        )}
+                      </div>
+                      {(variant.size || variant.color || p.product_code) && (
                         <div className="flex gap-2 text-[10px] text-stone-500 mt-0.5">
                           {variant.size && <span className="border border-white/10 px-1.5 rounded bg-white/5">Size: {variant.size}</span>}
                           {variant.color && (
@@ -490,12 +520,22 @@ export default function BookingForm({
                               {variant.color}
                             </span>
                           )}
+                          {p.product_code && (
+                            <span className="border border-white/10 px-1.5 rounded bg-white/5 font-mono">
+                              Code: {p.product_code}
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2 flex-shrink-0 ml-3">
-                    <p className="text-sm font-bold tabular-nums" style={{ color: accent }}>₦{p.price.toLocaleString()}</p>
+                    <div className="text-right">
+                      <p className="text-sm font-bold tabular-nums" style={{ color: accent }}>₦{itemPrice.toLocaleString()}</p>
+                      {hasDiscount && (
+                        <p className="text-[10px] text-stone-600 line-through tabular-nums">₦{p.price.toLocaleString()}</p>
+                      )}
+                    </div>
                     <button type="button" onClick={() => onProductDeselect(p.id)} className="text-stone-500 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-lg">
                       <XIcon className="w-3.5 h-3.5" />
                     </button>
@@ -514,7 +554,6 @@ export default function BookingForm({
         </div>
       )}
 
-      {/* ── FOOD SUMMARY (CART VIEW) ── */}
       {isFood && (
         <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm space-y-4" style={{ borderColor: `${accent}20` }}>
           <div className="flex items-center justify-between">
@@ -533,7 +572,6 @@ export default function BookingForm({
               const v = foodVariants[f.id];
               if (!v) return null;
               
-              // Flatten addons for display
               const flatAddons = Object.values(v.addons || {}).flat().filter(Boolean);
 
               return (
@@ -577,7 +615,6 @@ export default function BookingForm({
         </div>
       )}
 
-      {/* ── RENTAL DATES (Rentals Only) ── */}
       {isRental && (
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -591,7 +628,6 @@ export default function BookingForm({
         </div>
       )}
 
-      {/* ── VIEWING DATE (Car Sales Only) ── */}
       {isSale && (
          <div className="grid grid-cols-2 gap-3">
           <div>
@@ -605,7 +641,6 @@ export default function BookingForm({
         </div>
       )}
 
-      {/* ── DATE / TIME (Services Only) ── */}
       {!isProduct && !isFood && !isCar && (
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -619,7 +654,6 @@ export default function BookingForm({
         </div>
       )}
 
-      {/* ── ADDRESS (Rentals, Products, Food Only) ── */}
       {(isProduct || isFood || isRental) && (
         <div>
           <label className={labelStyle}>
@@ -629,7 +663,6 @@ export default function BookingForm({
         </div>
       )}
 
-      {/* ── CONTACT DETAILS ── */}
       <div className="space-y-4">
         <div>
           <label className={labelStyle}>Your Name</label>
@@ -645,7 +678,6 @@ export default function BookingForm({
         </div>
       </div>
 
-      {/* ── SUBMIT BUTTON ── */}
       <button 
         type="submit" 
         disabled={loading}
