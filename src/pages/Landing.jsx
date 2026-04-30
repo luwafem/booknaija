@@ -36,14 +36,11 @@ export default function Landing() {
   const [hasSearched, setHasSearched] = useState(false);
   const debounceTimer = useRef(null);
 
-  // Debounced Supabase search
   useEffect(function () {
-    // Clear previous timer
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
 
-    // If query is empty, reset state
     if (!searchQuery.trim()) {
       setSearchResults([]);
       setIsSearching(false);
@@ -51,10 +48,8 @@ export default function Landing() {
       return;
     }
 
-    // Show loading state immediately
     setIsSearching(true);
 
-    // Debounce: wait 300ms before hitting Supabase
     debounceTimer.current = setTimeout(async function () {
       try {
         var query = searchQuery.trim().toLowerCase();
@@ -81,7 +76,6 @@ export default function Landing() {
       }
     }, 300);
 
-    // Cleanup on unmount or query change
     return function () {
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current);
@@ -93,20 +87,26 @@ export default function Landing() {
     <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-zinc-100 selection:text-zinc-900">
       
       {/* Header */}
-      <nav className="bg-white sticky top-0 z-50 px-6">
-        <div className="max-w-7xl mx-auto py-3 flex justify-between items-center">
-          <Link to="/" className="flex items-center">
+      <nav className="bg-white sticky top-0 z-50 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto py-2.5 sm:py-3 flex justify-between items-center">
+          <Link to="/" className="flex items-center flex-shrink-0">
             <img 
               src="/fav-removebg.png" 
               alt="BookNaija Logo" 
-              className="h-20 w-auto object-contain transition-transform hover:scale-105" 
+              className="h-12 sm:h-20 w-auto object-contain transition-transform hover:scale-105" 
             />
           </Link>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <Link 
+              to="/dashboard"
+              className="text-xs sm:text-sm font-semibold text-zinc-600 hover:text-zinc-900 px-3 sm:px-4 py-2.5 rounded-lg border border-zinc-200 hover:border-zinc-300 transition-all active:scale-95 whitespace-nowrap"
+            >
+              Manage Business
+            </Link>
             <Link 
               to="/signup" 
-              className="bg-zinc-900 text-white px-6 py-2.5 text-sm font-semibold rounded-lg hover:bg-zinc-700 transition-all active:scale-95"
+              className="text-xs sm:text-sm font-semibold text-white bg-zinc-900 px-3 sm:px-6 py-2.5 rounded-lg hover:bg-zinc-700 transition-all active:scale-95 whitespace-nowrap"
             >
               Get Started
             </Link>
@@ -171,7 +171,6 @@ export default function Landing() {
                 )}
               </div>
 
-              {/* Search Results Dropdown */}
               {searchQuery.trim() && (
                 <div className="mt-2 bg-white border border-zinc-200 rounded-xl shadow-lg overflow-hidden">
                   {isSearching ? (

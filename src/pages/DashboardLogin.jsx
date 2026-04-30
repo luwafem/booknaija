@@ -208,7 +208,7 @@ export default function DashboardLogin() {
                 value={slug}
                 onChange={function(e) { setSlug(e.target.value); }}
                 placeholder="your-business-slug"
-                className="flex-1 px-3 py-3 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none"
+                className="flex-1 px-3 py-3 text-sm text-white placeholder-zinc-400 focus:outline-none"
                 autoFocus
               />
             </div>
