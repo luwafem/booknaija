@@ -61,6 +61,27 @@ export default function Onboarding() {
   var isAutoBusiness = businessType === 'Auto' || businessType === 'Auto Dealer / Rental';
   var isFoodBusiness = businessType === 'Restaurant' || businessType === 'Restaurant / Food';
 
+  // ─── NEW SECURITY STATES ───
+  var securityCodeArr = useState('');
+  var securityCode = securityCodeArr[0];
+  var setSecurityCode = securityCodeArr[1];
+
+  var securityQuestion1Arr = useState('');
+  var securityQuestion1 = securityQuestion1Arr[0];
+  var setSecurityQuestion1 = securityQuestion1Arr[1];
+
+  var securityAnswer1Arr = useState('');
+  var securityAnswer1 = securityAnswer1Arr[0];
+  var setSecurityAnswer1 = securityAnswer1Arr[1];
+
+  var securityQuestion2Arr = useState('');
+  var securityQuestion2 = securityQuestion2Arr[0];
+  var setSecurityQuestion2 = securityQuestion2Arr[1];
+
+  var securityAnswer2Arr = useState('');
+  var securityAnswer2 = securityAnswer2Arr[0];
+  var setSecurityAnswer2 = securityAnswer2Arr[1];
+
   var loadingArr = useState(false);
   var loading = loadingArr[0];
   var setLoading = loadingArr[1];
@@ -452,6 +473,18 @@ export default function Onboarding() {
     setLoading(true);
     setError('');
 
+    // ─── SECURITY VALIDATION ───
+    if (securityCode.length !== 4) {
+      setError('Please set a valid 4-digit security code.');
+      setLoading(false);
+      return;
+    }
+    if (!securityQuestion1 || !securityAnswer1.trim() || !securityQuestion2 || !securityAnswer2.trim()) {
+      setError('Please select and answer both security questions.');
+      setLoading(false);
+      return;
+    }
+
     var honeypot = document.getElementById('formspree_gotcha');
     if (honeypot && honeypot.value) {
       setLoading(false);
@@ -561,6 +594,7 @@ export default function Onboarding() {
       tagline: 'A professional ' + businessType + ' in Lagos',
       bio: bio,
       phone: phone,
+      referredBy: bizData.referredBy || null,
       whatsapp: whatsapp,
       email: email,
       location: locationAddr,
@@ -576,6 +610,13 @@ export default function Onboarding() {
       servicesEnabled: !isAutoBusiness,
       productsEnabled: !isAutoBusiness,
       foodEnabled: isFoodBusiness,
+      // ─── NEW SECURITY PAYLOAD ───
+      securityCode: securityCode,
+      securityQuestion1: securityQuestion1,
+      securityAnswer1: securityAnswer1.trim().toLowerCase(),
+      securityQuestion2: securityQuestion2,
+      securityAnswer2: securityAnswer2.trim().toLowerCase(),
+      // ─── END SECURITY PAYLOAD ───
       gallery: finalGallery,
       services: servicesData,
       products: productsData,
@@ -678,6 +719,52 @@ export default function Onboarding() {
             tabIndex={-1}
             autoComplete="off"
           />
+
+          {/* ─── NEW DASHBOARD SECURITY SECTION ─── */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100">
+            <h2 className={sectionTitle}>Dashboard Security</h2>
+            <p className={sectionDesc}>You will need these to log into your management dashboard.</p>
+            
+            <div className="space-y-5">
+              <div>
+                <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">4-Digit Security Code</label>
+                <input 
+                  className={inputBase + " font-mono tracking-widest text-center text-xl"} 
+                  placeholder="••••" 
+                  type="password"
+                  maxLength={4}
+                  inputMode="numeric"
+                  value={securityCode}
+                  onChange={function(e) { setSecurityCode(e.target.value.replace(/\D/g, '')); }}
+                  autoFocus
+                />
+              </div>
+              
+              <div className="border-t border-zinc-100 pt-5">
+                <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Security Question 1</label>
+                <select className={selectBase} value={securityQuestion1} onChange={function(e) { setSecurityQuestion1(e.target.value); }}>
+                  <option value="" disabled>Select a question...</option>
+                  <option value="What is your pet's name?">What is your pet's name?</option>
+                  <option value="What city were you born in?">What city were you born in?</option>
+                  <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+                  <option value="What was the name of your first school?">What was the name of your first school?</option>
+                </select>
+                <input className={inputBase + " mt-2"} placeholder="Your answer" value={securityAnswer1} onChange={function(e) { setSecurityAnswer1(e.target.value); }} />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Security Question 2</label>
+                <select className={selectBase} value={securityQuestion2} onChange={function(e) { setSecurityQuestion2(e.target.value); }}>
+                  <option value="" disabled>Select a question...</option>
+                  <option value="What is your favorite childhood movie?">What is your favorite childhood movie?</option>
+                  <option value="What street did you grow up on?">What street did you grow up on?</option>
+                  <option value="What is the name of your best friend?">What is the name of your best friend?</option>
+                  <option value="What was your first car?">What was your first car?</option>
+                </select>
+                <input className={inputBase + " mt-2"} placeholder="Your answer" value={securityAnswer2} onChange={function(e) { setSecurityAnswer2(e.target.value); }} />
+              </div>
+            </div>
+          </div>
 
           {/* GALLERY */}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100">

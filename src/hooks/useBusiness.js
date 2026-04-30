@@ -77,13 +77,23 @@ function transformBusiness(row) {
     subaccountCode: row.subaccount_code || '',
     calendarId: row.calendar_id || '',
     active: row.active,
-    adsEnabled: row.ads_enabled,
+    adsEnabled: row.ads_enabled !== false, // Fixed: prevents crash if null for old users
     carsEnabled: row.cars_enabled,
     servicesEnabled: row.services_enabled,
     productsEnabled: row.products_enabled,
     foodEnabled: row.food_enabled,
     socials: row.socials || {},
     gallery: row.gallery || [],
+    
+    // ─── SECURITY FIELDS ───
+    securityCode: row.security_code || '',
+    securityQuestion1: row.security_question_1 || '',
+    securityAnswer1: row.security_answer_1 || '',
+    securityQuestion2: row.security_question_2 || '',
+    securityAnswer2: row.security_answer_2 || '',
+
+    // ─── REFERRAL FIELD ───
+    referralCount: row.referral_count || 0,
 
     services: sortByOrder(row.business_services || []).map(function (s) {
       return {

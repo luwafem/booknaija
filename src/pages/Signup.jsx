@@ -140,7 +140,8 @@ export default function Signup() {
       location: formData.get('business_address'),
       instagram: formData.get('instagram_link'),
       tiktok: formData.get('tiktok_link'),
-      referralCode
+      referralCode,
+      referredBy: referralCode  // Add this for the backend to track
     });
     
     setLoading(false);

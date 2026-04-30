@@ -41,7 +41,14 @@ exports.handler = async function (event) {
       products_enabled: d.productsEnabled !== false,
       food_enabled: d.foodEnabled === true,
       socials: d.socials || {},
-      gallery: d.gallery || []
+      gallery: d.gallery || [],
+      // ─── NEW SECURITY FIELDS ───
+      security_code: d.securityCode || '',
+      security_question_1: d.securityQuestion1 || '',
+      security_answer_1: (d.securityAnswer1 || '').toLowerCase().trim(),
+      security_question_2: d.securityQuestion2 || '',
+      security_answer_2: (d.securityAnswer2 || '').toLowerCase().trim()
+      // ─── END SECURITY FIELDS ───
     };
 
     var { data: bizRow, error: bizErr } = await supabase
@@ -57,6 +64,42 @@ exports.handler = async function (event) {
 
     var businessId = bizRow.id;
     console.log('Business ID:', businessId);
+
+    // ─── REFERRAL TRACKING ───
+    // Check if this user was referred, and make sure they aren't referring themselves
+    if (d.referredBy && d.referredBy !== d.slug) {
+      try {
+        console.log('Processing referral from slug:', d.referredBy);
+        
+        // Find the referring business
+        const { data: referrer, error: refErr } = await supabase
+          .from('businesses')
+          .select('id, referral_count')
+          .eq('slug', d.referredKey)
+          .single();
+
+        if (!refErr && referrer) {
+          // Increment their count (fallback to 0 if null)
+          const newCount = (referrer.referral_count || 0) + 1;
+          
+          const { error: updateRefErr } = await supabase
+            .from('businesses')
+            .update({ referral_count: newCount })
+            .eq('id', referrer.id);
+
+          if (updateRefErr) {
+            console.error('Failed to update referral count:', updateRefErr.message);
+          } else {
+            console.log('Successfully updated referral count for', d.referredBy, 'to', newCount);
+          }
+        } else {
+          console.log('Referrer not found in database. Ignoring referral code.');
+        }
+      } catch (refCatchErr) {
+        // Don't let a referral error crash the whole signup
+        console.error('Referral processing error:', refCatchErr.message);
+      }
+    }
 
     // 2. Clear old related data
     await supabase.from('business_services').delete().eq('business_id', businessId);

@@ -41,6 +41,21 @@ export default function Dashboard() {
   var clickCountArr = useRef(0);
   var clickTimerArr = useRef(null);
 
+  // Referral copy state
+  var copiedArr = useState(false);
+  var copied = copiedArr[0];
+  var setCopied = copiedArr[1];
+
+  // ─── SESSION AUTH CHECK ───
+  useEffect(function () {
+    if (!loading && biz) {
+      var authStatus = sessionStorage.getItem('biz_auth_' + slug);
+      if (!authStatus) {
+        navigate('/dashboard');
+      }
+    }
+  }, [loading, biz, slug, navigate]);
+
   // Load business data into editable state
   useEffect(function () {
     if (initialBiz) {
@@ -76,11 +91,31 @@ export default function Dashboard() {
     }
   }
 
+  // ─── Copy Referral Link ───
+  function handleCopyReferralLink() {
+    var referralUrl = window.location.origin + '/signup?ref=' + biz.slug;
+    navigator.clipboard.writeText(referralUrl).then(function () {
+      setCopied(true);
+      setTimeout(function () { setCopied(false); }, 2500);
+    }).catch(function () {
+      // Fallback for older browsers
+      var textArea = document.createElement('textarea');
+      textArea.value = referralUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(function () { setCopied(false); }, 2500);
+    });
+  }
+
   // ─── Get visible tabs based on enabled features ───
   function getVisibleTabs() {
     if (!biz) return [];
     var tabs = [
       { id: 'info', label: 'Info' },
+      { id: 'security', label: 'Security' }, // NEW TAB
       { id: 'gallery', label: 'Gallery' }
     ];
     if (biz.servicesEnabled) tabs.push({ id: 'services', label: 'Services' });
@@ -399,8 +434,109 @@ export default function Dashboard() {
   // ─── Tab Content Renderers ───
 
   function renderInfoTab() {
+    var referralCount = biz.referralCount || 0;
+    var freeMonthsEarned = Math.floor(referralCount / 3);
+    var referralsUntilNextMonth = 3 - (referralCount % 3);
+    var referralUrl = window.location.origin + '/signup?ref=' + biz.slug;
+
     return (
       <div className="space-y-6">
+        {/* ─── REFERRAL PROGRAM CARD ─── */}
+        <div className="bg-white border border-zinc-100 rounded-2xl p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-bold text-zinc-600 flex items-center gap-2">
+                Referral Program
+              </h3>
+              <p className="text-xs text-zinc-600 mt-1">Refer 3 friends = 1 Free Month</p>
+            </div>
+            <div className="text-right">
+              <p className="text-3xl font-bold text-zinc-600">{referralCount}</p>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Total Referrals</p>
+            </div>
+          </div>
+
+          {/* Progress to next free month */}
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-1.5">
+              <span className="text-xs font-medium text-zinc-600">
+                {referralsUntilNextMonth === 3 
+                  ? 'Start referring to earn rewards' 
+                  : referralsUntilNextMonth + ' more until next free month'
+                }
+              </span>
+              <span className="text-xs font-bold text-zinc-600">
+                {freeMonthsEarned > 0 ? freeMonthsEarned + ' month' + (freeMonthsEarned > 1 ? 's' : '') + ' earned!' : '0 months earned'}
+              </span>
+            </div>
+            <div className="w-full bg-zinc-300 rounded-full h-2">
+              <div 
+                className="bg-zinc-600 h-2 rounded-full transition-all duration-500" 
+                style={{ width: Math.min((referralCount % 3) / 3 * 100, 100) + '%' }}
+              ></div>
+            </div>
+            <div className="flex justify-between mt-1">
+              <span className="text-[10px] text-zinc-600">0</span>
+              <span className="text-[10px] text-zinc-600">3</span>
+            </div>
+          </div>
+
+          {/* Referral Link */}
+          <div className="bg-white rounded-xl border border-zinc-200 p-3">
+            <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-bold mb-2">Your Referral Link</p>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 bg-zinc-50 rounded-lg px-3 py-2 border border-zinc-100">
+                <p className="text-xs text-zinc-600 font-mono truncate">{referralUrl}</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyReferralLink}
+                className={"px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap " + (copied 
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-zinc-600 text-white hover:bg-purple-700 active:scale-95'
+                )}
+              >
+                {copied ? (
+                  <span className="flex items-center gap-1">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Copied!
+                  </span>
+                ) : 'Copy Link'}
+              </button>
+            </div>
+            <p className="text-[10px] text-zinc-600 mt-2">
+              Share this link with friends. When they sign up, your counter increases automatically.
+            </p>
+          </div>
+
+          {/* How it works */}
+          <div className="mt-4 pt-4 border-t border-zinc-200">
+            <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-bold mb-2">How It Works</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center">
+                <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-1.5">
+                  <span className="text-xs font-bold text-zinc-600">1</span>
+                </div>
+                <p className="text-[10px] text-zinc-600 font-medium">Share your link</p>
+              </div>
+              <div className="text-center">
+                <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-1.5">
+                  <span className="text-xs font-bold text-zinc-600">2</span>
+                </div>
+                <p className="text-[10px] text-zinc-600 font-medium">Friend signs up</p>
+              </div>
+              <div className="text-center">
+                <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-1.5">
+                  <span className="text-xs font-bold text-zinc-600">3</span>
+                </div>
+                <p className="text-[10px] text-zinc-600 font-medium">Earn free month</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Logo */}
         <div>
           <label className={lbl}>Logo</label>
@@ -481,6 +617,95 @@ export default function Dashboard() {
           <a href={'/' + biz.slug} target="_blank" rel="noreferrer" className="text-purple-600 font-semibold text-sm hover:underline">
             booknaija.com/{biz.slug}
           </a>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── SECURITY TAB RENDERER ───
+  function renderSecurityTab() {
+    var isSetupRequired = sessionStorage.getItem('biz_auth_' + slug) === 'setup_required';
+
+    return (
+      <div className="space-y-6">
+        {isSetupRequired && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 text-red-500">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-red-800 mb-1">Security Not Set Up</p>
+                <p className="text-xs text-red-700 leading-relaxed">
+                  Your dashboard is currently unprotected. Please set a security code and questions below, then click <span className="font-bold">Save Changes</span>.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!isSetupRequired && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 text-amber-500">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-amber-800 mb-1">Important</p>
+                <p className="text-xs text-amber-700 leading-relaxed">
+                  Changing your security code or questions will take effect immediately. Do not forget these, as they cannot be recovered.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="bg-white p-6 rounded-2xl border border-zinc-100 space-y-6">
+          <h3 className="text-sm font-bold text-zinc-800">4-Digit Security Code</h3>
+          <div>
+            <label className={lbl}>Code</label>
+            <input 
+              className={inp + " font-mono tracking-widest text-center text-xl"} 
+              type="password"
+              maxLength={4}
+              inputMode="numeric"
+              value={biz.securityCode || ''}
+              onChange={function(e) { setField('securityCode', e.target.value.replace(/\D/g, '').substring(0, 4)); }}
+              placeholder="Enter new 4-digit code"
+            />
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl border border-zinc-100 space-y-6">
+          <h3 className="text-sm font-bold text-zinc-800">Security Questions</h3>
+          
+          <div>
+            <label className={lbl}>Question 1</label>
+            <select className={sel} value={biz.securityQuestion1 || ''} onChange={function(e) { setField('securityQuestion1', e.target.value); }}>
+              <option value="" disabled>Select a question...</option>
+              <option value="What is your pet's name?">What is your pet's name?</option>
+              <option value="What city were you born in?">What city were you born in?</option>
+              <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+              <option value="What was the name of your first school?">What was the name of your first school?</option>
+            </select>
+            <input className={inp + " mt-2"} placeholder="Your answer" value={biz.securityAnswer1 || ''} onChange={function(e) { setField('securityAnswer1', e.target.value); }} />
+          </div>
+
+          <div>
+            <label className={lbl}>Question 2</label>
+            <select className={sel} value={biz.securityQuestion2 || ''} onChange={function(e) { setField('securityQuestion2', e.target.value); }}>
+              <option value="" disabled>Select a question...</option>
+              <option value="What is your favorite childhood movie?">What is your favorite childhood movie?</option>
+              <option value="What street did you grow up on?">What street did you grow up on?</option>
+              <option value="What is the name of your best friend?">What is the name of your best friend?</option>
+              <option value="What was your first car?">What was your first car?</option>
+            </select>
+            <input className={inp + " mt-2"} placeholder="Your answer" value={biz.securityAnswer2 || ''} onChange={function(e) { setField('securityAnswer2', e.target.value); }} />
+          </div>
         </div>
       </div>
     );
@@ -715,6 +940,7 @@ export default function Dashboard() {
   function renderTabContent() {
     switch (activeTab) {
       case 'info': return renderInfoTab();
+      case 'security': return renderSecurityTab(); // NEW CASE
       case 'gallery': return renderGalleryTab();
       case 'services': return renderServicesTab();
       case 'products': return renderProductsTab();
