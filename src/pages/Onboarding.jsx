@@ -627,7 +627,16 @@ export default function Onboarding() {
     })
     .then(function(data) {
       if (data.ok) {
-        navigate('/onboarding-success');
+        // Save to sessionStorage so the success page survives a refresh
+        sessionStorage.setItem('new_biz_slug', businessSlug);
+        sessionStorage.setItem('new_biz_name', businessName);
+
+        navigate('/onboarding-success', {
+          state: {
+            businessName: businessName,
+            businessSlug: businessSlug
+          }
+        });
       } else {
         throw new Error(data.error || 'Failed to save business configuration.');
       }
