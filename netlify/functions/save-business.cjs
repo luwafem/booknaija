@@ -31,7 +31,7 @@ exports.handler = async function (event) {
       accent: d.accent || '#c8a97e',
       avatar: '',
       hero: d.hero || '',
-      paystack_public_key: d.paystackPublicKey || 'pk_test_129628160c0fdb0e1e837751e5ff0233872676b8',
+      paystack_public_key: d.paystackPublicKey || 'pk_live_2ba1413aaaf5091188571ea6f87cca34945d943c',
       subaccount_code: d.subaccountCode || '',
       calendar_id: d.calendarId || '',
       active: true,
