@@ -41,10 +41,10 @@ export function useBusinessWithSEO(slug) {
   // Generate structured data
   const structuredData = useMemo(() => {
     if (!biz || !biz.active) return null;
-    return {
-      ...generateBusinessSchema(biz),
-      ...generateBreadcrumbSchema(biz),
-    };
+    return [
+      generateBusinessSchema(biz),
+      generateBreadcrumbSchema(biz)
+    ];
   }, [biz]);
 
   // Return everything needed for the <SEO> component
