@@ -17,13 +17,15 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const SITE_URL = 'https://booknaija.com';
+const TODAY = new Date().toISOString().split('T')[0];
 
 async function generateSitemap() {
   console.log('Fetching active businesses...');
   
+  // FIX: Removed 'updated_at' from the query
   const { data: businesses, error } = await supabase
     .from('businesses')
-    .select('slug, updated_at')
+    .select('slug')
     .eq('active', true);
 
   if (error) {
@@ -42,7 +44,8 @@ async function generateSitemap() {
       url: `/${biz.slug}`,
       priority: '0.8',
       changefreq: 'weekly',
-      lastmod: biz.updated_at || new Date().toISOString().split('T')[0],
+      // FIX: Use today's date instead of updated_at
+      lastmod: TODAY,
     })),
   ];
 
