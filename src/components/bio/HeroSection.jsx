@@ -14,7 +14,7 @@ export default function HeroSection({ biz }) {
   return (
     <div className="relative w-full overflow-hidden bg-[#0a0a0a] text-white" style={{ minHeight: '85dvh' }}>
       
-      {/* 1. Immersive Editorial Background */}
+      {/* Background images - add aria-hidden */}
       {hasImages && (
         <>
           <style>{`
@@ -27,7 +27,7 @@ export default function HeroSection({ biz }) {
             }
           `}</style>
           
-          <div className="absolute inset-0 h-full w-full overflow-hidden z-0">
+          <div className="absolute inset-0 h-full w-full overflow-hidden z-0" aria-hidden="true">
             <div className="flex animate-hero-scroll h-full w-full opacity-60 grayscale-[40%]">
               {[...heroImages, ...heroImages].map((img, i) => (
                 <img
@@ -46,22 +46,23 @@ export default function HeroSection({ biz }) {
           <div 
             className="absolute inset-0 z-10 pointer-events-none opacity-[0.15] mix-blend-overlay"
             style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }}
+            aria-hidden="true"
           />
         </>
       )}
 
-      {/* 2. Content Layer */}
-      <div className="relative z-20 max-w-lg mx-auto px-6 pt-16 pb-12 flex flex-col items-center justify-end h-full min-h-[85dvh]">
+      {/* Content Layer with semantic markup */}
+      <header className="relative z-20 max-w-lg mx-auto px-6 pt-16 pb-12 flex flex-col items-center justify-end h-full min-h-[85dvh]">
         
-        {/* Unified Logo/Avatar Branding */}
         <div className="flex flex-col items-center text-center mb-8 animate-fade-in-up">
           <div className="relative mb-8">
-             <div className="relative w-32 h-32   overflow-hidden flex items-center justify-center shadow-2xl">
+             <div className="relative w-32 h-32 overflow-hidden flex items-center justify-center shadow-2xl">
                 {biz.logo || biz.avatar ? (
                   <img 
                     src={biz.logo || biz.avatar} 
-                    alt={biz.name} 
-                    className="w-full h-full object-contain p-3" 
+                    alt={`${biz.name} logo`}
+                    className="w-full h-full object-contain p-3"
+                    itemProp="logo"
                   />
                 ) : (
                   <span className="text-3xl font-bold tracking-tighter" style={{ color: accent }}>{initials}</span>
@@ -69,41 +70,44 @@ export default function HeroSection({ biz }) {
              </div>
           </div>
 
-          <h1 className="text-5xl font-heading font-bold tracking-tight text-white mb-3 leading-[1.1] capitalize drop-shadow-2xl">
+          <h1 
+            className="text-5xl font-heading font-bold tracking-tight text-white mb-3 leading-[1.1] capitalize drop-shadow-2xl"
+            itemProp="name"
+          >
             {biz.name}
           </h1>
           
-          
-
-          <p className="text-[11px] uppercase tracking-[0.3em] text-stone-400 font-medium max-w-[280px]">
+          <p 
+            className="text-[11px] uppercase tracking-[0.3em] text-stone-400 font-medium max-w-[280px]"
+            itemProp="description"
+          >
             {biz.tagline}
           </p>
         </div>
 
-        {/* Bio */}
         {biz.bio && (
           <p className="text-sm font-sans font-normal text-stone-300 leading-relaxed text-center mb-10 max-w-sm animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
             {biz.bio}
           </p>
         )}
 
-        {/* Info Pills */}
+        {/* Info Pills with semantic markup */}
         <div className="flex flex-wrap justify-center gap-2 mb-12 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           {biz.location && (
-            <div className="px-5 py-2.5 bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-2 shadow-sm">
+            <address className="px-5 py-2.5 bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-2 shadow-sm not-italic">
               <MapPinIcon className="w-3 h-3" style={{ color: accent }} />
-              <span className="text-[10px] font-bold text-stone-200 uppercase tracking-widest">{biz.location}</span>
-            </div>
+              <span className="text-[10px] font-bold text-stone-200 uppercase tracking-widest" itemProp="address">{biz.location}</span>
+            </address>
           )}
           {biz.hours && (
             <div className="px-5 py-2.5 bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-2 shadow-sm">
               <ClockIcon className="w-3 h-3" style={{ color: accent }} />
-              <span className="text-[10px] font-bold text-stone-200 uppercase tracking-widest">{biz.hours}</span>
+              <time className="text-[10px] font-bold text-stone-200 uppercase tracking-widest" itemProp="openingHours">{biz.hours}</time>
             </div>
           )}
         </div>
 
-        {/* Action Buttons: Minimalist Luxury Style */}
+        {/* Action Buttons */}
         <div className="w-full flex flex-col gap-3 mb-10 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
           <a
             href={biz.whatsapp ? `https://wa.me/${biz.whatsapp}` : `https://wa.me/${biz.phone?.replace(/\D/g, '')}`}
@@ -111,34 +115,51 @@ export default function HeroSection({ biz }) {
             rel="noreferrer"
             className="group relative flex items-center justify-center gap-3 py-5 rounded-full overflow-hidden transition-all duration-500 active:scale-[0.97]"
             style={{ backgroundColor: accent }}
+            aria-label={`Contact ${biz.name} on WhatsApp`}
           >
             <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <WhatsAppIcon className="w-4 h-4 text-black" />
             <span className="text-black font-bold uppercase tracking-[0.2em] text-[10px]">whatsapp</span>
           </a>
           
-          <a
-            href={`tel:${biz.phone}`}
-            className="flex items-center justify-center gap-3 py-5 rounded-full border border-white/10 bg-white/[0.03] backdrop-blur-md text-white font-bold hover:bg-white/[0.08] hover:border-white/20 transition-all duration-300 uppercase tracking-[0.2em] text-[10px]"
-          >
-            <PhoneIcon className="w-3.5 h-3.5 opacity-60" /> Call 
-          </a>
+          {biz.phone && (
+            <a
+              href={`tel:${biz.phone}`}
+              className="flex items-center justify-center gap-3 py-5 rounded-full border border-white/10 bg-white/[0.03] backdrop-blur-md text-white font-bold hover:bg-white/[0.08] hover:border-white/20 transition-all duration-300 uppercase tracking-[0.2em] text-[10px]"
+              itemProp="telephone"
+              aria-label={`Call ${biz.name} at ${biz.phone}`}
+            >
+              <PhoneIcon className="w-3.5 h-3.5 opacity-60" /> Call 
+            </a>
+          )}
         </div>
 
         {/* Socials */}
-        <div className="flex justify-center gap-8 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+        <nav className="flex justify-center gap-8 animate-fade-in-up" style={{ animationDelay: '0.4s' }} aria-label="Social media links">
           {biz.socials?.instagram && (
-            <a href={biz.socials.instagram} target="_blank" rel="noreferrer" className="text-stone-500 hover:text-white transition-all duration-300 hover:scale-110">
+            <a 
+              href={biz.socials.instagram} 
+              target="_blank" 
+              rel="noreferrer" 
+              className="text-stone-500 hover:text-white transition-all duration-300 hover:scale-110"
+              aria-label={`Follow ${biz.name} on Instagram`}
+            >
               <InstagramIcon className="w-5 h-5" />
             </a>
           )}
           {biz.socials?.tiktok && (
-            <a href={biz.socials.tiktok} target="_blank" rel="noreferrer" className="text-stone-500 hover:text-white transition-all duration-300 hover:scale-110">
+            <a 
+              href={biz.socials.tiktok} 
+              target="_blank" 
+              rel="noreferrer" 
+              className="text-stone-500 hover:text-white transition-all duration-300 hover:scale-110"
+              aria-label={`Follow ${biz.name} on TikTok`}
+            >
               <TikTokIcon className="w-5 h-5" />
             </a>
           )}
-        </div>
-      </div>
+        </nav>
+      </header>
       
       <style>{`
         @keyframes fade-in-up {

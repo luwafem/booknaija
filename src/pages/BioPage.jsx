@@ -1,6 +1,7 @@
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
-import { useBusiness } from '../hooks/useBusiness';
+import { useBusinessWithSEO } from '../hooks/useBusinessWithSEO';
+import SEO from '../hooks/useSEO';
 import BookingForm from '../components/BookingForm';
 import HeroSection from '../components/bio/HeroSection';
 import Gallery from '../components/bio/Gallery';
@@ -77,7 +78,7 @@ const GoogleAd = ({ slot, className = '' }) => {
   }, [slot]);
 
   return (
-    <div className={`w-full flex justify-center overflow-hidden ${className}`}>
+    <div className={`w-full flex justify-center overflow-hidden ${className}`} aria-hidden="true">
       <ins
         ref={adRef}
         className="adsbygoogle"
@@ -122,11 +123,12 @@ const ReferralLink = ({ slug, accent }) => {
         <button
           onClick={handleCopy}
           className="group relative flex items-center gap-3 px-4 py-2 rounded-full bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition-all duration-300"
+          aria-label="Copy referral link"
         >
           <span className="text-xs text-stone-400 font-medium truncate max-w-[180px] group-hover:text-stone-200 transition-colors">
             {referralUrl.replace(/^https?:\/\//, '')}
           </span>
-          <div className="h-4 w-px bg-white/10" />
+          <div className="h-4 w-px bg-white/10" aria-hidden="true" />
           <span 
             className="text-[11px] font-semibold transition-colors"
             style={{ color: copied ? accent : '#a8a29e' }}
@@ -145,7 +147,8 @@ export default function BioPage() {
   const ref = params.get('reference') || params.get('trxref');
   const codeParam = params.get('code') || '';
 
-  const { business: biz, loading, error } = useBusiness(slug);
+  // FIXED: Added seoDescription, seoImage, structuredData to destructuring
+  const { business: biz, loading, error, seoDescription, seoImage, structuredData } = useBusinessWithSEO(slug);
 
   const [searchQuery, setSearchQuery] = useState(codeParam);
   const [isSearchActive, setIsSearchActive] = useState(!!codeParam);
@@ -159,6 +162,13 @@ export default function BioPage() {
   
   const formRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
+
+  // Signal to prerenderer that page is ready
+  useEffect(() => {
+    if (!loading && biz?.active) {
+      window.dispatchEvent(new Event('prerender-ready'));
+    }
+  }, [loading, biz]);
 
   const scrollToForm = () => {
     if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
@@ -204,9 +214,9 @@ export default function BioPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-6" role="status" aria-label="Loading business page">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-stone-700 border-t-stone-400 rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-8 h-8 border-2 border-stone-700 border-t-stone-400 rounded-full animate-spin mx-auto mb-4" aria-hidden="true"></div>
           <p className="text-stone-500 text-sm font-medium">Loading...</p>
         </div>
       </div>
@@ -215,11 +225,17 @@ export default function BioPage() {
 
   if (!biz || !biz.active) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-6" role="alert">
         <div className="text-center">
-          <div className="w-16 h-16 rounded-full bg-stone-900 border border-stone-800 mx-auto mb-4 flex items-center justify-center text-stone-600 text-xl">!</div>
-          <p className="text-stone-500 text-sm font-medium">Page Unavailable</p>
+          <div className="w-16 h-16 rounded-full bg-stone-900 border border-stone-800 mx-auto mb-4 flex items-center justify-center text-stone-600 text-xl" aria-hidden="true">!</div>
+          <h1 className="text-stone-500 text-sm font-medium">Page Unavailable</h1>
           <p className="text-stone-700 text-xs mt-1">This link is currently inactive.</p>
+          <a 
+            href="/" 
+            className="inline-block mt-6 px-4 py-2 rounded-lg text-xs font-medium text-stone-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+          >
+            Go to BookNaija
+          </a>
         </div>
       </div>
     );
@@ -376,24 +392,51 @@ export default function BioPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white pb-12">
+    <div 
+      className="min-h-screen bg-[#0a0a0a] text-white pb-12"
+      itemScope 
+      itemType="https://schema.org/LocalBusiness"
+    >
+      {/* SEO Component */}
+      <SEO
+        title={biz.name}
+        description={seoDescription}
+        image={seoImage}
+        type="business.business"
+        noIndex={!biz.active}
+        structuredData={structuredData}
+      />
+
+      {/* Hidden structured data fields */}
+      <meta itemProp="url" content={`https://booknaija.com/${biz.slug}`} />
+      <meta itemProp="name" content={biz.name} />
+      {biz.phone && <meta itemProp="telephone" content={biz.phone} />}
+      {biz.location && <meta itemProp="address" content={biz.location} />}
+      
       <div className="max-w-lg mx-auto">
 
-        <HeroSection biz={{ logo: biz.logo, name: biz.name, slug: biz.slug, tagline: biz.tagline, bio: biz.bio, phone: biz.phone, whatsapp: biz.whatsapp, location: biz.location, hours: biz.hours, accent: biz.accent, avatar: biz.avatar, hero: biz.hero, gallery: biz.gallery, socials: biz.socials }} />
+        <HeroSection biz={{ 
+          logo: biz.logo, name: biz.name, slug: biz.slug, tagline: biz.tagline, bio: biz.bio, phone: biz.phone, whatsapp: biz.whatsapp, location: biz.location, hours: biz.hours, accent: biz.accent, avatar: biz.avatar, hero: biz.hero, gallery: biz.gallery, socials: biz.socials 
+        }} />
 
         {biz.gallery && biz.gallery.length > 0 && (
-          <Gallery gallery={biz.gallery} accent={accent} />
+          <div itemScope itemType="https://schema.org/ImageGallery" aria-label="Photo gallery">
+            <meta itemProp="name" content={`${biz.name} Gallery`} />
+            <Gallery gallery={biz.gallery} accent={accent} />
+          </div>
         )}
 
         <div className="px-6 mt-6">
-          <form onSubmit={handleSearch} className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <form onSubmit={handleSearch} className="relative" role="search" aria-label="Search services and products">
+            <label htmlFor="business-search" className="sr-only">Search by name, code, or description</label>
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none" aria-hidden="true">
               <svg className="w-4 h-4 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
             <input
-              type="text"
+              id="business-search"
+              type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by name, code, or description..."
@@ -404,6 +447,7 @@ export default function BioPage() {
                 type="button"
                 onClick={clearSearch}
                 className="absolute inset-y-0 right-0 pr-4 flex items-center text-stone-500 hover:text-white transition-colors"
+                aria-label="Clear search"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -413,7 +457,7 @@ export default function BioPage() {
           </form>
           
           {isSearchActive && searchQuery && (
-            <div className="mt-2 flex items-center justify-between">
+            <div className="mt-2 flex items-center justify-between" role="status" aria-live="polite">
               <p className="text-[11px] text-stone-500">
                 Showing results for "{searchQuery}"
               </p>
@@ -427,7 +471,7 @@ export default function BioPage() {
           )}
         </div>
 
-        <div className="mx-6 mt-6 border-t border-white/[0.04]" />
+        <div className="mx-6 mt-6 border-t border-white/[0.04]" aria-hidden="true" />
 
         {showPrimaryAd && (
           <div className="mx-6 mt-6">
@@ -439,8 +483,8 @@ export default function BioPage() {
         )}
 
         {isSearchActive && !hasAnyContent && (
-          <div className="px-6 mt-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-stone-900 border border-stone-800 mx-auto mb-4 flex items-center justify-center">
+          <div className="px-6 mt-8 text-center" role="status">
+            <div className="w-16 h-16 rounded-full bg-stone-900 border border-stone-800 mx-auto mb-4 flex items-center justify-center" aria-hidden="true">
               <svg className="w-6 h-6 text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -457,41 +501,57 @@ export default function BioPage() {
         )}
 
         {showServices && (
-          <ServiceList
-            services={filteredServices}
-            selectedId={selectedId}
-            onSelect={handleServiceSelect}
-            accent={accent}
-          />
+          <section itemScope itemType="https://schema.org/ItemList" aria-label="Services">
+            <meta itemProp="name" content={`${biz.name} Services`} />
+            <meta itemProp="numberOfItems" content={filteredServices.length} />
+            <ServiceList
+              services={filteredServices}
+              selectedId={selectedId}
+              onSelect={handleServiceSelect}
+              accent={accent}
+            />
+          </section>
         )}
 
         {showProducts && (
-          <ProductList
-            products={filteredProducts}
-            selectedProducts={selectedProducts}
-            onSelect={handleProductSelect}
-            accent={accent}
-            label={showServices ? 'Products' : 'Shop'}
-          />
+          <section itemScope itemType="https://schema.org/ItemList" aria-label={showServices ? 'Products' : 'Shop'}>
+            <meta itemProp="name" content={`${biz.name} Products`} />
+            <meta itemProp="numberOfItems" content={filteredProducts.length} />
+            <ProductList
+              products={filteredProducts}
+              selectedProducts={selectedProducts}
+              onSelect={handleProductSelect}
+              accent={accent}
+              label={showServices ? 'Products' : 'Shop'}
+            />
+          </section>
         )}
 
         {showFood && (
-          <FoodList
-            food={filteredFood}
-            selectedFood={selectedFood}
-            foodVariants={selectedFoodVariants}
-            onSelect={handleFoodSelect}
-            accent={accent}
-          />
+          <section itemScope itemType="https://schema.org/ItemList" aria-label="Menu">
+            <meta itemProp="name" content={`${biz.name} Menu`} />
+            <meta itemProp="numberOfItems" content={filteredFood.length} />
+            <FoodList
+              food={filteredFood}
+              selectedFood={selectedFood}
+              foodVariants={selectedFoodVariants}
+              onSelect={handleFoodSelect}
+              accent={accent}
+            />
+          </section>
         )}
 
         {showCars && (
-          <CarList
-            cars={filteredCars}
-            selectedCar={selectedCar}
-            onSelect={handleCarSelect}
-            accent={accent}
-          />
+          <section itemScope itemType="https://schema.org/ItemList" aria-label="Vehicles">
+            <meta itemProp="name" content={`${biz.name} Vehicles`} />
+            <meta itemProp="numberOfItems" content={filteredCars.length} />
+            <CarList
+              cars={filteredCars}
+              selectedCar={selectedCar}
+              onSelect={handleCarSelect}
+              accent={accent}
+            />
+          </section>
         )}
 
         {showSecondaryAd && (
@@ -503,7 +563,7 @@ export default function BioPage() {
           </div>
         )}
 
-        <div ref={formRef} className="px-6 mt-8 scroll-mt-4">
+        <section ref={formRef} className="px-6 mt-8 scroll-mt-4" aria-label="Booking form">
           <BookingForm
             biz={biz}
             selectedId={selectedId}
@@ -517,7 +577,7 @@ export default function BioPage() {
             selectedCar={selectedCar}
             onCarDeselect={handleCarDeselect}
           />
-        </div>
+        </section>
 
         {showFooterAd && (
           <div className="mt-8 border-t border-white/[0.04] pt-6">
@@ -525,10 +585,10 @@ export default function BioPage() {
           </div>
         )}
 
-        <div className="px-6 pt-12 pb-8 text-center">
+        <footer className="px-6 pt-12 pb-8 text-center">
           <ReferralLink slug={biz.slug} accent={accent} />
 
-          <nav className="flex justify-center gap-6 mb-6">
+          <nav className="flex justify-center gap-6 mb-6" aria-label="Legal links">
             <a href="/privacy" className="text-[11px] text-stone-500 hover:text-stone-300 underline decoration-stone-700 hover:decoration-stone-500 underline-offset-4 transition-colors">
               Privacy Policy
             </a>
@@ -540,7 +600,7 @@ export default function BioPage() {
           <p className="text-[11px] text-stone-500 uppercase tracking-widest font-semibold">
             Secured by Paystack
           </p> 
-        </div>
+        </footer>
       </div>
     </div>
   );

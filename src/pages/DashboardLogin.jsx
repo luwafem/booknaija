@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useNoIndex } from '../hooks/useNoIndex';
 
 export default function DashboardLogin() {
   var navigate = useNavigate();
+  
+  // Prevent search engines from indexing this protected page
+  useNoIndex();
   
   var slugArr = useState('');
   var slug = slugArr[0];
@@ -53,7 +57,6 @@ export default function DashboardLogin() {
     setLoading(true);
 
     try {
-      // Fetch business to check if it exists and get security fields
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
@@ -131,7 +134,7 @@ export default function DashboardLogin() {
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center px-4">
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
-            <a href="/dashboard">
+            <a href="/dashboard" aria-label="Back to dashboard login">
               <img src="/fav-removebg.png" alt="BookNaija" className="h-16 w-auto mx-auto object-contain mb-6" />
             </a>
             <h1 className="text-xl font-bold text-zinc-900">Verify Access</h1>
@@ -140,8 +143,9 @@ export default function DashboardLogin() {
 
           <form onSubmit={handleSecuritySubmit} className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100 space-y-5">
             <div>
-              <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">4-Digit Security Code</label>
+              <label htmlFor="security-code" className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">4-Digit Security Code</label>
               <input
+                id="security-code"
                 type="password"
                 value={code}
                 onChange={function(e) { setCode(e.target.value.replace(/\D/g, '').substring(0, 4)); }}
@@ -150,25 +154,28 @@ export default function DashboardLogin() {
                 maxLength={4}
                 inputMode="numeric"
                 autoFocus
+                autoComplete="one-time-code"
               />
             </div>
 
             {activeQuestion && (
               <div className="border-t border-zinc-100 pt-5">
-                <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Security Question</label>
+                <label htmlFor="security-answer" className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Security Question</label>
                 <p className="text-sm text-zinc-800 font-medium mb-2">{activeQuestion.q}</p>
                 <input
+                  id="security-answer"
                   type="text"
                   value={answer}
                   onChange={function(e) { setAnswer(e.target.value); }}
                   placeholder="Your answer"
                   className={inputBase}
+                  autoComplete="off"
                 />
               </div>
             )}
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-3" role="alert">
                 <p className="text-xs text-red-600 font-medium text-center">{error}</p>
               </div>
             )}
@@ -177,7 +184,10 @@ export default function DashboardLogin() {
               &larr; Back to Slug
             </button>
 
-            <button type="submit" className="w-full bg-zinc-900 text-white py-3 rounded-xl text-sm font-semibold hover:bg-zinc-700 transition-all active:scale-[0.98]">
+            <button 
+              type="submit" 
+              className="w-full bg-zinc-900 text-white py-3 rounded-xl text-sm font-semibold hover:bg-zinc-700 transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2"
+            >
               Unlock Dashboard
             </button>
           </form>
@@ -191,7 +201,7 @@ export default function DashboardLogin() {
     <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <a href="/">
+          <a href="/" aria-label="Go to homepage">
             <img src="/fav-removebg.png" alt="BookNaija" className="h-16 w-auto mx-auto object-contain mb-6" />
           </a>
           <h1 className="text-xl font-bold text-zinc-900">Manage Your Business</h1>
@@ -200,30 +210,40 @@ export default function DashboardLogin() {
 
         <form onSubmit={handleSlugSubmit} className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Business Slug</label>
+            <label htmlFor="biz-slug" className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Business Slug</label>
             <div className="flex items-center border border-zinc-200 rounded-xl overflow-hidden focus-within:border-purple-600 focus-within:ring-2 focus-within:ring-purple-100 transition-all">
-              <span className="px-3 text-sm text-zinc-400 bg-zinc-50 border-r border-zinc-200 select-none">booknaija.com/</span>
+              <span className="px-3 text-sm text-zinc-400 bg-zinc-50 border-r border-zinc-200 select-none" aria-hidden="true">booknaija.com/</span>
               <input
+                id="biz-slug"
                 type="text"
                 value={slug}
                 onChange={function(e) { setSlug(e.target.value); }}
                 placeholder="your-business-slug"
-                className="flex-1 px-3 py-3 text-sm text-white placeholder-zinc-400 focus:outline-none"
+                className="flex-1 px-3 py-3 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none"
                 autoFocus
+                autoComplete="username"
               />
             </div>
           </div>
 
           {error && (
-            <p className="text-xs text-red-500 font-medium">{error}</p>
+            <p className="text-xs text-red-500 font-medium" role="alert">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-zinc-900 text-white py-3 rounded-xl text-sm font-semibold hover:bg-zinc-700 transition-all active:scale-[0.98] disabled:bg-zinc-300"
+            className="w-full bg-zinc-900 text-white py-3 rounded-xl text-sm font-semibold hover:bg-zinc-700 transition-all active:scale-[0.98] disabled:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2"
           >
-            {loading ? 'Checking...' : 'Continue'}
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Checking...
+              </span>
+            ) : 'Continue'}
           </button>
         </form>
 
