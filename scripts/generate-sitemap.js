@@ -16,7 +16,7 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-const SITE_URL = 'https://booknaija.com';
+const SITE_URL = process.env.SITE_URL || 'https://booknaija.netlify.app';
 const TODAY = new Date().toISOString().split('T')[0];
 
 async function generateSitemap() {

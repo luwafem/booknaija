@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 
-const SITE_URL = 'https://booknaija.com';
+const SITE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://booknaija.netlify.app';
 const DEFAULT_IMAGE = `${SITE_URL}/og-image.png`;
 
 export default function SEO({

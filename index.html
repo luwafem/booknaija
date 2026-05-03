@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     
-    <!-- Primary Meta Tags -->
+    <!-- Primary Meta Tags (Fallback before React loads) -->
     <title>BookNaija - Your Business, One Simple Link</title>
     <meta name="title" content="BookNaija - Book Services, Buy Products, Pay Upfront" />
     <meta name="description" content="Stop the DM to book cycle. Turn your bio into a professional storefront where clients book services, buy products, and pay upfront via Paystack." />
@@ -13,24 +13,23 @@
     <meta name="language" content="English" />
     <meta name="author" content="BookNaija Technologies" />
     
-    <!-- Open Graph / Facebook -->
+    <!-- Open Graph / Facebook (Using relative paths so it works on .netlify.app AND your future custom domain) -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://booknaija.com/" />
+    <meta property="og:url" content="/" />
     <meta property="og:title" content="BookNaija - Your Business, One Simple Link" />
     <meta property="og:description" content="Stop the DM to book cycle. Turn your bio into a professional storefront." />
-    <meta property="og:image" content="https://booknaija.com/og-image.png" />
+    <meta property="og:image" content="/og-image.png" />
     <meta property="og:site_name" content="BookNaija" />
     <meta property="og:locale" content="en_NG" />
     
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://booknaija.com/" />
+    <meta name="twitter:url" content="/" />
     <meta name="twitter:title" content="BookNaija - Your Business, One Simple Link" />
     <meta name="twitter:description" content="Stop the DM to book cycle. Turn your bio into a professional storefront." />
-    <meta name="twitter:image" content="https://booknaija.com/og-image.png" />
+    <meta name="twitter:image" content="/og-image.png" />
     
-    <!-- Canonical -->
-    <link rel="canonical" href="https://booknaija.com/" />
+    <!-- Canonical is handled dynamically by React Helmet inside the app -->
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/fav.png" />
@@ -41,9 +40,6 @@
     
     <!-- Theme Color -->
     <meta name="theme-color" content="#0a0a0a" />
-    
-    <!-- Verification (add your actual codes) -->
-    <!-- <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE" /> -->
     
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://pagead2.googlesyndication.com" />
