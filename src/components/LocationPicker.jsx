@@ -9,12 +9,25 @@ export default function LocationPicker({ initialQuery, onSave, onClose }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsAllowed, setGpsAllowed] = useState(true); // Smart GPS detection
   
   const mapRef = useRef(null);
   const markerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const timeoutRef = useRef(null);
   const searchTimeoutRef = useRef(null);
+
+  // Check if GPS is actually allowed by the browser's permissions policy
+  useEffect(function () {
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'geolocation' }).catch(function() {
+        // If this throws, it means the Permissions-Policy header blocked it
+        setGpsAllowed(false);
+      });
+    } else if (!navigator.geolocation) {
+      setGpsAllowed(false);
+    }
+  }, []);
 
   useEffect(function () {
     if (!document.getElementById('leaflet-css')) {
@@ -132,7 +145,6 @@ export default function LocationPicker({ initialQuery, onSave, onClose }) {
     setTimeout(function () { map.invalidateSize(); }, 200);
   }
 
-  // --- SEARCH LOGIC ---
   function runSearch() {
     if (searchQuery.length < 2) return;
     setSearchResults([]);
@@ -180,12 +192,8 @@ export default function LocationPicker({ initialQuery, onSave, onClose }) {
     }
   }
 
-  // --- GPS CURRENT LOCATION LOGIC ---
   function handleGps() {
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser.");
-      return;
-    }
+    if (!navigator.geolocation) return;
 
     setGpsLoading(true);
     setSearchResults([]);
@@ -224,20 +232,14 @@ export default function LocationPicker({ initialQuery, onSave, onClose }) {
       function (err) {
         console.error(err);
         setGpsLoading(false);
+        setGpsAllowed(false); // Hide button if user denied it permanently
         
-        var msg = (err.message || '').toLowerCase();
-        
-        // Handle Local HTTP testing / Iframe missing permissions
-        if (msg.includes('permissions policy') || msg.includes('disabled in this document') || msg.includes('insecure context')) {
-          alert("GPS is blocked by your browser's security rules. This happens when testing on a local HTTP server (like stella:55). Don't worry — the GPS button will work perfectly for your users on your live HTTPS site!");
-        } 
-        // Handle user clicking "Block" on the popup
-        else if (err.code === 1) {
-          alert("Location permission denied. Please enable it in your browser's site settings.");
-        } 
-        // Handle timeout/no signal
-        else {
-          alert("Could not get your location. Please ensure location is turned on and try again.");
+        if ((err.message || '').toLowerCase().includes('permissions policy') || (err.message || '').toLowerCase().includes('disabled in this document')) {
+           // Silent fail for header blocks since we hide the button anyway
+        } else if (err.code === 1) {
+          alert("Location permission denied in browser settings.");
+        } else {
+          alert("Could not get location. Check device settings.");
         }
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -291,7 +293,7 @@ export default function LocationPicker({ initialQuery, onSave, onClose }) {
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <div>
             <h3 className="text-sm font-bold text-white">Pin Your Exact Location</h3>
-            <p className="text-[10px] text-stone-500 mt-0.5">Search, use GPS, or drag the pin</p>
+            <p className="text-[10px] text-stone-500 mt-0.5">Search or drag the pin to your doorway</p>
           </div>
           <button type="button" onClick={onClose} className="text-stone-500 hover:text-white transition-colors p-1 text-lg">✕</button>
         </div>
@@ -337,21 +339,24 @@ export default function LocationPicker({ initialQuery, onSave, onClose }) {
                   </svg>
                 </button>
 
-                <button 
-                  type="button" 
-                  onClick={handleGps} 
-                  disabled={gpsLoading}
-                  className="px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors flex items-center justify-center disabled:opacity-50 active:scale-95"
-                  title="Use my current location"
-                >
-                  {gpsLoading ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
-                    </svg>
-                  )}
-                </button>
+                {/* SMART GPS BUTTON: Only renders if browser headers allow it */}
+                {gpsAllowed && (
+                  <button 
+                    type="button" 
+                    onClick={handleGps} 
+                    disabled={gpsLoading}
+                    className="px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors flex items-center justify-center disabled:opacity-50 active:scale-95"
+                    title="Use my current location"
+                  >
+                    {gpsLoading ? (
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
+                      </svg>
+                    )}
+                  </button>
+                )}
               </div>
 
               {searchResults.length > 0 && (

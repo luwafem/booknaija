@@ -1,4 +1,4 @@
-# Build settings
+ # Build settings
 [build]
   command = "npm run build"
   publish = "dist"
@@ -23,7 +23,8 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    # REMOVED geolocation=(self) — omitting it allows it by default!
+    Permissions-Policy = "camera=(), microphone=()"
 
 # ─── CACHE STATIC ASSETS (Forever - they have hashed filenames) ───
 [[headers]]
