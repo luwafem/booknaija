@@ -292,7 +292,10 @@ export default function BioPage() {
 
   function handleServiceSelect(id) {
     setSelectedId(function(prev) {
-      if (prev !== id) scrollToForm();
+      if (prev !== id) {
+        window.history.replaceState({}, '', '#services'); // ADDED: URL Hash Fragment
+        scrollToForm();
+      }
       return prev === id ? '' : id;
     });
     setSelectedProducts([]);
@@ -348,6 +351,8 @@ export default function BioPage() {
         return next;
       });
     }
+    // ADDED: URL Hash Fragment
+    window.history.replaceState({}, '', '#food');
     scrollToForm();
   }
 
@@ -384,6 +389,8 @@ export default function BioPage() {
     setSelectedProducts([]);
     setSelectedFood([]);
     setSelectedCar(car);
+    // ADDED: URL Hash Fragment
+    window.history.replaceState({}, '', '#cars');
     scrollToForm();
   }
 
@@ -613,4 +620,4 @@ export default function BioPage() {
       </div>
     </div>
   );
-}
+  }

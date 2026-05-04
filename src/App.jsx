@@ -5,6 +5,7 @@ import Signup from './pages/Signup';
 import Onboarding from './pages/Onboarding';
 import OnboardingSuccess from './pages/OnboardingSuccess';
 import BioPage from './pages/BioPage';
+import Discover from './pages/Discover';
 import Legal from './pages/Legal';
 import DashboardLogin from './pages/DashboardLogin';
 import Dashboard from './pages/Dashboard';
@@ -51,6 +52,7 @@ export default function App() {
       <Routes>
         {/* Public Pages */}
         <Route path="/" element={<Landing />} />
+        <Route path="/discover" element={<Discover />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/onboarding-success" element={<OnboardingSuccess />} />
