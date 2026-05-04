@@ -45,6 +45,10 @@ export default function Dashboard() {
   var copied = copiedArr[0];
   var setCopied = copiedArr[1];
 
+  var urlCopiedArr = useState(false);
+  var urlCopied = urlCopiedArr[0];
+  var setUrlCopied = urlCopiedArr[1];
+
   useEffect(function () {
     if (!loading && biz) {
       var authStatus = sessionStorage.getItem('biz_auth_' + slug);
@@ -101,6 +105,35 @@ export default function Dashboard() {
       setCopied(true);
       setTimeout(function () { setCopied(false); }, 2500);
     });
+  }
+
+  function handleCopyPageUrl() {
+    var pageUrl = window.location.origin + '/' + biz.slug;
+    navigator.clipboard.writeText(pageUrl).then(function () {
+      setUrlCopied(true);
+      setTimeout(function () { setUrlCopied(false); }, 2500);
+    }).catch(function () {
+      var textArea = document.createElement('textarea');
+      textArea.value = pageUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setUrlCopied(true);
+      setTimeout(function () { setUrlCopied(false); }, 2500);
+    });
+  }
+
+  function getMapsReadiness() {
+    var issues = [];
+    if (!biz.name) issues.push('Business Name');
+    if (!biz.phone) issues.push('Phone Number');
+    if (!biz.location) issues.push('Location');
+    if (!biz.email) issues.push('Email');
+    return {
+      ready: issues.length === 0,
+      issues: issues
+    };
   }
 
   function getVisibleTabs() {
@@ -416,10 +449,147 @@ export default function Dashboard() {
     var freeMonthsEarned = Math.floor(referralCount / 3);
     var referralsUntilNextMonth = 3 - (referralCount % 3);
     var referralUrl = window.location.origin + '/signup?ref=' + biz.slug;
+    var pageUrl = window.location.origin + '/' + biz.slug;
+    var mapsReadiness = getMapsReadiness();
+    var mapsClaimed = biz.googleMapsClaimed || false;
 
     return (
       <div className="space-y-6">
-        <div className="bg-white border border-zinc-100 rounded-2xl p-6">
+
+        {/* ===== GOOGLE MAPS - MOBILE OPTIMIZED ===== */}
+        {!mapsClaimed && (
+          <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-4 sm:p-5 text-white relative overflow-hidden">
+            <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full"></div>
+            <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-white/10 rounded-full"></div>
+            
+            <div className="relative">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 bg-white/20 rounded-xl flex items-center justify-center">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                    <h3 className="text-base sm:text-lg font-bold leading-tight">Get on Google Maps</h3>
+                    <span className="px-1.5 py-0.5 bg-yellow-400 text-yellow-900 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider rounded-full whitespace-nowrap">+40% Traffic</span>
+                  </div>
+                  <p className="text-emerald-100 text-xs sm:text-sm leading-snug">
+                    Show up in "near me" searches
+                  </p>
+                </div>
+              </div>
+
+              {!mapsReadiness.ready ? (
+                <div className="bg-white/15 rounded-xl p-3 sm:p-4">
+                  <p className="text-[10px] sm:text-xs font-semibold text-yellow-300 mb-2 flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    Add these to enable setup:
+                  </p>
+                  <div className="space-y-1.5">
+                    {mapsReadiness.issues.map(function (issue) {
+                      return (
+                        <div key={issue} className="flex items-center gap-2">
+                          <span className="w-1 h-1 bg-yellow-400 rounded-full flex-shrink-0"></span>
+                          <span className="text-xs text-emerald-50">{issue}</span>
+                          <a href="#info-fields" className="text-yellow-300 hover:text-yellow-200 text-[10px] font-medium underline ml-auto">Edit →</a>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <button
+                    type="button"
+                    onClick={function () { window.open('https://business.google.com/create?hl=en', '_blank'); }}
+                    className="w-full bg-white text-emerald-700 font-bold py-3 sm:py-3.5 px-4 rounded-xl text-sm sm:text-base hover:bg-emerald-50 transition-all active:scale-[0.98] shadow-lg flex items-center justify-center gap-2.5"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    Add to Google Maps
+                  </button>
+                  <p className="text-[10px] text-emerald-200/80 text-center mt-2 px-2">
+                    Copy your website URL below • Free • ~2 mins
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ===== MAPS COMPLETED STATE ===== */}
+        {mapsClaimed && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 sm:p-5">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-emerald-800 mb-0.5">On Google Maps</h3>
+                <p className="text-[11px] text-emerald-700 leading-relaxed">
+                  "{biz.name} near me" searches will show your listing
+                </p>
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                  <a 
+                    href={'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(biz.name + ' ' + biz.location)} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="text-[11px] text-emerald-600 hover:text-emerald-800 font-medium underline"
+                  >
+                    View on Maps →
+                  </a>
+                  <button 
+                    type="button" 
+                    onClick={function () { setField('googleMapsClaimed', false); }}
+                    className="text-[11px] text-zinc-400 hover:text-zinc-600 font-medium"
+                  >
+                    Not done yet
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ===== YOUR WEBSITE URL - MOVED HERE ===== */}
+        {!mapsClaimed && (
+          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-zinc-100">
+            <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3 text-center">Your Website URL <span className="text-emerald-500">← for Google Maps</span></p>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 bg-zinc-50 rounded-lg px-3 py-2.5 border border-zinc-100">
+                <p className="text-sm text-purple-600 font-semibold font-mono truncate">{pageUrl}</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyPageUrl}
+                className={"px-4 py-2.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap " + (urlCopied 
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-purple-600 text-white hover:bg-purple-700 active:scale-95'
+                )}
+              >
+                {urlCopied ? '✓ Copied' : 'Copy'}
+              </button>
+            </div>
+            <div className="mt-2 flex items-center justify-center">
+              <a href={'/' + biz.slug} target="_blank" rel="noreferrer" className="text-xs text-zinc-500 hover:text-purple-600 font-medium transition-colors">
+                Open page →
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* ===== REFERRAL SECTION ===== */}
+        <div className="bg-white border border-zinc-100 rounded-2xl p-4 sm:p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
               <h3 className="text-sm font-bold text-zinc-600 flex items-center gap-2">
@@ -428,7 +598,7 @@ export default function Dashboard() {
               <p className="text-xs text-zinc-600 mt-1">Refer 3 friends = 1 Free Month</p>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold text-zinc-600">{referralCount}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-zinc-600">{referralCount}</p>
               <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Total Referrals</p>
             </div>
           </div>
@@ -459,26 +629,19 @@ export default function Dashboard() {
 
           <div className="bg-white rounded-xl border border-zinc-200 p-3">
             <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-bold mb-2">Your Referral Link</p>
-            <div className=" items-center gap-2">
+            <div className="flex items-center gap-2">
               <div className="flex-1 bg-zinc-50 rounded-lg px-3 py-2 border border-zinc-100">
                 <p className="text-xs text-zinc-600 font-mono truncate">{referralUrl}</p>
               </div>
               <button
                 type="button"
                 onClick={handleCopyReferralLink}
-                className={"px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap " + (copied 
+                className={"px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap " + (copied 
                   ? 'bg-green-500 text-white' 
                   : 'bg-zinc-600 text-white hover:bg-purple-700 active:scale-95'
                 )}
               >
-                {copied ? (
-                  <span className="flex items-center gap-1">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Copied!
-                  </span>
-                ) : 'Copy Link'}
+                {copied ? '✓' : 'Copy'}
               </button>
             </div>
             <p className="text-[10px] text-zinc-600 mt-2">
@@ -488,36 +651,36 @@ export default function Dashboard() {
 
           <div className="mt-4 pt-4 border-t border-zinc-200">
             <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-bold mb-2">How It Works</p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <div key="step-1" className="text-center">
-                <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-1.5">
-                  <span className="text-xs font-bold text-zinc-600">1</span>
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-1">
+                  <span className="text-[10px] sm:text-xs font-bold text-zinc-600">1</span>
                 </div>
-                <p className="text-[10px] text-zinc-600 font-medium">Share your link</p>
+                <p className="text-[9px] sm:text-[10px] text-zinc-600 font-medium">Share link</p>
               </div>
               <div key="step-2" className="text-center">
-                <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-1.5">
-                  <span className="text-xs font-bold text-zinc-600">2</span>
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-1">
+                  <span className="text-[10px] sm:text-xs font-bold text-zinc-600">2</span>
                 </div>
-                <p className="text-[10px] text-zinc-600 font-medium">Friend signs up</p>
+                <p className="text-[9px] sm:text-[10px] text-zinc-600 font-medium">Friend joins</p>
               </div>
               <div key="step-3" className="text-center">
-                <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-1.5">
-                  <span className="text-xs font-bold text-zinc-600">3</span>
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-1">
+                  <span className="text-[10px] sm:text-xs font-bold text-zinc-600">3</span>
                 </div>
-                <p className="text-[10px] text-zinc-600 font-medium">Earn free month</p>
+                <p className="text-[9px] sm:text-[10px] text-zinc-600 font-medium">Free month!</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div>
+        <div id="info-fields">
           <label className={lbl}>Logo</label>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             {biz.logo ? (
-              <img src={biz.logo} alt="" className="w-16 h-16 rounded-xl object-contain border border-zinc-200 p-1" />
+              <img src={biz.logo} alt="" className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-contain border border-zinc-200 p-1" />
             ) : (
-              <div className="w-16 h-16 rounded-xl border-2 border-dashed border-zinc-300 flex items-center justify-center text-zinc-400 text-xs">No logo</div>
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl border-2 border-dashed border-zinc-300 flex items-center justify-center text-zinc-400 text-xs">No logo</div>
             )}
             <div className="flex gap-2">
               <button type="button" onClick={handleLogoUpload} className="text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-3 py-2 rounded-lg font-medium transition-colors">Upload</button>
@@ -551,7 +714,7 @@ export default function Dashboard() {
         <div><label className={lbl}>Calendar ID (Email)</label><input className={inp} value={biz.calendarId} onChange={function (e) { setField('calendarId', e.target.value); }} /></div>
 
         {showToggles && (
-          <div className="bg-white p-6 rounded-2xl border border-zinc-100 space-y-4">
+          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-zinc-100 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Feature Toggles</h3>
               <button type="button" onClick={function () { setShowToggles(false); }} className="text-xs text-zinc-400 hover:text-zinc-600">Hide</button>
@@ -578,13 +741,6 @@ export default function Dashboard() {
             </div>
           </div>
         )}
-
-        <div className="bg-white p-6 rounded-2xl border border-zinc-100 text-center">
-          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Your Live Page</p>
-          <a href={'/' + biz.slug} target="_blank" rel="noreferrer" className="text-purple-600 font-semibold text-sm hover:underline">
-            booknaija.com/{biz.slug}
-          </a>
-        </div>
       </div>
     );
   }
@@ -630,7 +786,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="bg-white p-6 rounded-2xl border border-zinc-100 space-y-6">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-zinc-100 space-y-6">
           <h3 className="text-sm font-bold text-zinc-800">4-Digit Security Code</h3>
           <div>
             <label className={lbl}>Code</label>
@@ -646,7 +802,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-zinc-100 space-y-6">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-zinc-100 space-y-6">
           <h3 className="text-sm font-bold text-zinc-800">Security Questions</h3>
           
           <div>
@@ -739,7 +895,6 @@ export default function Dashboard() {
                 <input className={inp} placeholder="Duration" value={s.duration} onChange={function (e) { setNested('services', s.id, { duration: e.target.value }); }} />
               </div>
               
-              {/* NEW: Discount Fields */}
               <div className="border-t border-zinc-200 pt-3 mt-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-semibold text-zinc-600 uppercase tracking-wider">Discount Settings</span>
@@ -801,7 +956,6 @@ export default function Dashboard() {
               <button type="button" onClick={function () { removeItem('products', p.id); }} className="absolute top-2 right-2 text-zinc-400 hover:text-red-500">&times;</button>
               <input className={inp} placeholder="Name" value={p.name} onChange={function (e) { setNested('products', p.id, { name: e.target.value }); }} />
               
-              {/* NEW: Product Code Field */}
               <div>
                 <label className={lbl}>Product Code</label>
                 <div className="flex gap-2">
@@ -816,20 +970,19 @@ export default function Dashboard() {
                       <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span className="text-[10px] text-blue-700 font-medium">Shareable Link</span>
+                      <span className="text-[10px] text-blue-700 font-medium hidden sm:inline">Shareable</span>
                     </div>
                   )}
                 </div>
                 {p.product_code && (
                   <p className="text-[10px] text-zinc-500 mt-1">
-                    Share this link with customers: <span className="font-mono bg-zinc-100 px-1.5 py-0.5 rounded">/{biz.slug}?code={p.product_code}</span>
+                    Share: <span className="font-mono bg-zinc-100 px-1.5 py-0.5 rounded">/{biz.slug}?code={p.product_code}</span>
                   </p>
                 )}
               </div>
               
               <input className={inp} placeholder="Price" type="number" value={p.price} onChange={function (e) { setNested('products', p.id, { price: parseInt(e.target.value) || 0 }); }} />
               
-              {/* NEW: Discount Fields */}
               <div className="border-t border-zinc-200 pt-3 mt-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-semibold text-zinc-600 uppercase tracking-wider">Discount Settings</span>
@@ -1004,26 +1157,26 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-zinc-900">
-      <div className="bg-white border-b border-zinc-100 px-6 py-4">
+      <div className="bg-white border-b border-zinc-100 px-4 sm:px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             <a href="/" className="flex-shrink-0">
-              <img src="/fav-removebg.png" alt="BookNaija" className="h-10 w-auto object-contain" />
+              <img src="/fav-removebg.png" alt="BookNaija" className="h-9 w-auto sm:h-10 object-contain" />
             </a>
-            <div className="h-6 w-px bg-zinc-200"></div>
-            <div onClick={handleNameClick} className="cursor-default select-none">
-              <h1 className="text-sm font-bold text-zinc-900 leading-tight">{biz.name}</h1>
-              <p className="text-xs text-zinc-400">booknaija.com/{biz.slug}</p>
+            <div className="h-6 w-px bg-zinc-200 flex-shrink-0"></div>
+            <div onClick={handleNameClick} className="cursor-default select-none min-w-0">
+              <h1 className="text-sm font-bold text-zinc-900 leading-tight truncate">{biz.name}</h1>
+              <p className="text-[11px] text-zinc-400 truncate">booknaija.com/{biz.slug}</p>
             </div>
           </div>
-          <a href={'/' + biz.slug} target="_blank" rel="noreferrer" className="text-xs text-purple-600 hover:text-purple-800 font-semibold transition-colors">
-            Preview Page &rarr;
+          <a href={'/' + biz.slug} target="_blank" rel="noreferrer" className="text-xs text-purple-600 hover:text-purple-800 font-semibold transition-colors flex-shrink-0 ml-2">
+            Preview →
           </a>
         </div>
       </div>
 
-      <div className="bg-white border-b border-zinc-100 px-6">
-        <div className="max-w-4xl mx-auto flex gap-1 overflow-x-auto">
+      <div className="bg-white border-b border-zinc-100 px-4 sm:px-6">
+        <div className="max-w-4xl mx-auto flex gap-1 overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6">
           {visibleTabs.map(function (tab) {
             var isActive = activeTab === tab.id;
             return (
@@ -1031,7 +1184,7 @@ export default function Dashboard() {
                 key={tab.id}
                 type="button"
                 onClick={function () { setActiveTab(tab.id); }}
-                className={"px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-all " + (isActive ? 'border-purple-600 text-purple-600' : 'border-transparent text-zinc-400 hover:text-zinc-600')}
+                className={"px-3 sm:px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-all " + (isActive ? 'border-purple-600 text-purple-600' : 'border-transparent text-zinc-400 hover:text-zinc-600')}
               >
                 {tab.label}
               </button>
@@ -1041,18 +1194,18 @@ export default function Dashboard() {
       </div>
 
       <form onSubmit={handleSave}>
-        <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           {renderTabContent()}
         </div>
 
-        <div className="sticky bottom-0 bg-white border-t border-zinc-100 px-6 py-4 z-10">
+        <div className="sticky bottom-0 bg-white border-t border-zinc-100 px-4 sm:px-6 py-3 sm:py-4 z-10">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             {errorMsg && <p className="text-xs text-red-500">{errorMsg}</p>}
-            {saved && <p className="text-xs text-green-600 font-semibold">✓ Changes saved!</p>}
+            {saved && <p className="text-xs text-green-600 font-semibold">✓ Saved!</p>}
             <button
               type="submit"
               disabled={saving}
-              className="ml-auto bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 disabled:bg-zinc-400"
+              className="ml-auto bg-purple-600 hover:bg-purple-700 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 disabled:bg-zinc-400"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
