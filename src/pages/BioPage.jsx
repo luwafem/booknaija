@@ -397,7 +397,7 @@ export default function BioPage() {
       itemScope 
       itemType="https://schema.org/LocalBusiness"
     >
-      {/* SEO Component */}
+      {/* SEO Component - Added location for "Near Me" description */}
       <SEO
         title={biz.name}
         description={seoDescription}
@@ -405,10 +405,11 @@ export default function BioPage() {
         type="business.business"
         noIndex={!biz.active}
         structuredData={structuredData}
+        location={biz.location}
       />
 
       {/* Hidden structured data fields */}
-      <meta itemProp="url" content={`https://booknaija.com/${biz.slug}`} />
+      <meta itemProp="url" content={`${window.location.origin}/${biz.slug}`} />
       <meta itemProp="name" content={biz.name} />
       {biz.phone && <meta itemProp="telephone" content={biz.phone} />}
       {biz.location && <meta itemProp="address" content={biz.location} />}
@@ -422,7 +423,11 @@ export default function BioPage() {
         {biz.gallery && biz.gallery.length > 0 && (
           <div itemScope itemType="https://schema.org/ImageGallery" aria-label="Photo gallery">
             <meta itemProp="name" content={`${biz.name} Gallery`} />
-            <Gallery gallery={biz.gallery} accent={accent} />
+            <Gallery 
+              gallery={biz.gallery} 
+              accent={accent} 
+              location={biz.location} 
+            />
           </div>
         )}
 
@@ -509,6 +514,7 @@ export default function BioPage() {
               selectedId={selectedId}
               onSelect={handleServiceSelect}
               accent={accent}
+              location={biz.location}
             />
           </section>
         )}
@@ -523,6 +529,7 @@ export default function BioPage() {
               onSelect={handleProductSelect}
               accent={accent}
               label={showServices ? 'Products' : 'Shop'}
+              location={biz.location}
             />
           </section>
         )}
@@ -537,6 +544,7 @@ export default function BioPage() {
               foodVariants={selectedFoodVariants}
               onSelect={handleFoodSelect}
               accent={accent}
+              location={biz.location}
             />
           </section>
         )}
@@ -550,6 +558,7 @@ export default function BioPage() {
               selectedCar={selectedCar}
               onSelect={handleCarSelect}
               accent={accent}
+              location={biz.location}
             />
           </section>
         )}

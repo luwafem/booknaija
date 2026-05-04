@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
-export default function ProductList({ products, selectedProducts, onSelect, accent, label }) {
+export default function ProductList({ products, selectedProducts, onSelect, accent, label, location }) {
   return (
-    <section className="px-6 mt-8 max-w-xl mx-auto">
+    <section className="px-6 mt-8 max-w-xl mx-auto" aria-label={label}>
       <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-6 px-1">
         {label}
       </h2>
@@ -15,6 +15,7 @@ export default function ProductList({ products, selectedProducts, onSelect, acce
             active={selectedProducts.includes(p.id)}
             accent={accent}
             onClick={(id, size, color) => onSelect(id, size, color)}
+            location={location}
           />
         ))}
       </div>
@@ -22,7 +23,7 @@ export default function ProductList({ products, selectedProducts, onSelect, acce
   );
 }
 
-function ProductCard({ product, active, accent, onClick }) {
+function ProductCard({ product, active, accent, onClick, location }) {
   const [openDetails, setOpenDetails] = useState(false);
   
   // --- SIZE LOGIC ---
@@ -36,6 +37,9 @@ function ProductCard({ product, active, accent, onClick }) {
   // --- IMAGE CAROUSEL LOGIC ---
   const allImages = product.images || (product.image ? [product.image] : []);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
+
+  // Dynamic Alt Text for Stealth SEO
+  const seoAlt = location ? `${product.name} in ${location}` : product.name;
 
   // NEW: Discount calculation
   const hasDiscount = product.discount_enabled && product.discount_price > 0;
@@ -93,7 +97,7 @@ function ProductCard({ product, active, accent, onClick }) {
         {allImages.length > 0 ? (
           <img 
             src={allImages[currentImgIndex]} 
-            alt={product.name} 
+            alt={seoAlt} 
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
             loading="lazy"
           />

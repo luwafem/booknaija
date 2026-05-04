@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
-export default function ServiceList({ services, selectedId, onSelect, accent }) {
+export default function ServiceList({ services, selectedId, onSelect, accent, location }) {
   return (
-    <section className="px-6 mt-8 max-w-xl mx-auto">
+    <section className="px-6 mt-8 max-w-xl mx-auto" aria-label="Services">
       <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-6 px-1">
         Services
       </h2>
@@ -14,6 +14,7 @@ export default function ServiceList({ services, selectedId, onSelect, accent }) 
             active={selectedId === s.id}
             accent={accent}
             onClick={() => onSelect(s.id)}
+            location={location}
           />
         ))}
       </div>
@@ -21,10 +22,13 @@ export default function ServiceList({ services, selectedId, onSelect, accent }) 
   );
 }
 
-function ServiceCard({ service, active, accent, onClick }) {
+function ServiceCard({ service, active, accent, onClick, location }) {
   const [openDetails, setOpenDetails] = useState(false);
   
   const canShowDetails = service.showDetails !== false && (service.description || (service.images && service.images.length > 0));
+
+  // Dynamic Alt Text for Stealth SEO
+  const seoAlt = location ? `${service.name} in ${location}` : service.name;
 
   // NEW: Discount calculation
   const hasDiscount = service.discount_enabled && service.discount_price > 0;
@@ -65,7 +69,7 @@ function ServiceCard({ service, active, accent, onClick }) {
           <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-black border border-white/5 shadow-sm">
             <img 
               src={service.image} 
-              alt={service.name} 
+              alt={seoAlt} 
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
               loading="lazy"
             />
@@ -114,6 +118,7 @@ function ServiceCard({ service, active, accent, onClick }) {
             setOpenDetails(!openDetails);
           }}
           className="mt-3 text-[11px] font-medium text-stone-500 hover:text-white transition-colors flex items-center gap-2 group/btn"
+          aria-expanded={openDetails}
         >
           <span className="w-4 h-4 rounded border border-stone-700 flex items-center justify-center text-[10px] text-stone-400 group-hover/btn:border-stone-500 group-hover/btn:text-white transition-colors">
             {openDetails ? '−' : '+'}
@@ -141,7 +146,7 @@ function ServiceCard({ service, active, accent, onClick }) {
                   <div key={index} className="aspect-square rounded-xl overflow-hidden bg-black border border-white/5">
                     <img 
                       src={img} 
-                      alt={`${service.name} ${index + 1}`} 
+                      alt={`${seoAlt} - Image ${index + 1}`} 
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       loading="lazy"
                     />

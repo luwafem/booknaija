@@ -77,16 +77,19 @@ export default function HeroSection({ biz }) {
             {biz.name}
           </h1>
           
-          <p 
-            className="text-[11px] uppercase tracking-[0.3em] text-stone-400 font-medium max-w-[280px]"
-            itemProp="description"
-          >
+          {/* REMOVED itemProp="description" from here - tagline is not the description */}
+          <p className="text-[11px] uppercase tracking-[0.3em] text-stone-400 font-medium max-w-[280px]">
             {biz.tagline}
           </p>
         </div>
 
+        {/* ADDED itemProp="description" here - bio is the actual description */}
         {biz.bio && (
-          <p className="text-sm font-sans font-normal text-stone-300 leading-relaxed text-center mb-10 max-w-sm animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+          <p 
+            className="text-sm font-sans font-normal text-stone-300 leading-relaxed text-center mb-10 max-w-sm animate-fade-in-up" 
+            style={{ animationDelay: '0.1s' }}
+            itemProp="description"
+          >
             {biz.bio}
           </p>
         )}

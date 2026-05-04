@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { XIcon } from '../Icons';
 
-export default function Gallery({ gallery, accent }) {
+export default function Gallery({ gallery, accent, location }) {
   const [lightbox, setLightbox] = useState({ isOpen: false, groupIdx: 0, imgIdx: 0 });
 
   if (!gallery || gallery.length === 0) return null;
@@ -35,7 +35,7 @@ export default function Gallery({ gallery, accent }) {
 
   return (
     <>
-      <section className="px-6 mt-8 max-w-xl mx-auto">
+      <section className="px-6 mt-8 max-w-xl mx-auto" aria-label="Photo gallery">
         <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-6 px-1">
           Our Work
         </h2>
@@ -59,7 +59,8 @@ export default function Gallery({ gallery, accent }) {
                   >
                     <img
                       src={img}
-                      alt={`${g.group} ${iIdx + 1}`}
+                      // STEALTH SEO: "Braids in Yaba" instead of "Braids 1"
+                      alt={location ? `${g.group} in ${location}` : `${g.group} ${iIdx + 1}`}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                       loading="lazy"
                     />
@@ -82,13 +83,14 @@ export default function Gallery({ gallery, accent }) {
           onPrev={prev}
           onNext={next}
           accent={accent}
+          alt={location ? `${groups[lightbox.groupIdx].group} in ${location}` : "Gallery full view"}
         />
       )}
     </>
   );
 }
 
-function Lightbox({ image, current, total, onClose, onPrev, onNext, accent }) {
+function Lightbox({ image, current, total, onClose, onPrev, onNext, accent, alt }) {
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
   const [controlsVisible, setControlsVisible] = useState(true);
@@ -187,7 +189,7 @@ function Lightbox({ image, current, total, onClose, onPrev, onNext, accent }) {
       <div className="relative w-full h-full flex items-center justify-center p-12 sm:p-24 pointer-events-none">
         <img 
           src={image} 
-          alt="Gallery full view" 
+          alt={alt || "Gallery full view"} 
           className="max-w-full max-h-full object-contain rounded-lg shadow-2xl select-none pointer-events-auto"
           draggable="false"
         />

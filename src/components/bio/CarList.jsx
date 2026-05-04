@@ -1,12 +1,12 @@
 import { useState } from 'react';
 
-export default function CarList({ cars, selectedCar, onSelect, accent }) {
+export default function CarList({ cars, selectedCar, onSelect, accent, location }) {
   // Separate Rentals and Sales
   const rentals = cars.filter(c => c.type === 'rent');
   const sales = cars.filter(c => c.type === 'sale');
 
   return (
-    <section className="px-6 mt-8 max-w-xl mx-auto">
+    <section className="px-6 mt-8 max-w-xl mx-auto" aria-label="Vehicle listings">
       
       {/* --- RENTALS SECTION --- */}
       {rentals.length > 0 && (
@@ -22,6 +22,7 @@ export default function CarList({ cars, selectedCar, onSelect, accent }) {
                 active={selectedCar?.id === car.id}
                 accent={accent}
                 onClick={() => onSelect(car)}
+                location={location}
               />
             ))}
           </div>
@@ -42,6 +43,7 @@ export default function CarList({ cars, selectedCar, onSelect, accent }) {
                 active={selectedCar?.id === car.id}
                 accent={accent}
                 onClick={() => onSelect(car)}
+                location={location}
               />
             ))}
           </div>
@@ -57,7 +59,7 @@ export default function CarList({ cars, selectedCar, onSelect, accent }) {
   );
 }
 
-function CarCard({ car, active, accent, onClick }) {
+function CarCard({ car, active, accent, onClick, location }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false); // For Fullscreen Image
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
@@ -67,6 +69,9 @@ function CarCard({ car, active, accent, onClick }) {
   const badgeColor = isRent 
     ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' 
     : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+
+  // Dynamic Alt Text for Stealth SEO
+  const seoAlt = location ? `${car.name} in ${location}` : car.name;
 
   const activeClasses = active 
     ? `bg-white/5 border-[${accent}] shadow-[0_0_0_1px_${accent}40]` 
@@ -83,7 +88,7 @@ function CarCard({ car, active, accent, onClick }) {
         <div className="relative w-full aspect-[16/9] bg-black">
           <img 
             src={images[currentImgIndex]} 
-            alt={car.name} 
+            alt={seoAlt} 
             className="w-full h-full object-cover" 
           />
           <div className={`absolute top-3 left-3 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border backdrop-blur-md ${badgeColor}`}>
@@ -143,7 +148,7 @@ function CarCard({ car, active, accent, onClick }) {
               <div className="relative aspect-video bg-black group cursor-pointer" onClick={() => setIsLightboxOpen(true)}>
                 <img 
                   src={images[currentImgIndex]} 
-                  alt={car.name} 
+                  alt={seoAlt} 
                   className="w-full h-full object-cover"
                 />
                 {/* Expand Hint */}
@@ -164,7 +169,7 @@ function CarCard({ car, active, accent, onClick }) {
                         onClick={() => setCurrentImgIndex(idx)}
                         className={`aspect-video rounded-xl overflow-hidden border-2 transition-all relative ${idx === currentImgIndex ? 'border-white scale-105 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100 hover:border-white/30'}`}
                       >
-                        <img src={img} className="w-full h-full object-cover" alt="thumb" />
+                        <img src={img} className="w-full h-full object-cover" alt={`${car.name} thumbnail ${idx + 1}`} />
                         {idx === currentImgIndex && <div className="absolute inset-0 bg-white/10" />}
                       </button>
                     ))}
@@ -241,7 +246,7 @@ function CarCard({ car, active, accent, onClick }) {
           </button>
           <img 
             src={images[currentImgIndex]} 
-            alt={car.name} 
+            alt={seoAlt} 
             className="max-h-screen w-full object-contain"
           />
         </div>

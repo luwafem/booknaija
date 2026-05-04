@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
-export default function FoodList({ food, selectedFood, foodVariants, onSelect, accent }) {
+export default function FoodList({ food, selectedFood, foodVariants, onSelect, accent, location }) {
   return (
-    <section className="px-6 mt-8 max-w-xl mx-auto">
+    <section className="px-6 mt-8 max-w-xl mx-auto" aria-label="Food menu">
       <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-6 px-1">
         Menu
       </h2>
@@ -16,6 +16,7 @@ export default function FoodList({ food, selectedFood, foodVariants, onSelect, a
             accent={accent}
             existingVariant={foodVariants[item.id] || null}
             onAdd={(variant) => onSelect(item.id, variant)}
+            location={location}
           />
         ))}
       </div>
@@ -42,12 +43,15 @@ const MinusIcon = () => (
   </svg>
 );
 
-function FoodCard({ item, accent, existingVariant, onAdd }) {
+function FoodCard({ item, accent, existingVariant, onAdd, location }) {
   const [isOpen, setIsOpen] = useState(false);
   
   // Modal State
   const [tempQuantity, setTempQuantity] = useState(existingVariant?.quantity || 1);
   const [tempAddons, setTempAddons] = useState(existingVariant?.addons || {});
+
+  // Dynamic Alt Text for Stealth SEO
+  const seoAlt = location ? `${item.name} in ${location}` : item.name;
 
   // Calculate dynamic price in modal
   const calculatePrice = () => {
@@ -106,7 +110,7 @@ function FoodCard({ item, accent, existingVariant, onAdd }) {
         <div className="relative w-full aspect-[3/4] bg-black overflow-hidden">
           <img 
             src={item.image} 
-            alt={item.name} 
+            alt={seoAlt} 
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
             loading="lazy" 
           />
@@ -158,7 +162,7 @@ function FoodCard({ item, accent, existingVariant, onAdd }) {
             
             {/* Header */}
             <div className="relative h-48 shrink-0">
-              <img src={item.image} className="w-full h-full object-cover" alt={item.name} />
+              <img src={item.image} className="w-full h-full object-cover" alt={seoAlt} />
               <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 bg-black/50 hover:bg-black/80 rounded-full p-2 text-white transition-colors">
                 <XMarkIcon />
               </button>

@@ -12,13 +12,19 @@ export default function SEO({
   type = 'website',
   noIndex = false,
   structuredData = null,
+  location
 }) {
-  const location = useLocation();
+  const routeLocation = useLocation();
 
-  const fullUrl = `${SITE_URL}${location.pathname}`;
+  const fullUrl = `${SITE_URL}${routeLocation.pathname}`;
   const fullTitle = title ? `${title} | BookNaija` : 'BookNaija - Your Business, One Simple Link';
-  const fullDescription = description ||
-    'Book services, buy products, and pay upfront. Stop the DM to book cycle with BookNaija.';
+  
+  // DYNAMIC META DESCRIPTION WITH "NEAR ME"
+  const fullDescription = description || 
+    (location 
+      ? `Book ${title} near me in ${location}. Secure Paystack payments, instant booking. Stop the DM to book cycle with BookNaija.`
+      : 'Book services, buy products, and pay upfront. Stop the DM to book cycle with BookNaija.');
+      
   const fullImage = image || DEFAULT_IMAGE;
   const robotsContent = noIndex ? 'noindex, nofollow' : 'index, follow';
 
@@ -83,19 +89,25 @@ export function generateBusinessSchema(biz) {
   const firstImage = biz.logo || biz.avatar || biz.hero || 
     (biz.gallery?.[0]?.images?.[0]) || biz.gallery?.[0];
 
+  // Grab the permanent location for Stealth SEO
+  const location = biz.location;
+
   return {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     name: biz.name,
-    description: biz.bio || biz.tagline || `${biz.name} on BookNaija`,
+    
+    // DYNAMIC DESCRIPTION: Prioritize bio over tagline for richer keywords
+    description: `Book ${biz.name} online. ${biz.bio || biz.tagline || ''} Located in ${location}. Browse services, buy products, and pay securely via Paystack.`,
+    
     url: `${SITE_URL}/${biz.slug}`,
     logo: biz.logo || undefined,
     image: firstImage || undefined,
     telephone: biz.phone || undefined,
     
-    address: biz.location ? {
+    address: location ? {
       '@type': 'PostalAddress',
-      addressLocality: biz.location,
+      addressLocality: location,
       addressCountry: 'NG',
     } : undefined,
     
@@ -110,28 +122,67 @@ export function generateBusinessSchema(biz) {
       '@type': 'OfferCatalog',
       name: `${biz.name} Services & Products`,
       itemListElement: [
+        
+        // --- SERVICES (Stealth SEO injected here) ---
         ...(biz.services || []).slice(0, 10).map((s, i) => ({
           '@type': 'Offer',
           itemOffered: {
             '@type': 'Service',
-            name: s.name,
-            description: s.description || undefined,
+            // User types: "Volume Lashes" -> Google sees: "Volume Lashes in Yaba, Lagos"
+            name: location ? `${s.name} in ${location}` : s.name,
+            description: s.description 
+              ? `${s.description} Located in ${location}.` 
+              : `Book ${s.name} in ${location} securely on BookNaija.`,
           },
           price: s.discount_enabled ? s.discount_price : s.price,
           priceCurrency: 'NGN',
           position: i + 1,
         })),
+        
+        // --- PRODUCTS (Stealth SEO injected here) ---
         ...(biz.products || []).slice(0, 10).map((p, i) => ({
           '@type': 'Offer',
           itemOffered: {
             '@type': 'Product',
-            name: p.name,
-            description: p.description || undefined,
+            name: location ? `${p.name} in ${location}` : p.name,
+            description: p.description 
+              ? `${p.description} Available in ${location}.` 
+              : `Buy ${p.name} in ${location} on BookNaija.`,
             image: p.image || p.images?.[0] || undefined,
           },
           price: p.discount_enabled ? p.discount_price : p.price,
           priceCurrency: 'NGN',
           position: (biz.services?.length || 0) + i + 1,
+        })),
+        
+        // --- FOOD (Stealth SEO injected here) ---
+        ...(biz.food || []).slice(0, 10).map((f, i) => ({
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Product',
+            name: location ? `${f.name} in ${location}` : f.name,
+            description: `Order ${f.name} in ${location} for delivery or pickup.`,
+            image: f.image || undefined,
+          },
+          price: f.price,
+          priceCurrency: 'NGN',
+          position: (biz.services?.length || 0) + (biz.products?.length || 0) + i + 1,
+        })),
+
+        // --- CARS (Stealth SEO injected here) ---
+        ...(biz.cars || []).slice(0, 10).map((c, i) => ({
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Product',
+            name: location ? `${c.name} in ${location}` : c.name,
+            description: c.description 
+              ? `${c.description} Available in ${location}.` 
+              : `${c.type === 'rent' ? 'Rent' : 'Buy'} ${c.name} in ${location} on BookNaija.`,
+            image: c.image || c.images?.[0] || undefined,
+          },
+          price: c.price,
+          priceCurrency: 'NGN',
+          position: (biz.services?.length || 0) + (biz.products?.length || 0) + (biz.food?.length || 0) + i + 1,
         })),
       ],
     },
