@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useBusiness } from '../hooks/useBusiness';
+import LocationPicker from '../components/LocationPicker';
 
 var CLOUD_NAME = 'deexaiik4';
 var UPLOAD_PRESET = 'BizUploads';
@@ -48,6 +49,10 @@ export default function Dashboard() {
   var urlCopiedArr = useState(false);
   var urlCopied = urlCopiedArr[0];
   var setUrlCopied = urlCopiedArr[1];
+
+  var showMapPickerArr = useState(false);
+  var showMapPicker = showMapPickerArr[0];
+  var setShowMapPicker = showMapPickerArr[1];
 
   useEffect(function () {
     if (!loading && biz) {
@@ -452,6 +457,7 @@ export default function Dashboard() {
     var pageUrl = window.location.origin + '/' + biz.slug;
     var mapsReadiness = getMapsReadiness();
     var mapsClaimed = biz.googleMapsClaimed || false;
+    var hasPreciseLocation = biz.lat && biz.lng;
 
     return (
       <div className="space-y-6">
@@ -702,7 +708,40 @@ export default function Dashboard() {
           <div><label className={lbl}>Phone</label><input className={inp} value={biz.phone} onChange={function (e) { setField('phone', e.target.value); }} /></div>
           <div><label className={lbl}>WhatsApp</label><input className={inp} value={biz.whatsapp} onChange={function (e) { setField('whatsapp', e.target.value); }} /></div>
           <div><label className={lbl}>Email</label><input className={inp} value={biz.email} onChange={function (e) { setField('email', e.target.value); }} /></div>
-          <div><label className={lbl}>Location</label><input className={inp} value={biz.location} onChange={function (e) { setField('location', e.target.value); }} /></div>
+          
+          {/* ===== LOCATION WITH MAP PICKER ===== */}
+          <div>
+            <label className={lbl}>Location <span className="text-purple-500 font-normal normal-case tracking-normal">(Recommended: Pin for accuracy)</span></label>
+            <div className="flex gap-2">
+              <input 
+                className={inp + " flex-1"}
+                value={biz.location} 
+                onChange={function (e) { setField('location', e.target.value); }} 
+                placeholder="e.g. Lekki Phase 1, Lagos"
+              />
+              <button 
+                type="button"
+                onClick={function () { setShowMapPicker(true); }}
+                className="px-4 py-3 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors whitespace-nowrap flex-shrink-0 flex items-center gap-1.5"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Map
+              </button>
+            </div>
+            {hasPreciseLocation && (
+              <div className="mt-1.5 flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5">
+                <svg className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <p className="text-[10px] text-emerald-700 font-semibold">
+                  ✓ Precise coordinates saved
+                </p>
+              </div>
+            )}
+          </div>
           <div><label className={lbl}>Hours</label><input className={inp} value={biz.hours} onChange={function (e) { setField('hours', e.target.value); }} /></div>
         </div>
 
@@ -1212,6 +1251,20 @@ export default function Dashboard() {
           </div>
         </div>
       </form>
+
+      {/* ===== MAP PICKER MODAL ===== */}
+      {showMapPicker && (
+        <LocationPicker
+          initialQuery={biz.location}
+          onSave={function(data) {
+            setField('location', data.address);
+            setField('lat', data.lat);
+            setField('lng', data.lng);
+            setShowMapPicker(false);
+          }}
+          onClose={function () { setShowMapPicker(false); }}
+        />
+      )}
     </div>
   );
 }

@@ -10,11 +10,12 @@ export default function HeroSection({ biz }) {
     : (biz.gallery?.slice(0, 4) || []);
   
   const hasImages = heroImages.length > 0;
+  const mapQuery = biz.location ? encodeURIComponent(biz.name + ' ' + biz.location) : encodeURIComponent(biz.name || '');
 
   return (
     <div className="relative w-full overflow-hidden bg-[#0a0a0a] text-white" style={{ minHeight: '85dvh' }}>
       
-      {/* Background images - add aria-hidden */}
+      {/* Background images */}
       {hasImages && (
         <>
           <style>{`
@@ -51,7 +52,7 @@ export default function HeroSection({ biz }) {
         </>
       )}
 
-      {/* Content Layer with semantic markup */}
+      {/* Content Layer */}
       <header className="relative z-20 max-w-lg mx-auto px-6 pt-16 pb-12 flex flex-col items-center justify-end h-full min-h-[85dvh]">
         
         <div className="flex flex-col items-center text-center mb-8 animate-fade-in-up">
@@ -77,13 +78,12 @@ export default function HeroSection({ biz }) {
             {biz.name}
           </h1>
           
-          {/* REMOVED itemProp="description" from here - tagline is not the description */}
           <p className="text-[11px] uppercase tracking-[0.3em] text-stone-400 font-medium max-w-[280px]">
             {biz.tagline}
           </p>
         </div>
 
-        {/* ADDED itemProp="description" here - bio is the actual description */}
+        {/* Bio */}
         {biz.bio && (
           <p 
             className="text-sm font-sans font-normal text-stone-300 leading-relaxed text-center mb-10 max-w-sm animate-fade-in-up" 
@@ -94,13 +94,21 @@ export default function HeroSection({ biz }) {
           </p>
         )}
 
-        {/* Info Pills with semantic markup */}
-        <div className="flex flex-wrap justify-center gap-2 mb-12 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+        {/* Info Pills */}
+        <div className="flex flex-wrap justify-center gap-2 mb-6 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           {biz.location && (
-            <address className="px-5 py-2.5 bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-2 shadow-sm not-italic">
+            <button
+              type="button"
+              onClick={function() { 
+                var mapEl = document.getElementById('location-map');
+                if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }}
+              className="px-5 py-2.5 bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-2 shadow-sm hover:bg-white/[0.08] transition-colors cursor-pointer"
+              aria-label="View location on map"
+            >
               <MapPinIcon className="w-3 h-3" style={{ color: accent }} />
-              <span className="text-[10px] font-bold text-stone-200 uppercase tracking-widest" itemProp="address">{biz.location}</span>
-            </address>
+              <span className="text-[10px] font-bold text-stone-200 uppercase tracking-widest">{biz.location}</span>
+            </button>
           )}
           {biz.hours && (
             <div className="px-5 py-2.5 bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-2 shadow-sm">
@@ -109,6 +117,50 @@ export default function HeroSection({ biz }) {
             </div>
           )}
         </div>
+
+        {/* ===== MAP EMBED ===== */}
+        {biz.location && (
+          <div 
+            id="location-map"
+            className="w-full mb-10 rounded-2xl overflow-hidden border border-white/[0.06] bg-white/[0.02] animate-fade-in-up relative"
+            style={{ animationDelay: '0.25s', height: '180px' }}
+          >
+            <iframe
+              title={`Map showing ${biz.name} located at ${biz.location}`}
+              width="100%"
+              height="100%"
+              frameBorder="0"
+              scrolling="no"
+              marginHeight="0"
+              marginWidth="0"
+              src={biz.lat && biz.lng 
+                ? `https://maps.google.com/maps?q=${biz.lat},${biz.lng}&t=&z=17&ie=UTF8&iwloc=&output=embed`
+                : `https://maps.google.com/maps?q=${mapQuery}&t=&z=15&ie=UTF8&iwloc=&output=embed`
+              }
+              style={{ filter: 'invert(90%) hue-rotate(180deg) saturate(0.8) contrast(1.1) brightness(0.9)', border: '0' }}
+              loading="lazy"
+            />
+            <div 
+              className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-md rounded-lg px-3 py-1.5 border border-white/10"
+            >
+              <svg className="w-3 h-3 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <a 
+                href={biz.lat && biz.lng
+                  ? `https://www.google.com/maps/search/?api=1&query=${biz.lat},${biz.lng}`
+                  : `https://www.google.com/maps/search/?api=1&query=${mapQuery}`
+                }
+                target="_blank"
+                rel="noreferrer"
+                className="text-[10px] text-stone-300 hover:text-white font-medium transition-colors"
+              >
+                Open in Maps
+              </a>
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="w-full flex flex-col gap-3 mb-10 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
