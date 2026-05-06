@@ -1,9 +1,11 @@
 import { useState } from 'react';
 
-export default function ProductList({ products, selectedProducts, onSelect, accent, label, location }) {
+export default function ProductList({ products, selectedProducts, onSelect, accent, label, location, theme }) {
+  const isDark = theme === 'dark';
+
   return (
     <section className="px-6 mt-8 max-w-xl mx-auto" aria-label={label}>
-      <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-6 px-1">
+      <h2 className={`text-[11px] font-semibold uppercase tracking-[0.2em] mb-6 px-1 ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>
         {label}
       </h2>
       
@@ -16,6 +18,7 @@ export default function ProductList({ products, selectedProducts, onSelect, acce
             accent={accent}
             onClick={(id, size, color) => onSelect(id, size, color)}
             location={location}
+            theme={theme}
           />
         ))}
       </div>
@@ -23,8 +26,9 @@ export default function ProductList({ products, selectedProducts, onSelect, acce
   );
 }
 
-function ProductCard({ product, active, accent, onClick, location }) {
+function ProductCard({ product, active, accent, onClick, location, theme }) {
   const [openDetails, setOpenDetails] = useState(false);
+  const isDark = theme === 'dark';
   
   // --- SIZE LOGIC ---
   const hasSizes = product.sizes && product.sizes.length > 0;
@@ -46,6 +50,21 @@ function ProductCard({ product, active, accent, onClick, location }) {
   const originalPrice = product.price;
   const discountPrice = hasDiscount ? product.discount_price : originalPrice;
   const discountPercentage = hasDiscount ? Math.round(((originalPrice - discountPrice) / originalPrice) * 100) : 0;
+
+  // Theme specific styling variables
+  const cardBg = isDark 
+    ? (active ? 'bg-white/5' : 'bg-white/[0.02] hover:bg-white/[0.04]') 
+    : (active ? 'bg-stone-50' : 'bg-white hover:bg-stone-50');
+  
+  const cardBorder = active 
+    ? { borderColor: `${accent}60`, boxShadow: `0 0 0 1px ${accent}30, 0 4px 20px -4px ${accent}15` }
+    : { borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#e7e5e4' }; // stone-200
+
+  const textPrimary = isDark ? 'text-white' : 'text-stone-900';
+  const textSecondary = isDark ? 'text-stone-300' : 'text-stone-600';
+  const textMuted = isDark ? 'text-stone-500' : 'text-stone-500';
+  const borderSubtle = isDark ? 'border-white/5' : 'border-stone-100';
+  const imageBg = isDark ? 'bg-black' : 'bg-stone-100';
 
   const nextImage = (e) => {
     e.stopPropagation();
@@ -73,24 +92,15 @@ function ProductCard({ product, active, accent, onClick, location }) {
       className={`
         w-full text-left rounded-2xl border transition-all duration-300 group relative overflow-hidden flex flex-col cursor-pointer
         ${isWide ? 'col-span-2' : 'col-span-1'}
-        ${active 
-          ? 'bg-white/5' 
-          : 'bg-white/[0.02] hover:bg-white/[0.04]'
-        }
+        ${cardBg}
       `}
-      style={
-        active
-          ? { 
-              borderColor: `${accent}60`, 
-              boxShadow: `0 0 0 1px ${accent}30, 0 4px 20px -4px ${accent}15`,
-            }
-          : { borderColor: 'rgba(255,255,255,0.05)' }
-      }
+      style={cardBorder}
     >
       {/* Image Container */}
       <div 
         className={`
-          w-full bg-black border-b border-white/5 relative overflow-hidden
+          w-full relative overflow-hidden
+          ${imageBg} border-b ${borderSubtle}
           ${isWide ? 'aspect-[4/5]' : 'aspect-square'} 
         `}
       >
@@ -102,23 +112,23 @@ function ProductCard({ product, active, accent, onClick, location }) {
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-stone-800">
+          <div className={`w-full h-full flex items-center justify-center ${isDark ? 'text-stone-800' : 'text-stone-400'}`}>
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1">
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
             </svg>
           </div>
         )}
 
-        {/* NEW: Discount Badge */}
+        {/* Discount Badge */}
         {hasDiscount && (
           <div className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-lg">
             -{discountPercentage}%
           </div>
         )}
 
-        {/* NEW: Product Code Badge */}
+        {/* Product Code Badge */}
         {product.product_code && (
-          <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white text-[9px] font-mono px-2 py-1 rounded border border-white/10">
+          <div className={`absolute top-3 right-3 backdrop-blur-sm text-white text-[9px] font-mono px-2 py-1 rounded border ${isDark ? 'bg-black/70 border-white/10' : 'bg-stone-900/80 border-white/10'}`}>
             {product.product_code}
           </div>
         )}
@@ -132,7 +142,10 @@ function ProductCard({ product, active, accent, onClick, location }) {
                 onClick={nextImage}
                 className={`
                   h-1.5 rounded-full transition-all duration-300 pointer-events-auto cursor-pointer
-                  ${idx === currentImgIndex ? 'w-6 bg-white/90' : 'w-1.5 bg-white/40'}
+                  ${idx === currentImgIndex 
+                    ? (isDark ? 'w-6 bg-white/90' : 'w-6 bg-stone-900/90') 
+                    : (isDark ? 'w-1.5 bg-white/40' : 'w-1.5 bg-stone-900/40')
+                  }
                 `}
               />
             ))}
@@ -160,7 +173,7 @@ function ProductCard({ product, active, accent, onClick, location }) {
           <h3 className={`
             font-semibold mb-1 transition-colors line-clamp-1
             ${isWide ? 'text-2xl mb-4' : 'text-sm'} 
-            ${active ? 'text-white' : 'text-stone-300'}
+            ${active ? textPrimary : (isDark ? 'text-stone-300' : 'text-stone-800')}
           `}>
             {product.name}
           </h3>
@@ -184,8 +197,8 @@ function ProductCard({ product, active, accent, onClick, location }) {
                   `}
                   style={{
                     backgroundColor: selectedSize === size ? accent : 'transparent',
-                    color: selectedSize === size ? '#0a0a0a' : '#a1a1aa',
-                    border: selectedSize === size ? 'none' : '1px solid rgba(255,255,255,0.15)',
+                    color: selectedSize === size ? '#0a0a0a' : (isDark ? '#a1a1aa' : '#78716c'), // stone-400 : stone-500
+                    border: selectedSize === size ? 'none' : (isDark ? '1px solid rgba(255,255,255,0.15)' : '1px solid #d6d3d1'), // stone-300
                     fontSize: isWide ? '0.875rem' : '0.75rem', 
                     padding: isWide ? '0.25rem 0.75rem' : '0.125rem 0.5rem' 
                   }}
@@ -209,13 +222,13 @@ function ProductCard({ product, active, accent, onClick, location }) {
                   title={color} 
                   className={`
                     rounded-full transition-transform duration-200 relative
-                    border border-white/20
+                    ${isDark ? 'border-white/20' : 'border-stone-300'}
                     ${selectedColor === color ? 'scale-110 shadow-lg' : 'hover:scale-105'}
                   `}
                   style={{
                     backgroundColor: color,
                     boxShadow: selectedColor === color 
-                      ? `0 0 0 2px #0a0a0a, 0 0 0 4px ${accent}` 
+                      ? `0 0 0 2px ${isDark ? '#0a0a0a' : '#ffffff'}, 0 0 0 4px ${accent}` 
                       : 'none',
                     width: isWide ? '20px' : '16px', 
                     height: isWide ? '20px' : '16px',
@@ -232,11 +245,16 @@ function ProductCard({ product, active, accent, onClick, location }) {
                 e.stopPropagation(); 
                 setOpenDetails(!openDetails);
               }}
-              className={`mb-2 font-medium text-stone-500 hover:text-white transition-colors flex items-center gap-2 group/btn
+              className={`mb-2 font-medium transition-colors flex items-center gap-2 group/btn
                 ${isWide ? 'text-xs mb-4' : 'text-[11px]'}
+                ${isDark ? 'text-stone-500 hover:text-white' : 'text-stone-600 hover:text-stone-900'}
               `}
             >
-              <span className="w-4 h-4 rounded border border-stone-700 flex items-center justify-center text-[10px] text-stone-400 group-hover/btn:border-stone-500 group-hover/btn:text-white transition-colors">
+              <span className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] transition-colors ${
+                isDark 
+                  ? 'border-stone-700 text-stone-400 group-hover/btn:border-stone-500 group-hover/btn:text-white' 
+                  : 'border-stone-300 text-stone-500 group-hover/btn:border-stone-400 group-hover/btn:text-stone-900'
+              }`}>
                 {openDetails ? '−' : '+'}
               </span>
               {openDetails ? 'Less' : 'More'}
@@ -246,7 +264,8 @@ function ProductCard({ product, active, accent, onClick, location }) {
           {/* Expandable Details */}
           {openDetails && canShowDetails && (
             <p className={`
-              text-stone-300 leading-relaxed animate-fade-in
+              leading-relaxed animate-fade-in
+              ${isDark ? 'text-stone-300' : 'text-stone-600'}
               ${isWide ? 'text-base leading-relaxed mb-4' : 'text-xs'}
             `}>
               {product.description}
@@ -254,18 +273,19 @@ function ProductCard({ product, active, accent, onClick, location }) {
           )}
         </div>
 
-        {/* NEW: Price Display with Discount */}
+        {/* Price Display with Discount */}
         <div className="flex items-center gap-2">
           <p className={`
             font-bold tabular-nums transition-colors
             ${isWide ? 'text-2xl' : 'text-sm'}
-            ${active ? 'text-white' : ''}
-          `} style={{ color: accent }}>
+            ${active ? (isDark ? 'text-white' : 'text-stone-900') : ''}
+          `} style={{ color: active ? undefined : accent }}>
             ₦{discountPrice.toLocaleString()}
           </p>
           {hasDiscount && (
             <p className={`
-              text-stone-500 line-through tabular-nums
+              line-through tabular-nums
+              ${isDark ? 'text-stone-500' : 'text-stone-400'}
               ${isWide ? 'text-base' : 'text-xs'}
             `}>
               ₦{originalPrice.toLocaleString()}

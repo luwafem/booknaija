@@ -135,7 +135,7 @@ export default function Landing() {
                 to="/signup"
                 className="w-full sm:w-auto bg-zinc-900 text-white px-8 py-4 text-base font-semibold rounded-xl hover:bg-zinc-700 transition-all active:scale-95"
               >
-                Start Free Trial
+                Get Started for ₦500
               </Link>
               <div className="flex items-center gap-3 text-sm font-medium text-zinc-600">
                 <span>Refer & Earn Free Months</span>
@@ -378,10 +378,16 @@ export default function Landing() {
                 </div>
                 <div className="pt-4">
                   <p className="text-zinc-400 text-sm font-semibold uppercase tracking-wider mb-2">Monthly Plan</p>
-                  <div className="flex items-baseline gap-2 mb-8">
-                    <span className="text-6xl font-bold text-zinc-900 tracking-tighter">₦2,500</span>
-                    <span className="text-zinc-400 font-medium">/month</span>
+                  
+                  {/* UPDATED PRICING COPY */}
+                  <div className="mb-8">
+                    <p className="text-base text-green-600 font-bold mb-1">Start for just ₦500 today</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-6xl font-bold text-zinc-900 tracking-tighter">₦2,500</span>
+                      <span className="text-zinc-400 font-medium">/month after</span>
+                    </div>
                   </div>
+
                   <ul className="space-y-4 mb-10 text-sm text-zinc-600 font-medium">
                     <li className="flex items-center gap-3"><svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg> Sell Services & Products</li>
                     <li className="flex items-center gap-3"><svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg> Secure Paystack Payouts</li>
@@ -475,6 +481,15 @@ export default function Landing() {
                   <li><Link to="/signup" className="hover:text-zinc-900 transition-colors">Sign Up</Link></li>
                 </ul>
               </div>
+              
+              {/* NEW PARTNERS COLUMN */}
+              <div className="space-y-4">
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Partners</p>
+                <ul className="space-y-3 text-sm font-medium text-zinc-600">
+                  <li><Link to="/affiliate-signup" className="hover:text-zinc-900 font-bold text-purple-600 transition-colors">Become an Affiliate</Link></li>
+                </ul>
+              </div>
+
               <div className="space-y-4">
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Company</p>
                 <ul className="space-y-3 text-sm font-medium text-zinc-600">

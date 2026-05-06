@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useBusiness } from '../hooks/useBusiness';
 import LocationPicker from '../components/LocationPicker';
 
@@ -54,6 +54,15 @@ export default function Dashboard() {
   var showMapPicker = showMapPickerArr[0];
   var setShowMapPicker = showMapPickerArr[1];
 
+  // --- NEW SUBSCRIPTION STATE ---
+  var subLoadingArr = useState(false);
+  var subLoading = subLoadingArr[0];
+  var setSubLoading = subLoadingArr[1];
+
+  var subMsgArr = useState('');
+  var subMsg = subMsgArr[0];
+  var setSubMsg = subMsgArr[1];
+
   useEffect(function () {
     if (!loading && biz) {
       var authStatus = sessionStorage.getItem('biz_auth_' + slug);
@@ -72,6 +81,34 @@ export default function Dashboard() {
     }
   }, [initialBiz]);
 
+  // --- NEW SUBSCRIPTION VERIFICATION EFFECT ---
+  useEffect(function() {
+    const params = new URLSearchParams(window.location.search);
+    const subRef = params.get('sub_ref');
+    
+    if (subRef && biz) {
+      setSubLoading(true);
+      fetch('/.netlify/functions/verify-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference: subRef, slug: slug })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if(data.success) {
+          setSubMsg('Payment successful! Subscription extended by 30 days.');
+          setTimeout(() => window.location.reload(), 2000);
+        } else {
+          setSubMsg('Payment verification failed. Contact support.');
+        }
+      })
+      .catch(() => setSubMsg('Network error verifying payment.'))
+      .finally(() => setSubLoading(false));
+
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [biz, slug]);
+
   useEffect(function () {
     if (!window.cloudinary) {
       var s = document.createElement('script');
@@ -80,6 +117,35 @@ export default function Dashboard() {
       document.body.appendChild(s);
     }
   }, []);
+
+  // --- NEW SUBSCRIPTION LOGIC & CALCULATIONS ---
+  var subEndsAt = biz?.subscription_ends_at ? new Date(biz.subscription_ends_at) : null;
+  var now = new Date();
+  var daysLeft = subEndsAt ? Math.ceil((subEndsAt - now) / (1000 * 60 * 60 * 24)) : null;
+  var isExpired = daysLeft !== null && daysLeft <= 0;
+  var isWarning = daysLeft !== null && daysLeft <= 5 && daysLeft > 0;
+
+  async function handlePaySubscription() {
+    setSubLoading(true);
+    setSubMsg('');
+    try {
+      const res = await fetch('/.netlify/functions/initialize-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: slug, email: biz.email })
+      });
+      const data = await res.json();
+      if (data.authorization_url) {
+        window.location.href = data.authorization_url;
+      } else {
+        setSubMsg(data.error || 'Failed to initialize payment.');
+        setSubLoading(false);
+      }
+    } catch (err) {
+      setSubMsg('Network error.');
+      setSubLoading(false);
+    }
+  }
 
   function handleNameClick() {
     clickCountArr.current++;
@@ -462,6 +528,36 @@ export default function Dashboard() {
     return (
       <div className="space-y-6">
 
+        {/* ===== SUBSCRIPTION WARNING ===== */}
+        {(isExpired || isWarning) && (
+          <div className={`rounded-2xl p-5 text-white ${isExpired ? 'bg-red-600' : 'bg-amber-500'}`}>
+            <div className="flex items-start gap-3 mb-4">
+              <svg className="w-6 h-6 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <div>
+                <h3 className="text-base font-bold">
+                  {isExpired ? 'Your Page is Inactive' : `Subscription expires in ${daysLeft} day${daysLeft > 1 ? 's' : ''}`}
+                </h3>
+                <p className="text-sm opacity-90 mt-1">
+                  {isExpired ? 'Your bio-link is currently hidden. Pay now to reactivate it instantly.' : 'Pay now to avoid losing access to your store and bookings.'}
+                </p>
+              </div>
+            </div>
+            
+            {subMsg && <p className="text-sm font-medium bg-white/20 rounded-lg px-3 py-2 mb-3 text-center">{subMsg}</p>}
+
+            <button
+              type="button"
+              onClick={handlePaySubscription}
+              disabled={subLoading}
+              className="w-full bg-white text-zinc-900 font-bold py-3.5 rounded-xl hover:bg-zinc-100 transition-all active:scale-95 disabled:bg-zinc-300 disabled:text-zinc-500"
+            >
+              {subLoading ? 'Processing...' : `Pay ₦2,500 for Next Month`}
+            </button>
+          </div>
+        )}
+
         {/* ===== GOOGLE MAPS - MOBILE OPTIMIZED ===== */}
         {!mapsClaimed && (
           <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-4 sm:p-5 text-white relative overflow-hidden">
@@ -701,6 +797,40 @@ export default function Dashboard() {
           <div><label className={lbl}>Business Name</label><input className={inp} value={biz.name} onChange={function (e) { setField('name', e.target.value); }} /></div>
           <div><label className={lbl}>Accent Color</label><div className="flex gap-2"><input type="color" value={biz.accent} onChange={function (e) { setField('accent', e.target.value); }} className="w-12 h-11 rounded-lg border border-zinc-200 cursor-pointer p-1" /><input className={inp + " flex-1"} value={biz.accent} onChange={function (e) { setField('accent', e.target.value); }} /></div></div>
         </div>
+        
+        {/* ===== THEME SELECTOR ===== */}
+        <div>
+          <label className={lbl}>Theme Appearance</label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={function() { setField('theme', 'light'); }}
+              className={"p-3 rounded-xl border-2 text-left transition-all " + (biz.theme !== 'dark' ? 'border-purple-600 bg-purple-50' : 'border-zinc-200 bg-white hover:border-zinc-300')}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <span className="text-xs font-bold text-zinc-800">Light Mode</span>
+              </div>
+              <p className="text-[10px] text-zinc-500">Clean, bright background</p>
+            </button>
+            <button
+              type="button"
+              onClick={function() { setField('theme', 'dark'); }}
+              className={"p-3 rounded-xl border-2 text-left transition-all " + (biz.theme === 'dark' ? 'border-purple-600 bg-purple-50' : 'border-zinc-200 bg-white hover:border-zinc-300')}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+                <span className="text-xs font-bold text-zinc-800">Dark Mode</span>
+              </div>
+              <p className="text-[10px] text-zinc-500">Sleek, dark background</p>
+            </button>
+          </div>
+        </div>
+
         <div><label className={lbl}>Tagline</label><input className={inp} value={biz.tagline} onChange={function (e) { setField('tagline', e.target.value); }} /></div>
         <div><label className={lbl}>Bio</label><textarea className={inp + " h-24 resize-none"} value={biz.bio} onChange={function (e) { setField('bio', e.target.value); }} /></div>
 
@@ -1006,7 +1136,7 @@ export default function Dashboard() {
                   />
                   {p.product_code && (
                     <div className="flex items-center gap-1.5 px-3 bg-blue-50 border border-blue-200 rounded-xl">
-                      <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <span className="text-[10px] text-blue-700 font-medium hidden sm:inline">Shareable</span>

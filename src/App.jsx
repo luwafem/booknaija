@@ -11,6 +11,11 @@ import DashboardLogin from './pages/DashboardLogin';
 import Dashboard from './pages/Dashboard';
 import NotFound from './pages/NotFound';
 
+// --- NEW AFFILIATE IMPORTS ---
+import AffiliateSignup from './pages/AffiliateSignup';
+import AffiliateDashboard from './pages/AffiliateDashboard';
+// -----------------------------
+
 // Scroll to top on route change (important for SEO & UX)
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -57,6 +62,10 @@ export default function App() {
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/onboarding-success" element={<OnboardingSuccess />} />
         
+        {/* Affiliate System Routes */}
+        <Route path="/affiliate-signup" element={<AffiliateSignup />} />
+        <Route path="/affiliate/dashboard/:affiliateId" element={<AffiliateDashboard />} />
+
         {/* Legal Pages */}
         <Route path="/terms" element={<Legal type="terms" />} />
         <Route path="/privacy" element={<Legal type="privacy" />} />
@@ -66,6 +75,7 @@ export default function App() {
         <Route path="/dashboard/:slug" element={<Dashboard />} />
         
         {/* Business Pages - Dynamic Slugs */}
+        {/* WARNING: This MUST be second to last. If placed above /affiliate-signup, it will break those links */}
         <Route path="/:slug" element={<BioPage />} />
         
         {/* 404 Page - Must be last */}

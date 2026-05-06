@@ -34,7 +34,7 @@ exports.handler = async (event) => {
       email,
       amount: Math.round(amount * 100), // Ensure it's an integer (kobo)
       currency: 'NGN',
-      callback_url: `${event.headers.origin || 'https://yoursite.netlify.app'}/${slug}`,
+      callback_url: d.callback_url || `${event.headers.origin || 'https://yoursite.netlify.app'}/${slug}`,
       metadata: { 
         slug, serviceId, serviceName, date, time, 
         customerName: name, customerPhone: phone, 

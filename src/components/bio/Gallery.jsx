@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { XIcon } from '../Icons';
 
-export default function Gallery({ gallery, accent, location }) {
+export default function Gallery({ gallery, accent, location, theme }) {
   const [lightbox, setLightbox] = useState({ isOpen: false, groupIdx: 0, imgIdx: 0 });
+  const isDark = theme === 'dark';
 
   if (!gallery || gallery.length === 0) return null;
 
@@ -36,7 +37,7 @@ export default function Gallery({ gallery, accent, location }) {
   return (
     <>
       <section className="px-6 mt-8 max-w-xl mx-auto" aria-label="Photo gallery">
-        <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-6 px-1">
+        <h2 className={`text-[11px] font-semibold uppercase tracking-[0.2em] mb-6 px-1 ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>
           Our Work
         </h2>
         
@@ -44,7 +45,7 @@ export default function Gallery({ gallery, accent, location }) {
           {groups.map((g, gIdx) => (
             <div key={gIdx}>
               {groups.length > 1 && (
-                <h3 className="text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-3 px-1">
+                <h3 className={`text-[10px] uppercase tracking-widest font-bold mb-3 px-1 ${isDark ? 'text-stone-500' : 'text-stone-600'}`}>
                   {g.group}
                 </h3>
               )}
@@ -54,12 +55,14 @@ export default function Gallery({ gallery, accent, location }) {
                   <button
                     key={iIdx}
                     onClick={() => openLightbox(gIdx, iIdx)}
-                    // CHANGED: aspect-square -> aspect-[3/4] for a taller, portrait look
-                    className="aspect-[3/4] rounded-2xl overflow-hidden bg-black border border-white/5 hover:border-white/20 transition-all duration-300 group relative shadow-lg"
+                    className={`aspect-[3/4] rounded-2xl overflow-hidden transition-all duration-300 group relative shadow-lg ${
+                      isDark 
+                        ? 'bg-black border border-white/5 hover:border-white/20' 
+                        : 'bg-stone-100 border border-stone-200 hover:border-stone-300'
+                    }`}
                   >
                     <img
                       src={img}
-                      // STEALTH SEO: "Braids in Yaba" instead of "Braids 1"
                       alt={location ? `${g.group} in ${location}` : `${g.group} ${iIdx + 1}`}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                       loading="lazy"
@@ -84,17 +87,22 @@ export default function Gallery({ gallery, accent, location }) {
           onNext={next}
           accent={accent}
           alt={location ? `${groups[lightbox.groupIdx].group} in ${location}` : "Gallery full view"}
+          theme={theme}
         />
       )}
     </>
   );
 }
 
-function Lightbox({ image, current, total, onClose, onPrev, onNext, accent, alt }) {
+function Lightbox({ image, current, total, onClose, onPrev, onNext, accent, alt, theme }) {
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
   const [controlsVisible, setControlsVisible] = useState(true);
   const timeoutRef = useRef(null);
+
+  // Lightbox is typically dark regardless of theme to focus on the image
+  // But we keep the theme prop if specific adjustments are needed in future
+  const isDark = theme === 'dark';
 
   // Auto-hide controls logic
   const showControls = () => {

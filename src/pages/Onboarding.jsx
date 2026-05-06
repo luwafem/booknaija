@@ -43,7 +43,14 @@ export default function Onboarding() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  var bizData = location.state;
+  // --- UPDATED TO GRAB DATA FROM SESSION STORAGE AFTER PAYSTACK REDIRECT ---
+  var bizData = location.state || JSON.parse(sessionStorage.getItem('pending_signup_data')) || {};
+  
+  // --- CLEANUP SESSION STORAGE SO THEY DON'T GET STUCK HERE IF THEY REFRESH ---
+  if (!location.state && sessionStorage.getItem('pending_signup_data')) {
+    sessionStorage.removeItem('pending_signup_data');
+  }
+
   var businessName = (bizData && bizData.businessName) ? bizData.businessName : 'New Business';
   var businessSlug = (bizData && bizData.businessSlug) ? bizData.businessSlug : 'new-business';
   var businessType = (bizData && bizData.businessType) ? bizData.businessType : '';
@@ -57,6 +64,7 @@ export default function Onboarding() {
   var instagram = (bizData && bizData.instagram) ? bizData.instagram : '';
   var tiktok = (bizData && bizData.tiktok) ? bizData.tiktok : '';
   var subaccountCode = (bizData && bizData.subaccountCode) ? bizData.subaccountCode : 'ACCT_PENDING';
+  var referredBy = (bizData && bizData.referredBy) ? bizData.referredBy : null;
 
   var isAutoBusiness = businessType === 'Auto' || businessType === 'Auto Dealer / Rental';
   var isFoodBusiness = businessType === 'Restaurant' || businessType === 'Restaurant / Food';
@@ -594,7 +602,7 @@ export default function Onboarding() {
       tagline: 'A professional ' + businessType + ' in Lagos',
       bio: bio,
       phone: phone,
-      referredBy: bizData.referredBy || null,
+      referredBy: referredBy,
       whatsapp: whatsapp,
       email: email,
       location: locationAddr,
@@ -720,7 +728,7 @@ export default function Onboarding() {
             autoComplete="off"
           />
 
-          {/* ─── NEW DASHBOARD SECURITY SECTION ─── */}
+          {/* ─── DASHBOARD SECURITY SECTION ─── */}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100">
             <h2 className={sectionTitle}>Dashboard Security</h2>
             <p className={sectionDesc}>You will need these to log into your management dashboard.</p>

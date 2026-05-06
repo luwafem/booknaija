@@ -16,7 +16,14 @@ exports.handler = async function (event) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing slug or name' }) };
     }
 
-    // 1. Upsert the business row
+    // 1. Check if this is a brand new business or an update
+    const { data: existingBiz } = await supabase
+      .from('businesses')
+      .select('id')
+      .eq('slug', d.slug)
+      .single();
+
+    // 2. Upsert the business row
     var bizPayload = {
       slug: d.slug,
       name: d.name,
@@ -27,8 +34,12 @@ exports.handler = async function (event) {
       whatsapp: d.whatsapp || '',
       email: d.email || '',
       location: d.location || '',
+      lat: d.lat || null,
+      lng: d.lng || null,
       hours: d.hours || '',
       accent: d.accent || '#c8a97e',
+      theme: d.theme || 'light',
+      google_maps_claimed: d.googleMapsClaimed === true,
       avatar: '',
       hero: d.hero || '',
       paystack_public_key: d.paystackPublicKey || 'pk_live_2ba1413aaaf5091188571ea6f87cca34945d943c',
@@ -46,8 +57,16 @@ exports.handler = async function (event) {
       security_question_1: d.securityQuestion1 || '',
       security_answer_1: (d.securityAnswer1 || '').toLowerCase().trim(),
       security_question_2: d.securityQuestion2 || '',
-      security_answer_2: (d.securityAnswer2 || '').toLowerCase().trim()
+      security_answer_2: (d.securityAnswer2 || '').toLowerCase().trim(),
+      
+      // --- AFFILIATE TRACKING ---
+      referred_by_affiliate: (d.referredBy && d.referredBy.startsWith('aff_')) ? d.referredBy : null
     };
+
+    // --- SUBSCRIPTION TIMER LOGIC ---
+    if (!existingBiz) {
+      bizPayload.subscription_ends_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    }
 
     var { data: bizRow, error: bizErr } = await supabase
       .from('businesses')
@@ -64,14 +83,14 @@ exports.handler = async function (event) {
     console.log('Business ID:', businessId);
 
     // ─── REFERRAL TRACKING ───
-    if (d.referredBy && d.referredBy !== d.slug) {
+    if (d.referredBy && d.referredBy !== d.slug && !d.referredBy.startsWith('aff_')) {
       try {
-        console.log('Processing referral from slug:', d.referredBy);
+        console.log('Processing normal referral from slug:', d.referredBy);
         
         const { data: referrer, error: refErr } = await supabase
           .from('businesses')
           .select('id, referral_count')
-          .eq('slug', d.referredKey)
+          .eq('slug', d.referredBy)
           .single();
 
         if (!refErr && referrer) {
@@ -93,6 +112,8 @@ exports.handler = async function (event) {
       } catch (refCatchErr) {
         console.error('Referral processing error:', refCatchErr.message);
       }
+    } else if (d.referredBy && d.referredBy.startsWith('aff_')) {
+      console.log('Affiliate referral detected. Saved to database during upsert. Skipping standard referral count.');
     }
 
     // 2. Clear old related data
@@ -101,7 +122,7 @@ exports.handler = async function (event) {
     await supabase.from('business_cars').delete().eq('business_id', businessId);
     await supabase.from('business_food').delete().eq('business_id', businessId);
 
-    // 3. Insert services (UPDATED WITH DISCOUNTS)
+    // 3. Insert services
     if (d.services && d.services.length > 0) {
       var serviceRows = d.services.map(function (s, i) {
         return {
@@ -110,8 +131,8 @@ exports.handler = async function (event) {
           name: s.name,
           duration: s.duration || '',
           price: parseInt(String(s.price).replace(/,/g, '')) || 0,
-          discount_enabled: s.discount_enabled === true,           // NEW
-          discount_price: parseInt(String(s.discount_price).replace(/,/g, '')) || 0, // NEW
+          discount_enabled: s.discount_enabled === true,           
+          discount_price: parseInt(String(s.discount_price).replace(/,/g, '')) || 0, 
           image: s.image || '',
           images: s.images || [],
           show_details: s.showDetails !== false,
@@ -123,7 +144,7 @@ exports.handler = async function (event) {
       if (sErr) console.error('Services error:', sErr);
     }
 
-    // 4. Insert products (UPDATED WITH CODE & DISCOUNTS)
+    // 4. Insert products — BUG FIX: Changed s.discount_price to p.discount_price
     if (d.products && d.products.length > 0) {
       var productRows = d.products.map(function (p, i) {
         return {
@@ -131,9 +152,9 @@ exports.handler = async function (event) {
           product_id: p.id,
           name: p.name,
           price: parseInt(String(p.price).replace(/,/g, '')) || 0,
-          product_code: (p.product_code || '').toUpperCase().trim(), // NEW
-          discount_enabled: p.discount_enabled === true,               // NEW
-          discount_price: parseInt(String(p.discount_price).replace(/,/g, '')) || 0, // NEW
+          product_code: (p.product_code || '').toUpperCase().trim(), 
+          discount_enabled: p.discount_enabled === true,               
+          discount_price: parseInt(String(p.discount_price).replace(/,/g, '')) || 0, 
           image: p.image || '',
           images: p.images || [],
           sizes: p.sizes || [],

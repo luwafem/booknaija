@@ -1,6 +1,8 @@
 import { useState } from 'react';
 
-export default function CarList({ cars, selectedCar, onSelect, accent, location }) {
+export default function CarList({ cars, selectedCar, onSelect, accent, location, theme }) {
+  const isDark = theme === 'dark';
+
   // Separate Rentals and Sales
   const rentals = cars.filter(c => c.type === 'rent');
   const sales = cars.filter(c => c.type === 'sale');
@@ -11,7 +13,7 @@ export default function CarList({ cars, selectedCar, onSelect, accent, location 
       {/* --- RENTALS SECTION --- */}
       {rentals.length > 0 && (
         <>
-          <h2 className="text-[11px] font-semibold text-blue-400 uppercase tracking-[0.2em] mb-4 px-1">
+          <h2 className={`text-[11px] font-semibold uppercase tracking-[0.2em] mb-4 px-1 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
             Available for Rent
           </h2>
           <div className="space-y-4 mb-8">
@@ -23,6 +25,7 @@ export default function CarList({ cars, selectedCar, onSelect, accent, location 
                 accent={accent}
                 onClick={() => onSelect(car)}
                 location={location}
+                theme={theme}
               />
             ))}
           </div>
@@ -32,7 +35,7 @@ export default function CarList({ cars, selectedCar, onSelect, accent, location 
       {/* --- SALES SECTION --- */}
       {sales.length > 0 && (
         <>
-          <h2 className="text-[11px] font-semibold text-emerald-400 uppercase tracking-[0.2em] mb-4 px-1">
+          <h2 className={`text-[11px] font-semibold uppercase tracking-[0.2em] mb-4 px-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
             Cars for Sale
           </h2>
           <div className="space-y-4">
@@ -44,6 +47,7 @@ export default function CarList({ cars, selectedCar, onSelect, accent, location 
                 accent={accent}
                 onClick={() => onSelect(car)}
                 location={location}
+                theme={theme}
               />
             ))}
           </div>
@@ -51,7 +55,7 @@ export default function CarList({ cars, selectedCar, onSelect, accent, location 
       )}
 
       {cars.length === 0 && (
-        <div className="text-center py-8 text-stone-500 text-sm">
+        <div className={`text-center py-8 text-sm ${isDark ? 'text-stone-500' : 'text-stone-600'}`}>
           No cars available at the moment.
         </div>
       )}
@@ -59,33 +63,51 @@ export default function CarList({ cars, selectedCar, onSelect, accent, location 
   );
 }
 
-function CarCard({ car, active, accent, onClick, location }) {
+function CarCard({ car, active, accent, onClick, location, theme }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false); // For Fullscreen Image
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   
+  const isDark = theme === 'dark';
   const images = car.images || [car.image];
   const isRent = car.type === 'rent';
+
+  // Badge Colors
   const badgeColor = isRent 
-    ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' 
-    : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+    ? (isDark ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' : 'bg-blue-100 text-blue-700 border-blue-200') 
+    : (isDark ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-emerald-100 text-emerald-700 border-emerald-200');
 
   // Dynamic Alt Text for Stealth SEO
   const seoAlt = location ? `${car.name} in ${location}` : car.name;
 
-  const activeClasses = active 
-    ? `bg-white/5 border-[${accent}] shadow-[0_0_0_1px_${accent}40]` 
-    : 'border-white/5 hover:bg-white/[0.04]';
+  // Theme aware styles
+  const cardBg = isDark 
+    ? (active ? 'bg-white/5' : 'bg-white/[0.02] hover:bg-white/[0.04]') 
+    : (active ? 'bg-stone-50' : 'bg-white hover:bg-stone-50');
+  
+  const cardBorder = active 
+    ? { borderColor: accent, boxShadow: `0 4px 20px -4px ${accent}20` }
+    : { borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#e7e5e4' }; // stone-200
+
+  const textPrimary = isDark ? 'text-stone-200' : 'text-stone-900';
+  const textSecondary = isDark ? 'text-stone-500' : 'text-stone-600';
+  const textMuted = isDark ? 'text-stone-400' : 'text-stone-500';
+  const borderSubtle = isDark ? 'border-white/5' : 'border-stone-100';
+  const imageBg = isDark ? 'bg-black' : 'bg-stone-100';
+  const modalBg = isDark ? 'bg-[#0a0a0a]' : 'bg-white';
+  const modalText = isDark ? 'text-white' : 'text-stone-900';
+  const specBg = isDark ? 'bg-white/[0.02]' : 'bg-stone-50';
+  const specBorder = isDark ? 'border-white/5' : 'border-stone-100';
 
   return (
     <>
       {/* --- MAIN CARD --- */}
       <div
-        className={`w-full rounded-2xl border transition-all duration-300 group relative overflow-hidden cursor-pointer bg-white/[0.02] ${activeClasses}`}
-        style={active ? { borderColor: accent, boxShadow: `0 4px 20px -4px ${accent}20` } : {}}
+        className={`w-full rounded-2xl border transition-all duration-300 group relative overflow-hidden cursor-pointer ${cardBg}`}
+        style={cardBorder}
         onClick={() => setIsOpen(true)} 
       >
-        <div className="relative w-full aspect-[16/9] bg-black">
+        <div className={`relative w-full aspect-[16/9] ${imageBg}`}>
           <img 
             src={images[currentImgIndex]} 
             alt={seoAlt} 
@@ -102,17 +124,17 @@ function CarCard({ car, active, accent, onClick, location }) {
         <div className="p-4">
           <div className="flex justify-between items-start mb-2">
             <div>
-              <h3 className="font-bold leading-tight text-stone-200">{car.name}</h3>
-              <p className="text-xs text-stone-500 mt-0.5">{car.year} • {car.transmission}</p>
+              <h3 className={`font-bold leading-tight ${textPrimary}`}>{car.name}</h3>
+              <p className={`text-xs mt-0.5 ${textSecondary}`}>{car.year} • {car.transmission}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-stone-400">{isRent ? 'Daily Rate' : 'Asking Price'}</p>
+              <p className={`text-xs ${textMuted}`}>{isRent ? 'Daily Rate' : 'Asking Price'}</p>
               <p className="text-lg font-bold" style={{ color: accent }}>
                 {isRent ? `₦${car.price.toLocaleString()}` : `₦${(car.price / 1000).toFixed(0)}k`}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4 text-[11px] text-stone-400 border-t border-white/5 pt-3">
+          <div className={`flex items-center gap-4 text-[11px] ${textMuted} border-t ${borderSubtle} pt-3`}>
             <span className="flex items-center gap-1">
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
               {car.fuel}
@@ -128,24 +150,24 @@ function CarCard({ car, active, accent, onClick, location }) {
       {/* --- DETAILS MODAL (IMPROVED LAYOUT) --- */}
       {isOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 sm:p-6">
-          <div className="bg-[#0a0a0a] w-full h-full sm:h-auto sm:max-w-4xl sm:rounded-3xl overflow-hidden shadow-2xl border border-white/5 flex flex-col animate-slide-up">
+          <div className={`${modalBg} w-full h-full sm:h-auto sm:max-w-4xl sm:rounded-3xl overflow-hidden shadow-2xl border ${borderSubtle} flex flex-col animate-slide-up`}>
             
             {/* HEADER */}
-            <div className="flex justify-between items-center px-6 py-4 border-b border-white/[0.04] shrink-0">
-              <span className="text-[10px] text-stone-500 uppercase tracking-[0.2em] font-bold">Car Details</span>
+            <div className={`flex justify-between items-center px-6 py-4 border-b shrink-0 ${borderSubtle}`}>
+              <span className={`text-[10px] uppercase tracking-[0.2em] font-bold ${textSecondary}`}>Car Details</span>
               <button 
                 onClick={() => setIsOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-stone-400 hover:text-white transition-colors"
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-stone-400 hover:text-white' : 'bg-stone-100 hover:bg-stone-200 text-stone-600 hover:text-stone-900'}`}
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
 
             {/* SCROLLABLE CONTENT */}
-            <div className="overflow-y-auto flex-1 bg-[#0a0a0a]">
+            <div className={`overflow-y-auto flex-1 ${modalBg}`}>
               
               {/* IMAGE SECTION (Full Width) */}
-              <div className="relative aspect-video bg-black group cursor-pointer" onClick={() => setIsLightboxOpen(true)}>
+              <div className={`relative aspect-video group cursor-pointer ${imageBg}`} onClick={() => setIsLightboxOpen(true)}>
                 <img 
                   src={images[currentImgIndex]} 
                   alt={seoAlt} 
@@ -161,13 +183,13 @@ function CarCard({ car, active, accent, onClick, location }) {
 
               {/* THUMBNAILS */}
               {images.length > 1 && (
-                <div className="px-6 pb-6 border-b border-white/[0.04]">
+                <div className={`px-6 pb-6 border-b ${borderSubtle}`}>
                   <div className="grid grid-cols-4 gap-3">
                     {images.map((img, idx) => (
                       <button
                         key={idx}
                         onClick={() => setCurrentImgIndex(idx)}
-                        className={`aspect-video rounded-xl overflow-hidden border-2 transition-all relative ${idx === currentImgIndex ? 'border-white scale-105 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100 hover:border-white/30'}`}
+                        className={`aspect-video rounded-xl overflow-hidden border-2 transition-all relative ${idx === currentImgIndex ? `${isDark ? 'border-white' : 'border-stone-900'} scale-105 shadow-lg` : 'border-transparent opacity-60 hover:opacity-100 hover:border-stone-300'}`}
                       >
                         <img src={img} className="w-full h-full object-cover" alt={`${car.name} thumbnail ${idx + 1}`} />
                         {idx === currentImgIndex && <div className="absolute inset-0 bg-white/10" />}
@@ -180,7 +202,7 @@ function CarCard({ car, active, accent, onClick, location }) {
               {/* DETAILS TEXT */}
               <div className="p-6 space-y-6">
                 <div className="flex items-center justify-between sm:justify-start sm:gap-4">
-                  <h2 className="text-2xl font-bold text-white">{car.name}</h2>
+                  <h2 className={`text-2xl font-bold ${modalText}`}>{car.name}</h2>
                   <span className={`px-3 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider border backdrop-blur-md ${badgeColor}`}>
                     {isRent ? 'For Rent' : 'For Sale'}
                   </span>
@@ -188,37 +210,37 @@ function CarCard({ car, active, accent, onClick, location }) {
 
                 {car.description && (
                   <div>
-                    <h4 className="text-[11px] font-bold text-stone-500 uppercase tracking-[0.15em] mb-2 px-1">Description</h4>
-                    <p className="text-stone-300 text-sm leading-relaxed">{car.description}</p>
+                    <h4 className={`text-[11px] font-bold uppercase tracking-[0.15em] mb-2 px-1 ${textSecondary}`}>Description</h4>
+                    <p className={`text-sm leading-relaxed ${isDark ? 'text-stone-300' : 'text-stone-600'}`}>{car.description}</p>
                   </div>
                 )}
 
                 {/* SPECS GRID */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="bg-white/[0.02] p-4 rounded-xl border border-white/5 flex flex-col justify-center">
-                    <span className="block text-[10px] text-stone-500 uppercase tracking-[0.15em] font-semibold mb-1 px-1">Price</span>
-                    <span className="text-lg font-bold text-white block">
+                  <div className={`${specBg} p-4 rounded-xl border ${specBorder} flex flex-col justify-center`}>
+                    <span className={`block text-[10px] uppercase tracking-[0.15em] font-semibold mb-1 px-1 ${textSecondary}`}>Price</span>
+                    <span className={`text-lg font-bold block ${modalText}`}>
                       {isRent ? `₦${car.price.toLocaleString()}` : `₦${car.price.toLocaleString()}`}
                     </span>
                   </div>
-                  <div className="bg-white/[0.02] p-4 rounded-xl border border-white/5 flex flex-col justify-center">
-                    <span className="block text-[10px] text-stone-500 uppercase tracking-[0.15em] font-semibold mb-1 px-1">Mileage</span>
-                    <span className="text-lg font-bold text-white block">{car.mileage}</span>
+                  <div className={`${specBg} p-4 rounded-xl border ${specBorder} flex flex-col justify-center`}>
+                    <span className={`block text-[10px] uppercase tracking-[0.15em] font-semibold mb-1 px-1 ${textSecondary}`}>Mileage</span>
+                    <span className={`text-lg font-bold block ${modalText}`}>{car.mileage}</span>
                   </div>
-                  <div className="bg-white/[0.02] p-4 rounded-xl border border-white/5 flex flex-col justify-center">
-                    <span className="block text-[10px] text-stone-500 uppercase tracking-[0.15em] font-semibold mb-1 px-1">Transmission</span>
-                    <span className="text-lg font-bold text-white block">{car.transmission}</span>
+                  <div className={`${specBg} p-4 rounded-xl border ${specBorder} flex flex-col justify-center`}>
+                    <span className={`block text-[10px] uppercase tracking-[0.15em] font-semibold mb-1 px-1 ${textSecondary}`}>Transmission</span>
+                    <span className={`text-lg font-bold block ${modalText}`}>{car.transmission}</span>
                   </div>
-                  <div className="bg-white/[0.02] p-4 rounded-xl border border-white/5 flex flex-col justify-center">
-                    <span className="block text-[10px] text-stone-500 uppercase tracking-[0.15em] font-semibold mb-1 px-1">Fuel</span>
-                    <span className="text-lg font-bold text-white block">{car.fuel}</span>
+                  <div className={`${specBg} p-4 rounded-xl border ${specBorder} flex flex-col justify-center`}>
+                    <span className={`block text-[10px] uppercase tracking-[0.15em] font-semibold mb-1 px-1 ${textSecondary}`}>Fuel</span>
+                    <span className={`text-lg font-bold block ${modalText}`}>{car.fuel}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* FOOTER */}
-            <div className="p-4 sm:p-6 border-t border-white/[0.04] bg-[#0a0a0a] shrink-0">
+            <div className={`p-4 sm:p-6 border-t ${borderSubtle} ${modalBg} shrink-0`}>
               <button
                 onClick={(e) => {
                   e.stopPropagation();

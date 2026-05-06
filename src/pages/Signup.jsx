@@ -1,20 +1,15 @@
-// src/pages/Signup.jsx
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 export default function Signup() {
-  const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
   const [banks, setBanks] = useState([]);
   const [banksLoading, setBanksLoading] = useState(true);
-  const [subaccountCode, setSubaccountCode] = useState(null);
   const [error, setError] = useState('');
   const [consent, setConsent] = useState(false);
   const [brandColor, setBrandColor] = useState('#c8a97e');
   const [logoUrl, setLogoUrl] = useState('');
-  const [businessData, setBusinessData] = useState(null);
 
-  const navigate = useNavigate();
   const [params] = useSearchParams();
   const referralParam = params.get('ref');
 
@@ -95,6 +90,7 @@ export default function Signup() {
     let finalSubaccountCode = null;
 
     try {
+      // 1. Create the subaccount for FUTURE sales (5% split)
       const subaccountRes = await fetch('/.netlify/functions/create-subaccount', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -113,27 +109,25 @@ export default function Signup() {
 
       if (!subaccountRes.ok || !subaccountData.subaccount_code) {
         console.error('Subaccount creation failed:', subaccountData.error);
-        setError(subaccountData.error || 'Could not verify bank details. Your application will still be reviewed.');
+        // We won't block them completely, but we'll note it
+        finalSubaccountCode = 'ACCT_PENDING';
       } else {
         finalSubaccountCode = subaccountData.subaccount_code;
-        setSubaccountCode(finalSubaccountCode);
       }
     } catch (err) {
       console.error("Error creating subaccount", err);
+      finalSubaccountCode = 'ACCT_PENDING';
     }
 
-    const codeForHeader = finalSubaccountCode || 'ACCT_PENDING';
-
-    // Subaccount created, proceed to onboarding
-    setDone(true);
-    setBusinessData({ 
+    // 2. Save data to sessionStorage so it survives the Paystack redirect
+    const tempBusinessData = { 
       businessName, 
       businessSlug, 
       email,
       phone,
       whatsapp: formData.get('whatsapp_number'),
       businessType,
-      subaccountCode: codeForHeader,
+      subaccountCode: finalSubaccountCode,
       brandColor: colorToUse,
       logoUrl,
       bio: formData.get('business_description'),
@@ -141,62 +135,44 @@ export default function Signup() {
       instagram: formData.get('instagram_link'),
       tiktok: formData.get('tiktok_link'),
       referralCode,
-      referredBy: referralCode  // Add this for the backend to track
-    });
+      referredBy: referralParam 
+    };
     
-    setLoading(false);
+    sessionStorage.setItem('pending_signup_data', JSON.stringify(tempBusinessData));
+
+    // 3. Initialize 500 Naira Payment (NO subaccount passed = You keep 100%)
+    try {
+      const payRes = await fetch('/.netlify/functions/initialize-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email,
+          amount: 500, 
+          slug: businessSlug,
+          // Tell Paystack to redirect here after payment
+          callback_url: `${window.location.origin}/onboarding` 
+        })
+      });
+
+      const payData = await payRes.json();
+      
+      if (payData.authorization_url) {
+        // Redirect to Paystack
+        window.location.href = payData.authorization_url;
+      } else {
+        setError(payData.error || 'Failed to initialize payment.');
+        setLoading(false);
+      }
+    } catch (err) {
+      setError('Network error. Please try again.');
+      setLoading(false);
+    }
   };
 
   const inputBase = "w-full bg-white border border-zinc-200 text-zinc-900 text-sm rounded-xl px-4 py-3 placeholder-zinc-400 focus:outline-none focus:border-purple-600 transition-all duration-200";
   const selectBase = "w-full appearance-none bg-white border border-zinc-200 text-zinc-900 text-sm rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-purple-600 transition-all duration-200 cursor-pointer";
   const sectionTitle = "text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1 mt-6";
   const sectionDesc = "text-xs text-zinc-400 mb-3 -mt-1";
-
-  if (done) {
-    return (
-      <div className="min-h-screen bg-white text-zinc-900 font-sans flex items-center justify-center px-6 relative">
-        <div className="relative z-10 text-center max-w-sm bg-white border border-zinc-200 p-10 rounded-2xl">
-          <div className="w-16 h-16 bg-purple-50 border border-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-8 h-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-zinc-900 mb-2">You're on the list!</h2>
-          <p className="text-zinc-500 leading-relaxed mb-6">
-            We've received your details. Now let's set up your products and services.
-          </p>
-          {subaccountCode && subaccountCode !== 'ACCT_PENDING' && (
-            <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
-              <p className="text-xs text-green-700 font-medium mb-1">Payment Setup Verified</p>
-              <p className="text-xs text-green-600">
-                Your account code: <span className="font-mono font-bold">{subaccountCode}</span>
-              </p>
-            </div>
-          )}
-          {error && (!subaccountCode || subaccountCode === 'ACCT_PENDING') && (
-            <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <p className="text-xs text-amber-700">{error}</p>
-            </div>
-          )}
-          <button
-            onClick={() => navigate('/onboarding', { state: businessData })}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-95"
-          >
-            Continue to Setup Details
-          </button>
-          
-          <div className="mt-4">
-             <Link to="/" className="inline-flex items-center justify-center w-full text-sm text-zinc-500 hover:text-zinc-900 transition-colors duration-200 font-medium">
-               <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7 7m-7 7h18" />
-               </svg>
-               Back to Home
-             </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-white text-zinc-900 font-sans flex items-center justify-center px-6 py-12 relative">
@@ -453,10 +429,10 @@ export default function Signup() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                Submitting Application...
+                Connecting to Paystack...
               </span>
             ) : (
-              'Get Started'
+              'Pay ₦500 to Get Started'
             )}
           </button>
         </div>

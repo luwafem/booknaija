@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { XIcon, CalendarIcon } from './Icons';
 
-export default function BookingForm({ 
-  biz, 
-  selectedId, 
-  selectedProducts = [], 
-  onDeselect, 
-  onProductDeselect, 
-  reference, 
+export default function BookingForm({
+  biz,
+  selectedId,
+  selectedProducts = [],
+  onDeselect,
+  onProductDeselect,
+  reference,
   productVariants = {},
   selectedFood = [],
   foodVariants = {},
@@ -17,7 +17,7 @@ export default function BookingForm({
 }) {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
-  
+
   const [rentalStart, setRentalStart] = useState('');
   const [rentalEnd, setRentalEnd] = useState('');
 
@@ -30,8 +30,37 @@ export default function BookingForm({
   const [err, setErr] = useState('');
   const [booking, setBooking] = useState(null);
 
+  // ── PRODUCT QUANTITY STATE ──
+  const [productQuantities, setProductQuantities] = useState({});
+
+  // Sync quantities when selected products change
+  useEffect(() => {
+    setProductQuantities(prev => {
+      const next = { ...prev };
+      let changed = false;
+      selectedProducts.forEach(id => {
+        if (!next[id]) { next[id] = 1; changed = true; }
+      });
+      Object.keys(next).forEach(id => {
+        if (!selectedProducts.includes(id)) { delete next[id]; changed = true; }
+      });
+      return changed ? next : prev;
+    });
+  }, [selectedProducts]);
+
+  function updateProductQty(productId, delta) {
+    setProductQuantities(prev => {
+      const current = prev[productId] || 1;
+      const nextVal = Math.max(1, current + delta);
+      if (nextVal === current) return prev;
+      return { ...prev, [productId]: nextVal };
+    });
+  }
+
   const accent = biz.accent || '#c8a97e';
-  
+  const theme = biz.theme || 'light';
+  const isDark = theme === 'dark';
+
   const svc = biz.services?.find((s) => s.id === selectedId);
   const selectedPrds = biz.products?.filter((p) => selectedProducts.includes(p.id)) || [];
   const selectedFd = biz.food?.filter((f) => selectedFood.includes(f.id)) || [];
@@ -40,7 +69,7 @@ export default function BookingForm({
   const isProduct = selectedPrds.length > 0;
   const isFood = selectedFd.length > 0;
   const isCar = !!selectedCar;
-  
+
   const isRental = isCar && selectedCar.type === 'rent';
   const isSale = isCar && selectedCar.type === 'sale';
 
@@ -48,18 +77,18 @@ export default function BookingForm({
 
   const getProductVariant = (id) => productVariants[id] || {};
 
-  // --- TOTAL CALCULATION LOGIC (UPDATED FOR DISCOUNTS) ---
+  // ── TOTAL CALCULATION LOGIC (WITH QUANTITY) ──
   const totalAmount = useMemo(() => {
     if (isCar) {
       if (isRental && rentalStart && rentalEnd) {
         const start = new Date(rentalStart);
         const end = new Date(rentalEnd);
         const diffTime = Math.abs(end - start);
-        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         if (diffDays < 1) diffDays = 1;
         return selectedCar.price * diffDays;
       } else if (isSale) {
-        return 5000; 
+        return 5000;
       }
       return selectedCar.price;
     }
@@ -72,22 +101,21 @@ export default function BookingForm({
     }
 
     if (isProduct) {
-      // NEW: Use discount price if available
       return selectedPrds.reduce((sum, p) => {
         const hasDiscount = p.discount_enabled && p.discount_price > 0;
         const price = hasDiscount ? p.discount_price : p.price;
-        return sum + price;
+        const qty = productQuantities[p.id] || 1;
+        return sum + (price * qty);
       }, 0);
     }
 
-    // NEW: Use discount price for services if available
     if (svc) {
       const hasDiscount = svc.discount_enabled && svc.discount_price > 0;
       return hasDiscount ? svc.discount_price : svc.price;
     }
 
     return 0;
-  }, [isCar, selectedCar, isRental, rentalStart, rentalEnd, isSale, isFood, selectedFd, foodVariants, isProduct, selectedPrds, svc]);
+  }, [isCar, selectedCar, isRental, rentalStart, rentalEnd, isSale, isFood, selectedFd, foodVariants, isProduct, selectedPrds, svc, productQuantities]);
 
   const itemNames = useMemo(() => {
     if (isCar) {
@@ -109,10 +137,10 @@ export default function BookingForm({
     if (isProduct) {
       return selectedPrds.map(p => {
         const v = getProductVariant(p.id);
-        const parts = [p.name];
+        const qty = productQuantities[p.id] || 1;
+        const parts = [`${qty > 1 ? qty + 'x ' : ''}${p.name}`];
         if (v.size) parts.push(`Size: ${v.size}`);
         if (v.color) parts.push(`Color: ${v.color}`);
-        // NEW: Add discount info to name
         const hasDiscount = p.discount_enabled && p.discount_price > 0;
         if (hasDiscount) parts.push(`Discount Applied`);
         return parts.join(', ');
@@ -125,14 +153,14 @@ export default function BookingForm({
     }
 
     return '';
-  }, [isCar, selectedCar, isRental, rentalStart, rentalEnd, isFood, selectedFd, foodVariants, isProduct, selectedPrds, svc]);
+  }, [isCar, selectedCar, isRental, rentalStart, rentalEnd, isFood, selectedFd, foodVariants, isProduct, selectedPrds, svc, productQuantities]);
 
   useEffect(() => {
     if (!reference) return;
-    
+
     console.log('🔄 Verifying payment, reference:', reference);
     setLoading(true);
-    
+
     fetch('/.netlify/functions/create-booking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -146,11 +174,11 @@ export default function BookingForm({
     })
     .then((d) => {
       console.log('📦 Parsed response:', d);
-      if (d.success) { 
-        setBooking(d.booking); 
-        setOk(true); 
-      } else { 
-        setErr(d.error || 'Booking failed'); 
+      if (d.success) {
+        setBooking(d.booking);
+        setOk(true);
+      } else {
+        setErr(d.error || 'Booking failed');
       }
     })
     .catch((e) => {
@@ -165,11 +193,11 @@ export default function BookingForm({
     if (!hasSelection) return;
     setLoading(true);
     setErr('');
-    
+
     try {
       let bookingDate = date;
       let bookingTime = time;
-      
+
       if (isCar) {
         if (isRental) {
            bookingDate = rentalStart;
@@ -184,11 +212,11 @@ export default function BookingForm({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          slug: biz.slug, 
-          serviceId: isCar ? selectedCar.id : (isFood ? selectedFood.join(',') : (isProduct ? selectedProducts.join(',') : selectedId)), 
+          slug: biz.slug,
+          serviceId: isCar ? selectedCar.id : (isFood ? selectedFood.join(',') : (isProduct ? selectedProducts.join(',') : selectedId)),
           serviceName: itemNames,
           amount: totalAmount,
-          date: (isProduct || isRental) ? 'N/A' : bookingDate, 
+          date: (isProduct || isRental) ? 'N/A' : bookingDate,
           time: (isProduct || isRental) ? 'N/A' : bookingTime,
           type: isCar ? (isRental ? 'car_rental' : 'car_viewing') : (isFood ? 'food' : (isProduct ? 'product' : 'service')),
           address: (isProduct || isFood || isRental) ? address : 'N/A',
@@ -211,13 +239,15 @@ export default function BookingForm({
             products: isProduct ? selectedPrds.map(p => {
               const v = getProductVariant(p.id);
               const hasDiscount = p.discount_enabled && p.discount_price > 0;
-              return { 
-                name: p.name, 
-                price: hasDiscount ? p.discount_price : p.price, 
+              const qty = productQuantities[p.id] || 1;
+              return {
+                name: p.name,
+                price: hasDiscount ? p.discount_price : p.price,
                 originalPrice: hasDiscount ? p.price : null,
-                size: v.size || null, 
+                size: v.size || null,
                 color: v.color || null,
-                productCode: p.product_code || null
+                productCode: p.product_code || null,
+                quantity: qty
               };
             }) : [],
             food: isFood ? selectedFd.map(f => {
@@ -239,6 +269,30 @@ export default function BookingForm({
     setLoading(false);
   }
 
+  // ── Theme-aware style helpers ──
+  const pageBg = isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50';
+  const cardBg = isDark ? 'bg-white/[0.02]' : 'bg-white';
+  const cardBorder = isDark ? 'border-white/5' : 'border-stone-200';
+  const innerBg = isDark ? 'bg-white/5' : 'bg-stone-50';
+  const textPrimary = isDark ? 'text-white' : 'text-stone-900';
+  const textSecondary = isDark ? 'text-stone-200' : 'text-stone-800';
+  const textTertiary = isDark ? 'text-stone-300' : 'text-stone-600';
+  const textMuted = isDark ? 'text-stone-400' : 'text-stone-500';
+  const textFaint = isDark ? 'text-stone-500' : 'text-stone-500';
+  const textDim = isDark ? 'text-stone-600' : 'text-stone-400';
+  const dividerBorder = isDark ? 'border-white/5' : 'border-stone-100';
+  const imgBg = isDark ? 'bg-black' : 'bg-stone-100';
+  const imgBorder = isDark ? 'border-white/5' : 'border-stone-200';
+  const badgeBg = isDark ? 'bg-white/10' : 'bg-stone-100';
+  const hoverBg = isDark ? 'hover:bg-white/10' : 'hover:bg-stone-100';
+  const clearHover = isDark ? 'text-stone-600 hover:text-red-400' : 'text-stone-400 hover:text-red-500';
+
+  const inputBase = isDark
+    ? 'w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-stone-700 transition-all duration-200 focus:outline-none focus:border-white/30 focus:bg-black/60'
+    : 'w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm text-stone-900 placeholder-stone-400 transition-all duration-200 focus:outline-none focus:border-stone-400 focus:bg-white';
+
+  const labelStyle = `block text-[11px] ${textFaint} uppercase tracking-[0.15em] mb-2 px-1 font-semibold`;
+
   // ── SUCCESS SCREEN ──
   if (ok && booking) {
     const ctx = (() => {
@@ -248,7 +302,7 @@ export default function BookingForm({
     const isProductOk = booking.type === 'product' || ctx.type === 'product';
     const isFoodOk = booking.type === 'food' || ctx.type === 'food';
     const isCarOk = booking.type === 'car_rental' || booking.type === 'car_viewing' || ctx.type === 'car_rental' || ctx.type === 'car_viewing';
-    
+
     const paymentAmount = Number(booking.amount) || ctx.amount || 0;
 
     let calUrl = '#';
@@ -260,7 +314,7 @@ export default function BookingForm({
     }
 
     let waMessage = `Hi ${biz.name}! 👋\n\nI just made a ${isFoodOk ? 'food order' : (isProductOk ? 'purchase' : (isCarOk ? (ctx.car?.type === 'rent' ? 'car rental reservation' : 'car viewing appointment') : 'booking'))} on your page.\n\n`;
-    
+
     waMessage += `*Customer Details:*\n`;
     waMessage += `Name: ${booking.name || ctx.customerName || name}\n`;
     waMessage += `Email: ${booking.email || ctx.customerEmail || email}\n`;
@@ -296,19 +350,25 @@ export default function BookingForm({
       }
       waMessage += `\n*Total:* ₦${paymentAmount.toLocaleString()}\n`;
       waMessage += `*Delivery Address:* ${booking.address || ctx.address || address}\n`;
-    } 
+    }
     else if (isProductOk) {
       waMessage += `*Order Details:*\n`;
       const storedProducts = ctx.products || [];
       if (storedProducts.length > 0) {
         storedProducts.forEach((p) => {
-          let itemLine = `• ${p.name}`;
+          const qty = p.quantity || 1;
+          let itemLine = `• ${qty > 1 ? qty + 'x ' : ''}${p.name}`;
           if (p.size) itemLine += ` | Size: ${p.size}`;
           if (p.color) itemLine += ` | Color: ${p.color}`;
           if (p.productCode) itemLine += ` | Code: ${p.productCode}`;
-          itemLine += ` - ₦${p.price.toLocaleString()}`;
+          const lineTotal = p.price * qty;
+          itemLine += ` - ₦${lineTotal.toLocaleString()}`;
+          if (qty > 1) {
+            itemLine += ` (₦${p.price.toLocaleString()} each)`;
+          }
           if (p.originalPrice) {
-            itemLine += ` (Was: ₦${p.originalPrice.toLocaleString()})`;
+            const origLineTotal = p.originalPrice * qty;
+            itemLine += ` (Was: ₦${origLineTotal.toLocaleString()})`;
           }
           waMessage += `${itemLine}\n`;
         });
@@ -322,7 +382,7 @@ export default function BookingForm({
       }
       waMessage += `\n*Total:* ₦${paymentAmount.toLocaleString()}\n`;
       waMessage += `*Delivery Address:* ${booking.address || ctx.address || address}\n`;
-    } 
+    }
     else {
       waMessage += `*Booking Details:*\n`;
       waMessage += `Service: ${booking.serviceName || ctx.serviceName || svc?.name || ''}\n`;
@@ -334,24 +394,24 @@ export default function BookingForm({
     if (reference) {
       waMessage += `\n*Ref:* ${reference}\n`;
     }
-    
+
     waMessage += `\nLooking forward to hearing from you!`;
 
     const waLink = `https://wa.me/${biz.whatsapp}?text=${encodeURIComponent(waMessage)}`;
 
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-6">
+      <div className={`min-h-screen ${pageBg} flex items-center justify-center px-6`}>
         <div className="text-center max-w-sm">
           <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl font-bold border"
             style={{ background: `${accent}15`, color: accent, borderColor: `${accent}30`, boxShadow: `0 0 40px -10px ${accent}40` }}>
             ✓
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">
+          <h2 className={`text-2xl font-bold tracking-tight ${textPrimary}`}>
              {isCarOk ? (ctx.car?.type === 'rent' ? 'Rental Reserved!' : 'Viewing Scheduled!') : (isFoodOk ? 'Order Placed!' : (isProductOk ? 'Order Confirmed!' : 'Booking Confirmed!'))}
           </h2>
-          <p className="text-stone-400 mt-3 text-sm leading-relaxed">{booking.serviceName}</p>
-          <p className="text-stone-600 mt-1.5 text-sm">Check your email for your Paystack receipt.</p>
-          
+          <p className={`${textMuted} mt-3 text-sm leading-relaxed`}>{booking.serviceName}</p>
+          <p className={`${textDim} mt-1.5 text-sm`}>Check your email for your Paystack receipt.</p>
+
           <div className="mt-8 flex flex-col items-center gap-3">
             {!isProductOk && !isFoodOk && !isCarOk && (
               <a href={calUrl} target="_blank" rel="noreferrer"
@@ -368,106 +428,106 @@ export default function BookingForm({
             </a>
           </div>
 
-          <a href={`/${biz.slug}`} className="block mt-8 text-xs text-stone-600 hover:text-stone-400 transition-colors">← Back to page</a>
+          <a href={`/${biz.slug}`} className={`block mt-8 text-xs ${textDim} hover:${textMuted} transition-colors`}>← Back to page</a>
         </div>
       </div>
     );
   }
 
   if (reference && loading) return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-6">
-      <div className="flex items-center gap-3 text-stone-400 text-sm">
-        <div className="w-4 h-4 border-2 border-stone-600 border-t-stone-200 rounded-full animate-spin" />
+    <div className={`min-h-screen ${pageBg} flex items-center justify-center px-6`}>
+      <div className={`flex items-center gap-3 ${textMuted} text-sm`}>
+        <div className={`w-4 h-4 border-2 rounded-full animate-spin ${isDark ? 'border-stone-600 border-t-stone-200' : 'border-stone-300 border-t-stone-600'}`} />
         Verifying payment…
       </div>
     </div>
   );
 
   if (reference && err) return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-6">
+    <div className={`min-h-screen ${pageBg} flex items-center justify-center px-6`}>
       <div className="text-center max-w-sm">
-        <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 mx-auto mb-4 flex items-center justify-center text-red-400 text-2xl">!</div>
-        <p className="text-red-400 text-sm font-medium">{err}</p>
+        <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-red-400 text-2xl ${isDark ? 'bg-red-500/10 border border-red-500/20' : 'bg-red-50 border border-red-200'}`}>!</div>
+        <p className={`text-sm font-medium ${isDark ? 'text-red-400' : 'text-red-600'}`}>{err}</p>
         <a href={`/${biz.slug}`} className="inline-block mt-6 text-sm font-medium" style={{ color: accent }}>← Back to page</a>
       </div>
     </div>
   );
 
   if (!hasSelection) return (
-    <div className="text-center py-12 rounded-2xl border border-dashed border-white/5 bg-white/[0.01]">
-      <div className="w-12 h-12 rounded-full bg-white/[0.02] border border-white/5 mx-auto mb-3 flex items-center justify-center text-stone-600">
-         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+    <div className={`text-center py-12 rounded-2xl border border-dashed ${isDark ? 'border-white/5 bg-white/[0.01]' : 'border-stone-200 bg-stone-50/50'}`}>
+      <div className={`w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center ${isDark ? 'bg-white/[0.02] border border-white/5' : 'bg-stone-100 border border-stone-200'}`}>
+         <svg className={`w-5 h-5 ${textDim}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.567-2.226m-2.51-2.225l.567 2.226m-2.51-2.225l2.51 2.225a.75.75 0 01-.554-.759l-1.285-5.137a3 3 0 00-1.794-2.187L2.77 5.313a.75.75 0 01.85-.748l7.4 2.246a3 3 0 011.75 2.187l1.78 7.127a.75.75 0 01-.851.748L12 14.5l-4.995 1.721a.75.75 0 01-.463-1.549z" />
          </svg>
       </div>
-      <p className="text-stone-500 text-sm">Select a service, product, food, or car above to continue</p>
+      <p className={`${textFaint} text-sm`}>Select a service, product, food, or car above to continue</p>
     </div>
   );
 
-  const inputBase = 'w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-stone-700 transition-all duration-200 focus:outline-none focus:border-white/30 focus:bg-black/60';
-  const labelStyle = "block text-[11px] text-stone-500 uppercase tracking-[0.15em] mb-2 px-1 font-semibold";
+  // Total item count for heading
+  const totalProductItems = selectedPrds.reduce((sum, p) => sum + (productQuantities[p.id] || 1), 0);
 
   return (
     <form onSubmit={pay} className="space-y-5 mt-2">
-      
+
       {isCar && (
-        <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5" style={{ borderColor: `${accent}20` }}>
+        <div className={`p-4 rounded-2xl ${cardBg} border ${cardBorder}`} style={{ borderColor: `${accent}20` }}>
           <div className="flex gap-4">
-            <img src={selectedCar.image || selectedCar.images?.[0]} className="w-20 h-20 rounded-lg object-cover bg-black border border-white/5" alt={selectedCar.name} />
+            <img src={selectedCar.image || selectedCar.images?.[0]} className={`w-20 h-20 rounded-lg object-cover ${imgBg} border ${imgBorder}`} alt={selectedCar.name} />
             <div className="flex-1">
               <div className="flex justify-between items-start">
-                <h3 className="font-bold text-stone-200">{selectedCar.name}</h3>
-                <button type="button" onClick={onCarDeselect} className="text-stone-500 hover:text-red-400">
+                <h3 className={`font-bold ${textSecondary}`}>{selectedCar.name}</h3>
+                <button type="button" onClick={onCarDeselect} className={`${textFaint} hover:text-red-400 transition-colors`}>
                   <XIcon className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-xs text-stone-500 mt-1">{selectedCar.year} • {selectedCar.transmission}</p>
-              
+              <p className={`text-xs ${textFaint} mt-1`}>{selectedCar.year} • {selectedCar.transmission}</p>
+
               {isRental ? (
-                <div className="mt-3 p-2 bg-white/5 rounded-lg flex justify-between items-center">
-                  <span className="text-xs text-stone-400">Rate</span>
+                <div className={`mt-3 p-2 ${innerBg} rounded-lg flex justify-between items-center`}>
+                  <span className={`text-xs ${textMuted}`}>Rate</span>
                   <span className="text-sm font-bold" style={{color: accent}}>₦{selectedCar.price.toLocaleString()} / day</span>
                 </div>
               ) : (
-                <div className="mt-3 p-2 bg-white/5 rounded-lg flex justify-between items-center">
-                  <span className="text-xs text-stone-400">Viewing Fee</span>
+                <div className={`mt-3 p-2 ${innerBg} rounded-lg flex justify-between items-center`}>
+                  <span className={`text-xs ${textMuted}`}>Viewing Fee</span>
                   <span className="text-sm font-bold" style={{color: accent}}>₦5,000</span>
                 </div>
               )}
             </div>
           </div>
-          
+
           {isRental && rentalStart && rentalEnd && (
-             <div className="mt-3 pt-3 border-t border-white/5 text-right">
-               <span className="text-xs text-stone-400">Total for selected days:</span>
-               <div className="text-xl font-bold text-white">₦{totalAmount.toLocaleString()}</div>
+             <div className={`mt-3 pt-3 border-t ${dividerBorder} text-right`}>
+               <span className={`text-xs ${textMuted}`}>Total for selected days:</span>
+               <div className={`text-xl font-bold ${textPrimary}`}>₦{totalAmount.toLocaleString()}</div>
              </div>
           )}
         </div>
       )}
 
       {isService && (
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm"
+        <div className={`flex items-center justify-between p-4 rounded-2xl ${cardBg} border ${cardBorder} backdrop-blur-sm`}
           style={{ borderColor: `${accent}20` }}>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold truncate text-stone-200">{svc.name}</p>
+              <p className={`text-sm font-semibold truncate ${textSecondary}`}>{svc.name}</p>
               {svc.discount_enabled && svc.discount_price > 0 && (
-                <span className="bg-red-500/20 text-red-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-red-500/30">
+                <span className={`text-red-400 text-[9px] font-bold px-1.5 py-0.5 rounded border ${isDark ? 'bg-red-500/20 border-red-500/30' : 'bg-red-50 border-red-200'}`}>
                   DISCOUNT
                 </span>
               )}
             </div>
-            <p className="text-xs text-stone-500 mt-1">{svc.duration}</p>
+            <p className={`text-xs ${textFaint} mt-1`}>{svc.duration}</p>
           </div>
           <div className="flex items-center gap-4 flex-shrink-0 ml-3">
             <div className="text-right">
               <p className="text-sm font-bold tabular-nums" style={{ color: accent }}>₦{totalAmount.toLocaleString()}</p>
               {svc.discount_enabled && svc.discount_price > 0 && (
-                <p className="text-[10px] text-stone-600 line-through tabular-nums">₦{svc.price.toLocaleString()}</p>
+                <p className={`text-[10px] line-through tabular-nums ${textDim}`}>₦{svc.price.toLocaleString()}</p>
               )}
             </div>
-            <button type="button" onClick={onDeselect} className="text-stone-500 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded-lg">
+            <button type="button" onClick={onDeselect} className={`${textFaint} hover:${textPrimary} transition-colors p-1.5 ${hoverBg} rounded-lg`}>
               <XIcon className="w-4 h-4" />
             </button>
           </div>
@@ -475,78 +535,129 @@ export default function BookingForm({
       )}
 
       {isProduct && (
-        <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm space-y-3" style={{ borderColor: `${accent}20` }}>
+        <div className={`p-4 rounded-2xl ${cardBg} border ${cardBorder} backdrop-blur-sm space-y-3`} style={{ borderColor: `${accent}20` }}>
           <div className="flex items-center justify-between">
-            <h3 className="text-[11px] font-bold text-stone-500 uppercase tracking-widest">Your Order ({selectedPrds.length})</h3>
-            <button 
-              type="button" 
-              onClick={() => onProductDeselect('all')} 
-              className="text-[10px] text-stone-600 hover:text-red-400 transition-colors font-semibold uppercase tracking-wider"
+            <h3 className={`text-[11px] font-bold ${textFaint} uppercase tracking-widest`}>
+              Your Order ({totalProductItems} {totalProductItems === 1 ? 'item' : 'items'})
+            </h3>
+            <button
+              type="button"
+              onClick={() => onProductDeselect('all')}
+              className={`text-[10px] ${clearHover} transition-colors font-semibold uppercase tracking-wider`}
             >
               Clear all
             </button>
           </div>
-          
+
           <div className="space-y-3">
             {selectedPrds.map((p) => {
               const variant = getProductVariant(p.id);
               const hasDiscount = p.discount_enabled && p.discount_price > 0;
-              const itemPrice = hasDiscount ? p.discount_price : p.price;
-              
+              const unitPrice = hasDiscount ? p.discount_price : p.price;
+              const qty = productQuantities[p.id] || 1;
+              const lineTotal = unitPrice * qty;
+
               return (
-                <div key={p.id} className="flex items-start justify-between">
-                  <div className="min-w-0 flex items-center gap-3">
-                    {p.image && (
-                      <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-white/5" />
-                    )}
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm text-stone-300">{p.name}</p>
-                        {hasDiscount && (
-                          <span className="bg-red-500/20 text-red-400 text-[8px] font-bold px-1 py-0.5 rounded">
-                            -{Math.round(((p.price - p.discount_price) / p.price) * 100)}%
-                          </span>
-                        )}
-                      </div>
-                      {(variant.size || variant.color || p.product_code) && (
-                        <div className="flex gap-2 text-[10px] text-stone-500 mt-0.5">
-                          {variant.size && <span className="border border-white/10 px-1.5 rounded bg-white/5">Size: {variant.size}</span>}
-                          {variant.color && (
-                            <span className="flex items-center gap-1.5 border border-white/10 px-1.5 rounded bg-white/5">
-                              <span 
-                                className="w-3 h-3 rounded-full border border-stone-600/30"
-                                style={{ backgroundColor: variant.color }} 
-                              />
-                              {variant.color}
-                            </span>
-                          )}
-                          {p.product_code && (
-                            <span className="border border-white/10 px-1.5 rounded bg-white/5 font-mono">
-                              Code: {p.product_code}
+                <div key={p.id} className={`flex flex-col gap-2.5 p-3 rounded-xl ${isDark ? 'bg-white/[0.02] border border-white/5' : 'bg-stone-50/80 border border-stone-100'}`}>
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0 flex items-center gap-3">
+                      {p.image && (
+                        <img src={p.image} alt={p.name} className={`w-10 h-10 rounded-lg object-cover flex-shrink-0 border ${imgBorder}`} />
+                      )}
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <p className={`text-sm font-medium ${textTertiary}`}>{p.name}</p>
+                          {hasDiscount && (
+                            <span className={`text-red-400 text-[8px] font-bold px-1 py-0.5 rounded ${isDark ? 'bg-red-500/20' : 'bg-red-50'}`}>
+                              -{Math.round(((p.price - p.discount_price) / p.price) * 100)}%
                             </span>
                           )}
                         </div>
-                      )}
+                        {(variant.size || variant.color || p.product_code) && (
+                          <div className={`flex gap-2 text-[10px] ${textFaint} mt-0.5`}>
+                            {variant.size && <span className={`border px-1.5 rounded ${isDark ? 'border-white/10 bg-white/5' : 'border-stone-200 bg-white'}`}>Size: {variant.size}</span>}
+                            {variant.color && (
+                              <span className={`flex items-center gap-1.5 border px-1.5 rounded ${isDark ? 'border-white/10 bg-white/5' : 'border-stone-200 bg-white'}`}>
+                                <span
+                                  className={`w-3 h-3 rounded-full border ${isDark ? 'border-stone-600/30' : 'border-stone-300'}`}
+                                  style={{ backgroundColor: variant.color }}
+                                />
+                                {variant.color}
+                              </span>
+                            )}
+                            {p.product_code && (
+                              <span className={`border px-1.5 rounded font-mono ${isDark ? 'border-white/10 bg-white/5' : 'border-stone-200 bg-white'}`}>
+                                Code: {p.product_code}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-2 flex-shrink-0 ml-3">
-                    <div className="text-right">
-                      <p className="text-sm font-bold tabular-nums" style={{ color: accent }}>₦{itemPrice.toLocaleString()}</p>
-                      {hasDiscount && (
-                        <p className="text-[10px] text-stone-600 line-through tabular-nums">₦{p.price.toLocaleString()}</p>
-                      )}
-                    </div>
-                    <button type="button" onClick={() => onProductDeselect(p.id)} className="text-stone-500 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-lg">
+                    <button type="button" onClick={() => onProductDeselect(p.id)} className={`${textFaint} hover:text-red-400 transition-colors p-1 ${hoverBg} rounded-lg flex-shrink-0 ml-2`}>
                       <XIcon className="w-3.5 h-3.5" />
                     </button>
+                  </div>
+
+                  {/* Quantity & Price Row */}
+                  <div className="flex items-center justify-between">
+                    <div className={`flex items-center rounded-lg overflow-hidden border ${isDark ? 'border-white/10 bg-white/5' : 'border-stone-200 bg-white'}`}>
+                      <button
+                        type="button"
+                        onClick={() => updateProductQty(p.id, -1)}
+                        disabled={qty <= 1}
+                        className={`w-8 h-8 flex items-center justify-center transition-colors ${
+                          qty <= 1
+                            ? (isDark ? 'text-stone-700 cursor-not-allowed' : 'text-stone-300 cursor-not-allowed')
+                            : (isDark ? 'text-stone-400 hover:bg-white/10 hover:text-white' : 'text-stone-500 hover:bg-stone-100 hover:text-stone-900')
+                        }`}
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
+                        </svg>
+                      </button>
+                      <span className={`w-8 text-center text-xs font-bold tabular-nums ${textTertiary}`}>
+                        {qty}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => updateProductQty(p.id, 1)}
+                        className={`w-8 h-8 flex items-center justify-center transition-colors ${isDark ? 'text-stone-400 hover:bg-white/10 hover:text-white' : 'text-stone-500 hover:bg-stone-100 hover:text-stone-900'}`}
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-sm font-bold tabular-nums" style={{ color: accent }}>
+                        ₦{lineTotal.toLocaleString()}
+                      </p>
+                      {qty > 1 && (
+                        <p className={`text-[10px] tabular-nums ${textDim}`}>
+                          ₦{unitPrice.toLocaleString()} each
+                        </p>
+                      )}
+                      {hasDiscount && qty > 1 && (
+                        <p className={`text-[10px] line-through tabular-nums ${textDim}`}>
+                          ₦{(p.price * qty).toLocaleString()}
+                        </p>
+                      )}
+                      {hasDiscount && qty === 1 && (
+                        <p className={`text-[10px] line-through tabular-nums ${textDim}`}>
+                          ₦{p.price.toLocaleString()}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          <div className="flex items-center justify-between pt-3 border-t border-white/5">
-            <span className="text-sm font-semibold text-stone-300">Total</span>
+          <div className={`flex items-center justify-between pt-3 border-t ${dividerBorder}`}>
+            <span className={`text-sm font-semibold ${textTertiary}`}>Total</span>
             <span className="text-base font-bold tabular-nums" style={{ color: accent }}>
               ₦{totalAmount.toLocaleString()}
             </span>
@@ -555,36 +666,36 @@ export default function BookingForm({
       )}
 
       {isFood && (
-        <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm space-y-4" style={{ borderColor: `${accent}20` }}>
+        <div className={`p-4 rounded-2xl ${cardBg} border ${cardBorder} backdrop-blur-sm space-y-4`} style={{ borderColor: `${accent}20` }}>
           <div className="flex items-center justify-between">
-            <h3 className="text-[11px] font-bold text-stone-500 uppercase tracking-widest">Your Order</h3>
-            <button 
-              type="button" 
-              onClick={() => onFoodDeselect('all')} 
-              className="text-[10px] text-stone-600 hover:text-red-400 transition-colors font-semibold uppercase tracking-wider"
+            <h3 className={`text-[11px] font-bold ${textFaint} uppercase tracking-widest`}>Your Order</h3>
+            <button
+              type="button"
+              onClick={() => onFoodDeselect('all')}
+              className={`text-[10px] ${clearHover} transition-colors font-semibold uppercase tracking-wider`}
             >
               Clear all
             </button>
           </div>
-          
+
           <div className="space-y-4">
             {selectedFd.map((f) => {
               const v = foodVariants[f.id];
               if (!v) return null;
-              
+
               const flatAddons = Object.values(v.addons || {}).flat().filter(Boolean);
 
               return (
-                <div key={f.id} className="flex flex-col gap-2 p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                <div key={f.id} className={`flex flex-col gap-2 p-3 rounded-xl ${isDark ? 'bg-white/[0.02] border border-white/5' : 'bg-stone-50 border border-stone-100'}`}>
                   <div className="flex justify-between items-start">
                     <div className="flex gap-3">
-                       <div className="bg-white/10 rounded-lg h-10 w-10 flex items-center justify-center font-bold text-sm">
+                       <div className={`${badgeBg} rounded-lg h-10 w-10 flex items-center justify-center font-bold text-sm ${textTertiary}`}>
                           {v.quantity}
                        </div>
                        <div>
-                          <p className="text-sm font-semibold text-stone-200">{f.name}</p>
+                          <p className={`text-sm font-semibold ${textSecondary}`}>{f.name}</p>
                           {flatAddons.length > 0 && (
-                            <p className="text-[10px] text-stone-500 truncate max-w-[150px]">
+                            <p className={`text-[10px] ${textFaint} truncate max-w-[150px]`}>
                               {flatAddons.map(a => a.name).join(', ')}
                             </p>
                           )}
@@ -592,16 +703,16 @@ export default function BookingForm({
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold" style={{ color: accent }}>₦{v.finalPrice.toLocaleString()}</p>
-                      <button type="button" onClick={() => onFoodDeselect(f.id)} className="text-[10px] text-red-400 hover:text-red-300 mt-1">Remove</button>
+                      <button type="button" onClick={() => onFoodDeselect(f.id)} className={`text-[10px] ${isDark ? 'text-red-400 hover:text-red-300' : 'text-red-500 hover:text-red-600'} mt-1`}>Remove</button>
                     </div>
                   </div>
                 </div>
               );
             })}
           </div>
-          
-          <div className="flex items-center justify-between pt-3 border-t border-white/5">
-            <span className="text-sm font-semibold text-stone-300">Total</span>
+
+          <div className={`flex items-center justify-between pt-3 border-t ${dividerBorder}`}>
+            <span className={`text-sm font-semibold ${textTertiary}`}>Total</span>
             <span className="text-base font-bold tabular-nums" style={{ color: accent }}>
               ₦{totalAmount.toLocaleString()}
             </span>
@@ -610,8 +721,8 @@ export default function BookingForm({
       )}
 
       {err && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
-          <p className="text-sm text-red-400">{err}</p>
+        <div className={`rounded-xl px-4 py-3 ${isDark ? 'bg-red-500/10 border border-red-500/20' : 'bg-red-50 border border-red-200'}`}>
+          <p className={`text-sm ${isDark ? 'text-red-400' : 'text-red-600'}`}>{err}</p>
         </div>
       )}
 
@@ -619,11 +730,11 @@ export default function BookingForm({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelStyle}>Pick-up Date</label>
-            <input required type="date" value={rentalStart} onChange={(e) => setRentalStart(e.target.value)} className={inputBase} style={{ colorScheme: 'dark' }} />
+            <input required type="date" value={rentalStart} onChange={(e) => setRentalStart(e.target.value)} className={inputBase} style={{ colorScheme: isDark ? 'dark' : 'light' }} />
           </div>
           <div>
             <label className={labelStyle}>Return Date</label>
-            <input required type="date" value={rentalEnd} onChange={(e) => setRentalEnd(e.target.value)} className={inputBase} style={{ colorScheme: 'dark' }} />
+            <input required type="date" value={rentalEnd} onChange={(e) => setRentalEnd(e.target.value)} className={inputBase} style={{ colorScheme: isDark ? 'dark' : 'light' }} />
           </div>
         </div>
       )}
@@ -632,11 +743,11 @@ export default function BookingForm({
          <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelStyle}>Viewing Date</label>
-            <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputBase} style={{ colorScheme: 'dark' }} />
+            <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputBase} style={{ colorScheme: isDark ? 'dark' : 'light' }} />
           </div>
           <div>
             <label className={labelStyle}>Time</label>
-            <input required type="time" value={time} onChange={(e) => setTime(e.target.value)} className={inputBase} style={{ colorScheme: 'dark' }} />
+            <input required type="time" value={time} onChange={(e) => setTime(e.target.value)} className={inputBase} style={{ colorScheme: isDark ? 'dark' : 'light' }} />
           </div>
         </div>
       )}
@@ -645,11 +756,11 @@ export default function BookingForm({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelStyle}>Date</label>
-            <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputBase} style={{ colorScheme: 'dark' }} />
+            <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputBase} style={{ colorScheme: isDark ? 'dark' : 'light' }} />
           </div>
           <div>
             <label className={labelStyle}>Time</label>
-            <input required type="time" value={time} onChange={(e) => setTime(e.target.value)} className={inputBase} style={{ colorScheme: 'dark' }} />
+            <input required type="time" value={time} onChange={(e) => setTime(e.target.value)} className={inputBase} style={{ colorScheme: isDark ? 'dark' : 'light' }} />
           </div>
         </div>
       )}
@@ -678,16 +789,16 @@ export default function BookingForm({
         </div>
       </div>
 
-      <button 
-        type="submit" 
+      <button
+        type="submit"
         disabled={loading}
         className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide transition-all duration-200 disabled:opacity-50 hover:brightness-110 active:scale-[0.98] mt-2 shadow-lg"
-        style={{ 
-          background: accent, 
-          color: '#0a0a0a'
+        style={{
+          background: accent,
+          color: isDark ? '#0a0a0a' : '#ffffff'
         }}>
-        {loading ? 'Processing…' : 
-         isCar 
+        {loading ? 'Processing…' :
+         isCar
           ? (isRental ? `Pay ₦${totalAmount.toLocaleString()}` : 'Book Viewing')
           : `Pay ₦${totalAmount.toLocaleString()}`
         }

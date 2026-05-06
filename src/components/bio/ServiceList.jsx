@@ -1,9 +1,11 @@
 import { useState } from 'react';
 
-export default function ServiceList({ services, selectedId, onSelect, accent, location }) {
+export default function ServiceList({ services, selectedId, onSelect, accent, location, theme }) {
+  const isDark = theme === 'dark';
+
   return (
     <section className="px-6 mt-8 max-w-xl mx-auto" aria-label="Services">
-      <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-[0.2em] mb-6 px-1">
+      <h2 className={`text-[11px] font-semibold uppercase tracking-[0.2em] mb-6 px-1 ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>
         Services
       </h2>
       <div className="space-y-3">
@@ -15,6 +17,7 @@ export default function ServiceList({ services, selectedId, onSelect, accent, lo
             accent={accent}
             onClick={() => onSelect(s.id)}
             location={location}
+            theme={theme}
           />
         ))}
       </div>
@@ -22,8 +25,9 @@ export default function ServiceList({ services, selectedId, onSelect, accent, lo
   );
 }
 
-function ServiceCard({ service, active, accent, onClick, location }) {
+function ServiceCard({ service, active, accent, onClick, location, theme }) {
   const [openDetails, setOpenDetails] = useState(false);
+  const isDark = theme === 'dark';
   
   const canShowDetails = service.showDetails !== false && (service.description || (service.images && service.images.length > 0));
 
@@ -36,24 +40,25 @@ function ServiceCard({ service, active, accent, onClick, location }) {
   const discountPrice = hasDiscount ? service.discount_price : originalPrice;
   const discountPercentage = hasDiscount ? Math.round(((originalPrice - discountPrice) / originalPrice) * 100) : 0;
 
+  // Theme aware classes
+  const cardBg = isDark 
+    ? (active ? 'bg-white/5' : 'bg-white/[0.02] hover:bg-white/[0.04]') 
+    : (active ? 'bg-stone-50' : 'bg-white hover:bg-stone-50');
+  
+  const cardBorder = active 
+    ? { borderColor: `${accent}60`, boxShadow: `0 0 0 1px ${accent}30, 0 4px 20px -4px ${accent}15` }
+    : { borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#e7e5e4' }; // stone-200
+
+  const textPrimary = isDark ? 'text-white' : 'text-stone-900';
+  const textSecondary = isDark ? 'text-stone-400' : 'text-stone-500';
+  const textMuted = isDark ? 'text-stone-500' : 'text-stone-600';
+  const imageBg = isDark ? 'bg-black border-white/5' : 'bg-stone-100 border-stone-200';
+
   return (
     <div
       onClick={onClick}
-      className={`
-        w-full text-left p-4 rounded-2xl border transition-all duration-300 group relative overflow-hidden cursor-pointer
-        ${active 
-          ? 'bg-white/5' 
-          : 'bg-white/[0.02] hover:bg-white/[0.04]'
-        }
-      `}
-      style={
-        active
-          ? { 
-              borderColor: `${accent}60`, 
-              boxShadow: `0 0 0 1px ${accent}30, 0 4px 20px -4px ${accent}15`,
-            }
-          : { borderColor: 'rgba(255,255,255,0.05)' }
-      }
+      className={`w-full text-left p-4 rounded-2xl border transition-all duration-300 group relative overflow-hidden cursor-pointer ${cardBg}`}
+      style={cardBorder}
     >
       {/* Active Side Indicator Line */}
       {active && (
@@ -66,7 +71,7 @@ function ServiceCard({ service, active, accent, onClick, location }) {
       {/* Main Card Content */}
       <div className="flex items-center gap-4">
         {service.image ? (
-          <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-black border border-white/5 shadow-sm">
+          <div className={`w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 shadow-sm ${imageBg}`}>
             <img 
               src={service.image} 
               alt={seoAlt} 
@@ -75,38 +80,42 @@ function ServiceCard({ service, active, accent, onClick, location }) {
             />
           </div>
         ) : (
-          <div className="w-16 h-16 rounded-xl bg-black border border-white/5 flex-shrink-0 flex items-center justify-center">
+          <div className={`w-16 h-16 rounded-xl flex-shrink-0 flex items-center justify-center ${imageBg}`}>
           </div>
         )}
         
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              <p className={`text-sm font-semibold truncate transition-colors ${active ? 'text-white' : 'text-stone-300'}`}>
+              <p className={`text-sm font-semibold truncate transition-colors ${textPrimary}`}>
                 {service.name}
               </p>
-              {/* NEW: Discount Badge */}
+              {/* Discount Badge */}
               {hasDiscount && (
-                <span className="bg-red-500/20 text-red-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-red-500/30">
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                  isDark 
+                    ? 'bg-red-500/20 text-red-400 border-red-500/30' 
+                    : 'bg-red-50 text-red-600 border-red-200'
+                }`}>
                   -{discountPercentage}%
                 </span>
               )}
             </div>
             <div className="text-right flex-shrink-0">
-              {/* NEW: Price Display with Discount */}
+              {/* Price Display with Discount */}
               <div className="flex items-center gap-1.5">
-                <p className={`text-sm font-bold tabular-nums transition-colors ${active ? 'text-white' : ''}`} style={{ color: accent }}>
+                <p className={`text-sm font-bold tabular-nums transition-colors ${active ? '' : ''}`} style={{ color: accent }}>
                   ₦{discountPrice.toLocaleString()}
                 </p>
                 {hasDiscount && (
-                  <p className="text-[10px] text-stone-600 line-through tabular-nums">
+                  <p className={`text-[10px] line-through tabular-nums ${isDark ? 'text-stone-600' : 'text-stone-400'}`}>
                     ₦{originalPrice.toLocaleString()}
                   </p>
                 )}
               </div>
             </div>
           </div>
-          <p className="text-xs text-stone-400">{service.duration}</p>
+          <p className={`text-xs ${textSecondary}`}>{service.duration}</p>
         </div>
       </div>
 
@@ -117,10 +126,14 @@ function ServiceCard({ service, active, accent, onClick, location }) {
             e.stopPropagation();
             setOpenDetails(!openDetails);
           }}
-          className="mt-3 text-[11px] font-medium text-stone-500 hover:text-white transition-colors flex items-center gap-2 group/btn"
+          className={`mt-3 text-[11px] font-medium transition-colors flex items-center gap-2 group/btn ${textMuted} hover:text-stone-900`}
           aria-expanded={openDetails}
         >
-          <span className="w-4 h-4 rounded border border-stone-700 flex items-center justify-center text-[10px] text-stone-400 group-hover/btn:border-stone-500 group-hover/btn:text-white transition-colors">
+          <span className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] transition-colors ${
+            isDark 
+              ? 'border-stone-700 text-stone-400 group-hover/btn:border-stone-500 group-hover/btn:text-white' 
+              : 'border-stone-300 text-stone-500 group-hover/btn:border-stone-400 group-hover/btn:text-stone-900'
+          }`}>
             {openDetails ? '−' : '+'}
           </span>
           {openDetails ? 'Hide details' : 'View details'}
@@ -129,21 +142,21 @@ function ServiceCard({ service, active, accent, onClick, location }) {
 
       {/* Expandable Details & Gallery Section */}
       {openDetails && canShowDetails && (
-        <div className="mt-4 pt-4 border-t border-white/5 animate-fade-in space-y-4">
+        <div className={`mt-4 pt-4 border-t animate-fade-in space-y-4 ${isDark ? 'border-white/5' : 'border-stone-100'}`}>
           {service.description && (
-            <p className="text-xs text-stone-300 leading-relaxed">
+            <p className={`text-xs leading-relaxed ${isDark ? 'text-stone-300' : 'text-stone-600'}`}>
               {service.description}
             </p>
           )}
           
           {service.images && service.images.length > 0 && (
             <div>
-              <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest mb-3">
+              <p className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${isDark ? 'text-stone-500' : 'text-stone-600'}`}>
                 {service.images.length} Pictures
               </p>
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 {service.images.map((img, index) => (
-                  <div key={index} className="aspect-square rounded-xl overflow-hidden bg-black border border-white/5">
+                  <div key={index} className={`aspect-square rounded-xl overflow-hidden ${imageBg}`}>
                     <img 
                       src={img} 
                       alt={`${seoAlt} - Image ${index + 1}`} 

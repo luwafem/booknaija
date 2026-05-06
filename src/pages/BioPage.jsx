@@ -93,9 +93,10 @@ const GoogleAd = ({ slot, className = '' }) => {
   );
 };
 
-const ReferralLink = ({ slug, accent }) => {
+const ReferralLink = ({ slug, accent, theme }) => {
   const [copied, setCopied] = useState(false);
   const referralUrl = `${window.location.origin}/signup?ref=${slug}`;
+  const isDark = theme === 'dark';
 
   const handleCopy = async () => {
     try {
@@ -117,21 +118,21 @@ const ReferralLink = ({ slug, accent }) => {
   return (
     <div className="mt-8 mb-4 px-4">
       <div className="flex flex-col items-center justify-center gap-3">
-        <span className="text-[10px] text-stone-500 uppercase tracking-[0.2em] font-bold">
+        <span className={`text-[10px] uppercase tracking-[0.2em] font-bold ${isDark ? 'text-stone-500' : 'text-stone-600'}`}>
           Share your link <br /> Refer 3 friends = 1 Free Month
         </span>
         <button
           onClick={handleCopy}
-          className="group relative flex items-center gap-3 px-4 py-2 rounded-full bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition-all duration-300"
+          className={`group relative flex items-center gap-3 px-4 py-2 rounded-full border transition-all duration-300 ${isDark ? 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06] hover:border-white/10' : 'bg-stone-100 border-stone-200 hover:bg-stone-200 hover:border-stone-300'}`}
           aria-label="Copy referral link"
         >
-          <span className="text-xs text-stone-400 font-medium truncate max-w-[180px] group-hover:text-stone-200 transition-colors">
+          <span className={`text-xs font-medium truncate max-w-[180px] transition-colors ${isDark ? 'text-stone-400 group-hover:text-stone-200' : 'text-stone-600 group-hover:text-stone-900'}`}>
             {referralUrl.replace(/^https?:\/\//, '')}
           </span>
-          <div className="h-4 w-px bg-white/10" aria-hidden="true" />
+          <div className={`h-4 w-px ${isDark ? 'bg-white/10' : 'bg-stone-300'}`} aria-hidden="true" />
           <span 
             className="text-[11px] font-semibold transition-colors"
-            style={{ color: copied ? accent : '#a8a29e' }}
+            style={{ color: copied ? accent : (isDark ? '#a8a29e' : '#78716c') }}
           >
             {copied ? 'Copied!' : 'Copy'}
           </span>
@@ -147,7 +148,6 @@ export default function BioPage() {
   const ref = params.get('reference') || params.get('trxref');
   const codeParam = params.get('code') || '';
 
-  // FIXED: Added seoDescription, seoImage, structuredData to destructuring
   const { business: biz, loading, error, seoDescription, seoImage, structuredData } = useBusinessWithSEO(slug);
 
   const [searchQuery, setSearchQuery] = useState(codeParam);
@@ -163,7 +163,6 @@ export default function BioPage() {
   const formRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
 
-  // Signal to prerenderer that page is ready
   useEffect(() => {
     if (!loading && biz?.active) {
       window.dispatchEvent(new Event('prerender-ready'));
@@ -212,12 +211,16 @@ export default function BioPage() {
       )
     : (biz?.cars || []);
 
+  // Theme Logic
+  const theme = biz?.theme || 'light';
+  const isDark = theme === 'dark';
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-6" role="status" aria-label="Loading business page">
+      <div className={`min-h-screen flex items-center justify-center px-6 ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}`} role="status" aria-label="Loading business page">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-stone-700 border-t-stone-400 rounded-full animate-spin mx-auto mb-4" aria-hidden="true"></div>
-          <p className="text-stone-500 text-sm font-medium">Loading...</p>
+          <div className={`w-8 h-8 border-2 rounded-full animate-spin mx-auto mb-4 ${isDark ? 'border-stone-700 border-t-stone-400' : 'border-stone-200 border-t-stone-500'}`} aria-hidden="true"></div>
+          <p className={`text-sm font-medium ${isDark ? 'text-stone-500' : 'text-stone-600'}`}>Loading...</p>
         </div>
       </div>
     );
@@ -225,14 +228,14 @@ export default function BioPage() {
 
   if (!biz || !biz.active) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-6" role="alert">
+      <div className={`min-h-screen flex items-center justify-center px-6 ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}`} role="alert">
         <div className="text-center">
-          <div className="w-16 h-16 rounded-full bg-stone-900 border border-stone-800 mx-auto mb-4 flex items-center justify-center text-stone-600 text-xl" aria-hidden="true">!</div>
-          <h1 className="text-stone-500 text-sm font-medium">Page Unavailable</h1>
-          <p className="text-stone-700 text-xs mt-1">This link is currently inactive.</p>
+          <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-xl ${isDark ? 'bg-stone-900 border border-stone-800 text-stone-600' : 'bg-white border border-stone-200 text-stone-500'}`} aria-hidden="true">!</div>
+          <h1 className={`text-sm font-medium ${isDark ? 'text-stone-500' : 'text-stone-700'}`}>Page Unavailable</h1>
+          <p className={`text-xs mt-1 ${isDark ? 'text-stone-700' : 'text-stone-500'}`}>This link is currently inactive.</p>
           <a 
             href="/" 
-            className="inline-block mt-6 px-4 py-2 rounded-lg text-xs font-medium text-stone-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+            className={`inline-block mt-6 px-4 py-2 rounded-lg text-xs font-medium transition-colors ${isDark ? 'text-stone-400 hover:text-white bg-white/5 hover:bg-white/10' : 'text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200'}`}
           >
             Go to BookNaija
           </a>
@@ -293,7 +296,7 @@ export default function BioPage() {
   function handleServiceSelect(id) {
     setSelectedId(function(prev) {
       if (prev !== id) {
-        window.history.replaceState({}, '', '#services'); // ADDED: URL Hash Fragment
+        window.history.replaceState({}, '', '#services');
         scrollToForm();
       }
       return prev === id ? '' : id;
@@ -351,7 +354,6 @@ export default function BioPage() {
         return next;
       });
     }
-    // ADDED: URL Hash Fragment
     window.history.replaceState({}, '', '#food');
     scrollToForm();
   }
@@ -389,7 +391,6 @@ export default function BioPage() {
     setSelectedProducts([]);
     setSelectedFood([]);
     setSelectedCar(car);
-    // ADDED: URL Hash Fragment
     window.history.replaceState({}, '', '#cars');
     scrollToForm();
   }
@@ -400,11 +401,10 @@ export default function BioPage() {
 
   return (
     <div 
-      className="min-h-screen bg-[#0a0a0a] text-white pb-12"
+      className={`min-h-screen pb-12 ${isDark ? 'bg-[#0a0a0a] text-white' : 'bg-stone-50 text-stone-900'}`}
       itemScope 
       itemType="https://schema.org/LocalBusiness"
     >
-      {/* SEO Component - Added location for "Near Me" description */}
       <SEO
         title={biz.name}
         description={seoDescription}
@@ -415,7 +415,6 @@ export default function BioPage() {
         location={biz.location}
       />
 
-      {/* Hidden structured data fields */}
       <meta itemProp="url" content={`${window.location.origin}/${biz.slug}`} />
       <meta itemProp="name" content={biz.name} />
       {biz.phone && <meta itemProp="telephone" content={biz.phone} />}
@@ -424,7 +423,7 @@ export default function BioPage() {
       <div className="max-w-lg mx-auto">
 
         <HeroSection biz={{ 
-          logo: biz.logo, name: biz.name, slug: biz.slug, tagline: biz.tagline, bio: biz.bio, phone: biz.phone, whatsapp: biz.whatsapp, location: biz.location, hours: biz.hours, accent: biz.accent, avatar: biz.avatar, hero: biz.hero, gallery: biz.gallery, socials: biz.socials 
+          logo: biz.logo, name: biz.name, slug: biz.slug, tagline: biz.tagline, bio: biz.bio, phone: biz.phone, whatsapp: biz.whatsapp, location: biz.location, hours: biz.hours, accent: biz.accent, avatar: biz.avatar, hero: biz.hero, gallery: biz.gallery, socials: biz.socials, theme: biz.theme
         }} />
 
         {biz.gallery && biz.gallery.length > 0 && (
@@ -434,6 +433,7 @@ export default function BioPage() {
               gallery={biz.gallery} 
               accent={accent} 
               location={biz.location} 
+              theme={theme}
             />
           </div>
         )}
@@ -441,8 +441,8 @@ export default function BioPage() {
         <div className="px-6 mt-6">
           <form onSubmit={handleSearch} className="relative" role="search" aria-label="Search services and products">
             <label htmlFor="business-search" className="sr-only">Search by name, code, or description</label>
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none" aria-hidden="true">
-              <svg className="w-4 h-4 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <div className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none`} aria-hidden="true">
+              <svg className={`w-4 h-4 ${isDark ? 'text-stone-500' : 'text-stone-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
@@ -452,13 +452,13 @@ export default function BioPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by name, code, or description..."
-              className="w-full bg-white/[0.03] border border-white/10 rounded-xl pl-11 pr-10 py-3 text-sm text-white placeholder-stone-600 focus:outline-none focus:border-white/30 transition-colors"
+              className={`w-full rounded-xl pl-11 pr-10 py-3 text-sm placeholder-stone-400 focus:outline-none transition-colors ${isDark ? 'bg-white/[0.03] border border-white/10 text-white focus:border-white/30' : 'bg-white border border-stone-200 text-stone-900 focus:border-stone-400'}`}
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={clearSearch}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-stone-500 hover:text-white transition-colors"
+                className={`absolute inset-y-0 right-0 pr-4 flex items-center transition-colors ${isDark ? 'text-stone-500 hover:text-white' : 'text-stone-400 hover:text-stone-700'}`}
                 aria-label="Clear search"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -470,12 +470,12 @@ export default function BioPage() {
           
           {isSearchActive && searchQuery && (
             <div className="mt-2 flex items-center justify-between" role="status" aria-live="polite">
-              <p className="text-[11px] text-stone-500">
+              <p className={`text-[11px] ${isDark ? 'text-stone-500' : 'text-stone-600'}`}>
                 Showing results for "{searchQuery}"
               </p>
               <button
                 onClick={clearSearch}
-                className="text-[11px] text-stone-400 hover:text-white transition-colors"
+                className={`text-[11px] transition-colors ${isDark ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-stone-800'}`}
               >
                 Clear
               </button>
@@ -483,12 +483,12 @@ export default function BioPage() {
           )}
         </div>
 
-        <div className="mx-6 mt-6 border-t border-white/[0.04]" aria-hidden="true" />
+        <div className={`mx-6 mt-6 border-t ${isDark ? 'border-white/[0.04]' : 'border-stone-200'}`} aria-hidden="true" />
 
         {showPrimaryAd && (
           <div className="mx-6 mt-6">
-            <div className="rounded-xl bg-stone-900/50 border border-white/5 p-4 flex flex-col items-center">
-              <span className="text-[10px] text-stone-500 uppercase tracking-widest mb-2 font-semibold">Sponsored</span>
+            <div className={`rounded-xl border p-4 flex flex-col items-center ${isDark ? 'bg-stone-900/50 border-white/5' : 'bg-white border-stone-200'}`}>
+              <span className={`text-[10px] uppercase tracking-widest mb-2 font-semibold ${isDark ? 'text-stone-500' : 'text-stone-600'}`}>Sponsored</span>
               <GoogleAd slot={AD_SLOT_PRIMARY} />
             </div>
           </div>
@@ -496,16 +496,16 @@ export default function BioPage() {
 
         {isSearchActive && !hasAnyContent && (
           <div className="px-6 mt-8 text-center" role="status">
-            <div className="w-16 h-16 rounded-full bg-stone-900 border border-stone-800 mx-auto mb-4 flex items-center justify-center" aria-hidden="true">
-              <svg className="w-6 h-6 text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${isDark ? 'bg-stone-900 border border-stone-800' : 'bg-stone-100 border border-stone-200'}`} aria-hidden="true">
+              <svg className={`w-6 h-6 ${isDark ? 'text-stone-600' : 'text-stone-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <p className="text-stone-400 text-sm font-medium">No results found</p>
-            <p className="text-stone-600 text-xs mt-1">Try a different search term</p>
+            <p className={`text-sm font-medium ${isDark ? 'text-stone-400' : 'text-stone-700'}`}>No results found</p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-stone-600' : 'text-stone-500'}`}>Try a different search term</p>
             <button
               onClick={clearSearch}
-              className="mt-4 px-4 py-2 rounded-lg text-xs font-medium text-stone-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+              className={`mt-4 px-4 py-2 rounded-lg text-xs font-medium transition-colors ${isDark ? 'text-stone-400 hover:text-white bg-white/5 hover:bg-white/10' : 'text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200'}`}
             >
               View all items
             </button>
@@ -522,6 +522,7 @@ export default function BioPage() {
               onSelect={handleServiceSelect}
               accent={accent}
               location={biz.location}
+              theme={theme}
             />
           </section>
         )}
@@ -537,6 +538,7 @@ export default function BioPage() {
               accent={accent}
               label={showServices ? 'Products' : 'Shop'}
               location={biz.location}
+              theme={theme}
             />
           </section>
         )}
@@ -552,6 +554,7 @@ export default function BioPage() {
               onSelect={handleFoodSelect}
               accent={accent}
               location={biz.location}
+              theme={theme}
             />
           </section>
         )}
@@ -566,14 +569,15 @@ export default function BioPage() {
               onSelect={handleCarSelect}
               accent={accent}
               location={biz.location}
+              theme={theme}
             />
           </section>
         )}
 
         {showSecondaryAd && (
           <div className="mx-6 mt-8 mb-6">
-            <div className="rounded-xl bg-stone-900/50 border border-white/5 p-4 flex flex-col items-center">
-              <span className="text-[10px] text-stone-500 uppercase tracking-widest mb-2 font-semibold">Sponsored</span>
+            <div className={`rounded-xl border p-4 flex flex-col items-center ${isDark ? 'bg-stone-900/50 border-white/5' : 'bg-white border-stone-200'}`}>
+              <span className={`text-[10px] uppercase tracking-widest mb-2 font-semibold ${isDark ? 'text-stone-500' : 'text-stone-600'}`}>Sponsored</span>
               <GoogleAd slot={AD_SLOT_SECONDARY} />
             </div>
           </div>
@@ -596,28 +600,28 @@ export default function BioPage() {
         </section>
 
         {showFooterAd && (
-          <div className="mt-8 border-t border-white/[0.04] pt-6">
+          <div className={`mt-8 border-t pt-6 ${isDark ? 'border-white/[0.04]' : 'border-stone-200'}`}>
             <GoogleAd slot={AD_SLOT_FOOTER} />
           </div>
         )}
 
         <footer className="px-6 pt-12 pb-8 text-center">
-          <ReferralLink slug={biz.slug} accent={accent} />
+          <ReferralLink slug={biz.slug} accent={accent} theme={theme} />
 
           <nav className="flex justify-center gap-6 mb-6" aria-label="Legal links">
-            <a href="/privacy" className="text-[11px] text-stone-500 hover:text-stone-300 underline decoration-stone-700 hover:decoration-stone-500 underline-offset-4 transition-colors">
+            <a href="/privacy" className={`text-[11px] underline underline-offset-4 transition-colors ${isDark ? 'text-stone-500 hover:text-stone-300 decoration-stone-700 hover:decoration-stone-500' : 'text-stone-600 hover:text-stone-900 decoration-stone-300 hover:decoration-stone-500'}`}>
               Privacy Policy
             </a>
-            <a href="/terms" className="text-[11px] text-stone-500 hover:text-stone-300 underline decoration-stone-700 hover:decoration-stone-500 underline-offset-4 transition-colors">
+            <a href="/terms" className={`text-[11px] underline underline-offset-4 transition-colors ${isDark ? 'text-stone-500 hover:text-stone-300 decoration-stone-700 hover:decoration-stone-500' : 'text-stone-600 hover:text-stone-900 decoration-stone-300 hover:decoration-stone-500'}`}>
               Terms of Service
             </a>
           </nav> 
           
-          <p className="text-[11px] text-stone-500 uppercase tracking-widest font-semibold">
+          <p className={`text-[11px] uppercase tracking-widest font-semibold ${isDark ? 'text-stone-500' : 'text-stone-600'}`}>
             Secured by Paystack
           </p> 
         </footer>
       </div>
     </div>
   );
-  }
+}
