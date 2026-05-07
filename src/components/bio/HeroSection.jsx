@@ -1,5 +1,14 @@
 import { InstagramIcon, TikTokIcon, PhoneIcon, WhatsAppIcon, MapPinIcon, ClockIcon } from '../Icons';
 
+function formatWhatsAppNumber(num) {
+  if (!num) return '';
+  let digits = num.replace(/\D/g, '');
+  if (digits.startsWith('0')) {
+    digits = '234' + digits.substring(1);
+  }
+  return digits;
+}
+
 export default function HeroSection({ biz }) {
   const accent = biz.accent || '#c8a97e';
   const initials = biz.name ? biz.name.split(' ').map((w) => w[0]).join('').substring(0, 2) : '??';
@@ -14,10 +23,11 @@ export default function HeroSection({ biz }) {
   const hasImages = heroImages.length > 0;
   const mapQuery = biz.location ? encodeURIComponent(biz.name + ' ' + biz.location) : encodeURIComponent(biz.name || '');
 
+  const waNumber = formatWhatsAppNumber(biz.whatsapp || biz.phone);
+
   return (
     <div className={`relative w-full overflow-hidden text-white ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}`} style={{ minHeight: '85dvh' }}>
       
-      {/* Background images */}
       {hasImages && (
         <>
           <style>{`
@@ -54,12 +64,10 @@ export default function HeroSection({ biz }) {
         </>
       )}
 
-      {/* Content Layer */}
       <header className="relative z-20 max-w-lg mx-auto px-6 pt-16 pb-12 flex flex-col items-center justify-end h-full min-h-[85dvh]">
         
         <div className="flex flex-col items-center text-center mb-8 animate-fade-in-up">
           <div className="relative mb-8">
-             {/* Updated Logo Container: Theme Aware */}
              <div className={`relative w-32 h-32 rounded-full overflow-hidden flex items-center justify-center shadow-2xl ${isDark ? 'bg-[#0a0a0a] border border-white/10' : 'bg-white border border-stone-200 shadow-md'}`}>
                 {biz.logo || biz.avatar ? (
                   <img 
@@ -86,7 +94,6 @@ export default function HeroSection({ biz }) {
           </p>
         </div>
 
-        {/* Bio */}
         {biz.bio && (
           <p 
             className={`text-sm font-sans font-normal leading-relaxed text-center mb-10 max-w-sm animate-fade-in-up ${isDark ? 'text-stone-300' : 'text-stone-600'}`}
@@ -97,7 +104,6 @@ export default function HeroSection({ biz }) {
           </p>
         )}
 
-        {/* Info Pills */}
         <div className="flex flex-wrap justify-center gap-2 mb-6 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           {biz.location && (
             <button
@@ -121,7 +127,6 @@ export default function HeroSection({ biz }) {
           )}
         </div>
 
-        {/* ===== MAP EMBED ===== */}
         {biz.location && (
           <div 
             id="location-map"
@@ -165,20 +170,21 @@ export default function HeroSection({ biz }) {
           </div>
         )}
 
-        {/* Action Buttons */}
         <div className="w-full flex flex-col gap-3 mb-10 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-          <a
-            href={biz.whatsapp ? `https://wa.me/${biz.whatsapp}` : `https://wa.me/${biz.phone?.replace(/\D/g, '')}`}
-            target="_blank"
-            rel="noreferrer"
-            className="group relative flex items-center justify-center gap-3 py-5 rounded-full overflow-hidden transition-all duration-500 active:scale-[0.97]"
-            style={{ backgroundColor: accent }}
-            aria-label={`Contact ${biz.name} on WhatsApp`}
-          >
-            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <WhatsAppIcon className="w-4 h-4 text-black" />
-            <span className="text-black font-bold uppercase tracking-[0.2em] text-[10px]">whatsapp</span>
-          </a>
+          {waNumber && (
+            <a
+              href={`https://wa.me/${waNumber}`}
+              target="_blank"
+              rel="noreferrer"
+              className="group relative flex items-center justify-center gap-3 py-5 rounded-full overflow-hidden transition-all duration-500 active:scale-[0.97]"
+              style={{ backgroundColor: accent }}
+              aria-label={`Contact ${biz.name} on WhatsApp`}
+            >
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <WhatsAppIcon className="w-4 h-4 text-black" />
+              <span className="text-black font-bold uppercase tracking-[0.2em] text-[10px]">whatsapp</span>
+            </a>
+          )}
           
           {biz.phone && (
             <a
@@ -192,7 +198,6 @@ export default function HeroSection({ biz }) {
           )}
         </div>
 
-        {/* Socials */}
         <nav className="flex justify-center gap-8 animate-fade-in-up" style={{ animationDelay: '0.4s' }} aria-label="Social media links">
           {biz.socials?.instagram && (
             <a 
