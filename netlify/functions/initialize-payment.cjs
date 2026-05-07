@@ -11,11 +11,12 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing request body' }) };
     }
 
+    const parsedBody = JSON.parse(event.body);
     const { 
       slug, amount, date, time, name, email, phone, 
       calendarId, serviceId, serviceName, type, address,
       subaccountCode    
-    } = JSON.parse(event.body);
+    } = parsedBody;
 
     // 3. Check environment variables
     const secretKey = process.env.PAYSTACK_SECRET_KEY;
@@ -34,7 +35,8 @@ exports.handler = async (event) => {
       email,
       amount: Math.round(amount * 100), // Ensure it's an integer (kobo)
       currency: 'NGN',
-      callback_url: d.callback_url || `${event.headers.origin || 'https://yoursite.netlify.app'}/${slug}`,
+      // BUG FIX: Changed d.callback_url to parsedBody.callback_url
+      callback_url: parsedBody.callback_url || `${event.headers.origin || 'https://booknaija.netlify.app'}/${slug}`,
       metadata: { 
         slug, serviceId, serviceName, date, time, 
         customerName: name, customerPhone: phone, 
