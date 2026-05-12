@@ -1,15 +1,12 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import path from 'path'
-import Prerender from 'vite-plugin-prerender'
+const { defineConfig } = require('vite');
+const react = require('@vitejs/plugin-react');
+const path = require('path');
+const Prerender = require('vite-plugin-prerender');
 
-export default defineConfig({
+module.exports = defineConfig({
   plugins: [
     react(),
     Prerender({
-      // Required - The path to the output directory
-      staticDir: path.join(__dirname, 'dist'),
-      
       // Required - Routes to prerender
       routes: [
         '/',
@@ -28,19 +25,23 @@ export default defineConfig({
         '/terms',
       ],
       
-      // Optional - Wait for prerenderReady
+      // Required - The path to the vite output directory
+      staticDir: path.join(__dirname, 'dist'),
+      
+      // Required - Renderer options
       renderer: '@prerenderer/renderer-puppeteer',
       rendererOptions: {
+        // Wait for the event we dispatch in our React components
         renderAfterDocumentEvent: 'prerender-ready',
-        // Wait up to 30 seconds for React to load
-        renderAfterTime: 15000,
+        // Maximum time to wait for React to load (30 seconds)
+        renderAfterTime: 30000,
       },
       
-      // Optional - Minify the rendered HTML
+      // Optional - Clean up URLs
       postProcess(renderedRoute) {
-        // Handle trailing slashes
-        renderedRoute.route = renderedRoute.originalRoute
+        renderedRoute.html = renderedRoute.html
+          .replace(/http://localhost:[0-9]+/g, 'https://booknaija.netlify.app');
       },
     }),
   ],
-})
+});
