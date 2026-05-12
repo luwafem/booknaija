@@ -1,9 +1,13 @@
- # Build settings
+# Build settings
 [build]
   command = "npm run build"
   publish = "dist"
-  # Forces Netlify to use Node 18 for building AND running functions
+
+# Environment variables (Node version + Prerendering for SEO/AdSense bots)
+[build.environment]
   NODE_VERSION = "18"
+  # THIS tells Netlify to execute your JS and serve full HTML to bots instead of an empty <div>
+  NETLIFY_PRERENDER = "true"
 
 # Functions config
 [functions]
