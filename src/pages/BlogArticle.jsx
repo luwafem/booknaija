@@ -1,4 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
+import { useEffect } from 'react'; // ADDED THIS IMPORT
 import SEO from '../hooks/useSEO';
 
 const blogData = [
@@ -132,10 +133,14 @@ The Psychology of Upfront Payment: When a client pays upfront via a secure platf
   }
 ];
 
-// ⚠️ MAKE SURE THIS LINE IS EXACTLY AS BELOW ⚠️
 export default function BlogArticle() {
   const { slug } = useParams();
   const article = blogData.find(a => a.slug === slug);
+
+  // ADDED THIS: Tell prerender bot the page is ready immediately since it's static content
+  useEffect(() => {
+    window.prerenderReady = true;
+  }, []);
 
   if (!article) {
     return (
@@ -155,7 +160,6 @@ export default function BlogArticle() {
         description={article.content.substring(0, 150) + '...'}
       />
 
-      {/* Header */}
       <nav className="bg-white sticky top-0 z-50 px-4 sm:px-6 border-b border-zinc-100">
         <div className="max-w-2xl mx-auto py-4 flex justify-between items-center">
           <Link to="/blog" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">
@@ -178,7 +182,6 @@ export default function BlogArticle() {
           <div className="w-16 h-1 bg-purple-600 rounded-full"></div>
         </header>
 
-        {/* Article Content */}
         <div className="prose prose-zinc prose-lg max-w-none">
           {article.content.split('\n\n').map((paragraph, index) => (
             <p key={index} className="text-zinc-600 leading-relaxed mb-6 text-base">
@@ -187,7 +190,6 @@ export default function BlogArticle() {
           ))}
         </div>
 
-        {/* CTA at the bottom */}
         <div className="mt-16 p-8 rounded-2xl bg-zinc-50 border border-zinc-200 text-center">
           <h3 className="text-xl font-bold text-zinc-900 mb-2">Ready to grow your business?</h3>
           <p className="text-zinc-500 text-sm mb-6">Stop the DM cycle. Get your professional storefront on BookNaija today.</p>

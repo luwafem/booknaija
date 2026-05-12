@@ -46,6 +46,11 @@
     
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1898000452698308"
      crossorigin="anonymous"></script>
+
+    <!-- Tell Netlify Prerendering to wait for React to load before taking a snapshot -->
+    <script>
+      window.prerenderReady = false;
+    </script>
   </head>
   <body>
     <div id="root"></div>

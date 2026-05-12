@@ -160,7 +160,9 @@ export default function BioPage() {
 
   useEffect(() => {
     if (!loading && biz?.active) {
-      window.dispatchEvent(new Event('prerender-ready'));
+      // Tell Netlify Prerendering that the page is fully loaded and ready to snapshot!
+      window.prerenderReady = true;
+      
       const cart = getCart();
       setActiveService(cart.service || '');
       setActiveProducts(cart.products || []);
@@ -329,7 +331,6 @@ export default function BioPage() {
     if (hasItems) navigate(`/book/${slug}`);
   }
 
-  // ── DYNAMIC FAQ GENERATION (Adapts to ANY business type) ──
   const businessType = showCars ? 'dealership' : (showFood ? 'restaurant' : (showProducts && !showServices ? 'store' : 'business'));
   
   const faqs = [
@@ -461,7 +462,6 @@ export default function BioPage() {
           </div>
         )}
 
-        {/* ── DYNAMIC FAQ SECTION ── */}
         <section className="px-6 mt-8" aria-label="Frequently Asked Questions">
           <h2 className={`text-[11px] font-semibold uppercase tracking-[0.2em] mb-4 px-1 ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>Frequently Asked Questions</h2>
           <div className="space-y-3">
@@ -477,7 +477,6 @@ export default function BioPage() {
           </div>
         </section>
 
-        {/* ── TRUST SECTION ── */}
         <section className="px-6 mt-8" aria-label="Trust and Security">
            <div className={`p-5 rounded-2xl border text-center ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-white border-stone-200'}`}>
              <h3 className={`text-sm font-bold mb-1 ${isDark ? 'text-stone-200' : 'text-stone-900'}`}>Secure & Verified Booking</h3>
