@@ -162,7 +162,6 @@ export default function BioPage() {
   useEffect(() => {
     if (!loading && biz?.active) {
       window.dispatchEvent(new Event('prerender-ready'));
-      // Load existing cart from sessionStorage on mount
       const cart = getCart();
       setActiveService(cart.service || '');
       setActiveProducts(cart.products || []);
@@ -171,12 +170,10 @@ export default function BioPage() {
     }
   }, [loading, biz]);
 
-  // ── Paystack Redirect Handler ──
   if (ref) {
     return <Navigate to={`/book/${slug}?reference=${ref}`} replace />;
   }
 
-  // ── SESSION STORAGE HELPERS ──
   function getCart() {
     try { return JSON.parse(sessionStorage.getItem(`cart_${slug}`)) || {}; }
     catch { return {}; }
@@ -190,7 +187,6 @@ export default function BioPage() {
     setActiveCar(cart.car || null);
   }
 
-  // ── Search Logic ──
   const filteredProducts = searchQuery
     ? (biz?.products || []).filter(p =>
         (p.product_code && p.product_code.toLowerCase() === searchQuery.toLowerCase()) ||
@@ -281,36 +277,23 @@ export default function BioPage() {
     setIsSearchActive(false);
   };
 
-  // ── CART NAVIGATION HANDLERS ──
   function handleServiceSelect(id) {
     const cart = getCart();
-    if (cart.service === id) {
-      cart.service = ''; // Toggle off
-    } else {
-      cart.service = id;
-      cart.products = [];
-      cart.productVariants = {};
-      cart.food = [];
-      cart.foodVariants = {};
-      cart.car = null;
+    if (cart.service === id) { cart.service = ''; } 
+    else {
+      cart.service = id; cart.products = []; cart.productVariants = {};
+      cart.food = []; cart.foodVariants = {}; cart.car = null;
     }
     saveCart(cart);
-    
     const hasItems = cart.service || cart.products?.length || cart.food?.length || cart.car;
     if (hasItems) navigate(`/book/${slug}`);
   }
 
   function handleProductSelect(id, size, color) {
     const cart = getCart();
-    cart.service = '';
-    cart.food = [];
-    cart.foodVariants = {};
-    cart.car = null;
-    
+    cart.service = ''; cart.food = []; cart.foodVariants = {}; cart.car = null;
     if (!cart.products) cart.products = [];
     if (!cart.productVariants) cart.productVariants = {};
-    
-    // Toggle: Add or Remove
     if (cart.products.includes(id)) {
       cart.products = cart.products.filter(p => p !== id);
       delete cart.productVariants[id];
@@ -321,24 +304,16 @@ export default function BioPage() {
       if (color) variant.color = color;
       if (Object.keys(variant).length) cart.productVariants[id] = variant;
     }
-    
     saveCart(cart);
-    
     const hasItems = cart.products.length > 0;
     if (hasItems) navigate(`/book/${slug}`);
   }
 
   function handleFoodSelect(id, variant) {
     const cart = getCart();
-    cart.service = '';
-    cart.products = [];
-    cart.productVariants = {};
-    cart.car = null;
-    
+    cart.service = ''; cart.products = []; cart.productVariants = {}; cart.car = null;
     if (!cart.food) cart.food = [];
     if (!cart.foodVariants) cart.foodVariants = {};
-    
-    // Toggle: Add or Remove
     if (cart.food.includes(id)) {
       cart.food = cart.food.filter(f => f !== id);
       delete cart.foodVariants[id];
@@ -346,30 +321,44 @@ export default function BioPage() {
       cart.food.push(id);
       if (variant) cart.foodVariants[id] = variant;
     }
-    
     saveCart(cart);
-    
     const hasItems = cart.food.length > 0;
     if (hasItems) navigate(`/book/${slug}`);
   }
 
   function handleCarSelect(car) {
     const cart = getCart();
-    if (cart.car === car.id) {
-      cart.car = null; // Toggle off
-    } else {
-      cart.service = '';
-      cart.products = [];
-      cart.productVariants = {};
-      cart.food = [];
-      cart.foodVariants = {};
-      cart.car = car.id;
+    if (cart.car === car.id) { cart.car = null; } 
+    else {
+      cart.service = ''; cart.products = []; cart.productVariants = {};
+      cart.food = []; cart.foodVariants = {}; cart.car = car.id;
     }
     saveCart(cart);
-    
     const hasItems = cart.car;
     if (hasItems) navigate(`/book/${slug}`);
   }
+
+  // ── DYNAMIC FAQ GENERATION (Crucial for AdSense "Informational" requirement) ──
+  const faqs = [
+    {
+      q: `How do I book an appointment with ${biz.name}?`,
+      a: `Booking with ${biz.name} is simple. Browse the services or products listed above, select your preferred option, and you will be directed to a secure checkout page. Payment is processed securely via Paystack.`
+    },
+    {
+      q: `Where is ${biz.name} located?`,
+      a: biz.location ? `${biz.name} is located in ${biz.location}. You can find more details and contact them directly through this page.` : `You can find location details and contact information for ${biz.name} on this page.`
+    },
+    {
+      q: `Is my payment secure?`,
+      a: `Absolutely. All payments on BookNaija are processed securely through Paystack, ensuring your financial information is fully protected. You will receive an instant receipt upon successful payment.`
+    },
+    {
+      q: `Can I buy products from ${biz.name} online?`,
+      a: biz.productsEnabled && showProducts 
+        ? `Yes! ${biz.name} offers a selection of products that you can purchase directly through this page. Simply select the items you want and proceed to secure checkout.`
+        : `Yes, you can book services and make purchases directly through this page with secure online payments.`
+    }
+  ];
 
   return (
     <div
@@ -438,6 +427,7 @@ export default function BioPage() {
 
         <div className={`mx-6 mt-6 border-t ${isDark ? 'border-white/[0.04]' : 'border-stone-200'}`} aria-hidden="true" />
 
+        {/* ── PRIMARY AD ── */}
         {showPrimaryAd && (
           <div className="mx-6 mt-6">
             <div className={`rounded-xl border p-4 flex flex-col items-center ${isDark ? 'bg-stone-900/50 border-white/5' : 'bg-white border-stone-200'}`}>
@@ -445,6 +435,20 @@ export default function BioPage() {
               <GoogleAd slot={AD_SLOT_PRIMARY} />
             </div>
           </div>
+        )}
+
+        {/* ── NEW: ABOUT SECTION (Editorial Content) ── */}
+        {biz.bio && (
+          <section className="px-6 mt-8" aria-label="About business">
+            <h2 className={`text-[11px] font-semibold uppercase tracking-[0.2em] mb-4 px-1 ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>
+              About {biz.name}
+            </h2>
+            <div className={`p-5 rounded-2xl border ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-white border-stone-200'}`}>
+              <p className={`text-sm leading-relaxed ${isDark ? 'text-stone-300' : 'text-stone-600'}`}>
+                {biz.bio}
+              </p>
+            </div>
+          </section>
         )}
 
         {isSearchActive && !hasAnyContent && (
@@ -489,6 +493,7 @@ export default function BioPage() {
           </section>
         )}
 
+        {/* ── SECONDARY AD ── */}
         {showSecondaryAd && (
           <div className="mx-6 mt-8 mb-6">
             <div className={`rounded-xl border p-4 flex flex-col items-center ${isDark ? 'bg-stone-900/50 border-white/5' : 'bg-white border-stone-200'}`}>
@@ -498,6 +503,45 @@ export default function BioPage() {
           </div>
         )}
 
+        {/* ── NEW: FAQ SECTION (Heavy Informational Content for AdSense) ── */}
+        <section className="px-6 mt-8" aria-label="Frequently Asked Questions">
+          <h2 className={`text-[11px] font-semibold uppercase tracking-[0.2em] mb-4 px-1 ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>
+            Frequently Asked Questions
+          </h2>
+          <div className="space-y-3">
+            {faqs.map((faq, index) => (
+              <details 
+                key={index} 
+                className={`group rounded-2xl border overflow-hidden transition-colors ${isDark ? 'bg-white/[0.02] border-white/5 hover:border-white/10' : 'bg-white border-stone-200 hover:border-stone-300'}`}
+              >
+                <summary className={`flex justify-between items-center cursor-pointer p-4 text-sm font-medium list-none ${isDark ? 'text-stone-200' : 'text-stone-800'}`}>
+                  <span className="flex-1 pr-4">{faq.q}</span>
+                  <svg className="w-4 h-4 shrink-0 transition-transform group-open:rotate-180 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <div className={`px-4 pb-4 text-sm leading-relaxed ${isDark ? 'text-stone-400' : 'text-stone-600'}`}>
+                  {faq.a}
+                </div>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        {/* ── NEW: TRUST & GUARANTEE SECTION ── */}
+        <section className="px-6 mt-8" aria-label="Trust and Security">
+           <div className={`p-5 rounded-2xl border text-center ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-white border-stone-200'}`}>
+             <div className="flex justify-center mb-3">
+               
+             </div>
+             <h3 className={`text-sm font-bold mb-1 ${isDark ? 'text-stone-200' : 'text-stone-900'}`}>Secure & Verified Booking</h3>
+             <p className={`text-xs leading-relaxed ${isDark ? 'text-stone-500' : 'text-stone-500'}`}>
+               All transactions are encrypted and processed securely via Paystack. Your booking is confirmed instantly, and you will receive a digital receipt.
+             </p>
+           </div>
+        </section>
+
+        {/* ── FOOTER AD ── */}
         {showFooterAd && (
           <div className={`mt-8 border-t pt-6 ${isDark ? 'border-white/[0.04]' : 'border-stone-200'}`}>
             <GoogleAd slot={AD_SLOT_FOOTER} />
