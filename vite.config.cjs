@@ -7,7 +7,6 @@ module.exports = defineConfig({
   plugins: [
     react(),
     Prerender({
-      // Required - Routes to prerender
       routes: [
         '/',
         '/blog',
@@ -25,22 +24,12 @@ module.exports = defineConfig({
         '/terms',
       ],
       
-      // Required - The path to the vite output directory
       staticDir: path.join(__dirname, 'dist'),
       
-      // Required - Renderer options
       renderer: '@prerenderer/renderer-puppeteer',
       rendererOptions: {
-        // Wait for the event we dispatch in our React components
         renderAfterDocumentEvent: 'prerender-ready',
-        // Maximum time to wait for React to load (30 seconds)
         renderAfterTime: 30000,
-      },
-      
-      // Optional - Clean up URLs
-      postProcess(renderedRoute) {
-        renderedRoute.html = renderedRoute.html
-          .replace(/http://localhost:[0-9]+/g, 'https://booknaija.netlify.app');
       },
     }),
   ],
