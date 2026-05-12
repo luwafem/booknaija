@@ -17,7 +17,10 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const SITE_URL = process.env.SITE_URL || 'https://booknaija.netlify.app';
-const TODAY = new Date().toISOString().split('T')[0];
+
+// ✅ FIX: Use full ISO 8601 datetime format (Google sitemap requirement)
+// Output: "2024-05-13T00:00:00.000Z" — always valid for sitemaps
+const TODAY = new Date().toISOString();
 
 async function generateSitemap() {
   console.log('Fetching active businesses...');
@@ -49,7 +52,7 @@ async function generateSitemap() {
   ];
 
   const pages = [
-    // --- Static Pages (FIXED: added lastmod: TODAY) ---
+    // --- Static Pages ---
     { url: '/', priority: '1.0', changefreq: 'daily', lastmod: TODAY },
     { url: '/signup', priority: '0.9', changefreq: 'monthly', lastmod: TODAY },
     { url: '/discover', priority: '0.9', changefreq: 'weekly', lastmod: TODAY },
