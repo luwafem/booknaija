@@ -5,7 +5,7 @@
 
 # Environment variables (Node version + Prerendering for SEO/AdSense bots)
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20"
   # THIS tells Netlify to execute your JS and serve full HTML to bots instead of an empty <div>
   NETLIFY_PRERENDER = "true"
 
