@@ -22,7 +22,6 @@ const TODAY = new Date().toISOString().split('T')[0];
 async function generateSitemap() {
   console.log('Fetching active businesses...');
   
-  // FIX: Removed 'updated_at' from the query
   const { data: businesses, error } = await supabase
     .from('businesses')
     .select('slug')
@@ -35,16 +34,45 @@ async function generateSitemap() {
 
   console.log(`Found ${businesses.length} active businesses`);
 
+  // NEW: Blog article slugs (must match Blog.jsx exactly)
+  const blogArticles = [
+    'how-to-maintain-knotless-braids-in-lagos',
+    '5-best-local-ingredients-every-nigerian-restaurant-needs',
+    'what-to-check-before-renting-a-car-in-lagos',
+    'why-every-nigerian-small-business-needs-a-bio-link',
+    'the-rise-of-cloud-kitchens-in-nigeria',
+    'complete-guide-to-buying-a-used-car-in-nigeria',
+    'setting-the-right-prices-for-your-beauty-services',
+    'how-paystack-is-changing-online-payments-for-creatives',
+    'how-to-package-food-for-delivery-in-nigeria',
+    'building-client-trust-why-online-booking-beats-dms'
+  ];
+
   const pages = [
-    { url: '/', priority: '1.0', changefreq: 'daily' },
-    { url: '/signup', priority: '0.9', changefreq: 'monthly' },
-    { url: '/privacy', priority: '0.3', changefreq: 'yearly' },
-    { url: '/terms', priority: '0.3', changefreq: 'yearly' },
+    // --- Static Pages (FIXED: added lastmod: TODAY) ---
+    { url: '/', priority: '1.0', changefreq: 'daily', lastmod: TODAY },
+    { url: '/signup', priority: '0.9', changefreq: 'monthly', lastmod: TODAY },
+    { url: '/discover', priority: '0.9', changefreq: 'weekly', lastmod: TODAY },
+    { url: '/affiliate-signup', priority: '0.7', changefreq: 'monthly', lastmod: TODAY },
+    { url: '/privacy', priority: '0.3', changefreq: 'yearly', lastmod: TODAY },
+    { url: '/terms', priority: '0.3', changefreq: 'yearly', lastmod: TODAY },
+    
+    // --- Blog Index ---
+    { url: '/blog', priority: '0.8', changefreq: 'weekly', lastmod: TODAY },
+    
+    // --- Blog Articles ---
+    ...blogArticles.map(slug => ({
+      url: `/blog/${slug}`,
+      priority: '0.7',
+      changefreq: 'monthly',
+      lastmod: TODAY,
+    })),
+    
+    // --- Dynamic Business Pages ---
     ...businesses.map(biz => ({
       url: `/${biz.slug}`,
       priority: '0.8',
       changefreq: 'weekly',
-      // FIX: Use today's date instead of updated_at
       lastmod: TODAY,
     })),
   ];

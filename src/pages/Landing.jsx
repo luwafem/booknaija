@@ -379,7 +379,6 @@ export default function Landing() {
                 <div className="pt-4">
                   <p className="text-zinc-400 text-sm font-semibold uppercase tracking-wider mb-2">Monthly Plan</p>
                   
-                  {/* UPDATED PRICING COPY */}
                   <div className="mb-8">
                     <p className="text-base text-green-600 font-bold mb-1">Start for just ₦500 today</p>
                     <div className="flex items-baseline gap-2">
@@ -482,7 +481,6 @@ export default function Landing() {
                 </ul>
               </div>
               
-              {/* NEW PARTNERS COLUMN */}
               <div className="space-y-4">
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Partners</p>
                 <ul className="space-y-3 text-sm font-medium text-zinc-600">
@@ -493,6 +491,8 @@ export default function Landing() {
               <div className="space-y-4">
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Company</p>
                 <ul className="space-y-3 text-sm font-medium text-zinc-600">
+                  {/* ADDED BLOG LINK HERE */}
+                  <li><Link to="/blog" className="hover:text-zinc-900 transition-colors">Blog</Link></li>
                   <li><Link to="/privacy" className="hover:text-zinc-900 transition-colors">Privacy Policy</Link></li>
                   <li><Link to="/terms" className="hover:text-zinc-900 transition-colors">Terms of Service</Link></li>
                 </ul>

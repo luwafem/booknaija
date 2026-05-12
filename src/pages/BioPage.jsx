@@ -153,7 +153,6 @@ export default function BioPage() {
   const [searchQuery, setSearchQuery] = useState(codeParam);
   const [isSearchActive, setIsSearchActive] = useState(!!codeParam);
 
-  // ── CART STATE (for visual indicators on BioPage) ──
   const [activeService, setActiveService] = useState('');
   const [activeProducts, setActiveProducts] = useState([]);
   const [activeFood, setActiveFood] = useState([]);
@@ -259,14 +258,6 @@ export default function BioPage() {
   const showSecondaryAd = adsEnabled && hasAnyContent && !isSearchActive && totalItems >= 6;
   const showFooterAd = adsEnabled && hasAnyContent && !isSearchActive && totalItems >= 4;
 
-  const isGrouped = biz.gallery?.length > 0 && typeof biz.gallery[0] === 'object' && biz.gallery[0].images;
-  let heroImages = [];
-  if (isGrouped) {
-    heroImages = biz.gallery.flatMap(function(g) { return g.images; }).slice(0, 4);
-  } else if (biz.gallery) {
-    heroImages = biz.gallery.slice(0, 4);
-  }
-
   const handleSearch = (e) => {
     e.preventDefault();
     setIsSearchActive(!!searchQuery.trim());
@@ -338,24 +329,38 @@ export default function BioPage() {
     if (hasItems) navigate(`/book/${slug}`);
   }
 
-  // ── DYNAMIC FAQ GENERATION (Crucial for AdSense "Informational" requirement) ──
+  // ── DYNAMIC FAQ GENERATION (Adapts to ANY business type) ──
+  const businessType = showCars ? 'dealership' : (showFood ? 'restaurant' : (showProducts && !showServices ? 'store' : 'business'));
+  
   const faqs = [
     {
-      q: `How do I book an appointment with ${biz.name}?`,
-      a: `Booking with ${biz.name} is simple. Browse the services or products listed above, select your preferred option, and you will be directed to a secure checkout page. Payment is processed securely via Paystack.`
+      q: `How do I book with ${biz.name}?`,
+      a: showServices 
+        ? `Booking an appointment with ${biz.name} is simple. Browse the services listed above, select your preferred option, and you will be directed to a secure checkout page.`
+        : showCars 
+        ? `Scheduling a rental or viewing with ${biz.name} is easy. Browse the available vehicles, select the one you are interested in, and proceed to secure checkout.`
+        : showFood
+        ? `Placing an order with ${biz.name} is straightforward. Browse their menu, customize your items, and proceed to secure checkout.`
+        : `Booking or purchasing from ${biz.name} is simple. Browse the listings above, select your preferred option, and proceed to secure checkout.`
     },
     {
       q: `Where is ${biz.name} located?`,
-      a: biz.location ? `${biz.name} is located in ${biz.location}. You can find more details and contact them directly through this page.` : `You can find location details and contact information for ${biz.name} on this page.`
+      a: biz.location 
+        ? `${biz.name} is located in ${biz.location}. You can find more details and contact them directly through this page.` 
+        : `You can find location details and contact information for ${biz.name} on this page.`
     },
     {
       q: `Is my payment secure?`,
-      a: `Absolutely. All payments on BookNaija are processed securely through Paystack, ensuring your financial information is fully protected. You will receive an instant receipt upon successful payment.`
+      a: `Absolutely. All payments on BookNaija are processed securely through Paystack, ensuring your financial information is fully protected. You will receive an instant digital receipt upon successful payment.`
     },
     {
       q: `Can I buy products from ${biz.name} online?`,
-      a: biz.productsEnabled && showProducts 
+      a: showProducts 
         ? `Yes! ${biz.name} offers a selection of products that you can purchase directly through this page. Simply select the items you want and proceed to secure checkout.`
+        : showFood 
+        ? `Yes! ${biz.name} offers online ordering for their menu items with secure checkout and delivery options.`
+        : showCars
+        ? `Yes, you can secure a vehicle rental or schedule a viewing online directly through this page with safe, upfront payments.`
         : `Yes, you can book services and make purchases directly through this page with secure online payments.`
     }
   ];
@@ -382,10 +387,7 @@ export default function BioPage() {
       {biz.location && <meta itemProp="address" content={biz.location} />}
 
       <div className="max-w-lg mx-auto">
-
-        <HeroSection biz={{
-          logo: biz.logo, name: biz.name, slug: biz.slug, tagline: biz.tagline, bio: biz.bio, phone: biz.phone, whatsapp: biz.whatsapp, location: biz.location, hours: biz.hours, accent: biz.accent, avatar: biz.avatar, hero: biz.hero, gallery: biz.gallery, socials: biz.socials, theme: biz.theme
-        }} />
+        <HeroSection biz={{ logo: biz.logo, name: biz.name, slug: biz.slug, tagline: biz.tagline, bio: biz.bio, phone: biz.phone, whatsapp: biz.whatsapp, location: biz.location, hours: biz.hours, accent: biz.accent, avatar: biz.avatar, hero: biz.hero, gallery: biz.gallery, socials: biz.socials, theme: biz.theme }} />
 
         {biz.gallery && biz.gallery.length > 0 && (
           <div itemScope itemType="https://schema.org/ImageGallery" aria-label="Photo gallery">
@@ -394,23 +396,13 @@ export default function BioPage() {
           </div>
         )}
 
-        {/* Search Bar */}
         <div className="px-6 mt-6">
           <form onSubmit={handleSearch} className="relative" role="search" aria-label="Search services and products">
             <label htmlFor="business-search" className="sr-only">Search by name, code, or description</label>
             <div className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none`} aria-hidden="true">
-              <svg className={`w-4 h-4 ${isDark ? 'text-stone-500' : 'text-stone-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              <svg className={`w-4 h-4 ${isDark ? 'text-stone-500' : 'text-stone-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             </div>
-            <input
-              id="business-search"
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name, code, or description..."
-              className={`w-full rounded-xl pl-11 pr-10 py-3 text-sm placeholder-stone-400 focus:outline-none transition-colors ${isDark ? 'bg-white/[0.03] border border-white/10 text-white focus:border-white/30' : 'bg-white border border-stone-200 text-stone-900 focus:border-stone-400'}`}
-            />
+            <input id="business-search" type="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by name, code, or description..." className={`w-full rounded-xl pl-11 pr-10 py-3 text-sm placeholder-stone-400 focus:outline-none transition-colors ${isDark ? 'bg-white/[0.03] border border-white/10 text-white focus:border-white/30' : 'bg-white border border-stone-200 text-stone-900 focus:border-stone-400'}`} />
             {searchQuery && (
               <button type="button" onClick={clearSearch} className={`absolute inset-y-0 right-0 pr-4 flex items-center transition-colors ${isDark ? 'text-stone-500 hover:text-white' : 'text-stone-400 hover:text-stone-700'}`} aria-label="Clear search">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -427,7 +419,6 @@ export default function BioPage() {
 
         <div className={`mx-6 mt-6 border-t ${isDark ? 'border-white/[0.04]' : 'border-stone-200'}`} aria-hidden="true" />
 
-        {/* ── PRIMARY AD ── */}
         {showPrimaryAd && (
           <div className="mx-6 mt-6">
             <div className={`rounded-xl border p-4 flex flex-col items-center ${isDark ? 'bg-stone-900/50 border-white/5' : 'bg-white border-stone-200'}`}>
@@ -437,16 +428,11 @@ export default function BioPage() {
           </div>
         )}
 
-        {/* ── NEW: ABOUT SECTION (Editorial Content) ── */}
         {biz.bio && (
           <section className="px-6 mt-8" aria-label="About business">
-            <h2 className={`text-[11px] font-semibold uppercase tracking-[0.2em] mb-4 px-1 ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>
-              About {biz.name}
-            </h2>
+            <h2 className={`text-[11px] font-semibold uppercase tracking-[0.2em] mb-4 px-1 ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>About {biz.name}</h2>
             <div className={`p-5 rounded-2xl border ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-white border-stone-200'}`}>
-              <p className={`text-sm leading-relaxed ${isDark ? 'text-stone-300' : 'text-stone-600'}`}>
-                {biz.bio}
-              </p>
+              <p className={`text-sm leading-relaxed ${isDark ? 'text-stone-300' : 'text-stone-600'}`}>{biz.bio}</p>
             </div>
           </section>
         )}
@@ -461,39 +447,11 @@ export default function BioPage() {
           </div>
         )}
 
-        {showServices && (
-          <section itemScope itemType="https://schema.org/ItemList" aria-label="Services">
-            <meta itemProp="name" content={`${biz.name} Services`} />
-            <meta itemProp="numberOfItems" content={filteredServices.length} />
-            <ServiceList services={filteredServices} selectedId={activeService} onSelect={handleServiceSelect} accent={accent} location={biz.location} theme={theme} />
-          </section>
-        )}
+        {showServices && (<section itemScope itemType="https://schema.org/ItemList" aria-label="Services"><meta itemProp="name" content={`${biz.name} Services`} /><meta itemProp="numberOfItems" content={filteredServices.length} /><ServiceList services={filteredServices} selectedId={activeService} onSelect={handleServiceSelect} accent={accent} location={biz.location} theme={theme} /></section>)}
+        {showProducts && (<section itemScope itemType="https://schema.org/ItemList" aria-label={showServices ? 'Products' : 'Shop'}><meta itemProp="name" content={`${biz.name} Products`} /><meta itemProp="numberOfItems" content={filteredProducts.length} /><ProductList products={filteredProducts} selectedProducts={activeProducts} onSelect={handleProductSelect} accent={accent} label={showServices ? 'Products' : 'Shop'} location={biz.location} theme={theme} /></section>)}
+        {showFood && (<section itemScope itemType="https://schema.org/ItemList" aria-label="Menu"><meta itemProp="name" content={`${biz.name} Menu`} /><meta itemProp="numberOfItems" content={filteredFood.length} /><FoodList food={filteredFood} selectedFood={activeFood} foodVariants={getCart().foodVariants || {}} onSelect={handleFoodSelect} accent={accent} location={biz.location} theme={theme} /></section>)}
+        {showCars && (<section itemScope itemType="https://schema.org/ItemList" aria-label="Vehicles"><meta itemProp="name" content={`${biz.name} Vehicles`} /><meta itemProp="numberOfItems" content={filteredCars.length} /><CarList cars={filteredCars} selectedCar={activeCar ? biz.cars.find(c => c.id === activeCar) : null} onSelect={handleCarSelect} accent={accent} location={biz.location} theme={theme} /></section>)}
 
-        {showProducts && (
-          <section itemScope itemType="https://schema.org/ItemList" aria-label={showServices ? 'Products' : 'Shop'}>
-            <meta itemProp="name" content={`${biz.name} Products`} />
-            <meta itemProp="numberOfItems" content={filteredProducts.length} />
-            <ProductList products={filteredProducts} selectedProducts={activeProducts} onSelect={handleProductSelect} accent={accent} label={showServices ? 'Products' : 'Shop'} location={biz.location} theme={theme} />
-          </section>
-        )}
-
-        {showFood && (
-          <section itemScope itemType="https://schema.org/ItemList" aria-label="Menu">
-            <meta itemProp="name" content={`${biz.name} Menu`} />
-            <meta itemProp="numberOfItems" content={filteredFood.length} />
-            <FoodList food={filteredFood} selectedFood={activeFood} foodVariants={getCart().foodVariants || {}} onSelect={handleFoodSelect} accent={accent} location={biz.location} theme={theme} />
-          </section>
-        )}
-
-        {showCars && (
-          <section itemScope itemType="https://schema.org/ItemList" aria-label="Vehicles">
-            <meta itemProp="name" content={`${biz.name} Vehicles`} />
-            <meta itemProp="numberOfItems" content={filteredCars.length} />
-            <CarList cars={filteredCars} selectedCar={activeCar ? biz.cars.find(c => c.id === activeCar) : null} onSelect={handleCarSelect} accent={accent} location={biz.location} theme={theme} />
-          </section>
-        )}
-
-        {/* ── SECONDARY AD ── */}
         {showSecondaryAd && (
           <div className="mx-6 mt-8 mb-6">
             <div className={`rounded-xl border p-4 flex flex-col items-center ${isDark ? 'bg-stone-900/50 border-white/5' : 'bg-white border-stone-200'}`}>
@@ -503,45 +461,30 @@ export default function BioPage() {
           </div>
         )}
 
-        {/* ── NEW: FAQ SECTION (Heavy Informational Content for AdSense) ── */}
+        {/* ── DYNAMIC FAQ SECTION ── */}
         <section className="px-6 mt-8" aria-label="Frequently Asked Questions">
-          <h2 className={`text-[11px] font-semibold uppercase tracking-[0.2em] mb-4 px-1 ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>
-            Frequently Asked Questions
-          </h2>
+          <h2 className={`text-[11px] font-semibold uppercase tracking-[0.2em] mb-4 px-1 ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>Frequently Asked Questions</h2>
           <div className="space-y-3">
             {faqs.map((faq, index) => (
-              <details 
-                key={index} 
-                className={`group rounded-2xl border overflow-hidden transition-colors ${isDark ? 'bg-white/[0.02] border-white/5 hover:border-white/10' : 'bg-white border-stone-200 hover:border-stone-300'}`}
-              >
+              <details key={index} className={`group rounded-2xl border overflow-hidden transition-colors ${isDark ? 'bg-white/[0.02] border-white/5 hover:border-white/10' : 'bg-white border-stone-200 hover:border-stone-300'}`}>
                 <summary className={`flex justify-between items-center cursor-pointer p-4 text-sm font-medium list-none ${isDark ? 'text-stone-200' : 'text-stone-800'}`}>
                   <span className="flex-1 pr-4">{faq.q}</span>
-                  <svg className="w-4 h-4 shrink-0 transition-transform group-open:rotate-180 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
+                  <svg className="w-4 h-4 shrink-0 transition-transform group-open:rotate-180 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                 </summary>
-                <div className={`px-4 pb-4 text-sm leading-relaxed ${isDark ? 'text-stone-400' : 'text-stone-600'}`}>
-                  {faq.a}
-                </div>
+                <div className={`px-4 pb-4 text-sm leading-relaxed ${isDark ? 'text-stone-400' : 'text-stone-600'}`}>{faq.a}</div>
               </details>
             ))}
           </div>
         </section>
 
-        {/* ── NEW: TRUST & GUARANTEE SECTION ── */}
+        {/* ── TRUST SECTION ── */}
         <section className="px-6 mt-8" aria-label="Trust and Security">
            <div className={`p-5 rounded-2xl border text-center ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-white border-stone-200'}`}>
-             <div className="flex justify-center mb-3">
-               
-             </div>
              <h3 className={`text-sm font-bold mb-1 ${isDark ? 'text-stone-200' : 'text-stone-900'}`}>Secure & Verified Booking</h3>
-             <p className={`text-xs leading-relaxed ${isDark ? 'text-stone-500' : 'text-stone-500'}`}>
-               All transactions are encrypted and processed securely via Paystack. Your booking is confirmed instantly, and you will receive a digital receipt.
-             </p>
+             <p className={`text-xs leading-relaxed ${isDark ? 'text-stone-500' : 'text-stone-500'}`}>All transactions are encrypted and processed securely via Paystack. Your booking is confirmed instantly, and you will receive a digital receipt.</p>
            </div>
         </section>
 
-        {/* ── FOOTER AD ── */}
         {showFooterAd && (
           <div className={`mt-8 border-t pt-6 ${isDark ? 'border-white/[0.04]' : 'border-stone-200'}`}>
             <GoogleAd slot={AD_SLOT_FOOTER} />

@@ -5,7 +5,7 @@ import Signup from './pages/Signup';
 import Onboarding from './pages/Onboarding';
 import OnboardingSuccess from './pages/OnboardingSuccess';
 import BioPage from './pages/BioPage';
-import BookingPage from './pages/BookingPage'; // NEW
+import BookingPage from './pages/BookingPage'; 
 import Discover from './pages/Discover';
 import Legal from './pages/Legal';
 import DashboardLogin from './pages/DashboardLogin';
@@ -13,6 +13,10 @@ import Dashboard from './pages/Dashboard';
 import NotFound from './pages/NotFound';
 import AffiliateSignup from './pages/AffiliateSignup';
 import AffiliateDashboard from './pages/AffiliateDashboard';
+
+// NEW: Blog Imports
+import Blog from './pages/Blog';
+import BlogArticle from './pages/BlogArticle';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -46,6 +50,11 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/discover" element={<Discover />} />
+        
+        {/* NEW: Blog Routes - MUST be before /:slug catch-all */}
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:slug" element={<BlogArticle />} />
+        
         <Route path="/signup" element={<Signup />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/onboarding-success" element={<OnboardingSuccess />} />
@@ -55,11 +64,9 @@ export default function App() {
         <Route path="/privacy" element={<Legal type="privacy" />} />
         <Route path="/dashboard" element={<DashboardLogin />} />
         <Route path="/dashboard/:slug" element={<Dashboard />} />
-        
-        {/* NEW: Booking page route — MUST be before /:slug */}
         <Route path="/book/:slug" element={<BookingPage />} />
         
-        {/* Business Profile Pages (No Booking Form) */}
+        {/* Business Profile Pages */}
         <Route path="/:slug" element={<BioPage />} />
         
         <Route path="*" element={<NotFound />} />
