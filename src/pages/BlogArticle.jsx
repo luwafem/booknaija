@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { useEffect } from 'react'; // ADDED THIS IMPORT
+import { useEffect } from 'react';
 import SEO from '../hooks/useSEO';
 
 const blogData = [
@@ -137,9 +137,10 @@ export default function BlogArticle() {
   const { slug } = useParams();
   const article = blogData.find(a => a.slug === slug);
 
-  // ADDED THIS: Tell prerender bot the page is ready immediately since it's static content
+  // Tell prerender bot the page is ready immediately since it's static content
   useEffect(() => {
     window.prerenderReady = true;
+    document.dispatchEvent(new Event('prerender-ready'));
   }, []);
 
   if (!article) {

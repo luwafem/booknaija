@@ -162,6 +162,7 @@ export default function BioPage() {
     if (!loading && biz?.active) {
       // Tell Netlify Prerendering that the page is fully loaded and ready to snapshot!
       window.prerenderReady = true;
+      document.dispatchEvent(new Event('prerender-ready'));
       
       const cart = getCart();
       setActiveService(cart.service || '');
