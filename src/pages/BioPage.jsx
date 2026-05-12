@@ -1,13 +1,13 @@
-import { useParams, useSearchParams } from 'react-router-dom';
-import { useState, useRef, useEffect } from 'react';
+import { useParams, useSearchParams, useNavigate, Navigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
 import { useBusinessWithSEO } from '../hooks/useBusinessWithSEO';
 import SEO from '../hooks/useSEO';
-import BookingForm from '../components/BookingForm';
+// REMOVED: BookingForm import
 import HeroSection from '../components/bio/HeroSection';
 import Gallery from '../components/bio/Gallery';
 import ServiceList from '../components/bio/ServiceList';
 import ProductList from '../components/bio/ProductList';
-import FoodList from '../components/bio/FoodList'; 
+import FoodList from '../components/bio/FoodList';
 import CarList from '../components/bio/CarList';
 
 // --- ADSENSE CONFIGURATION (GLOBAL) ---
@@ -130,7 +130,7 @@ const ReferralLink = ({ slug, accent, theme }) => {
             {referralUrl.replace(/^https?:\/\//, '')}
           </span>
           <div className={`h-4 w-px ${isDark ? 'bg-white/10' : 'bg-stone-300'}`} aria-hidden="true" />
-          <span 
+          <span
             className="text-[11px] font-semibold transition-colors"
             style={{ color: copied ? accent : (isDark ? '#a8a29e' : '#78716c') }}
           >
@@ -145,6 +145,7 @@ const ReferralLink = ({ slug, accent, theme }) => {
 export default function BioPage() {
   const { slug } = useParams();
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const ref = params.get('reference') || params.get('trxref');
   const codeParam = params.get('code') || '';
 
@@ -152,16 +153,11 @@ export default function BioPage() {
 
   const [searchQuery, setSearchQuery] = useState(codeParam);
   const [isSearchActive, setIsSearchActive] = useState(!!codeParam);
-  
-  const [selectedId, setSelectedId] = useState('');
-  const [selectedProducts, setSelectedProducts] = useState([]);
-  const [selectedProductVariants, setSelectedProductVariants] = useState({});
-  const [selectedFood, setSelectedFood] = useState([]);
-  const [selectedFoodVariants, setSelectedFoodVariants] = useState({});
-  const [selectedCar, setSelectedCar] = useState(null);
-  
-  const formRef = useRef(null);
-  const scrollTimeoutRef = useRef(null);
+
+  // ── All selection state REMOVED ──
+  // No more: selectedId, selectedProducts, selectedProductVariants,
+  //          selectedFood, selectedFoodVariants, selectedCar,
+  //          formRef, scrollTimeoutRef, scrollToForm
 
   useEffect(() => {
     if (!loading && biz?.active) {
@@ -169,21 +165,16 @@ export default function BioPage() {
     }
   }, [loading, biz]);
 
-  const scrollToForm = () => {
-    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-    scrollTimeoutRef.current = setTimeout(() => {
-      const el = formRef.current;
-      if (el) {
-        const rect = el.getBoundingClientRect();
-        const windowHeight = window.innerHeight;
-        const isVisible = rect.top >= 0 && rect.bottom <= windowHeight;
-        if (!isVisible) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 100);
-  };
+  // ── Handle Paystack callback redirect ──
+  // Paystack currently redirects to /:slug?reference=xxx
+  // We forward to /book/:slug?reference=xxx so BookingForm can verify
+  if (ref) {
+    return <Navigate to={`/book/${slug}?reference=${ref}`} replace />;
+  }
 
-  const filteredProducts = searchQuery 
-    ? (biz?.products || []).filter(p => 
+  // ── Search filtering (kept) ──
+  const filteredProducts = searchQuery
+    ? (biz?.products || []).filter(p =>
         (p.product_code && p.product_code.toLowerCase() === searchQuery.toLowerCase()) ||
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -211,10 +202,10 @@ export default function BioPage() {
       )
     : (biz?.cars || []);
 
-  // Theme Logic
   const theme = biz?.theme || 'light';
   const isDark = theme === 'dark';
 
+  // ── Loading State ──
   if (loading) {
     return (
       <div className={`min-h-screen flex items-center justify-center px-6 ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}`} role="status" aria-label="Loading business page">
@@ -226,6 +217,7 @@ export default function BioPage() {
     );
   }
 
+  // ── Inactive/Not Found State ──
   if (!biz || !biz.active) {
     return (
       <div className={`min-h-screen flex items-center justify-center px-6 ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}`} role="alert">
@@ -233,8 +225,8 @@ export default function BioPage() {
           <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-xl ${isDark ? 'bg-stone-900 border border-stone-800 text-stone-600' : 'bg-white border border-stone-200 text-stone-500'}`} aria-hidden="true">!</div>
           <h1 className={`text-sm font-medium ${isDark ? 'text-stone-500' : 'text-stone-700'}`}>Page Unavailable</h1>
           <p className={`text-xs mt-1 ${isDark ? 'text-stone-700' : 'text-stone-500'}`}>This link is currently inactive.</p>
-          <a 
-            href="/" 
+          <a
+            href="/"
             className={`inline-block mt-6 px-4 py-2 rounded-lg text-xs font-medium transition-colors ${isDark ? 'text-stone-400 hover:text-white bg-white/5 hover:bg-white/10' : 'text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200'}`}
           >
             Go to BookNaija
@@ -244,29 +236,17 @@ export default function BioPage() {
     );
   }
 
-  if (ref) {
-    return (
-      <BookingForm 
-        biz={biz} 
-        selectedId="" 
-        selectedProducts={[]} 
-        onDeselect={() => {}} 
-        onProductDeselect={() => {}} 
-        reference={ref} 
-      />
-    );
-  }
-
+  // ── Derived state ──
   const accent = biz.accent || '#c8a97e';
   const showServices = biz.servicesEnabled && filteredServices.length > 0;
   const showProducts = biz.productsEnabled && filteredProducts.length > 0;
   const showFood = biz.foodEnabled && filteredFood.length > 0;
   const showCars = biz.carsEnabled && filteredCars.length > 0;
-  
+
   const adsEnabled = biz.adsEnabled !== false;
   const totalItems = filteredServices.length + filteredProducts.length + filteredFood.length + filteredCars.length;
   const hasAnyContent = showServices || showProducts || showFood || showCars;
-  
+
   const showPrimaryAd = adsEnabled && hasAnyContent && !isSearchActive;
   const showSecondaryAd = adsEnabled && hasAnyContent && !isSearchActive && totalItems >= 6;
   const showFooterAd = adsEnabled && hasAnyContent && !isSearchActive && totalItems >= 4;
@@ -279,6 +259,7 @@ export default function BioPage() {
     heroImages = biz.gallery.slice(0, 4);
   }
 
+  // ── Search handlers (kept) ──
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -293,116 +274,34 @@ export default function BioPage() {
     setIsSearchActive(false);
   };
 
+  // ── NAVIGATION HANDLERS (replace old selection handlers) ──
   function handleServiceSelect(id) {
-    setSelectedId(function(prev) {
-      if (prev !== id) {
-        window.history.replaceState({}, '', '#services');
-        scrollToForm();
-      }
-      return prev === id ? '' : id;
-    });
-    setSelectedProducts([]);
-    setSelectedFood([]);
-    setSelectedCar(null);
+    navigate(`/book/${slug}?service=${id}`);
   }
 
   function handleProductSelect(id, size, color) {
-    setSelectedId('');
-    setSelectedFood([]);
-    setSelectedCar(null);
-    var isAdding = !selectedProducts.includes(id);
-    
-    setSelectedProducts(function(prev) {
-      if (prev.includes(id)) return prev.filter(function(p) { return p !== id; });
-      return prev.concat([id]);
-    });
-
-    if (isAdding && (size || color)) {
-      setSelectedProductVariants(function(prev) {
-        var next = Object.assign({}, prev);
-        next[id] = { size: size, color: color };
-        return next;
-      });
-    } else if (!isAdding) {
-      setSelectedProductVariants(function(prev) {
-        var next = Object.assign({}, prev);
-        delete next[id];
-        return next;
-      });
+    if (size || color) {
+      sessionStorage.setItem(`bv_${slug}_product_${id}`, JSON.stringify({ size, color }));
     }
-
-    if (isAdding) scrollToForm();
+    navigate(`/book/${slug}?product=${id}`);
   }
 
   function handleFoodSelect(id, variant) {
-    setSelectedId('');
-    setSelectedProducts([]);
-    setSelectedCar(null);
-    var exists = selectedFood.includes(id);
-    
-    if (exists) {
-      setSelectedFoodVariants(function(prev) {
-        var next = Object.assign({}, prev);
-        next[id] = variant;
-        return next;
-      });
-    } else {
-      setSelectedFood(function(prev) { return prev.concat([id]); });
-      setSelectedFoodVariants(function(prev) {
-        var next = Object.assign({}, prev);
-        next[id] = variant;
-        return next;
-      });
+    if (variant) {
+      sessionStorage.setItem(`bv_${slug}_food_${id}`, JSON.stringify(variant));
     }
-    window.history.replaceState({}, '', '#food');
-    scrollToForm();
-  }
-
-  function handleProductDeselect(id) {
-    if (id === 'all') {
-      setSelectedProducts([]);
-      setSelectedProductVariants({});
-    } else {
-      setSelectedProducts(function(prev) { return prev.filter(function(p) { return p !== id; }); });
-      setSelectedProductVariants(function(prev) {
-        var next = Object.assign({}, prev);
-        delete next[id];
-        return next;
-      });
-    }
-  }
-
-  function handleFoodDeselect(id) {
-    if (id === 'all') {
-      setSelectedFood([]);
-      setSelectedFoodVariants({});
-    } else {
-      setSelectedFood(function(prev) { return prev.filter(function(f) { return f !== id; }); });
-      setSelectedFoodVariants(function(prev) {
-        var next = Object.assign({}, prev);
-        delete next[id];
-        return next;
-      });
-    }
+    navigate(`/book/${slug}?food=${id}`);
   }
 
   function handleCarSelect(car) {
-    setSelectedId('');
-    setSelectedProducts([]);
-    setSelectedFood([]);
-    setSelectedCar(car);
-    window.history.replaceState({}, '', '#cars');
-    scrollToForm();
+    navigate(`/book/${slug}?car=${car.id}`);
   }
 
-  function handleCarDeselect() {
-    setSelectedCar(null);
-  }
-
+  // ── RENDER ──
   return (
-    <div 
+    <div
       className={`min-h-screen pb-12 ${isDark ? 'bg-[#0a0a0a] text-white' : 'bg-stone-50 text-stone-900'}`}
-      itemScope 
+      itemScope
       itemType="https://schema.org/LocalBusiness"
     >
       <SEO
@@ -419,25 +318,26 @@ export default function BioPage() {
       <meta itemProp="name" content={biz.name} />
       {biz.phone && <meta itemProp="telephone" content={biz.phone} />}
       {biz.location && <meta itemProp="address" content={biz.location} />}
-      
+
       <div className="max-w-lg mx-auto">
 
-        <HeroSection biz={{ 
+        <HeroSection biz={{
           logo: biz.logo, name: biz.name, slug: biz.slug, tagline: biz.tagline, bio: biz.bio, phone: biz.phone, whatsapp: biz.whatsapp, location: biz.location, hours: biz.hours, accent: biz.accent, avatar: biz.avatar, hero: biz.hero, gallery: biz.gallery, socials: biz.socials, theme: biz.theme
         }} />
 
         {biz.gallery && biz.gallery.length > 0 && (
           <div itemScope itemType="https://schema.org/ImageGallery" aria-label="Photo gallery">
             <meta itemProp="name" content={`${biz.name} Gallery`} />
-            <Gallery 
-              gallery={biz.gallery} 
-              accent={accent} 
-              location={biz.location} 
+            <Gallery
+              gallery={biz.gallery}
+              accent={accent}
+              location={biz.location}
               theme={theme}
             />
           </div>
         )}
 
+        {/* Search Bar */}
         <div className="px-6 mt-6">
           <form onSubmit={handleSearch} className="relative" role="search" aria-label="Search services and products">
             <label htmlFor="business-search" className="sr-only">Search by name, code, or description</label>
@@ -467,7 +367,7 @@ export default function BioPage() {
               </button>
             )}
           </form>
-          
+
           {isSearchActive && searchQuery && (
             <div className="mt-2 flex items-center justify-between" role="status" aria-live="polite">
               <p className={`text-[11px] ${isDark ? 'text-stone-500' : 'text-stone-600'}`}>
@@ -485,6 +385,7 @@ export default function BioPage() {
 
         <div className={`mx-6 mt-6 border-t ${isDark ? 'border-white/[0.04]' : 'border-stone-200'}`} aria-hidden="true" />
 
+        {/* ── PRIMARY AD ── */}
         {showPrimaryAd && (
           <div className="mx-6 mt-6">
             <div className={`rounded-xl border p-4 flex flex-col items-center ${isDark ? 'bg-stone-900/50 border-white/5' : 'bg-white border-stone-200'}`}>
@@ -494,6 +395,7 @@ export default function BioPage() {
           </div>
         )}
 
+        {/* ── NO RESULTS ── */}
         {isSearchActive && !hasAnyContent && (
           <div className="px-6 mt-8 text-center" role="status">
             <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${isDark ? 'bg-stone-900 border border-stone-800' : 'bg-stone-100 border border-stone-200'}`} aria-hidden="true">
@@ -512,13 +414,14 @@ export default function BioPage() {
           </div>
         )}
 
+        {/* ── SERVICE LIST ── Clicking now navigates to booking page */}
         {showServices && (
           <section itemScope itemType="https://schema.org/ItemList" aria-label="Services">
             <meta itemProp="name" content={`${biz.name} Services`} />
             <meta itemProp="numberOfItems" content={filteredServices.length} />
             <ServiceList
               services={filteredServices}
-              selectedId={selectedId}
+              selectedId=""
               onSelect={handleServiceSelect}
               accent={accent}
               location={biz.location}
@@ -527,13 +430,14 @@ export default function BioPage() {
           </section>
         )}
 
+        {/* ── PRODUCT LIST ── Clicking now navigates to booking page */}
         {showProducts && (
           <section itemScope itemType="https://schema.org/ItemList" aria-label={showServices ? 'Products' : 'Shop'}>
             <meta itemProp="name" content={`${biz.name} Products`} />
             <meta itemProp="numberOfItems" content={filteredProducts.length} />
             <ProductList
               products={filteredProducts}
-              selectedProducts={selectedProducts}
+              selectedProducts={[]}
               onSelect={handleProductSelect}
               accent={accent}
               label={showServices ? 'Products' : 'Shop'}
@@ -543,14 +447,15 @@ export default function BioPage() {
           </section>
         )}
 
+        {/* ── FOOD LIST ── "Add to Order" in modal now navigates to booking page */}
         {showFood && (
           <section itemScope itemType="https://schema.org/ItemList" aria-label="Menu">
             <meta itemProp="name" content={`${biz.name} Menu`} />
             <meta itemProp="numberOfItems" content={filteredFood.length} />
             <FoodList
               food={filteredFood}
-              selectedFood={selectedFood}
-              foodVariants={selectedFoodVariants}
+              selectedFood={[]}
+              foodVariants={{}}
               onSelect={handleFoodSelect}
               accent={accent}
               location={biz.location}
@@ -559,13 +464,14 @@ export default function BioPage() {
           </section>
         )}
 
+        {/* ── CAR LIST ── "Proceed to Book" in modal now navigates to booking page */}
         {showCars && (
           <section itemScope itemType="https://schema.org/ItemList" aria-label="Vehicles">
             <meta itemProp="name" content={`${biz.name} Vehicles`} />
             <meta itemProp="numberOfItems" content={filteredCars.length} />
             <CarList
               cars={filteredCars}
-              selectedCar={selectedCar}
+              selectedCar={null}
               onSelect={handleCarSelect}
               accent={accent}
               location={biz.location}
@@ -574,6 +480,7 @@ export default function BioPage() {
           </section>
         )}
 
+        {/* ── SECONDARY AD ── */}
         {showSecondaryAd && (
           <div className="mx-6 mt-8 mb-6">
             <div className={`rounded-xl border p-4 flex flex-col items-center ${isDark ? 'bg-stone-900/50 border-white/5' : 'bg-white border-stone-200'}`}>
@@ -583,28 +490,17 @@ export default function BioPage() {
           </div>
         )}
 
-        <section ref={formRef} className="px-6 mt-8 scroll-mt-4" aria-label="Booking form">
-          <BookingForm
-            biz={biz}
-            selectedId={selectedId}
-            selectedProducts={selectedProducts}
-            productVariants={selectedProductVariants}
-            selectedFood={selectedFood}
-            foodVariants={selectedFoodVariants}
-            onDeselect={function() { setSelectedId(''); }}
-            onProductDeselect={handleProductDeselect}
-            onFoodDeselect={handleFoodDeselect}
-            selectedCar={selectedCar}
-            onCarDeselect={handleCarDeselect}
-          />
-        </section>
+        {/* ── BOOKING FORM SECTION REMOVED ── */}
+        {/* Users now click items above → they get navigated to /book/:slug */}
 
+        {/* ── FOOTER AD ── */}
         {showFooterAd && (
           <div className={`mt-8 border-t pt-6 ${isDark ? 'border-white/[0.04]' : 'border-stone-200'}`}>
             <GoogleAd slot={AD_SLOT_FOOTER} />
           </div>
         )}
 
+        {/* ── FOOTER ── */}
         <footer className="px-6 pt-12 pb-8 text-center">
           <ReferralLink slug={biz.slug} accent={accent} theme={theme} />
 
@@ -615,11 +511,11 @@ export default function BioPage() {
             <a href="/terms" className={`text-[11px] underline underline-offset-4 transition-colors ${isDark ? 'text-stone-500 hover:text-stone-300 decoration-stone-700 hover:decoration-stone-500' : 'text-stone-600 hover:text-stone-900 decoration-stone-300 hover:decoration-stone-500'}`}>
               Terms of Service
             </a>
-          </nav> 
-          
+          </nav>
+
           <p className={`text-[11px] uppercase tracking-widest font-semibold ${isDark ? 'text-stone-500' : 'text-stone-600'}`}>
             Secured by Paystack
-          </p> 
+          </p>
         </footer>
       </div>
     </div>

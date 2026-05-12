@@ -36,7 +36,7 @@ exports.handler = async (event) => {
       amount: Math.round(amount * 100), // Ensure it's an integer (kobo)
       currency: 'NGN',
       // BUG FIX: Changed d.callback_url to parsedBody.callback_url
-      callback_url: parsedBody.callback_url || `${event.headers.origin || 'https://booknaija.netlify.app'}/${slug}`,
+      callback_url: parsedBody.callback_url || `${event.headers.origin || 'https://booknaija.netlify.app'}/book/${slug}`,
       metadata: { 
         slug, serviceId, serviceName, date, time, 
         customerName: name, customerPhone: phone, 
