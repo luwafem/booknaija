@@ -1,26 +1,25 @@
-# Build settings
 [build]
   command = "npm run build"
   publish = "dist"
 
-# Environment variables (Node version + Prerendering for SEO/AdSense bots)
 [build.environment]
   NODE_VERSION = "20"
-  # THIS tells Netlify to execute your JS and serve full HTML to bots instead of an empty <div>
-  NETLIFY_PRERENDER = "true"
+  # ❌ REMOVE: NETLIFY_PRERENDER = "true" (deprecated)
 
-# Functions config
-[functions]
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
+# ─── BLOG POSTS: Serve static HTML files directly ───
+[[redirects]]
+  from = "/blog/*"
+  to = "/blog/:splat/index.html"
+  status = 200
+  force = true
 
-# ─── SPA ROUTING ───
+# ─── SPA FALLBACK: Only for non-blog routes ───
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# ─── SECURITY HEADERS (Global) ───
+# ─── SECURITY HEADERS ───
 [[headers]]
   for = "/*"
   [headers.values]
@@ -29,54 +28,18 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=()"
 
-# ─── CACHE STATIC ASSETS (Forever - they have hashed filenames) ───
+# ─── CACHE POLICIES ───
 [[headers]]
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# ─── CACHE IMAGES ───
-[[headers]]
-  for = "/*.png"
-  [headers.values]
-    Cache-Control = "public, max-age=86400"
-
-[[headers]]
-  for = "/*.jpg"
-  [headers.values]
-    Cache-Control = "public, max-age=86400"
-
-[[headers]]
-  for = "/*.svg"
-  [headers.values]
-    Cache-Control = "public, max-age=86400"
-
-[[headers]]
-  for = "/*.ico"
-  [headers.values]
-    Cache-Control = "public, max-age=86400"
-
-# ─── SITEMAP & ROBOTS (Cache briefly so Google sees updates fast) ───
-[[headers]]
-  for = "/sitemap.xml"
-  [headers.values]
-    Cache-Control = "public, max-age=3600, must-revalidate"
-    Content-Type = "application/xml"
-
-[[headers]]
-  for = "/robots.txt"
-  [headers.values]
-    Cache-Control = "public, max-age=3600, must-revalidate"
-    Content-Type = "text/plain"
-
-# ─── HTML FILES (Never cache - always serve fresh meta tags for SEO) ──
 [[headers]]
   for = "/*.html"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 
-# ─── ROOT INDEX.HTML ───
 [[headers]]
-  for = "/index.html"
+  for = "/blog/*/index.html"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
