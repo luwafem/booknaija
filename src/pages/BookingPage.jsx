@@ -7,74 +7,100 @@ import BookingForm from '../components/BookingForm';
 export default function BookingPage() {
   const { slug } = useParams();
   const [params] = useSearchParams();
-
   const reference = params.get('reference') || params.get('trxref');
-  const serviceId = params.get('service') || '';
-  const productId = params.get('product') || '';
-  const foodId = params.get('food') || '';
-  const carId = params.get('car') || '';
 
   const { business: biz, loading } = useBusinessWithSEO(slug);
 
-  // Booking selection state
   const [selectedId, setSelectedId] = useState('');
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [selectedProductVariants, setSelectedProductVariants] = useState({});
   const [selectedFood, setSelectedFood] = useState([]);
   const [selectedFoodVariants, setSelectedFoodVariants] = useState({});
   const [selectedCar, setSelectedCar] = useState(null);
+  
+  // Prevent syncing empty state back to sessionStorage before cart is loaded
+  const [isCartLoaded, setIsCartLoaded] = useState(false);
 
-  // Initialize selection from URL params + sessionStorage
+  // ── Load Cart from Session Storage on Mount ──
   useEffect(() => {
     if (!biz || !biz.active) return;
-
-    if (serviceId) {
-      const exists = biz.services?.some(s => s.id === serviceId);
-      if (exists) setSelectedId(serviceId);
+    
+    // If returning from Paystack payment, clear cart and skip loading
+    if (reference) {
+      sessionStorage.removeItem(`cart_${slug}`);
+      setIsCartLoaded(true);
+      return;
     }
 
-    if (productId) {
-      const product = biz.products?.find(p => p.id === productId);
-      if (product) {
-        setSelectedProducts([productId]);
-        const stored = sessionStorage.getItem(`bv_${slug}_product_${productId}`);
-        if (stored) {
-          try { setSelectedProductVariants({ [productId]: JSON.parse(stored) }); }
-          catch { setDefaultProductVariant(product); }
-        } else {
-          setDefaultProductVariant(product);
-        }
-        sessionStorage.removeItem(`bv_${slug}_product_${productId}`);
+    try {
+      const cart = JSON.parse(sessionStorage.getItem(`cart_${slug}`) || '{}');
+      
+      if (cart.service) {
+        const exists = biz.services?.some(s => s.id === cart.service);
+        if (exists) setSelectedId(cart.service);
       }
-    }
 
-    if (foodId) {
-      const foodItem = biz.food?.find(f => f.id === foodId);
-      if (foodItem) {
-        setSelectedFood([foodId]);
-        const stored = sessionStorage.getItem(`bv_${slug}_food_${foodId}`);
-        if (stored) {
-          try { setSelectedFoodVariants({ [foodId]: JSON.parse(stored) }); }
-          catch { setSelectedFoodVariants({ [foodId]: { quantity: 1, addons: {}, finalPrice: foodItem.price } }); }
-        } else {
-          setSelectedFoodVariants({ [foodId]: { quantity: 1, addons: {}, finalPrice: foodItem.price } });
+      if (cart.products && cart.products.length > 0) {
+        const validProducts = cart.products.filter(id => biz.products?.some(p => p.id === id));
+        setSelectedProducts(validProducts);
+        
+        const validVariants = {};
+        for (const id of validProducts) {
+          const p = biz.products.find(pr => pr.id === id);
+          if (cart.productVariants && cart.productVariants[id]) {
+            validVariants[id] = cart.productVariants[id];
+          } else {
+            const variant = {};
+            if (p?.sizes?.length) variant.size = p.sizes[0];
+            if (p?.colors?.length) variant.color = p.colors[0];
+            if (Object.keys(variant).length) validVariants[id] = variant;
+          }
         }
-        sessionStorage.removeItem(`bv_${slug}_food_${foodId}`);
+        setSelectedProductVariants(validVariants);
       }
-    }
 
-    if (carId) {
-      const car = biz.cars?.find(c => c.id === carId);
-      if (car) setSelectedCar(car);
-    }
-  }, [biz, serviceId, productId, foodId, carId, slug]);
+      if (cart.food && cart.food.length > 0) {
+        const validFood = cart.food.filter(id => biz.food?.some(f => f.id === id));
+        setSelectedFood(validFood);
+        
+        const validVariants = {};
+        for (const id of validFood) {
+          const f = biz.food.find(fd => fd.id === id);
+          if (cart.foodVariants && cart.foodVariants[id]) {
+            validVariants[id] = cart.foodVariants[id];
+          } else {
+            validVariants[id] = { quantity: 1, addons: {}, finalPrice: f?.price || 0 };
+          }
+        }
+        setSelectedFoodVariants(validVariants);
+      }
 
-  function setDefaultProductVariant(product) {
-    const variant = {};
-    if (product.sizes?.length) variant.size = product.sizes[0];
-    if (product.colors?.length) variant.color = product.colors[0];
-    if (Object.keys(variant).length) setSelectedProductVariants({ [product.id]: variant });
-  }
+      if (cart.car) {
+        const car = biz.cars?.find(c => c.id === cart.car);
+        if (car) setSelectedCar(car);
+      }
+    } catch (e) {
+      console.error("Failed to load cart", e);
+    }
+    
+    setIsCartLoaded(true);
+  }, [biz, slug, reference]);
+
+  // ── Sync React State back to Session Storage when user modifies cart ──
+  useEffect(() => {
+    if (!isCartLoaded || !biz || reference) return; // Don't overwrite if still loading or verifying payment
+    
+    const cart = {
+      service: selectedId,
+      products: selectedProducts,
+      productVariants: selectedProductVariants,
+      food: selectedFood,
+      foodVariants: selectedFoodVariants,
+      car: selectedCar?.id || null
+    };
+    sessionStorage.setItem(`cart_${slug}`, JSON.stringify(cart));
+    
+  }, [isCartLoaded, selectedId, selectedProducts, selectedProductVariants, selectedFood, selectedFoodVariants, selectedCar, slug, biz, reference]);
 
   const theme = biz?.theme || 'light';
   const isDark = theme === 'dark';
@@ -104,11 +130,7 @@ export default function BookingPage() {
 
   return (
     <div className={`min-h-screen pb-12 ${isDark ? 'bg-[#0a0a0a] text-white' : 'bg-stone-50 text-stone-900'}`}>
-      <SEO
-        title={`Book ${biz.name}`}
-        description={`Complete your booking with ${biz.name}`}
-        noIndex={true}
-      />
+      <SEO title={`Book ${biz.name}`} description={`Complete your booking with ${biz.name}`} noIndex={true} />
 
       <div className="max-w-lg mx-auto px-6 pt-6">
 
@@ -128,10 +150,7 @@ export default function BookingPage() {
             {biz.logo ? (
               <img src={biz.logo} alt="" className="w-10 h-10 rounded-lg object-contain shrink-0" />
             ) : (
-              <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
-                style={{ backgroundColor: accent }}
-              >
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: accent }}>
                 {biz.name?.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()}
               </div>
             )}
@@ -182,12 +201,8 @@ export default function BookingPage() {
           reference={reference}
         />
 
-        {/* Back link at bottom */}
         <div className="mt-8 text-center">
-          <a
-            href={`/${slug}`}
-            className={`text-xs transition-colors ${isDark ? 'text-stone-600 hover:text-stone-400' : 'text-stone-400 hover:text-stone-600'}`}
-          >
+          <a href={`/${slug}`} className={`text-xs transition-colors ${isDark ? 'text-stone-600 hover:text-stone-400' : 'text-stone-400 hover:text-stone-600'}`}>
             ← Back to {biz.name}
           </a>
         </div>

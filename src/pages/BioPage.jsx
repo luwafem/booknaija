@@ -2,7 +2,6 @@ import { useParams, useSearchParams, useNavigate, Navigate } from 'react-router-
 import { useState, useEffect, useRef } from 'react';
 import { useBusinessWithSEO } from '../hooks/useBusinessWithSEO';
 import SEO from '../hooks/useSEO';
-// REMOVED: BookingForm import
 import HeroSection from '../components/bio/HeroSection';
 import Gallery from '../components/bio/Gallery';
 import ServiceList from '../components/bio/ServiceList';
@@ -154,25 +153,44 @@ export default function BioPage() {
   const [searchQuery, setSearchQuery] = useState(codeParam);
   const [isSearchActive, setIsSearchActive] = useState(!!codeParam);
 
-  // ── All selection state REMOVED ──
-  // No more: selectedId, selectedProducts, selectedProductVariants,
-  //          selectedFood, selectedFoodVariants, selectedCar,
-  //          formRef, scrollTimeoutRef, scrollToForm
+  // ── CART STATE (for visual indicators on BioPage) ──
+  const [activeService, setActiveService] = useState('');
+  const [activeProducts, setActiveProducts] = useState([]);
+  const [activeFood, setActiveFood] = useState([]);
+  const [activeCar, setActiveCar] = useState(null);
 
   useEffect(() => {
     if (!loading && biz?.active) {
       window.dispatchEvent(new Event('prerender-ready'));
+      // Load existing cart from sessionStorage on mount
+      const cart = getCart();
+      setActiveService(cart.service || '');
+      setActiveProducts(cart.products || []);
+      setActiveFood(cart.food || []);
+      setActiveCar(cart.car || null);
     }
   }, [loading, biz]);
 
-  // ── Handle Paystack callback redirect ──
-  // Paystack currently redirects to /:slug?reference=xxx
-  // We forward to /book/:slug?reference=xxx so BookingForm can verify
+  // ── Paystack Redirect Handler ──
   if (ref) {
     return <Navigate to={`/book/${slug}?reference=${ref}`} replace />;
   }
 
-  // ── Search filtering (kept) ──
+  // ── SESSION STORAGE HELPERS ──
+  function getCart() {
+    try { return JSON.parse(sessionStorage.getItem(`cart_${slug}`)) || {}; }
+    catch { return {}; }
+  }
+
+  function saveCart(cart) {
+    sessionStorage.setItem(`cart_${slug}`, JSON.stringify(cart));
+    setActiveService(cart.service || '');
+    setActiveProducts(cart.products || []);
+    setActiveFood(cart.food || []);
+    setActiveCar(cart.car || null);
+  }
+
+  // ── Search Logic ──
   const filteredProducts = searchQuery
     ? (biz?.products || []).filter(p =>
         (p.product_code && p.product_code.toLowerCase() === searchQuery.toLowerCase()) ||
@@ -205,30 +223,25 @@ export default function BioPage() {
   const theme = biz?.theme || 'light';
   const isDark = theme === 'dark';
 
-  // ── Loading State ──
   if (loading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center px-6 ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}`} role="status" aria-label="Loading business page">
+      <div className={`min-h-screen flex items-center justify-center px-6 ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}`} role="status">
         <div className="text-center">
-          <div className={`w-8 h-8 border-2 rounded-full animate-spin mx-auto mb-4 ${isDark ? 'border-stone-700 border-t-stone-400' : 'border-stone-200 border-t-stone-500'}`} aria-hidden="true"></div>
+          <div className={`w-8 h-8 border-2 rounded-full animate-spin mx-auto mb-4 ${isDark ? 'border-stone-700 border-t-stone-400' : 'border-stone-200 border-t-stone-500'}`} />
           <p className={`text-sm font-medium ${isDark ? 'text-stone-500' : 'text-stone-600'}`}>Loading...</p>
         </div>
       </div>
     );
   }
 
-  // ── Inactive/Not Found State ──
   if (!biz || !biz.active) {
     return (
       <div className={`min-h-screen flex items-center justify-center px-6 ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}`} role="alert">
         <div className="text-center">
-          <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-xl ${isDark ? 'bg-stone-900 border border-stone-800 text-stone-600' : 'bg-white border border-stone-200 text-stone-500'}`} aria-hidden="true">!</div>
+          <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-xl ${isDark ? 'bg-stone-900 border border-stone-800 text-stone-600' : 'bg-white border border-stone-200 text-stone-500'}`}>!</div>
           <h1 className={`text-sm font-medium ${isDark ? 'text-stone-500' : 'text-stone-700'}`}>Page Unavailable</h1>
           <p className={`text-xs mt-1 ${isDark ? 'text-stone-700' : 'text-stone-500'}`}>This link is currently inactive.</p>
-          <a
-            href="/"
-            className={`inline-block mt-6 px-4 py-2 rounded-lg text-xs font-medium transition-colors ${isDark ? 'text-stone-400 hover:text-white bg-white/5 hover:bg-white/10' : 'text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200'}`}
-          >
+          <a href="/" className={`inline-block mt-6 px-4 py-2 rounded-lg text-xs font-medium transition-colors ${isDark ? 'text-stone-400 hover:text-white bg-white/5 hover:bg-white/10' : 'text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200'}`}>
             Go to BookNaija
           </a>
         </div>
@@ -236,7 +249,6 @@ export default function BioPage() {
     );
   }
 
-  // ── Derived state ──
   const accent = biz.accent || '#c8a97e';
   const showServices = biz.servicesEnabled && filteredServices.length > 0;
   const showProducts = biz.productsEnabled && filteredProducts.length > 0;
@@ -259,14 +271,9 @@ export default function BioPage() {
     heroImages = biz.gallery.slice(0, 4);
   }
 
-  // ── Search handlers (kept) ──
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      setIsSearchActive(true);
-    } else {
-      setIsSearchActive(false);
-    }
+    setIsSearchActive(!!searchQuery.trim());
   };
 
   const clearSearch = () => {
@@ -274,30 +281,96 @@ export default function BioPage() {
     setIsSearchActive(false);
   };
 
-  // ── NAVIGATION HANDLERS (replace old selection handlers) ──
+  // ── CART NAVIGATION HANDLERS ──
   function handleServiceSelect(id) {
-    navigate(`/book/${slug}?service=${id}`);
+    const cart = getCart();
+    if (cart.service === id) {
+      cart.service = ''; // Toggle off
+    } else {
+      cart.service = id;
+      cart.products = [];
+      cart.productVariants = {};
+      cart.food = [];
+      cart.foodVariants = {};
+      cart.car = null;
+    }
+    saveCart(cart);
+    
+    const hasItems = cart.service || cart.products?.length || cart.food?.length || cart.car;
+    if (hasItems) navigate(`/book/${slug}`);
   }
 
   function handleProductSelect(id, size, color) {
-    if (size || color) {
-      sessionStorage.setItem(`bv_${slug}_product_${id}`, JSON.stringify({ size, color }));
+    const cart = getCart();
+    cart.service = '';
+    cart.food = [];
+    cart.foodVariants = {};
+    cart.car = null;
+    
+    if (!cart.products) cart.products = [];
+    if (!cart.productVariants) cart.productVariants = {};
+    
+    // Toggle: Add or Remove
+    if (cart.products.includes(id)) {
+      cart.products = cart.products.filter(p => p !== id);
+      delete cart.productVariants[id];
+    } else {
+      cart.products.push(id);
+      const variant = {};
+      if (size) variant.size = size;
+      if (color) variant.color = color;
+      if (Object.keys(variant).length) cart.productVariants[id] = variant;
     }
-    navigate(`/book/${slug}?product=${id}`);
+    
+    saveCart(cart);
+    
+    const hasItems = cart.products.length > 0;
+    if (hasItems) navigate(`/book/${slug}`);
   }
 
   function handleFoodSelect(id, variant) {
-    if (variant) {
-      sessionStorage.setItem(`bv_${slug}_food_${id}`, JSON.stringify(variant));
+    const cart = getCart();
+    cart.service = '';
+    cart.products = [];
+    cart.productVariants = {};
+    cart.car = null;
+    
+    if (!cart.food) cart.food = [];
+    if (!cart.foodVariants) cart.foodVariants = {};
+    
+    // Toggle: Add or Remove
+    if (cart.food.includes(id)) {
+      cart.food = cart.food.filter(f => f !== id);
+      delete cart.foodVariants[id];
+    } else {
+      cart.food.push(id);
+      if (variant) cart.foodVariants[id] = variant;
     }
-    navigate(`/book/${slug}?food=${id}`);
+    
+    saveCart(cart);
+    
+    const hasItems = cart.food.length > 0;
+    if (hasItems) navigate(`/book/${slug}`);
   }
 
   function handleCarSelect(car) {
-    navigate(`/book/${slug}?car=${car.id}`);
+    const cart = getCart();
+    if (cart.car === car.id) {
+      cart.car = null; // Toggle off
+    } else {
+      cart.service = '';
+      cart.products = [];
+      cart.productVariants = {};
+      cart.food = [];
+      cart.foodVariants = {};
+      cart.car = car.id;
+    }
+    saveCart(cart);
+    
+    const hasItems = cart.car;
+    if (hasItems) navigate(`/book/${slug}`);
   }
 
-  // ── RENDER ──
   return (
     <div
       className={`min-h-screen pb-12 ${isDark ? 'bg-[#0a0a0a] text-white' : 'bg-stone-50 text-stone-900'}`}
@@ -328,12 +401,7 @@ export default function BioPage() {
         {biz.gallery && biz.gallery.length > 0 && (
           <div itemScope itemType="https://schema.org/ImageGallery" aria-label="Photo gallery">
             <meta itemProp="name" content={`${biz.name} Gallery`} />
-            <Gallery
-              gallery={biz.gallery}
-              accent={accent}
-              location={biz.location}
-              theme={theme}
-            />
+            <Gallery gallery={biz.gallery} accent={accent} location={biz.location} theme={theme} />
           </div>
         )}
 
@@ -355,37 +423,21 @@ export default function BioPage() {
               className={`w-full rounded-xl pl-11 pr-10 py-3 text-sm placeholder-stone-400 focus:outline-none transition-colors ${isDark ? 'bg-white/[0.03] border border-white/10 text-white focus:border-white/30' : 'bg-white border border-stone-200 text-stone-900 focus:border-stone-400'}`}
             />
             {searchQuery && (
-              <button
-                type="button"
-                onClick={clearSearch}
-                className={`absolute inset-y-0 right-0 pr-4 flex items-center transition-colors ${isDark ? 'text-stone-500 hover:text-white' : 'text-stone-400 hover:text-stone-700'}`}
-                aria-label="Clear search"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+              <button type="button" onClick={clearSearch} className={`absolute inset-y-0 right-0 pr-4 flex items-center transition-colors ${isDark ? 'text-stone-500 hover:text-white' : 'text-stone-400 hover:text-stone-700'}`} aria-label="Clear search">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             )}
           </form>
-
           {isSearchActive && searchQuery && (
             <div className="mt-2 flex items-center justify-between" role="status" aria-live="polite">
-              <p className={`text-[11px] ${isDark ? 'text-stone-500' : 'text-stone-600'}`}>
-                Showing results for "{searchQuery}"
-              </p>
-              <button
-                onClick={clearSearch}
-                className={`text-[11px] transition-colors ${isDark ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-stone-800'}`}
-              >
-                Clear
-              </button>
+              <p className={`text-[11px] ${isDark ? 'text-stone-500' : 'text-stone-600'}`}>Showing results for "{searchQuery}"</p>
+              <button onClick={clearSearch} className={`text-[11px] transition-colors ${isDark ? 'text-stone-400 hover:text-white' : 'text-stone-500 hover:text-stone-800'}`}>Clear</button>
             </div>
           )}
         </div>
 
         <div className={`mx-6 mt-6 border-t ${isDark ? 'border-white/[0.04]' : 'border-stone-200'}`} aria-hidden="true" />
 
-        {/* ── PRIMARY AD ── */}
         {showPrimaryAd && (
           <div className="mx-6 mt-6">
             <div className={`rounded-xl border p-4 flex flex-col items-center ${isDark ? 'bg-stone-900/50 border-white/5' : 'bg-white border-stone-200'}`}>
@@ -395,92 +447,48 @@ export default function BioPage() {
           </div>
         )}
 
-        {/* ── NO RESULTS ── */}
         {isSearchActive && !hasAnyContent && (
           <div className="px-6 mt-8 text-center" role="status">
-            <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${isDark ? 'bg-stone-900 border border-stone-800' : 'bg-stone-100 border border-stone-200'}`} aria-hidden="true">
-              <svg className={`w-6 h-6 ${isDark ? 'text-stone-600' : 'text-stone-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+            <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${isDark ? 'bg-stone-900 border border-stone-800' : 'bg-stone-100 border border-stone-200'}`}>
+              <svg className={`w-6 h-6 ${isDark ? 'text-stone-600' : 'text-stone-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             </div>
             <p className={`text-sm font-medium ${isDark ? 'text-stone-400' : 'text-stone-700'}`}>No results found</p>
-            <p className={`text-xs mt-1 ${isDark ? 'text-stone-600' : 'text-stone-500'}`}>Try a different search term</p>
-            <button
-              onClick={clearSearch}
-              className={`mt-4 px-4 py-2 rounded-lg text-xs font-medium transition-colors ${isDark ? 'text-stone-400 hover:text-white bg-white/5 hover:bg-white/10' : 'text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200'}`}
-            >
-              View all items
-            </button>
+            <button onClick={clearSearch} className={`mt-4 px-4 py-2 rounded-lg text-xs font-medium transition-colors ${isDark ? 'text-stone-400 hover:text-white bg-white/5 hover:bg-white/10' : 'text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200'}`}>View all items</button>
           </div>
         )}
 
-        {/* ── SERVICE LIST ── Clicking now navigates to booking page */}
         {showServices && (
           <section itemScope itemType="https://schema.org/ItemList" aria-label="Services">
             <meta itemProp="name" content={`${biz.name} Services`} />
             <meta itemProp="numberOfItems" content={filteredServices.length} />
-            <ServiceList
-              services={filteredServices}
-              selectedId=""
-              onSelect={handleServiceSelect}
-              accent={accent}
-              location={biz.location}
-              theme={theme}
-            />
+            <ServiceList services={filteredServices} selectedId={activeService} onSelect={handleServiceSelect} accent={accent} location={biz.location} theme={theme} />
           </section>
         )}
 
-        {/* ── PRODUCT LIST ── Clicking now navigates to booking page */}
         {showProducts && (
           <section itemScope itemType="https://schema.org/ItemList" aria-label={showServices ? 'Products' : 'Shop'}>
             <meta itemProp="name" content={`${biz.name} Products`} />
             <meta itemProp="numberOfItems" content={filteredProducts.length} />
-            <ProductList
-              products={filteredProducts}
-              selectedProducts={[]}
-              onSelect={handleProductSelect}
-              accent={accent}
-              label={showServices ? 'Products' : 'Shop'}
-              location={biz.location}
-              theme={theme}
-            />
+            <ProductList products={filteredProducts} selectedProducts={activeProducts} onSelect={handleProductSelect} accent={accent} label={showServices ? 'Products' : 'Shop'} location={biz.location} theme={theme} />
           </section>
         )}
 
-        {/* ── FOOD LIST ── "Add to Order" in modal now navigates to booking page */}
         {showFood && (
           <section itemScope itemType="https://schema.org/ItemList" aria-label="Menu">
             <meta itemProp="name" content={`${biz.name} Menu`} />
             <meta itemProp="numberOfItems" content={filteredFood.length} />
-            <FoodList
-              food={filteredFood}
-              selectedFood={[]}
-              foodVariants={{}}
-              onSelect={handleFoodSelect}
-              accent={accent}
-              location={biz.location}
-              theme={theme}
-            />
+            <FoodList food={filteredFood} selectedFood={activeFood} foodVariants={getCart().foodVariants || {}} onSelect={handleFoodSelect} accent={accent} location={biz.location} theme={theme} />
           </section>
         )}
 
-        {/* ── CAR LIST ── "Proceed to Book" in modal now navigates to booking page */}
         {showCars && (
           <section itemScope itemType="https://schema.org/ItemList" aria-label="Vehicles">
             <meta itemProp="name" content={`${biz.name} Vehicles`} />
             <meta itemProp="numberOfItems" content={filteredCars.length} />
-            <CarList
-              cars={filteredCars}
-              selectedCar={null}
-              onSelect={handleCarSelect}
-              accent={accent}
-              location={biz.location}
-              theme={theme}
-            />
+            <CarList cars={filteredCars} selectedCar={activeCar ? biz.cars.find(c => c.id === activeCar) : null} onSelect={handleCarSelect} accent={accent} location={biz.location} theme={theme} />
           </section>
         )}
 
-        {/* ── SECONDARY AD ── */}
         {showSecondaryAd && (
           <div className="mx-6 mt-8 mb-6">
             <div className={`rounded-xl border p-4 flex flex-col items-center ${isDark ? 'bg-stone-900/50 border-white/5' : 'bg-white border-stone-200'}`}>
@@ -490,32 +498,19 @@ export default function BioPage() {
           </div>
         )}
 
-        {/* ── BOOKING FORM SECTION REMOVED ── */}
-        {/* Users now click items above → they get navigated to /book/:slug */}
-
-        {/* ── FOOTER AD ── */}
         {showFooterAd && (
           <div className={`mt-8 border-t pt-6 ${isDark ? 'border-white/[0.04]' : 'border-stone-200'}`}>
             <GoogleAd slot={AD_SLOT_FOOTER} />
           </div>
         )}
 
-        {/* ── FOOTER ── */}
         <footer className="px-6 pt-12 pb-8 text-center">
           <ReferralLink slug={biz.slug} accent={accent} theme={theme} />
-
           <nav className="flex justify-center gap-6 mb-6" aria-label="Legal links">
-            <a href="/privacy" className={`text-[11px] underline underline-offset-4 transition-colors ${isDark ? 'text-stone-500 hover:text-stone-300 decoration-stone-700 hover:decoration-stone-500' : 'text-stone-600 hover:text-stone-900 decoration-stone-300 hover:decoration-stone-500'}`}>
-              Privacy Policy
-            </a>
-            <a href="/terms" className={`text-[11px] underline underline-offset-4 transition-colors ${isDark ? 'text-stone-500 hover:text-stone-300 decoration-stone-700 hover:decoration-stone-500' : 'text-stone-600 hover:text-stone-900 decoration-stone-300 hover:decoration-stone-500'}`}>
-              Terms of Service
-            </a>
+            <a href="/privacy" className={`text-[11px] underline underline-offset-4 transition-colors ${isDark ? 'text-stone-500 hover:text-stone-300 decoration-stone-700 hover:decoration-stone-500' : 'text-stone-600 hover:text-stone-900 decoration-stone-300 hover:decoration-stone-500'}`}>Privacy Policy</a>
+            <a href="/terms" className={`text-[11px] underline underline-offset-4 transition-colors ${isDark ? 'text-stone-500 hover:text-stone-300 decoration-stone-700 hover:decoration-stone-500' : 'text-stone-600 hover:text-stone-900 decoration-stone-300 hover:decoration-stone-500'}`}>Terms of Service</a>
           </nav>
-
-          <p className={`text-[11px] uppercase tracking-widest font-semibold ${isDark ? 'text-stone-500' : 'text-stone-600'}`}>
-            Secured by Paystack
-          </p>
+          <p className={`text-[11px] uppercase tracking-widest font-semibold ${isDark ? 'text-stone-500' : 'text-stone-600'}`}>Secured by Paystack</p>
         </footer>
       </div>
     </div>
