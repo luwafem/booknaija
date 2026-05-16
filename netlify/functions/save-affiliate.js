@@ -21,6 +21,22 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
     }
 
+    // ─── SPAM / DUPLICATE PROTECTION ───
+    // Check if an affiliate with this email already exists
+    const { data: existingAffiliate } = await supabase
+      .from('affiliates')
+      .select('id')
+      .eq('email', email)
+      .single();
+
+    if (existingAffiliate) {
+      return { 
+        statusCode: 409, // 409 Conflict
+        body: JSON.stringify({ error: 'An affiliate account with this email already exists. Please sign in instead.' }) 
+      };
+    }
+    // ─── END SPAM PROTECTION ───
+
     const { data, error } = await supabase
       .from('affiliates')
       .insert({
@@ -40,6 +56,10 @@ exports.handler = async (event) => {
 
     if (error) {
       console.error('Supabase insert error:', error);
+      // Handle Supabase unique constraint violation just in case of race condition
+      if (error.code === '23505') {
+         return { statusCode: 409, body: JSON.stringify({ error: 'An account with this email or ID already exists.' }) };
+      }
       return { statusCode: 400, body: JSON.stringify({ error: error.message }) };
     }
 

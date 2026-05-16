@@ -9,6 +9,12 @@ const securityQuestions = [
   "What is your favorite food?"
 ];
 
+// --- SANITIZATION HELPER ---
+const sanitize = (str) => {
+  if (typeof str !== 'string') return '';
+  return str.replace(/<[^>]*>?/gm, '').trim();
+};
+
 export default function AffiliateSignup() {
   const [isSignUp, setIsSignUp] = useState(true);
   const [done, setDone] = useState(false);
@@ -42,10 +48,10 @@ export default function AffiliateSignup() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          email: signInEmail,
-          securityCode: formData.get('sign_in_code'),
-          securityQuestion: formData.get('sign_in_question'),
-          securityAnswer: formData.get('sign_in_answer')
+          email: sanitize(signInEmail),
+          securityCode: sanitize(formData.get('sign_in_code')),
+          securityQuestion: sanitize(formData.get('sign_in_question')),
+          securityAnswer: sanitize(formData.get('sign_in_answer'))
         })
       });
 
@@ -70,7 +76,10 @@ export default function AffiliateSignup() {
     const form = e.target;
     const formData = new FormData(form);
 
-    if (formData.get('security_question_1') === formData.get('security_question_2')) {
+    const q1 = sanitize(formData.get('security_question_1'));
+    const q2 = sanitize(formData.get('security_question_2'));
+
+    if (q1 === q2) {
       setError('Please choose two different security questions.');
       setLoading(false);
       return;
@@ -81,13 +90,13 @@ export default function AffiliateSignup() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        business_name: `Affiliate - ${formData.get('full_name')}`,
-        settlement_bank: formData.get('settlement_bank'),
-        account_number: formData.get('account_number'),
+        business_name: `Affiliate - ${sanitize(formData.get('full_name'))}`,
+        settlement_bank: sanitize(formData.get('settlement_bank')),
+        account_number: sanitize(formData.get('account_number')),
         percentage_charge: 60,
-        primary_contact_name: formData.get('full_name'),
-        primary_contact_email: formData.get('email'),
-        primary_contact_phone: formData.get('phone'),
+        primary_contact_name: sanitize(formData.get('full_name')),
+        primary_contact_email: sanitize(formData.get('email')),
+        primary_contact_phone: sanitize(formData.get('phone')),
       }),
     });
 
@@ -106,21 +115,27 @@ export default function AffiliateSignup() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         affiliate_id: newAffId,
-        name: formData.get('full_name'),
-        email: formData.get('email'),
-        phone: formData.get('phone'),
+        name: sanitize(formData.get('full_name')),
+        email: sanitize(formData.get('email')),
+        phone: sanitize(formData.get('phone')),
         subaccount_code: subData.subaccount_code,
-        security_code: formData.get('security_code'),
-        security_question_1: formData.get('security_question_1'),
-        security_answer_1: formData.get('security_answer_1'),
-        security_question_2: formData.get('security_question_2'),
-        security_answer_2: formData.get('security_answer_2')
+        security_code: sanitize(formData.get('security_code')),
+        security_question_1: q1,
+        security_answer_1: sanitize(formData.get('security_answer_1')),
+        security_question_2: q2,
+        security_answer_2: sanitize(formData.get('security_answer_2'))
       })
     });
 
     const saveData = await saveRes.json();
+    
+    // --- UPDATED ERROR HANDLING FOR DUPLICATES ---
     if (!saveRes.ok) {
-      setError('Failed to save affiliate account. Please try again.');
+      if (saveRes.status === 409) {
+        setError('An account with this email already exists. Please sign in instead.');
+      } else {
+        setError(saveData.error || 'Failed to save affiliate account. Please try again.');
+      }
       setLoading(false);
       return;
     }

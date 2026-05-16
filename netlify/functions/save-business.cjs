@@ -16,6 +16,26 @@ exports.handler = async function (event) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing slug or name' }) };
     }
 
+    // ─── SPAM PROTECTION ───
+    // 1. Honeypot check (if _gotcha is filled, a bot did it)
+    if (d._gotcha) {
+      console.log('Honeypot triggered. Rejecting spam.');
+      return { statusCode: 200, body: JSON.stringify({ ok: true, spam: true }) }; // Fake success to trick bots
+    }
+
+    // 2. Duplicate Signup Rate Limit (Check if this email signed up in the last 2 minutes)
+    const twoMinsAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    const { data: recentSignups } = await supabase
+      .from('businesses')
+      .select('id')
+      .eq('email', d.email)
+      .gte('created_at', twoMinsAgo);
+    
+    if (recentSignups && recentSignups.length > 0) {
+      return { statusCode: 429, body: JSON.stringify({ error: 'Too many signup attempts. Please wait a minute.' }) };
+    }
+    // ─── END SPAM PROTECTION ───
+
     // 1. Check if this is a brand new business or an update
     const { data: existingBiz } = await supabase
       .from('businesses')
@@ -63,8 +83,6 @@ exports.handler = async function (event) {
       referred_by_affiliate: (d.referredBy && d.referredBy.startsWith('aff_')) ? d.referredBy : null,
       
       // --- NEW: Mark bounty as paid instantly if they paid 2500 upfront via affiliate ---
-      // If the initial payment was 2500 and it came from an affiliate link, Paystack already split the money.
-      // We mark this true so initialize-subscription.js doesn't split it again in Month 2.
       affiliate_bounty_paid: (d.initialPaymentAmount === 2500 && d.referredBy && d.referredBy.startsWith('aff_'))
     };
 
