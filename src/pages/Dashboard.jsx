@@ -63,6 +63,35 @@ export default function Dashboard() {
   var subMsg = subMsgArr[0];
   var setSubMsg = subMsgArr[1];
 
+  // --- NEW BANK UPDATE STATE ---
+  var bankUpdatingArr = useState(false);
+  var bankUpdating = bankUpdatingArr[0];
+  var setBankUpdating = bankUpdatingArr[1];
+
+  var bankUpdateErrorArr = useState('');
+  var bankUpdateError = bankUpdateErrorArr[0];
+  var setBankUpdateError = bankUpdateErrorArr[1];
+
+  var bankUpdateSuccessArr = useState(false);
+  var bankUpdateSuccess = bankUpdateSuccessArr[0];
+  var setBankUpdateSuccess = bankUpdateSuccessArr[1];
+
+  var bankNameArr = useState('');
+  var bankName = bankNameArr[0];
+  var setBankName = bankNameArr[1];
+
+  var bankCodeArr = useState('');
+  var bankCode = bankCodeArr[0];
+  var setBankCode = bankCodeArr[1];
+
+  var bankAccArr = useState('');
+  var bankAcc = bankAccArr[0];
+  var setBankAcc = bankAccArr[1];
+
+  var banksArr = useState([]);
+  var banks = banksArr[0];
+  var setBanks = banksArr[1];
+
   useEffect(function () {
     if (!loading && biz) {
       var authStatus = sessionStorage.getItem('biz_auth_' + slug);
@@ -80,6 +109,14 @@ export default function Dashboard() {
       clickCountArr.current = 0;
     }
   }, [initialBiz]);
+
+  // --- FETCH BANKS FOR UPDATE ---
+  useEffect(function() {
+    fetch('/.netlify/functions/list-banks')
+      .then(function(res) { return res.json(); })
+      .then(function(data) { if (Array.isArray(data)) setBanks(data); })
+      .catch(function(err) { console.error('Failed to load banks:', err); });
+  }, []);
 
   // --- NEW SUBSCRIPTION VERIFICATION EFFECT ---
   useEffect(function() {
@@ -117,6 +154,41 @@ export default function Dashboard() {
       document.body.appendChild(s);
     }
   }, []);
+
+  // --- NEW BANK UPDATE LOGIC ---
+  async function handleUpdateBank() {
+    setBankUpdating(true);
+    setBankUpdateError('');
+    setBankUpdateSuccess(false);
+
+    try {
+      const res = await fetch('/.netlify/functions/update-subaccount', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug: biz.slug,
+          business_name: biz.name,
+          settlement_bank: bankCode,
+          account_number: bankAcc,
+          account_name: bankName,
+          email: biz.email,
+          phone: biz.phone
+        })
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.subaccount_code) {
+        setBankUpdateSuccess(true);
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        setBankUpdateError(data.error || 'Verification failed. Please check details or contact support.');
+      }
+    } catch (err) {
+      setBankUpdateError('Network error. Please try again.');
+    } finally {
+      setBankUpdating(false);
+    }
+  }
 
   // --- NEW SUBSCRIPTION LOGIC & CALCULATIONS ---
   var subEndsAt = biz?.subscription_ends_at ? new Date(biz.subscription_ends_at) : null;
@@ -555,6 +627,69 @@ export default function Dashboard() {
             >
               {subLoading ? 'Processing...' : `Pay ₦2,500 for Next Month`}
             </button>
+          </div>
+        )}
+
+        {/* ===== PAYOUT DETAILS PENDING ===== */}
+        {(biz.subaccount_code === 'ACCT_PENDING' || !biz.subaccount_code) && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 sm:p-5">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-red-800">Payout Details Required</h3>
+                <p className="text-sm text-red-700 mt-1">
+                  Your bank verification failed during signup. You won't receive payouts until this is fixed. Please re-enter your details below or contact support.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <input 
+                className={inp} 
+                placeholder="Account Name (as on bank account)" 
+                value={bankName} 
+                onChange={function(e) { setBankName(e.target.value); }} 
+              />
+              <select 
+                className={sel} 
+                value={bankCode} 
+                onChange={function(e) { setBankCode(e.target.value); }}
+              >
+                <option value="" disabled>Select your bank</option>
+                {banks.map(function(b, i) { return <option key={i} value={b.code}>{b.name}</option>; })}
+              </select>
+              <input 
+                className={inp + " font-mono tracking-wider"} 
+                placeholder="10-digit Account Number" 
+                maxLength={10} 
+                value={bankAcc} 
+                onChange={function(e) { setBankAcc(e.target.value.replace(/\D/g, '')); }} 
+              />
+            </div>
+
+            {bankUpdateError && <p className="text-xs text-red-600 mt-3 bg-white p-2 rounded-lg border border-red-100">{bankUpdateError}</p>}
+            {bankUpdateSuccess && <p className="text-xs text-green-600 mt-3 bg-white p-2 rounded-lg border border-green-100">✓ Bank details verified successfully! Refreshing...</p>}
+
+            <div className="mt-4 flex flex-col sm:flex-row gap-2">
+              <button 
+                type="button" 
+                onClick={handleUpdateBank} 
+                disabled={bankUpdating || !bankName || !bankCode || !bankAcc} 
+                className="flex-1 bg-red-600 text-white font-bold py-3 rounded-xl hover:bg-red-700 transition-all active:scale-95 disabled:bg-zinc-300 disabled:text-zinc-500"
+              >
+                {bankUpdating ? 'Verifying...' : 'Verify Bank Details'}
+              </button>
+              <a 
+                href="mailto:support@booknaija.com" 
+                className="flex-1 bg-white text-red-700 font-bold py-3 rounded-xl border border-red-200 text-center hover:bg-red-50 transition-all active:scale-95"
+              >
+                Contact Support
+              </a>
+            </div>
           </div>
         )}
 
