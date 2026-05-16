@@ -87,6 +87,10 @@ export default function Signup() {
     
     const businessSlug = generateSlug(businessName);
 
+    // --- NEW: Dynamic Pricing based on Affiliate ---
+    const isAffiliateReferral = referralParam && referralParam.startsWith('aff_');
+    const signupAmount = isAffiliateReferral ? 2500 : 500; // 2500 if affiliate, else 500
+
     let finalSubaccountCode = null;
 
     try {
@@ -109,7 +113,6 @@ export default function Signup() {
 
       if (!subaccountRes.ok || !subaccountData.subaccount_code) {
         console.error('Subaccount creation failed:', subaccountData.error);
-        // We won't block them completely, but we'll note it
         finalSubaccountCode = 'ACCT_PENDING';
       } else {
         finalSubaccountCode = subaccountData.subaccount_code;
@@ -135,21 +138,22 @@ export default function Signup() {
       instagram: formData.get('instagram_link'),
       tiktok: formData.get('tiktok_link'),
       referralCode,
-      referredBy: referralParam 
+      referredBy: referralParam,
+      initialPaymentAmount: signupAmount // --- NEW: Save the amount they paid for save-business.js ---
     };
     
     sessionStorage.setItem('pending_signup_data', JSON.stringify(tempBusinessData));
 
-    // 3. Initialize 500 Naira Payment (NO subaccount passed = You keep 100%)
+    // 3. Initialize Payment (Dynamic amount + Affiliate ID passed)
     try {
       const payRes = await fetch('/.netlify/functions/initialize-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: email,
-          amount: 500, 
+          amount: signupAmount, // --- NEW: Dynamic amount (500 or 2500) ---
           slug: businessSlug,
-          // Tell Paystack to redirect here after payment
+          referredBy: isAffiliateReferral ? referralParam : null, // --- NEW: Pass affiliate ID for instant split ---
           callback_url: `${window.location.origin}/onboarding` 
         })
       });
@@ -157,7 +161,6 @@ export default function Signup() {
       const payData = await payRes.json();
       
       if (payData.authorization_url) {
-        // Redirect to Paystack
         window.location.href = payData.authorization_url;
       } else {
         setError(payData.error || 'Failed to initialize payment.');
@@ -432,7 +435,10 @@ export default function Signup() {
                 Connecting to Paystack...
               </span>
             ) : (
-              'Pay ₦500 to Get Started'
+              // --- NEW: Dynamic Button Text based on Affiliate ---
+              referralParam && referralParam.startsWith('aff_') 
+                ? 'Pay ₦2,500 to Get Started' 
+                : 'Pay ₦500 to Get Started'
             )}
           </button>
         </div>

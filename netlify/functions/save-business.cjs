@@ -59,8 +59,13 @@ exports.handler = async function (event) {
       security_question_2: d.securityQuestion2 || '',
       security_answer_2: (d.securityAnswer2 || '').toLowerCase().trim(),
       
-      // --- AFFILIATE TRACKING ---
-      referred_by_affiliate: (d.referredBy && d.referredBy.startsWith('aff_')) ? d.referredBy : null
+      // --- AFFILIATE TRACKING (UPDATED) ---
+      referred_by_affiliate: (d.referredBy && d.referredBy.startsWith('aff_')) ? d.referredBy : null,
+      
+      // --- NEW: Mark bounty as paid instantly if they paid 2500 upfront via affiliate ---
+      // If the initial payment was 2500 and it came from an affiliate link, Paystack already split the money.
+      // We mark this true so initialize-subscription.js doesn't split it again in Month 2.
+      affiliate_bounty_paid: (d.initialPaymentAmount === 2500 && d.referredBy && d.referredBy.startsWith('aff_'))
     };
 
     // --- SUBSCRIPTION TIMER LOGIC ---
@@ -144,7 +149,7 @@ exports.handler = async function (event) {
       if (sErr) console.error('Services error:', sErr);
     }
 
-    // 4. Insert products — BUG FIX: Changed s.discount_price to p.discount_price
+    // 4. Insert products
     if (d.products && d.products.length > 0) {
       var productRows = d.products.map(function (p, i) {
         return {

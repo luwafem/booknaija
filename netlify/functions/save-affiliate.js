@@ -11,9 +11,13 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { affiliate_id, name, email, phone, subaccount_code } = JSON.parse(event.body);
+    const { 
+      affiliate_id, name, email, phone, subaccount_code,
+      security_code, security_question_1, security_answer_1, 
+      security_question_2, security_answer_2 
+    } = JSON.parse(event.body);
 
-    if (!affiliate_id || !subaccount_code) {
+    if (!affiliate_id || !subaccount_code || !security_code) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
     }
 
@@ -24,7 +28,12 @@ exports.handler = async (event) => {
         name: name,
         email: email,
         phone: phone,
-        subaccount_code: subaccount_code
+        subaccount_code: subaccount_code,
+        security_code: security_code,
+        security_question_1: security_question_1,
+        security_answer_1: (security_answer_1 || '').toLowerCase().trim(),
+        security_question_2: security_question_2,
+        security_answer_2: (security_answer_2 || '').toLowerCase().trim()
       })
       .select()
       .single();

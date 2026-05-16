@@ -48,7 +48,7 @@ export default function AffiliateDashboard() {
       <div className="text-center bg-white p-10 rounded-2xl border border-zinc-200 max-w-sm">
         <h2 className="text-xl font-bold mb-2">Affiliate Not Found</h2>
         <p className="text-zinc-500 text-sm mb-4">Please check your link or sign up again.</p>
-        <Link to="/affiliate-signup" className="text-purple-600 font-bold text-sm hover:underline">Go to Signup</Link>
+        <Link to="/affiliate-signup" className="text-zinc-900 font-bold text-sm hover:underline">Go to Signup</Link>
       </div>
     </div>
   );
@@ -70,14 +70,14 @@ export default function AffiliateDashboard() {
 
       <main className="max-w-5xl mx-auto px-6 py-10">
         {/* Payout Notice */}
-        <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-8 flex items-start gap-3">
-          <svg className="w-5 h-5 text-purple-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 mb-8 flex items-start gap-3">
+          <svg className="w-5 h-5 text-zinc-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div>
-            <p className="text-sm font-bold text-purple-800">How you get paid</p>
-            <p className="text-xs text-purple-700 mt-1">
-              You earn <span className="font-bold">1,500 Naira</span> automatically via Paystack when a vendor you referred upgrades to the 2,500 Naira monthly plan. The money is sent directly to the bank account you provided. No manual withdrawals needed.
+            <p className="text-sm font-bold text-zinc-900">How you get paid</p>
+            <p className="text-xs text-zinc-600 mt-1">
+              You earn <span className="font-bold text-zinc-900">1,500 Naira</span> instantly via Paystack when a vendor you referred pays their 2,500 Naira at signup. The money is sent directly to the bank account you provided. No manual withdrawals needed.
             </p>
           </div>
         </div>
@@ -85,7 +85,7 @@ export default function AffiliateDashboard() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
           <div className="bg-white p-6 rounded-xl border border-zinc-200">
-            <p className="text-xs font-bold text-zinc-400 uppercase mb-1">Total Referred (Free Trial)</p>
+            <p className="text-xs font-bold text-zinc-400 uppercase mb-1">Total Referred</p>
             <p className="text-4xl font-black text-zinc-900">{totalReferred}</p>
           </div>
           <div className="bg-white p-6 rounded-xl border border-zinc-200">
@@ -115,7 +115,7 @@ export default function AffiliateDashboard() {
           {totalReferred === 0 ? (
             <div className="px-6 py-16 text-center">
               <p className="text-zinc-400 font-medium">No one has signed up using your link yet.</p>
-              <p className="text-zinc-400 text-sm mt-1">Share your link on WhatsApp or Twitter to get started!</p>
+              <p className="text-zinc-400 text-sm mt-1">Share your link across socials or directly sign up vendors to get started!</p>
             </div>
           ) : (
             <div className="divide-y divide-zinc-100">
@@ -135,14 +135,13 @@ export default function AffiliateDashboard() {
                     </div>
                   </div>
                   <div className="text-right">
-                    {/* In a real app, you'd check if they paid 2500 here. For now, we assume 'active' means they upgraded */}
-                    {ref.active ? (
+                    {(ref.affiliate_bounty_paid || ref.active) ? (
                       <span className="text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full">
                         Paid (You earned ₦1,500)
                       </span>
                     ) : (
                       <span className="text-xs font-medium text-zinc-500 bg-zinc-50 border border-zinc-200 px-3 py-1 rounded-full">
-                        Free Trial
+                        Pending
                       </span>
                     )}
                   </div>

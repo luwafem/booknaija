@@ -1,4 +1,11 @@
-// netlify/functions/initialize-payment.js
+const { createClient } = require('@supabase/supabase-js');
+
+// Initialize Supabase
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
 exports.handler = async (event) => {
   // 1. Ensure it's a POST request
   if (event.httpMethod !== 'POST') {
@@ -15,7 +22,8 @@ exports.handler = async (event) => {
     const { 
       slug, amount, date, time, name, email, phone, 
       calendarId, serviceId, serviceName, type, address,
-      subaccountCode    
+      subaccountCode,
+      referredBy // --- NEW: Affiliate ID from Signup.jsx
     } = parsedBody;
 
     // 3. Check environment variables
@@ -30,25 +38,50 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Email and amount are required.' }) };
     }
 
+    // --- NEW: AFFILIATE SPLIT LOGIC ---
+    let finalSubaccountCode = subaccountCode || null;
+
+    // If this is an affiliate signup (referredBy starts with 'aff_'), fetch the affiliate's subaccount code
+    if (referredBy && referredBy.startsWith('aff_')) {
+      console.log(`Affiliate referral detected: ${referredBy}. Looking up subaccount...`);
+      
+      const { data: affiliate, error: affErr } = await supabase
+        .from('affiliates')
+        .select('subaccount_code')
+        .eq('id', referredBy)
+        .single();
+
+      if (affErr) {
+        console.error('Error fetching affiliate:', affErr.message);
+      } else if (affiliate && affiliate.subaccount_code) {
+        // Override the subaccount with the AFFILIATE's subaccount code for the 60% split
+        finalSubaccountCode = affiliate.subaccount_code;
+        console.log(`Applying affiliate subaccount split: ${finalSubaccountCode}`);
+      } else {
+        console.warn('Affiliate ID provided but no subaccount code found in DB.');
+      }
+    }
+    // --- END AFFILIATE SPLIT LOGIC ---
+
     // Build the transaction payload
     const payload = {
       email,
       amount: Math.round(amount * 100), // Ensure it's an integer (kobo)
       currency: 'NGN',
-      // BUG FIX: Changed d.callback_url to parsedBody.callback_url
       callback_url: parsedBody.callback_url || `${event.headers.origin || 'https://booknaija.netlify.app'}/book/${slug}`,
       metadata: { 
         slug, serviceId, serviceName, date, time, 
         customerName: name, customerPhone: phone, 
         calendarId, type: type || 'service', 
         address: address || 'N/A',
-        subaccountCode: subaccountCode || null,   
+        subaccountCode: finalSubaccountCode || null,
+        referredBy: referredBy || null // Save to metadata for reference
       },
     };
 
-    // Add subaccount split if provided
-    if (subaccountCode) {
-      payload.subaccount = subaccountCode;         
+    // Add subaccount split if provided (Works for both vendor bookings 5% and affiliate signups 60%)
+    if (finalSubaccountCode) {
+      payload.subaccount = finalSubaccountCode;         
       payload.bearer = 'subaccount';               
     }
 

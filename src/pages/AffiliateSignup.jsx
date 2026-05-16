@@ -1,12 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+const securityQuestions = [
+  "What is the name of your first pet?",
+  "What city were you born in?",
+  "What is your mother's maiden name?",
+  "What was the name of your elementary school?",
+  "What is your favorite food?"
+];
+
 export default function AffiliateSignup() {
+  const [isSignUp, setIsSignUp] = useState(true);
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
   const [banks, setBanks] = useState([]);
   const [error, setError] = useState('');
   const [affiliateId, setAffiliateId] = useState('');
+  
+  // Sign In States
+  const [signInEmail, setSignInEmail] = useState('');
+  const [signInLoading, setSignInLoading] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,14 +30,53 @@ export default function AffiliateSignup() {
       .catch(err => console.error(err));
   }, []);
 
-  const handleSubmit = async (e) => {
+  const handleSignIn = async (e) => {
+    e.preventDefault();
+    setSignInLoading(true);
+    setError('');
+    const form = e.target;
+    const formData = new FormData(form);
+    
+    try {
+      const res = await fetch('/.netlify/functions/affiliate-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: signInEmail,
+          securityCode: formData.get('sign_in_code'),
+          securityQuestion: formData.get('sign_in_question'),
+          securityAnswer: formData.get('sign_in_answer')
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.affiliateId) {
+        navigate(`/affiliate/dashboard/${data.affiliateId}`);
+      } else {
+        setError(data.error || 'Invalid details. Please try again.');
+      }
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setSignInLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     const form = e.target;
     const formData = new FormData(form);
 
-    // 1. Create Paystack Subaccount (Takes 60% = 1,500 Naira later)
+    if (formData.get('security_question_1') === formData.get('security_question_2')) {
+      setError('Please choose two different security questions.');
+      setLoading(false);
+      return;
+    }
+
+    // 1. Create Paystack Subaccount (Takes 60% = 1,500 Naira instantly at vendor signup)
     const subRes = await fetch('/.netlify/functions/create-subaccount', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -31,7 +84,7 @@ export default function AffiliateSignup() {
         business_name: `Affiliate - ${formData.get('full_name')}`,
         settlement_bank: formData.get('settlement_bank'),
         account_number: formData.get('account_number'),
-        percentage_charge: 60, // THE MAGIC NUMBER: 60% of 2500 = 1500
+        percentage_charge: 60,
         primary_contact_name: formData.get('full_name'),
         primary_contact_email: formData.get('email'),
         primary_contact_phone: formData.get('phone'),
@@ -45,7 +98,7 @@ export default function AffiliateSignup() {
       return;
     }
 
-    // 2. Save Affiliate to your DB (NOW UNCOMMENTED!)
+    // 2. Save Affiliate to your DB
     const newAffId = `aff_${Date.now()}`;
     
     const saveRes = await fetch('/.netlify/functions/save-affiliate', {
@@ -56,7 +109,12 @@ export default function AffiliateSignup() {
         name: formData.get('full_name'),
         email: formData.get('email'),
         phone: formData.get('phone'),
-        subaccount_code: subData.subaccount_code
+        subaccount_code: subData.subaccount_code,
+        security_code: formData.get('security_code'),
+        security_question_1: formData.get('security_question_1'),
+        security_answer_1: formData.get('security_answer_1'),
+        security_question_2: formData.get('security_question_2'),
+        security_answer_2: formData.get('security_answer_2')
       })
     });
 
@@ -79,7 +137,7 @@ export default function AffiliateSignup() {
       <div className="min-h-screen bg-white text-zinc-900 font-sans flex items-center justify-center px-6">
         <div className="max-w-sm bg-white border border-zinc-200 p-10 rounded-2xl text-center">
           <h2 className="text-2xl font-bold mb-4">You're In!</h2>
-          <p className="text-zinc-500 mb-6">Share your unique link below. When your vendors pay their 2,500 Naira in Month 2, you get 1,500 Naira instantly.</p>
+          <p className="text-zinc-500 mb-6">Share your unique link below. When your vendors pay their 2,500 Naira at signup, you get 1,500 Naira instantly.</p>
           
           <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 mb-6 flex items-center justify-between gap-2">
             <code className="text-sm font-bold text-purple-600 truncate">booknaija.netlify.app/signup?ref={affiliateId}</code>
@@ -104,38 +162,139 @@ export default function AffiliateSignup() {
 
   return (
     <div className="min-h-screen bg-white text-zinc-900 font-sans flex items-center justify-center px-6 py-12">
-      <form onSubmit={handleSubmit} className="w-full max-w-md bg-white border border-zinc-200 p-8 rounded-2xl">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold tracking-tight">Become an Affiliate</h2>
-          <p className="text-zinc-500 text-sm mt-2">Earn 1,500 Naira per business you refer.</p>
-        </div>
-
-        <div className="space-y-4">
-          <input required name="full_name" placeholder="Full Name" className={inputBase} />
-          <input required type="email" name="email" placeholder="Email address" className={inputBase} />
-          <input required name="phone" placeholder="Phone number" className={inputBase} />
-          
-          <div className="pt-4 border-t border-zinc-100">
-            <p className="text-xs font-bold text-zinc-400 uppercase mb-3">Payout Bank Details</p>
-            <input required name="account_name" placeholder="Account Name" className={inputBase} />
-            <select required name="settlement_bank" defaultValue="" className={`${inputBase} mt-4`}>
-              <option value="" disabled>Select Bank</option>
-              {banks.map((b, i) => <option key={i} value={b.code}>{b.name}</option>)}
-            </select>
-            <input required name="account_number" placeholder="10-digit Account Number" maxLength={10} className={`${inputBase} mt-4 font-mono`} />
-          </div>
-
-          {error && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-600">{error}</div>}
-
-          <button type="submit" disabled={loading} className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl text-sm font-semibold mt-4 disabled:bg-zinc-200">
-            {loading ? 'Verifying Bank...' : 'Create Affiliate Account'}
+      <div className="w-full max-w-md bg-white border border-zinc-200 p-8 rounded-2xl">
+        
+        {/* Toggle Header */}
+        <div className="flex border border-zinc-200 rounded-xl p-1 mb-8">
+          <button 
+            type="button"
+            onClick={() => { setIsSignUp(true); setError(''); }}
+            className={`w-1/2 py-2.5 text-sm font-semibold rounded-lg transition-colors ${isSignUp ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900'}`}
+          >
+            Sign Up
+          </button>
+          <button 
+            type="button"
+            onClick={() => { setIsSignUp(false); setError(''); }}
+            className={`w-1/2 py-2.5 text-sm font-semibold rounded-lg transition-colors ${!isSignUp ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900'}`}
+          >
+            Sign In
           </button>
         </div>
 
-        <div className="mt-6 text-center">
-          <Link to="/" className="text-sm text-zinc-500 hover:text-zinc-900 font-medium">Back to Home</Link>
-        </div>
-      </form>
+        {/* Sign In Form */}
+        {!isSignUp ? (
+          <form onSubmit={handleSignIn} className="space-y-4">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight mb-1">Welcome back</h2>
+              <p className="text-zinc-500 text-sm">Verify your security details to access your dashboard.</p>
+            </div>
+            
+            <input 
+              required 
+              type="email" 
+              name="sign_in_email" 
+              placeholder="Email address" 
+              value={signInEmail}
+              onChange={(e) => setSignInEmail(e.target.value)}
+              className={inputBase} 
+            />
+            <input 
+              required 
+              name="sign_in_code" 
+              placeholder="4-Digit Security Code" 
+              maxLength={4}
+              type="password"
+              className={`${inputBase} font-mono tracking-widest`} 
+            />
+            
+            <div className="pt-2 border-t border-zinc-100">
+              <select required name="sign_in_question" defaultValue="" className={inputBase}>
+                <option value="" disabled>Choose your security question</option>
+                {securityQuestions.map((q, i) => <option key={i} value={q}>{q}</option>)}
+              </select>
+              <input 
+                required 
+                name="sign_in_answer" 
+                placeholder="Your answer" 
+                className={`${inputBase} mt-4`} 
+              />
+            </div>
+
+            {error && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-600">{error}</div>}
+
+            <button 
+              type="submit" 
+              disabled={signInLoading} 
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl text-sm font-semibold disabled:bg-zinc-200"
+            >
+              {signInLoading ? 'Verifying...' : 'Access Dashboard'}
+            </button>
+
+            <div className="text-center">
+              <Link to="/" className="text-sm text-zinc-500 hover:text-zinc-900 font-medium">Back to Home</Link>
+            </div>
+          </form>
+        ) : (
+          /* Sign Up Form */
+          <form onSubmit={handleSignUp} className="space-y-4">
+            <div className="mb-4">
+              <h2 className="text-2xl font-bold tracking-tight">Become an Affiliate</h2>
+              <p className="text-zinc-500 text-sm mt-2">Earn 1,500 Naira instantly per business you refer.</p>
+            </div>
+
+            <input required name="full_name" placeholder="Full Name" className={inputBase} />
+            <input required type="email" name="email" placeholder="Email address" className={inputBase} />
+            <input required name="phone" placeholder="Phone number" className={inputBase} />
+            
+            <div className="pt-4 border-t border-zinc-100">
+              <p className="text-xs font-bold text-zinc-400 uppercase mb-3">Payout Bank Details</p>
+              <input required name="account_name" placeholder="Account Name" className={inputBase} />
+              <select required name="settlement_bank" defaultValue="" className={`${inputBase} mt-4`}>
+                <option value="" disabled>Select Bank</option>
+                {banks.map((b, i) => <option key={i} value={b.code}>{b.name}</option>)}
+              </select>
+              <input required name="account_number" placeholder="10-digit Account Number" maxLength={10} className={`${inputBase} mt-4 font-mono`} />
+            </div>
+
+            <div className="pt-4 border-t border-zinc-100">
+              <p className="text-xs font-bold text-zinc-400 uppercase mb-3">Account Security</p>
+              <input 
+                required 
+                name="security_code" 
+                placeholder="Create 4-Digit Security Code" 
+                maxLength={4}
+                pattern="[0-9]{4}"
+                title="Must be exactly 4 digits"
+                type="password"
+                className={`${inputBase} font-mono tracking-widest`} 
+              />
+              
+              <select required name="security_question_1" defaultValue="" className={`${inputBase} mt-4`}>
+                <option value="" disabled>Security Question 1</option>
+                {securityQuestions.map((q, i) => <option key={i} value={q}>{q}</option>)}
+              </select>
+              <input required name="security_answer_1" placeholder="Answer 1" className={`${inputBase} mt-4`} />
+
+              <select required name="security_question_2" defaultValue="" className={`${inputBase} mt-4`}>
+                <option value="" disabled>Security Question 2</option>
+                {securityQuestions.map((q, i) => <option key={i} value={q}>{q}</option>)}
+              </select>
+              <input required name="security_answer_2" placeholder="Answer 2" className={`${inputBase} mt-4`} />
+            </div>
+
+            {error && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-600">{error}</div>}
+
+            <button type="submit" disabled={loading} className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl text-sm font-semibold mt-4 disabled:bg-zinc-200">
+              {loading ? 'Verifying Bank...' : 'Create Affiliate Account'}
+            </button>
+
+            <div className="text-center">
+              <Link to="/" className="text-sm text-zinc-500 hover:text-zinc-900 font-medium">Back to Home</Link>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   );
 }
