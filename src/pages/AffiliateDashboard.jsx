@@ -21,15 +21,37 @@ const OBJECTIONS = [
   },
   {
     q: '"₦2,500 is too much"',
-    a: 'It costs less than one Instagram ad. And you only pay once to set up a store that takes card payments 24/7. One single order from your store pays for the whole thing.',
+    a: 'It costs less than one Instagram ad. And you only pay once to set up a store that takes card payments 24/7 AND puts you on Google Maps where people are already searching for you. One customer from a "near me" search pays for the whole thing.',
   },
   {
     q: '"How will people find my store?"',
-    a: 'We set you up on Google Maps so when people search "hair stylist near me" or "food near me," you show up. Plus you can still share your store link on your WhatsApp status and Instagram, it just converts way better now.',
+    a: 'Your BookNaija page is built for Google. It ranks in search results, shows up on Google Maps for "near me" searches, and we walk you through claiming your Google Business Profile in under 2 minutes. Plus you can still share your store link on WhatsApp and Instagram — it just converts way better now.',
   },
   {
     q: '"I don\'t know how to use technology"',
-    a: "That's why I'm here. I will set the whole thing up for you. You just need to tell me your business name, what you sell, and your bank details for payment. I handle the rest.",
+    a: "That's why I'm here. I will set the whole thing up for you — your store, your Google Maps listing, everything. You just need to tell me your business name, what you sell, and your bank details for payment. I handle the rest.",
+  },
+  {
+    q: '"I already have a website / Instagram page"',
+    a: 'A website nobody finds is just a digital business card. BookNaija is different because it puts you on Google Maps and optimizes your page for "near me" searches. When someone in your area searches "lash artist near me" or "food near me," you show up. Your Instagram page can\'t do that.',
+  },
+];
+
+const SWIPE_FILES = [
+  {
+    id: 'casual',
+    label: 'Casual / Friend',
+    text: `Hey! Are you still only selling on WhatsApp status? I found something that gives you a proper online store WITH Google Maps so people searching "near me" actually find you.\n\nBookNaija sets up your store + puts you on Google Maps + customers pay you directly with card. All for ₦2,500 one-time.\n\nHere's the link:`,
+  },
+  {
+    id: 'local',
+    label: 'Local Business / In-Person',
+    text: `Hi! I noticed your business isn't showing up on Google Maps when people search in your area. You're losing customers who are literally looking for what you sell.\n\nI can fix that today + set you up with a full online store where customers can book or buy and pay directly with card.\n\nSetup is just ₦2,500. Let me know if you want me to set it up for you.`,
+  },
+  {
+    id: 'professional',
+    label: 'Professional / Cold Pitch',
+    text: `Hi [Name], I help local businesses get found on Google.\n\nRight now, when someone searches "[their service] near me" in your area, your business doesn't appear. That's free traffic you're losing every day.\n\nI can set up your Google Maps ranking + a professional online storefront (with card payments via Paystack) + SEO optimization so you show up in searches. Everything runs on autopilot.\n\nThe setup is ₦2,500 one-time. Should I send the details?`,
   },
 ];
 
@@ -39,7 +61,7 @@ export default function AffiliateDashboard() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [swipeCopied, setSwipeCopied] = useState('');
-  const [affiliateType, setAffiliateType] = useState(null);
+  const [expandedSection, setExpandedSection] = useState(null);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -83,6 +105,10 @@ export default function AffiliateDashboard() {
     window.open(`https://wa.me/?text=${message}`, '_blank');
   };
 
+  const toggleSection = (section) => {
+    setExpandedSection(expandedSection === section ? null : section);
+  };
+
   if (loading) return (
     <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
       <p className="text-zinc-500 font-medium">Loading dashboard...</p>
@@ -105,18 +131,6 @@ export default function AffiliateDashboard() {
   const totalEarned = paidReferrals * 1500;
   const pendingEarned = pendingReferrals * 1500;
 
-  const whatsappNetworker = `Are you still selling only on WhatsApp status? Stop chasing DMs and dealing with "I want to buy" trolls!\n\nI just started using BookNaija. It gives you a proper online store for your fashion, food, or products where customers pay you directly with card before ordering.\n\nSetup is just ₦2,500. Here's the link to get your store:`;
-
-  const whatsappHustler = `Hey! I noticed your business isn't showing up on Google Maps when people search in your area.\n\nI can fix that for you today + set you up with a full online store where customers can buy your products or book your services and pay directly with card.\n\nSetup is just ₦2,500. Let me know if you want me to set it up for you.`;
-
-  const whatsappAgency = `Hi [Name], I run digital setups for local businesses. Right now, you're losing sales by only selling via WhatsApp status and you're invisible on Google Maps.\n\nI can set up your Google Maps ranking, a professional e-commerce storefront (for fashion, food, cars, or bookings), and automated Paystack payments. Everything runs on autopilot.\n\nThe onboarding setup is ₦2,500. Should I send the details?`;
-
-  const getSwipeText = () => {
-    if (affiliateType === 'networker') return whatsappNetworker;
-    if (affiliateType === 'hustler') return whatsappHustler;
-    return whatsappAgency;
-  };
-
   return (
     <div className="min-h-screen bg-zinc-50 font-sans text-zinc-900">
       {/* Header */}
@@ -133,13 +147,11 @@ export default function AffiliateDashboard() {
       <main className="max-w-5xl mx-auto px-6 py-10 space-y-8">
 
         {/* ===== HOW YOU GET PAID ===== */}
-        <div className="bg-zinc-100 border border-zinc-200 rounded-xl p-5 flex items-start gap-4">
-          <div>
-            <p className="text-base font-bold text-zinc-900">You earn ₦1,500 per setup</p>
-            <p className="text-sm text-zinc-600 mt-1">
-              When a vendor pays their ₦2,500 using your link, <span className="font-bold text-zinc-900">₦1,500 is sent instantly to your bank</span> via Paystack. The remaining ₦1,000 goes to the platform.
-            </p>
-          </div>
+        <div className="bg-zinc-100 border border-zinc-200 rounded-xl p-5">
+          <p className="text-base font-bold text-zinc-900">You earn ₦1,500 per setup</p>
+          <p className="text-sm text-zinc-600 mt-1">
+            When a vendor pays their ₦2,500 using your link, <span className="font-bold text-zinc-900">₦1,500 is sent instantly to your bank</span> via Paystack. The remaining ₦1,000 goes to the platform.
+          </p>
         </div>
 
         {/* ===== STATS & LINK ===== */}
@@ -161,7 +173,7 @@ export default function AffiliateDashboard() {
             <div className="flex items-center gap-2">
               <input 
                 readOnly 
-                value={data.affiliate.link} 
+                value={data.affiliate.link || ''} 
                 className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2.5 text-sm font-mono text-zinc-700 truncate"
               />
               <button 
@@ -200,225 +212,187 @@ export default function AffiliateDashboard() {
           </div>
         </div>
 
-        {/* ===== THE PLAYBOOK GATE ===== */}
+        {/* ===== AFFILIATE TOOLKIT ===== */}
         <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-zinc-100 bg-zinc-50 flex justify-between items-center">
-            <div>
-              <h3 className="text-base font-bold text-zinc-900">The Affiliate Playbook</h3>
-              <p className="text-xs text-zinc-500 mt-1">Choose your strategy to close deals and earn commissions.</p>
-            </div>
-            {affiliateType && (
-              <button 
-                onClick={() => setAffiliateType(null)} 
-                className="text-xs font-semibold text-zinc-400 hover:text-purple-600 transition-colors"
-              >
-                Switch Path
-              </button>
-            )}
+          <div className="px-6 py-4 border-b border-zinc-100 bg-zinc-50">
+            <h3 className="text-base font-bold text-zinc-900">Affiliate Toolkit</h3>
+            <p className="text-xs text-zinc-500 mt-1">Everything you need to close deals. Use what works, skip what doesn't.</p>
           </div>
           
-          <div className="p-6">
-            {!affiliateType ? (
-              <div className="space-y-4">
-                <p className="text-sm font-medium text-zinc-600 text-center mb-6">
-                  How do you plan to refer businesses?
-                </p>
-                
-                <button 
-                  onClick={() => setAffiliateType('networker')}
-                  className="w-full p-5 border-2 border-zinc-200 bg-white rounded-xl text-left hover:border-zinc-400 hover:bg-zinc-50 transition-all group"
+          <div className="divide-y divide-zinc-100">
+
+            {/* --- Demo Store --- */}
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold text-zinc-900">Live Demo Store</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">Show vendors what their store will look like. This closes deals faster than any pitch.</p>
+                </div>
+                <a 
+                  href="https://booknaija.netlify.app/demo" 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="bg-zinc-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-zinc-700 transition-colors shrink-0"
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 bg-zinc-100 rounded-lg flex items-center justify-center shrink-0 group-hover:bg-zinc-200 transition-colors">
-                      <svg className="w-5 h-5 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-zinc-900 mb-1 text-sm">The Networker</h4>
-                      <p className="text-[11px] text-zinc-600 leading-relaxed">
-                        You know lots of vendors. You share links in WhatsApp groups and tell friends to upgrade from WhatsApp status to a proper online store.
-                      </p>
-                    </div>
-                  </div>
-                </button>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <button 
-                    onClick={() => setAffiliateType('hustler')}
-                    className="p-5 border-2 border-zinc-200 rounded-xl text-left hover:border-zinc-400 hover:bg-zinc-50 transition-all group"
-                  >
-                    <div className="w-10 h-10 bg-zinc-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-zinc-200 transition-colors">
-                      <svg className="w-5 h-5 text-zinc-600 group-hover:text-zinc-900 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <h4 className="font-bold text-zinc-900 mb-1 text-sm">The Street Scout</h4>
-                    <p className="text-[11px] text-zinc-500 leading-relaxed">
-                      You walk up to businesses. You sell the "Google Maps + Storefront" done-for-you setup.
-                    </p>
-                  </button>
-
-                  <button 
-                    onClick={() => setAffiliateType('agency')}
-                    className="p-5 border-2 border-zinc-200 rounded-xl text-left hover:border-zinc-400 hover:bg-zinc-50 transition-all group"
-                  >
-                    <div className="w-10 h-10 bg-zinc-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-zinc-200 transition-colors">
-                      <svg className="w-5 h-5 text-zinc-600 group-hover:text-zinc-900 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <h4 className="font-bold text-zinc-900 mb-1 text-sm">Agency / Pro</h4>
-                    <p className="text-[11px] text-zinc-500 leading-relaxed">
-                      You sell digital services and want to use BookNaija as a white-label e-commerce backend.
-                    </p>
-                  </button>
-                </div>
+                  View Demo
+                </a>
               </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Live Demo */}
-                <div className="bg-zinc-900 text-white p-4 rounded-lg flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">Show them a live demo</p>
-                    <p className="text-sm font-medium mt-1">Let them see what their store will look like.</p>
-                  </div>
-                  <a 
-                    href="https://booknaija.netlify.app/demo" 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="bg-white text-zinc-900 px-4 py-2 rounded-lg text-xs font-bold hover:bg-zinc-100 transition-colors shrink-0"
-                  >
-                    View Demo Store
-                  </a>
-                </div>
+            </div>
 
-                <div className="bg-zinc-50 border border-zinc-100 p-4 rounded-lg">
-                  <p className="text-xs font-bold text-zinc-900 mb-1">Your Secret Weapon: Google Maps + Full Storefront</p>
-                  <p className="text-[11px] text-zinc-600 leading-relaxed">
-                    BookNaija isn't just for bookings. You are selling a <span className="font-bold">"Done-For-You Online Store & Google Maps Setup"</span>. Businesses can sell fashion, food, cars, and products with direct Paystack payouts, while showing up in "near me" searches.
-                  </p>
-                </div>
-
-                {affiliateType === 'networker' ? (
-                  <div>
-                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">The Networker Close</p>
-                    <div className="space-y-3">
-                      <div className="flex gap-3">
-                        <div className="w-6 h-6 bg-zinc-200 text-zinc-600 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">1</div>
-                        <div>
-                          <p className="text-xs font-bold text-zinc-900">Target the "WhatsApp Status" Pain</p>
-                          <p className="text-[11px] text-zinc-500">Look for vendors posting items on their status. Ask them: "Are you tired of chasing DMs for money and dealing with fake buyers?"</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-3">
-                        <div className="w-6 h-6 bg-zinc-200 text-zinc-600 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</div>
-                        <div>
-                          <p className="text-xs font-bold text-zinc-900">Offer the Upgrade</p>
-                          <p className="text-[11px] text-zinc-500">Tell them BookNaija gives them a real store with card payments. No more chasing money, it comes straight to their bank.</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-3">
-                        <div className="w-6 h-6 bg-zinc-200 text-zinc-600 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">3</div>
-                        <div>
-                          <p className="text-xs font-bold text-zinc-900">Drop the Link</p>
-                          <p className="text-[11px] text-zinc-500">Share your affiliate link in the group or DM. When they sign up and pay ₦2,500, you get ₦1,500 instantly.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : affiliateType === 'hustler' ? (
-                  <div>
-                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">The Street Scout Close</p>
-                    <div className="space-y-3">
-                      <div className="flex gap-3">
-                        <div className="w-6 h-6 bg-zinc-200 rounded-full flex items-center justify-center text-[10px] font-bold text-zinc-600 shrink-0 mt-0.5">1</div>
-                        <div>
-                          <p className="text-xs font-bold text-zinc-900">Find the Gap</p>
-                          <p className="text-[11px] text-zinc-500">Search for local businesses on Google Maps. If they aren't there, you've found a lead who is losing "near me" customers.</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-3">
-                        <div className="w-6 h-6 bg-zinc-200 rounded-full flex items-center justify-center text-[10px] font-bold text-zinc-600 shrink-0 mt-0.5">2</div>
-                        <div>
-                          <p className="text-xs font-bold text-zinc-900">Pitch the Full Package</p>
-                          <p className="text-[11px] text-zinc-500">Tell them you can put them on Google Maps AND give them a store for their products/food/cars with card payments. All for ₦2,500.</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-3">
-                        <div className="w-6 h-6 bg-zinc-200 rounded-full flex items-center justify-center text-[10px] font-bold text-zinc-600 shrink-0 mt-0.5">3</div>
-                        <div>
-                          <p className="text-xs font-bold text-zinc-900">Do it for them</p>
-                          <p className="text-[11px] text-zinc-500">They pay you. You sign them up with your link, fill their info, and set up their store/Maps. You keep ₦1,500.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">The Agency Close</p>
-                    <div className="space-y-3">
-                      <div className="flex gap-3">
-                        <div className="w-6 h-6 bg-zinc-200 rounded-full flex items-center justify-center text-[10px] font-bold text-zinc-600 shrink-0 mt-0.5">1</div>
-                        <div>
-                          <p className="text-xs font-bold text-zinc-900">Audit their Digital Presence</p>
-                          <p className="text-[11px] text-zinc-500">Show them their missing Google Maps listing and how selling on WhatsApp status limits their growth and lacks professional checkout.</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-3">
-                        <div className="w-6 h-6 bg-zinc-200 rounded-full flex items-center justify-center text-[10px] font-bold text-zinc-600 shrink-0 mt-0.5">2</div>
-                        <div>
-                          <p className="text-xs font-bold text-zinc-900">Bundle the Setup</p>
-                          <p className="text-[11px] text-zinc-500">Sell a "Digital Infrastructure Setup" (Maps + E-commerce Store for fashion/food/cars + Paystack). Charge them whatever you want (e.g., ₦15,000+).</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-3">
-                        <div className="w-6 h-6 bg-zinc-200 rounded-full flex items-center justify-center text-[10px] font-bold text-zinc-600 shrink-0 mt-0.5">3</div>
-                        <div>
-                          <p className="text-xs font-bold text-zinc-900">Fulfill with BookNaija</p>
-                          <p className="text-[11px] text-zinc-500">You pay the ₦2,500 via your affiliate link. You just earned ₦1,500 back instantly, meaning your tool cost was only ₦1,000. You keep the rest of the client fee.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Swipe File with WhatsApp Share */}
+            {/* --- Core Pitch --- */}
+            <div className="p-6">
+              <button 
+                onClick={() => toggleSection('pitch')}
+                className="w-full flex items-center justify-between text-left"
+              >
                 <div>
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">WhatsApp Swipe File</p>
-                  <div className="bg-zinc-50 border border-zinc-200 rounded-lg p-4">
-                    <p className="text-sm text-zinc-800 whitespace-pre-line">{getSwipeText()}</p>
-                    <div className="mt-4 flex gap-2">
-                      <button 
-                        onClick={() => copySwipe(getSwipeText(), affiliateType)}
-                        className="bg-zinc-200 text-zinc-900 px-3 py-1.5 rounded-md text-[11px] font-bold hover:bg-zinc-300 transition-colors"
-                      >
-                        {swipeCopied === affiliateType ? 'Copied' : 'Copy Text'}
-                      </button>
-                      <button 
-                        onClick={() => shareToWhatsApp(getSwipeText())}
-                        className="bg-zinc-900 text-white px-3 py-1.5 rounded-md text-[11px] font-bold hover:bg-zinc-700 transition-colors"
-                      >
-                        Open in WhatsApp
-                      </button>
-                    </div>
+                  <p className="text-sm font-bold text-zinc-900">The Core Pitch</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">What you're selling and why they need it.</p>
+                </div>
+                <svg className={"w-4 h-4 text-zinc-400 transition-transform shrink-0 ml-4 " + (expandedSection === 'pitch' ? 'rotate-180' : '')} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {expandedSection === 'pitch' && (
+                <div className="mt-4 space-y-3">
+                  <div className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
+                    <p className="text-xs font-bold text-zinc-900 mb-1">The #1 hook: Google Maps + "Near Me" Visibility</p>
+                    <p className="text-[11px] text-zinc-600 leading-relaxed">
+                      Most Nigerian businesses are invisible on Google. When someone searches "lash artist near me" or "food near me" in their area, nothing comes up. BookNaija fixes this. Every store page is SEO-optimized to rank on Google, and we walk them through claiming their Google Business Profile so they appear on Maps. This alone is worth more than ₦2,500.
+                    </p>
+                  </div>
+                  <div className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
+                    <p className="text-xs font-bold text-zinc-900 mb-1">The full package</p>
+                    <p className="text-[11px] text-zinc-600 leading-relaxed">
+                      BookNaija gives them three things: (1) A professional online store where customers can browse, book, or order and pay directly with card via Paystack. (2) Google Maps visibility so people searching in their area find them. (3) SEO-optimized page that ranks in Google search results for their business name and services. The location they set on their store also pinpoints them on Maps with accurate directions.
+                    </p>
+                  </div>
+                  <div className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
+                    <p className="text-xs font-bold text-zinc-900 mb-1">The pain you solve</p>
+                    <p className="text-[11px] text-zinc-600 leading-relaxed">
+                      They're stuck selling through WhatsApp status and DMs — chasing payments, dealing with fake buyers, zero Google visibility. You're offering the upgrade from "DM me to order" to a real store with card payments that customers actually find on Google.
+                    </p>
+                  </div>
+                  <div className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
+                    <p className="text-xs font-bold text-zinc-900 mb-1">The price point</p>
+                    <p className="text-[11px] text-zinc-600 leading-relaxed">
+                      ₦2,500 one-time setup. No monthly fees, no hidden costs. One customer from a Google "near me" search pays for the entire setup. After signup, their dashboard has a direct button to claim their Google Business Profile — takes under 2 minutes.
+                    </p>
                   </div>
                 </div>
+              )}
+            </div>
 
-                {/* Objection Handler */}
+            {/* --- Closing Approaches --- */}
+            <div className="p-6">
+              <button 
+                onClick={() => toggleSection('closes')}
+                className="w-full flex items-center justify-between text-left"
+              >
                 <div>
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Objection Handler</p>
-                  <div className="space-y-3">
-                    {OBJECTIONS.map((obj) => (
-                      <div key={obj.q} className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
-                        <p className="text-xs font-bold text-zinc-900 mb-1.5">{obj.q}</p>
-                        <p className="text-[11px] text-zinc-600 leading-relaxed">{obj.a}</p>
-                      </div>
-                    ))}
+                  <p className="text-sm font-bold text-zinc-900">Closing Approaches</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">Suggested ways to close. Adapt them, combine them, or ignore them entirely.</p>
+                </div>
+                <svg className={"w-4 h-4 text-zinc-400 transition-transform shrink-0 ml-4 " + (expandedSection === 'closes' ? 'rotate-180' : '')} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {expandedSection === 'closes' && (
+                <div className="mt-4 space-y-4">
+                  <div className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
+                    <p className="text-xs font-bold text-zinc-900 mb-2">The Google Maps Angle (strongest)</p>
+                    <p className="text-[11px] text-zinc-600 leading-relaxed">
+                      Search for local businesses on Google Maps. Hair salons, restaurants, boutiques — if they aren't listed, they're losing customers every day to the ones that are. Walk in or message them: "I can put you on Google Maps so people searching 'near me' find you, AND give you a full online store with card payments. ₦2,500 one time." The Maps angle is the easiest hook because the problem is visible — you can literally show them their competitors ranking while they don't exist.
+                    </p>
+                  </div>
+                  <div className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
+                    <p className="text-xs font-bold text-zinc-900 mb-2">The WhatsApp Status Angle</p>
+                    <p className="text-[11px] text-zinc-600 leading-relaxed">
+                      Target vendors posting items on their status. Ask: "Are you tired of chasing DMs for money and dealing with fake buyers?" Then offer the upgrade — a real store with card payments that goes straight to their bank. Mention that they'll also show up on Google Maps, so they get customers who aren't even on their WhatsApp.
+                    </p>
+                  </div>
+                  <div className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
+                    <p className="text-xs font-bold text-zinc-900 mb-2">The Done-For-You Angle</p>
+                    <p className="text-[11px] text-zinc-600 leading-relaxed">
+                      Many business owners don't want to set anything up themselves. Offer to do it all: "Just give me your business name, what you sell, your location, and your bank details. I'll set up your store, pin you on the map, and get you on Google." They pay ₦2,500, you sign them up with your link, you keep ₦1,500. Their dashboard even has a button to claim their Google Business Profile in 2 minutes.
+                    </p>
+                  </div>
+                  <div className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
+                    <p className="text-xs font-bold text-zinc-900 mb-2">The Agency / Bundle Angle</p>
+                    <p className="text-[11px] text-zinc-600 leading-relaxed">
+                      Sell a "Digital Presence Setup" to businesses — Google Maps ranking + SEO-optimized storefront + Paystack payments + location pinning with directions. Charge them ₦15,000+. You pay ₦2,500 via your link (earning ₦1,500 back instantly), so your real cost is ₦1,000. You keep the rest.
+                    </p>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+
+            {/* --- Swipe Files --- */}
+            <div className="p-6">
+              <button 
+                onClick={() => toggleSection('swipes')}
+                className="w-full flex items-center justify-between text-left"
+              >
+                <div>
+                  <p className="text-sm font-bold text-zinc-900">WhatsApp Swipe Files</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">Copy, tweak, and send. Or write your own — these are just starting points.</p>
+                </div>
+                <svg className={"w-4 h-4 text-zinc-400 transition-transform shrink-0 ml-4 " + (expandedSection === 'swipes' ? 'rotate-180' : '')} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {expandedSection === 'swipes' && (
+                <div className="mt-4 space-y-4">
+                  {SWIPE_FILES.map((swipe) => (
+                    <div key={swipe.id} className="bg-zinc-50 border border-zinc-200 rounded-lg p-4">
+                      <p className="text-xs font-bold text-zinc-900 mb-2">{swipe.label}</p>
+                      <p className="text-sm text-zinc-800 whitespace-pre-line">{swipe.text}</p>
+                      <div className="mt-4 flex gap-2">
+                        <button 
+                          onClick={() => copySwipe(swipe.text, swipe.id)}
+                          className="bg-zinc-200 text-zinc-900 px-3 py-1.5 rounded-md text-[11px] font-bold hover:bg-zinc-300 transition-colors"
+                        >
+                          {swipeCopied === swipe.id ? 'Copied' : 'Copy Text'}
+                        </button>
+                        <button 
+                          onClick={() => shareToWhatsApp(swipe.text)}
+                          className="bg-zinc-900 text-white px-3 py-1.5 rounded-md text-[11px] font-bold hover:bg-zinc-700 transition-colors"
+                        >
+                          Open in WhatsApp
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* --- Objection Handler --- */}
+            <div className="p-6">
+              <button 
+                onClick={() => toggleSection('objections')}
+                className="w-full flex items-center justify-between text-left"
+              >
+                <div>
+                  <p className="text-sm font-bold text-zinc-900">Objection Handler</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">When they push back, here's how to respond.</p>
+                </div>
+                <svg className={"w-4 h-4 text-zinc-400 transition-transform shrink-0 ml-4 " + (expandedSection === 'objections' ? 'rotate-180' : '')} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {expandedSection === 'objections' && (
+                <div className="mt-4 space-y-3">
+                  {OBJECTIONS.map((obj) => (
+                    <div key={obj.q} className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
+                      <p className="text-xs font-bold text-zinc-900 mb-1.5">{obj.q}</p>
+                      <p className="text-[11px] text-zinc-600 leading-relaxed">{obj.a}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
 
@@ -431,7 +405,7 @@ export default function AffiliateDashboard() {
           {totalReferred === 0 ? (
             <div className="px-6 py-16 text-center">
               <p className="text-zinc-400 font-medium">No one has signed up using your link yet.</p>
-              <p className="text-zinc-400 text-sm mt-1">Choose your playbook above to close your first deal.</p>
+              <p className="text-zinc-400 text-sm mt-1">Share your link with businesses to earn your first ₦1,500 commission.</p>
             </div>
           ) : (
             <div className="divide-y divide-zinc-100">
