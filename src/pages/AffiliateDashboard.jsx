@@ -21,15 +21,15 @@ const OBJECTIONS = [
   },
   {
     q: '"₦2,500 is too much"',
-    a: 'It costs less than one Instagram ad. And you only pay once to set up a store that takes card payments 24/7 AND puts you on Google Maps where people are already searching for you. One customer from a "near me" search pays for the whole thing.',
+    a: 'It costs less than one Instagram ad. And for ₦2,500/month you get a store that takes card payments 24/7 AND puts you on Google Maps where people are already searching for you. One customer from a "near me" search pays for the whole month. Plus, refer 3 friends and your next month is free.',
   },
   {
     q: '"How will people find my store?"',
-    a: 'Your BookNaija page is built for Google. It ranks in search results, shows up on Google Maps for "near me" searches, and we walk you through claiming your Google Business Profile in under 2 minutes. Plus you can still share your store link on WhatsApp and Instagram — it just converts way better now.',
+    a: 'Your BookNaija page is built for Google. It ranks in search results, shows up on Google Maps for "near me" searches, and we walk you through claiming your Google Business Profile in under 2 minutes. Plus you can still share your store link on WhatsApp and Instagram it just converts way better now.',
   },
   {
     q: '"I don\'t know how to use technology"',
-    a: "That's why I'm here. I will set the whole thing up for you — your store, your Google Maps listing, everything. You just need to tell me your business name, what you sell, and your bank details for payment. I handle the rest.",
+    a: "That's why I'm here. I will set the whole thing up for you your store, your Google Maps listing, everything. You just need to tell me your business name, what you sell, and your bank details for payment. I handle the rest.",
   },
   {
     q: '"I already have a website / Instagram page"',
@@ -41,17 +41,17 @@ const SWIPE_FILES = [
   {
     id: 'casual',
     label: 'Casual / Friend',
-    text: `Hey! Are you still only selling on WhatsApp status? I found something that gives you a proper online store WITH Google Maps so people searching "near me" actually find you.\n\nBookNaija sets up your store + puts you on Google Maps + customers pay you directly with card. All for ₦2,500 one-time.\n\nHere's the link:`,
+    text: `Hey! Are you still only selling on WhatsApp status? I found something that gives you a proper online store WITH Google Maps so people searching "near me" actually find you.\n\nBookNaija sets up your store + puts you on Google Maps + customers pay you directly with card. All for ₦2,500/month.\n\nHere's the link:`,
   },
   {
     id: 'local',
     label: 'Local Business / In-Person',
-    text: `Hi! I noticed your business isn't showing up on Google Maps when people search in your area. You're losing customers who are literally looking for what you sell.\n\nI can fix that today + set you up with a full online store where customers can book or buy and pay directly with card.\n\nSetup is just ₦2,500. Let me know if you want me to set it up for you.`,
+    text: `Hi! I noticed your business isn't showing up on Google Maps when people search in your area. You're losing customers who are literally looking for what you sell.\n\nI can fix that today + set you up with a full online store where customers can book or buy and pay directly with card.\n\nIt's ₦2,500/month. Let me know if you want me to set it up for you.`,
   },
   {
     id: 'professional',
     label: 'Professional / Cold Pitch',
-    text: `Hi [Name], I help local businesses get found on Google.\n\nRight now, when someone searches "[their service] near me" in your area, your business doesn't appear. That's free traffic you're losing every day.\n\nI can set up your Google Maps ranking + a professional online storefront (with card payments via Paystack) + SEO optimization so you show up in searches. Everything runs on autopilot.\n\nThe setup is ₦2,500 one-time. Should I send the details?`,
+    text: `Hi [Name], I help local businesses get found on Google.\n\nRight now, when someone searches "[their service] near me" in your area, your business doesn't appear. That's free traffic you're losing every day.\n\nI can set up your Google Maps ranking + a professional online storefront (with card payments via Paystack) + SEO optimization so you show up in searches. Everything runs on autopilot.\n\nThe plan is ₦2,500/month. Should I send the details?`,
   },
 ];
 
@@ -148,9 +148,9 @@ export default function AffiliateDashboard() {
 
         {/* ===== HOW YOU GET PAID ===== */}
         <div className="bg-zinc-100 border border-zinc-200 rounded-xl p-5">
-          <p className="text-base font-bold text-zinc-900">You earn ₦1,500 per setup</p>
+          <p className="text-base font-bold text-zinc-900">You earn ₦1,500 per signup</p>
           <p className="text-sm text-zinc-600 mt-1">
-            When a vendor pays their ₦2,500 using your link, <span className="font-bold text-zinc-900">₦1,500 is sent instantly to your bank</span> via Paystack. The remaining ₦1,000 goes to the platform.
+            When a vendor pays their ₦2,500 monthly plan using your link, <span className="font-bold text-zinc-900">₦1,500 is sent instantly to your bank</span> via Paystack. The remaining ₦1,000 goes to the platform. You earn again every month they stay active.
           </p>
         </div>
 
@@ -258,7 +258,7 @@ export default function AffiliateDashboard() {
                   <div className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
                     <p className="text-xs font-bold text-zinc-900 mb-1">The #1 hook: Google Maps + "Near Me" Visibility</p>
                     <p className="text-[11px] text-zinc-600 leading-relaxed">
-                      Most Nigerian businesses are invisible on Google. When someone searches "lash artist near me" or "food near me" in their area, nothing comes up. BookNaija fixes this. Every store page is SEO-optimized to rank on Google, and we walk them through claiming their Google Business Profile so they appear on Maps. This alone is worth more than ₦2,500.
+                      Most Nigerian businesses are invisible on Google. When someone searches "lash artist near me" or "food near me" in their area, nothing comes up. BookNaija fixes this. Every store page is SEO-optimized to rank on Google, and we walk them through claiming their Google Business Profile so they appear on Maps. This alone is worth more than ₦2,500/month.
                     </p>
                   </div>
                   <div className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
@@ -270,13 +270,13 @@ export default function AffiliateDashboard() {
                   <div className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
                     <p className="text-xs font-bold text-zinc-900 mb-1">The pain you solve</p>
                     <p className="text-[11px] text-zinc-600 leading-relaxed">
-                      They're stuck selling through WhatsApp status and DMs — chasing payments, dealing with fake buyers, zero Google visibility. You're offering the upgrade from "DM me to order" to a real store with card payments that customers actually find on Google.
+                      They're stuck selling through WhatsApp status and DMs chasing payments, dealing with fake buyers, zero Google visibility. You're offering the upgrade from "DM me to order" to a real store with card payments that customers actually find on Google.
                     </p>
                   </div>
                   <div className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
                     <p className="text-xs font-bold text-zinc-900 mb-1">The price point</p>
                     <p className="text-[11px] text-zinc-600 leading-relaxed">
-                      ₦2,500 one-time setup. No monthly fees, no hidden costs. One customer from a Google "near me" search pays for the entire setup. After signup, their dashboard has a direct button to claim their Google Business Profile — takes under 2 minutes.
+                      ₦2,500/month. Cancel anytime. No contracts, no hidden fees. One customer from a Google "near me" search pays for the entire month. After signup, their dashboard has a direct button to claim their Google Business Profile takes under 2 minutes. And if they refer 3 friends, their next month is free.
                     </p>
                   </div>
                 </div>
@@ -302,25 +302,25 @@ export default function AffiliateDashboard() {
                   <div className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
                     <p className="text-xs font-bold text-zinc-900 mb-2">The Google Maps Angle (strongest)</p>
                     <p className="text-[11px] text-zinc-600 leading-relaxed">
-                      Search for local businesses on Google Maps. Hair salons, restaurants, boutiques — if they aren't listed, they're losing customers every day to the ones that are. Walk in or message them: "I can put you on Google Maps so people searching 'near me' find you, AND give you a full online store with card payments. ₦2,500 one time." The Maps angle is the easiest hook because the problem is visible — you can literally show them their competitors ranking while they don't exist.
+                      Search for local businesses on Google Maps. Hair salons, restaurants, boutiques if they aren't listed, they're losing customers every day to the ones that are. Walk in or message them: "I can put you on Google Maps so people searching 'near me' find you, AND give you a full online store with card payments. ₦2,500/month, cancel anytime." The Maps angle is the easiest hook because the problem is visible you can literally show them their competitors ranking while they don't exist.
                     </p>
                   </div>
                   <div className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
                     <p className="text-xs font-bold text-zinc-900 mb-2">The WhatsApp Status Angle</p>
                     <p className="text-[11px] text-zinc-600 leading-relaxed">
-                      Target vendors posting items on their status. Ask: "Are you tired of chasing DMs for money and dealing with fake buyers?" Then offer the upgrade — a real store with card payments that goes straight to their bank. Mention that they'll also show up on Google Maps, so they get customers who aren't even on their WhatsApp.
+                      Target vendors posting items on their status. Ask: "Are you tired of chasing DMs for money and dealing with fake buyers?" Then offer the upgrade a real store with card payments that goes straight to their bank. Mention that they'll also show up on Google Maps, so they get customers who aren't even on their WhatsApp.
                     </p>
                   </div>
                   <div className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
                     <p className="text-xs font-bold text-zinc-900 mb-2">The Done-For-You Angle</p>
                     <p className="text-[11px] text-zinc-600 leading-relaxed">
-                      Many business owners don't want to set anything up themselves. Offer to do it all: "Just give me your business name, what you sell, your location, and your bank details. I'll set up your store, pin you on the map, and get you on Google." They pay ₦2,500, you sign them up with your link, you keep ₦1,500. Their dashboard even has a button to claim their Google Business Profile in 2 minutes.
+                      Many business owners don't want to set anything up themselves. Offer to do it all: "Just give me your business name, what you sell, your location, and your bank details. I'll set up your store, pin you on the map, and get you on Google." They pay ₦2,500/month, you sign them up with your link, you keep ₦1,500. Their dashboard even has a button to claim their Google Business Profile in 2 minutes.
                     </p>
                   </div>
                   <div className="bg-zinc-50 border border-zinc-100 rounded-lg p-4">
                     <p className="text-xs font-bold text-zinc-900 mb-2">The Agency / Bundle Angle</p>
                     <p className="text-[11px] text-zinc-600 leading-relaxed">
-                      Sell a "Digital Presence Setup" to businesses — Google Maps ranking + SEO-optimized storefront + Paystack payments + location pinning with directions. Charge them ₦15,000+. You pay ₦2,500 via your link (earning ₦1,500 back instantly), so your real cost is ₦1,000. You keep the rest.
+                      Sell a "Digital Presence Setup" to businesses Google Maps ranking + SEO-optimized storefront + Paystack payments + location pinning with directions. Charge them ₦15,000+ as a setup fee. You pay ₦2,500/month via your link (earning ₦1,500 back instantly), so your real cost is ₦1,000. You keep the rest.
                     </p>
                   </div>
                 </div>
@@ -335,7 +335,7 @@ export default function AffiliateDashboard() {
               >
                 <div>
                   <p className="text-sm font-bold text-zinc-900">WhatsApp Swipe Files</p>
-                  <p className="text-xs text-zinc-500 mt-0.5">Copy, tweak, and send. Or write your own — these are just starting points.</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">Copy, tweak, and send. Or write your own these are just starting points.</p>
                 </div>
                 <svg className={"w-4 h-4 text-zinc-400 transition-transform shrink-0 ml-4 " + (expandedSection === 'swipes' ? 'rotate-180' : '')} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
