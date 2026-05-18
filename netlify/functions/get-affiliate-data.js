@@ -31,7 +31,7 @@ exports.handler = async (event) => {
     // 2. Get all businesses referred by this affiliate
     const { data: referrals, error: refErr } = await supabase
       .from('businesses')
-      .select('slug, name, logo, created_at, active')
+      .select('slug, name, logo, created_at, active, affiliate_bounty_paid')
       .eq('referred_by_affiliate', affiliateId)
       .order('created_at', { ascending: false });
 
@@ -41,7 +41,10 @@ exports.handler = async (event) => {
         affiliate: {
           id: affiliate.id,
           name: affiliate.name,
-          link: `https://booknaija.netlify.app/signup?ref=${affiliate.id}`
+          email: affiliate.email,
+          phone: affiliate.phone,
+          link: `https://booknaija.netlify.app/signup?ref=${affiliate.id}`,
+          subaccount_code: affiliate.subaccount_code || null
         },
         referrals: referrals || [] 
       })

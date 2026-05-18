@@ -135,7 +135,7 @@ export default function Landing() {
                 to="/signup"
                 className="w-full sm:w-auto bg-zinc-900 text-white px-8 py-4 text-base font-semibold rounded-xl hover:bg-zinc-700 transition-all active:scale-95"
               >
-                Get Started for ₦500
+                Get Started for ₦2,500
               </Link>
               <div className="flex items-center gap-3 text-sm font-medium text-zinc-600">
                 <span>Refer & Earn Free Months</span>
@@ -357,7 +357,7 @@ export default function Landing() {
                 One price. <br />No hidden fees.
               </h2>
               <p className="text-zinc-500 text-lg mb-8 leading-relaxed">
-                For the price of a small lunch, you get a complete booking engine and e-commerce store. We don't take a cut of your earnings.
+                For the price of a nice lunch, you get a complete booking engine and e-commerce store. We don't take a cut of your earnings.
               </p>
               <div className="grid grid-cols-2 gap-y-6 gap-x-8">
                 {['No commissions', 'Unlimited bookings', 'Priority WhatsApp support', 'Auto-reminders', 'Product inventory', 'Refer & Earn'].map(function (item) {
@@ -374,16 +374,15 @@ export default function Landing() {
             <div className="relative order-2 lg:order-1">
               <div className="bg-white p-10 rounded-3xl border-2 border-zinc-900 relative">
                 <div className="absolute -top-5 left-8 bg-purple-600 text-white px-4 py-1.5 rounded-full text-xs font-bold tracking-wide uppercase">
-                  Launch Offer
+                  All Access
                 </div>
                 <div className="pt-4">
                   <p className="text-zinc-400 text-sm font-semibold uppercase tracking-wider mb-2">Monthly Plan</p>
                   
                   <div className="mb-8">
-                    <p className="text-base text-green-600 font-bold mb-1">Start for just ₦500 today</p>
                     <div className="flex items-baseline gap-2">
                       <span className="text-6xl font-bold text-zinc-900 tracking-tighter">₦2,500</span>
-                      <span className="text-zinc-400 font-medium">/month after</span>
+                      <span className="text-zinc-400 font-medium">/month</span>
                     </div>
                   </div>
 

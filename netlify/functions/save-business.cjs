@@ -79,11 +79,12 @@ exports.handler = async function (event) {
       security_question_2: d.securityQuestion2 || '',
       security_answer_2: (d.securityAnswer2 || '').toLowerCase().trim(),
       
-      // --- AFFILIATE TRACKING (UPDATED) ---
+      // --- AFFILIATE TRACKING (UPDATED FOR FLAT 2500 PRICING) ---
       referred_by_affiliate: (d.referredBy && d.referredBy.startsWith('aff_')) ? d.referredBy : null,
       
-      // --- NEW: Mark bounty as paid instantly if they paid 2500 upfront via affiliate ---
-      affiliate_bounty_paid: (d.initialPaymentAmount === 2500 && d.referredBy && d.referredBy.startsWith('aff_'))
+      // If they were referred by an affiliate, the bounty is instantly considered paid because 
+      // everyone pays 2500 upfront now, and Paystack handles the split on the frontend.
+      affiliate_bounty_paid: !!(d.referredBy && d.referredBy.startsWith('aff_'))
     };
 
     // --- SUBSCRIPTION TIMER LOGIC ---

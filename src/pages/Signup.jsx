@@ -87,9 +87,8 @@ export default function Signup() {
     
     const businessSlug = generateSlug(businessName);
 
-    // --- NEW: Dynamic Pricing based on Affiliate ---
-    const isAffiliateReferral = referralParam && referralParam.startsWith('aff_');
-    const signupAmount = isAffiliateReferral ? 2500 : 500; // 2500 if affiliate, else 500
+    // --- FLAT PRICING: Everyone pays 2500 ---
+    const signupAmount = 2500; 
 
     let finalSubaccountCode = null;
 
@@ -139,21 +138,22 @@ export default function Signup() {
       tiktok: formData.get('tiktok_link'),
       referralCode,
       referredBy: referralParam,
-      initialPaymentAmount: signupAmount // --- NEW: Save the amount they paid for save-business.js ---
+      initialPaymentAmount: signupAmount 
     };
     
     sessionStorage.setItem('pending_signup_data', JSON.stringify(tempBusinessData));
 
-    // 3. Initialize Payment (Dynamic amount + Affiliate ID passed)
+    // 3. Initialize Payment (Flat 2500 amount + Affiliate ID passed if present)
     try {
       const payRes = await fetch('/.netlify/functions/initialize-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: email,
-          amount: signupAmount, // --- NEW: Dynamic amount (500 or 2500) ---
+          amount: signupAmount, 
           slug: businessSlug,
-          referredBy: isAffiliateReferral ? referralParam : null, // --- NEW: Pass affiliate ID for instant split ---
+          // Only pass affiliate ID to Paystack if it exists, so the split happens
+          referredBy: referralParam && referralParam.startsWith('aff_') ? referralParam : null, 
           callback_url: `${window.location.origin}/onboarding` 
         })
       });
@@ -435,10 +435,7 @@ export default function Signup() {
                 Connecting to Paystack...
               </span>
             ) : (
-              // --- NEW: Dynamic Button Text based on Affiliate ---
-              referralParam && referralParam.startsWith('aff_') 
-                ? 'Pay ₦2,500 to Get Started' 
-                : 'Pay ₦500 to Get Started'
+              'Pay ₦2,500 to Get Started'
             )}
           </button>
         </div>
