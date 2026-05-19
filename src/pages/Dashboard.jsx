@@ -92,6 +92,13 @@ export default function Dashboard() {
   var banks = banksArr[0];
   var setBanks = banksArr[1];
 
+  // --- COLLISION-PROOF ID GENERATOR ---
+  var idCounter = useRef(0);
+  function uid(prefix) {
+    idCounter.current++;
+    return (prefix || '') + Date.now().toString(36) + idCounter.current.toString(36);
+  }
+
   useEffect(function () {
     if (!loading && biz) {
       var authStatus = sessionStorage.getItem('biz_auth_' + slug);
@@ -157,6 +164,19 @@ export default function Dashboard() {
 
   // --- NEW BANK UPDATE LOGIC ---
   async function handleUpdateBank() {
+    if (!bankName.trim()) {
+      setBankUpdateError('Please enter the account name.');
+      return;
+    }
+    if (!bankCode) {
+      setBankUpdateError('Please select a bank.');
+      return;
+    }
+    if (!/^[0-9]{10}$/.test(bankAcc)) {
+      setBankUpdateError('Account number must be exactly 10 digits.');
+      return;
+    }
+
     setBankUpdating(true);
     setBankUpdateError('');
     setBankUpdateSuccess(false);
@@ -171,17 +191,19 @@ export default function Dashboard() {
           settlement_bank: bankCode,
           account_number: bankAcc,
           account_name: bankName,
-          email: biz.email,
-          phone: biz.phone
+          email: biz.email || '',
+          phone: biz.phone || ''
         })
       });
+
       const data = await res.json();
-      
-      if (res.ok && data.subaccount_code) {
+
+      if (res.ok && (data.ok || data.subaccount_code)) {
         setBankUpdateSuccess(true);
-        setTimeout(() => window.location.reload(), 1500);
+        setBiz(function(p) { return Object.assign({}, p, { subaccount_code: data.subaccount_code || p.subaccount_code }); });
+        setTimeout(function() { window.location.reload(); }, 1500);
       } else {
-        setBankUpdateError(data.error || 'Verification failed. Please check details or contact support.');
+        setBankUpdateError(data.error || 'Verification failed. Please check your details or contact support.');
       }
     } catch (err) {
       setBankUpdateError('Network error. Please try again.');
@@ -348,7 +370,7 @@ export default function Dashboard() {
   }
 
   function addGalleryGroup() {
-    addItem('gallery', { id: 'g-' + Date.now(), group: '', images: [] });
+    addItem('gallery', { id: uid('g-'), group: '', images: [] });
   }
   function removeGalleryGroup(gid) {
     setBiz(function (p) { return Object.assign({}, p, { gallery: p.gallery.filter(function (g) { return g.id !== gid; }) }); });
@@ -454,7 +476,7 @@ export default function Dashboard() {
       return Object.assign({}, p, {
         food: p.food.map(function (f) {
           if (f.id !== foodId) return f;
-          return Object.assign({}, f, { addons: (f.addons || []).concat([{ id: 'a-' + Date.now(), label: '', type: 'single', options: [] }]) });
+          return Object.assign({}, f, { addons: (f.addons || []).concat([{ id: uid('a-'), label: '', type: 'single', options: [] }]) });
         })
       });
     });
@@ -487,7 +509,7 @@ export default function Dashboard() {
           return Object.assign({}, f, {
             addons: (f.addons || []).map(function (a) {
               if (a.id !== addonId) return a;
-              return Object.assign({}, a, { options: (a.options || []).concat([{ id: 'opt-' + Date.now(), name: '', price: 0 }]) });
+              return Object.assign({}, a, { options: (a.options || []).concat([{ id: uid('opt-'), name: '', price: 0 }]) });
             })
           });
         })
@@ -557,32 +579,33 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-zinc-300 border-t-purple-600 rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-zinc-700 border-t-white rounded-full animate-spin"></div>
       </div>
     );
   }
 
   if (!biz) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-4">
         <div className="text-center">
-          <p className="text-zinc-900 font-bold text-lg mb-1">Business not found</p>
-          <p className="text-zinc-500 text-sm mb-4">No business with slug "{slug}" exists.</p>
-          <a href="/dashboard" className="text-purple-600 text-sm font-semibold hover:underline">Try a different slug</a>
+          <p className="text-white font-bold text-lg mb-1">Business not found</p>
+          <p className="text-zinc-400 text-sm mb-4">No business with slug "{slug}" exists.</p>
+          <a href="/dashboard" className="text-white hover:text-zinc-200 transition-colors text-sm font-semibold">Try a different slug</a>
         </div>
       </div>
     );
   }
 
-  var inp = "w-full bg-white border border-zinc-200 text-zinc-900 text-sm rounded-xl px-4 py-3 placeholder-zinc-400 focus:outline-none focus:border-purple-600 transition-all";
-  var sel = "w-full appearance-none bg-white border border-zinc-200 text-zinc-900 text-sm rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-purple-600 transition-all cursor-pointer";
-  var lbl = "block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5";
+  // Dark theme input/select styles matching other pages
+  var inp = "w-full bg-zinc-800 border border-zinc-700 text-white text-sm rounded-xl px-4 py-3 placeholder-zinc-400 focus:outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500 transition-all duration-200";
+  var sel = "w-full appearance-none bg-zinc-800 border border-zinc-700 text-white text-sm rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500 transition-all duration-200 cursor-pointer";
+  var lbl = "block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5";
 
   function Toggle(props) {
     return (
-      <button type="button" onClick={props.onChange} className={"relative w-10 h-6 rounded-full transition-colors " + (props.checked ? 'bg-purple-600' : 'bg-zinc-300')}>
-        <span className={"absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform " + (props.checked ? 'translate-x-4' : '')}></span>
+      <button type="button" onClick={props.onChange} className={"relative w-10 h-6 rounded-full transition-colors " + (props.checked ? 'bg-white' : 'bg-zinc-700')}>
+        <span className={"absolute top-0.5 left-0.5 w-5 h-5 bg-zinc-900 rounded-full shadow transition-transform " + (props.checked ? 'translate-x-4' : '')}></span>
       </button>
     );
   }
@@ -623,7 +646,7 @@ export default function Dashboard() {
               type="button"
               onClick={handlePaySubscription}
               disabled={subLoading}
-              className="w-full bg-white text-zinc-900 font-bold py-3.5 rounded-xl hover:bg-zinc-100 transition-all active:scale-95 disabled:bg-zinc-300 disabled:text-zinc-500"
+              className="w-full bg-white text-zinc-900 font-bold py-3.5 rounded-xl hover:bg-zinc-200 transition-all active:scale-95 disabled:bg-zinc-300 disabled:text-zinc-500"
             >
               {subLoading ? 'Processing...' : `Pay ₦2,500 for Next Month`}
             </button>
@@ -632,16 +655,16 @@ export default function Dashboard() {
 
         {/* ===== PAYOUT DETAILS PENDING ===== */}
         {(biz.subaccount_code === 'ACCT_PENDING' || !biz.subaccount_code) && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 sm:p-5">
+          <div className="bg-zinc-700/30 border border-zinc-700 rounded-2xl p-4 sm:p-5">
             <div className="flex items-start gap-3 mb-4">
-              <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
-                <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <div className="flex-shrink-0 w-10 h-10 bg-zinc-900/50 rounded-xl flex items-center justify-center">
+                <svg className="w-5 h-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
               </div>
               <div>
-                <h3 className="text-base font-bold text-red-800">Payout Details Required</h3>
-                <p className="text-sm text-red-700 mt-1">
+                <h3 className="text-base font-bold text-zinc-300">Payout Details Required</h3>
+                <p className="text-sm text-zinc-400 mt-1">
                   Your bank verification failed during signup. You won't receive payouts until this is fixed. Please re-enter your details below or contact support.
                 </p>
               </div>
@@ -659,8 +682,8 @@ export default function Dashboard() {
                 value={bankCode} 
                 onChange={function(e) { setBankCode(e.target.value); }}
               >
-                <option value="" disabled>Select your bank</option>
-                {banks.map(function(b, i) { return <option key={i} value={b.code}>{b.name}</option>; })}
+                <option value="" disabled className="bg-zinc-800">Select your bank</option>
+                {banks.map(function(b, bidx) { return <option key={b.code + '-' + bidx} value={b.code} className="bg-zinc-800">{b.name}</option>; })}
               </select>
               <input 
                 className={inp + " font-mono tracking-wider"} 
@@ -671,21 +694,21 @@ export default function Dashboard() {
               />
             </div>
 
-            {bankUpdateError && <p className="text-xs text-red-600 mt-3 bg-white p-2 rounded-lg border border-red-100">{bankUpdateError}</p>}
-            {bankUpdateSuccess && <p className="text-xs text-green-600 mt-3 bg-white p-2 rounded-lg border border-green-100">✓ Bank details verified successfully! Refreshing...</p>}
+            {bankUpdateError && <p className="text-xs text-red-400 mt-3 bg-zinc-800/50 p-2 rounded-lg border border-red-700">{bankUpdateError}</p>}
+            {bankUpdateSuccess && <p className="text-xs text-green-400 mt-3 bg-zinc-800/50 p-2 rounded-lg border border-green-700">✓ Bank details verified successfully! Refreshing...</p>}
 
             <div className="mt-4 flex flex-col sm:flex-row gap-2">
               <button 
                 type="button" 
                 onClick={handleUpdateBank} 
                 disabled={bankUpdating || !bankName || !bankCode || !bankAcc} 
-                className="flex-1 bg-red-600 text-white font-bold py-3 rounded-xl hover:bg-red-700 transition-all active:scale-95 disabled:bg-zinc-300 disabled:text-zinc-500"
+                className="flex-1 bg-red-600 text-white font-bold py-3 rounded-xl hover:bg-red-700 transition-all active:scale-95 disabled:bg-zinc-700 disabled:text-zinc-400"
               >
                 {bankUpdating ? 'Verifying...' : 'Verify Bank Details'}
               </button>
               <a 
                 href="mailto:support@booknaija.com" 
-                className="flex-1 bg-white text-red-700 font-bold py-3 rounded-xl border border-red-200 text-center hover:bg-red-50 transition-all active:scale-95"
+                className="flex-1 bg-zinc-800 text-zinc-300 font-bold py-3 rounded-xl border border-zinc-700 text-center hover:bg-zinc-700 transition-all active:scale-95"
               >
                 Contact Support
               </a>
@@ -693,9 +716,9 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ===== GOOGLE MAPS - MOBILE OPTIMIZED ===== */}
+        {/* ===== GOOGLE MAPS - DARK THEME ===== */}
         {!mapsClaimed && (
-          <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-4 sm:p-5 text-white relative overflow-hidden">
+          <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-4 sm:p-5 text-white relative overflow-hidden">
             <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full"></div>
             <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-white/10 rounded-full"></div>
             
@@ -710,7 +733,7 @@ export default function Dashboard() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-0.5">
                     <h3 className="text-base sm:text-lg font-bold leading-tight">Get on Google Maps</h3>
-                    <span className="px-1.5 py-0.5 bg-yellow-400 text-yellow-900 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider rounded-full whitespace-nowrap">+40% Traffic</span>
+                    <span className="px-1.5 py-0.5 bg-yellow-500 text-yellow-900 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider rounded-full whitespace-nowrap">+40% Traffic</span>
                   </div>
                   <p className="text-emerald-100 text-xs sm:text-sm leading-snug">
                     Show up in "near me" searches
@@ -727,9 +750,9 @@ export default function Dashboard() {
                     Add these to enable setup:
                   </p>
                   <div className="space-y-1.5">
-                    {mapsReadiness.issues.map(function (issue) {
+                    {mapsReadiness.issues.map(function (issue, iidx) {
                       return (
-                        <div key={issue} className="flex items-center gap-2">
+                        <div key={'issue-' + issue + '-' + iidx} className="flex items-center gap-2">
                           <span className="w-1 h-1 bg-yellow-400 rounded-full flex-shrink-0"></span>
                           <span className="text-xs text-emerald-50">{issue}</span>
                           <a href="#info-fields" className="text-yellow-300 hover:text-yellow-200 text-[10px] font-medium underline ml-auto">Edit →</a>
@@ -764,16 +787,16 @@ export default function Dashboard() {
 
         {/* ===== MAPS COMPLETED STATE ===== */}
         {mapsClaimed && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 sm:p-5">
+          <div className="bg-emerald-900/30 border border-emerald-700 rounded-2xl p-4 sm:p-5">
             <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
-                <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <div className="flex-shrink-0 w-10 h-10 bg-emerald-900/50 rounded-xl flex items-center justify-center">
+                <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-bold text-emerald-800 mb-0.5">On Google Maps</h3>
-                <p className="text-[11px] text-emerald-700 leading-relaxed">
+                <h3 className="text-sm font-bold text-emerald-300 mb-0.5">On Google Maps</h3>
+                <p className="text-[11px] text-emerald-400 leading-relaxed">
                   "{biz.name} near me" searches will show your listing
                 </p>
                 <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
@@ -781,14 +804,14 @@ export default function Dashboard() {
                     href={'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(biz.name + ' ' + biz.location)} 
                     target="_blank" 
                     rel="noreferrer"
-                    className="text-[11px] text-emerald-600 hover:text-emerald-800 font-medium underline"
+                    className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium underline"
                   >
                     View on Maps →
                   </a>
                   <button 
                     type="button" 
                     onClick={function () { setField('googleMapsClaimed', false); }}
-                    className="text-[11px] text-zinc-400 hover:text-zinc-600 font-medium"
+                    className="text-[11px] text-zinc-400 hover:text-white font-medium"
                   >
                     Not done yet
                   </button>
@@ -798,27 +821,27 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ===== YOUR WEBSITE URL - MOVED HERE ===== */}
+        {/* ===== YOUR WEBSITE URL ===== */}
         {!mapsClaimed && (
-          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-zinc-100">
-            <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3 text-center">Your Website URL <span className="text-emerald-500">← for Google Maps</span></p>
+          <div className="bg-zinc-900 p-4 sm:p-6 rounded-2xl border border-zinc-800">
+            <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3 text-center">Your Website URL <span className="text-emerald-400">← for Google Maps</span></p>
             <div className="flex items-center gap-2">
-              <div className="flex-1 bg-zinc-50 rounded-lg px-3 py-2.5 border border-zinc-100">
-                <p className="text-sm text-purple-600 font-semibold font-mono truncate">{pageUrl}</p>
+              <div className="flex-1 bg-zinc-800 rounded-lg px-3 py-2.5 border border-zinc-700">
+                <p className="text-sm text-white font-semibold font-mono truncate">{pageUrl}</p>
               </div>
               <button
                 type="button"
                 onClick={handleCopyPageUrl}
                 className={"px-4 py-2.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap " + (urlCopied 
-                  ? 'bg-green-500 text-white' 
-                  : 'bg-purple-600 text-white hover:bg-purple-700 active:scale-95'
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-white text-zinc-900 hover:bg-zinc-200 active:scale-95'
                 )}
               >
                 {urlCopied ? '✓ Copied' : 'Copy'}
               </button>
             </div>
             <div className="mt-2 flex items-center justify-center">
-              <a href={'/' + biz.slug} target="_blank" rel="noreferrer" className="text-xs text-zinc-500 hover:text-purple-600 font-medium transition-colors">
+              <a href={'/' + biz.slug} target="_blank" rel="noreferrer" className="text-xs text-zinc-400 hover:text-white font-medium transition-colors">
                 Open page →
               </a>
             </div>
@@ -826,87 +849,83 @@ export default function Dashboard() {
         )}
 
         {/* ===== REFERRAL SECTION ===== */}
-        <div className="bg-white border border-zinc-100 rounded-2xl p-4 sm:p-6">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h3 className="text-sm font-bold text-zinc-600 flex items-center gap-2">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 Referral Program
               </h3>
-              <p className="text-xs text-zinc-600 mt-1">Refer 3 friends = 1 Free Month</p>
+              <p className="text-xs text-zinc-400 mt-1">Refer 3 friends = 1 Free Month</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl sm:text-3xl font-bold text-zinc-600">{referralCount}</p>
-              <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Total Referrals</p>
+              <p className="text-2xl sm:text-3xl font-bold text-white">{referralCount}</p>
+              <p className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">Total Referrals</p>
             </div>
           </div>
 
           <div className="mb-4">
             <div className="flex justify-between items-center mb-1.5">
-              <span className="text-xs font-medium text-zinc-600">
+              <span className="text-xs font-medium text-zinc-300">
                 {referralsUntilNextMonth === 3 
                   ? 'Start referring to earn rewards' 
                   : referralsUntilNextMonth + ' more until next free month'
                 }
               </span>
-              <span className="text-xs font-bold text-zinc-600">
+              <span className="text-xs font-bold text-zinc-300">
                 {freeMonthsEarned > 0 ? freeMonthsEarned + ' month' + (freeMonthsEarned > 1 ? 's' : '') + ' earned!' : '0 months earned'}
               </span>
             </div>
-            <div className="w-full bg-zinc-300 rounded-full h-2">
+            <div className="w-full bg-zinc-700 rounded-full h-2">
               <div 
-                className="bg-zinc-600 h-2 rounded-full transition-all duration-500" 
+                className="bg-white h-2 rounded-full transition-all duration-500" 
                 style={{ width: Math.min((referralCount % 3) / 3 * 100, 100) + '%' }}
               ></div>
             </div>
             <div className="flex justify-between mt-1">
-              <span className="text-[10px] text-zinc-600">0</span>
-              <span className="text-[10px] text-zinc-600">3</span>
+              <span className="text-[10px] text-zinc-400">0</span>
+              <span className="text-[10px] text-zinc-400">3</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-zinc-200 p-3">
-            <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-bold mb-2">Your Referral Link</p>
+          <div className="bg-zinc-800 rounded-xl border border-zinc-700 p-3">
+            <p className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold mb-2">Your Referral Link</p>
             <div className="flex items-center gap-2">
-              <div className="flex-1 bg-zinc-50 rounded-lg px-3 py-2 border border-zinc-100">
-                <p className="text-xs text-zinc-600 font-mono truncate">{referralUrl}</p>
+              <div className="flex-1 bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-700">
+                <p className="text-xs text-zinc-300 font-mono truncate">{referralUrl}</p>
               </div>
               <button
                 type="button"
                 onClick={handleCopyReferralLink}
                 className={"px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap " + (copied 
-                  ? 'bg-green-500 text-white' 
-                  : 'bg-zinc-600 text-white hover:bg-purple-700 active:scale-95'
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-zinc-700 text-white hover:bg-zinc-600 active:scale-95'
                 )}
               >
                 {copied ? '✓' : 'Copy'}
               </button>
             </div>
-            <p className="text-[10px] text-zinc-600 mt-2">
+            <p className="text-[10px] text-zinc-400 mt-2">
               Share this link with friends. When they sign up, your counter increases automatically.
             </p>
           </div>
 
-          <div className="mt-4 pt-4 border-t border-zinc-200">
-            <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-bold mb-2">How It Works</p>
+                    <div className="mt-4 pt-4 border-t border-zinc-700">
+            <p className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold mb-2">How It Works</p>
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
-              <div key="step-1" className="text-center">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-1">
-                  <span className="text-[10px] sm:text-xs font-bold text-zinc-600">1</span>
-                </div>
-                <p className="text-[9px] sm:text-[10px] text-zinc-600 font-medium">Share link</p>
-              </div>
-              <div key="step-2" className="text-center">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-1">
-                  <span className="text-[10px] sm:text-xs font-bold text-zinc-600">2</span>
-                </div>
-                <p className="text-[9px] sm:text-[10px] text-zinc-600 font-medium">Friend joins</p>
-              </div>
-              <div key="step-3" className="text-center">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-1">
-                  <span className="text-[10px] sm:text-xs font-bold text-zinc-600">3</span>
-                </div>
-                <p className="text-[9px] sm:text-[10px] text-zinc-600 font-medium">Free month!</p>
-              </div>
+              {[
+                { num: '1', text: 'Share link' },
+                { num: '2', text: 'Friend joins' },
+                { num: '3', text: 'Free month!' }
+              ].map(function (step) {
+                return (
+                  <div key={'step-' + step.num} className="text-center">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-zinc-800 flex items-center justify-center mx-auto mb-1">
+                      <span className="text-[10px] sm:text-xs font-bold text-zinc-300">{step.num}</span>
+                    </div>
+                    <p className="text-[9px] sm:text-[10px] text-zinc-400 font-medium">{step.text}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -915,14 +934,14 @@ export default function Dashboard() {
           <label className={lbl}>Logo</label>
           <div className="flex items-center gap-3 sm:gap-4">
             {biz.logo ? (
-              <img src={biz.logo} alt="" className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-contain border border-zinc-200 p-1" />
+              <img src={biz.logo} alt="" className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-contain border border-zinc-700 p-1" />
             ) : (
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl border-2 border-dashed border-zinc-300 flex items-center justify-center text-zinc-400 text-xs">No logo</div>
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 text-xs">No logo</div>
             )}
             <div className="flex gap-2">
-              <button type="button" onClick={handleLogoUpload} className="text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-3 py-2 rounded-lg font-medium transition-colors">Upload</button>
+              <button type="button" onClick={handleLogoUpload} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-2 rounded-lg font-medium transition-colors">Upload</button>
               {biz.logo && (
-                <button type="button" onClick={function () { setField('logo', ''); }} className="text-xs bg-red-50 hover:bg-red-100 text-red-600 px-3 py-2 rounded-lg font-medium transition-colors">Remove</button>
+                <button type="button" onClick={function () { setField('logo', ''); }} className="text-xs bg-red-900/50 hover:bg-red-900 text-red-400 px-3 py-2 rounded-lg font-medium transition-colors">Remove</button>
               )}
             </div>
           </div>
@@ -930,7 +949,7 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><label className={lbl}>Business Name</label><input className={inp} value={biz.name} onChange={function (e) { setField('name', e.target.value); }} /></div>
-          <div><label className={lbl}>Accent Color</label><div className="flex gap-2"><input type="color" value={biz.accent} onChange={function (e) { setField('accent', e.target.value); }} className="w-12 h-11 rounded-lg border border-zinc-200 cursor-pointer p-1" /><input className={inp + " flex-1"} value={biz.accent} onChange={function (e) { setField('accent', e.target.value); }} /></div></div>
+          <div><label className={lbl}>Accent Color</label><div className="flex gap-2"><input type="color" value={biz.accent} onChange={function (e) { setField('accent', e.target.value); }} className="w-12 h-11 rounded-lg border border-zinc-700 cursor-pointer p-1 bg-zinc-800" /><input className={inp + " flex-1"} value={biz.accent} onChange={function (e) { setField('accent', e.target.value); }} /></div></div>
         </div>
         
         {/* ===== THEME SELECTOR ===== */}
@@ -940,28 +959,28 @@ export default function Dashboard() {
             <button
               type="button"
               onClick={function() { setField('theme', 'light'); }}
-              className={"p-3 rounded-xl border-2 text-left transition-all " + (biz.theme !== 'dark' ? 'border-purple-600 bg-purple-50' : 'border-zinc-200 bg-white hover:border-zinc-300')}
+              className={"p-3 rounded-xl border-2 text-left transition-all " + (biz.theme !== 'dark' ? 'border-white bg-zinc-800' : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-600')}
             >
               <div className="flex items-center gap-2 mb-1">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg className="w-4 h-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
-                <span className="text-xs font-bold text-zinc-800">Light Mode</span>
+                <span className="text-xs font-bold text-white">Light Mode</span>
               </div>
-              <p className="text-[10px] text-zinc-500">Clean, bright background</p>
+              <p className="text-[10px] text-zinc-400">Clean, bright background</p>
             </button>
             <button
               type="button"
               onClick={function() { setField('theme', 'dark'); }}
-              className={"p-3 rounded-xl border-2 text-left transition-all " + (biz.theme === 'dark' ? 'border-purple-600 bg-purple-50' : 'border-zinc-200 bg-white hover:border-zinc-300')}
+              className={"p-3 rounded-xl border-2 text-left transition-all " + (biz.theme === 'dark' ? 'border-white bg-zinc-800' : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-600')}
             >
               <div className="flex items-center gap-2 mb-1">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg className="w-4 h-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                 </svg>
-                <span className="text-xs font-bold text-zinc-800">Dark Mode</span>
+                <span className="text-xs font-bold text-white">Dark Mode</span>
               </div>
-              <p className="text-[10px] text-zinc-500">Sleek, dark background</p>
+              <p className="text-[10px] text-zinc-400">Sleek, dark background</p>
             </button>
           </div>
         </div>
@@ -976,7 +995,7 @@ export default function Dashboard() {
           
           {/* ===== LOCATION WITH MAP PICKER ===== */}
           <div>
-            <label className={lbl}>Location <span className="text-purple-500 font-normal normal-case tracking-normal">(Recommended: Pin for accuracy)</span></label>
+            <label className={lbl}>Location <span className="text-white font-normal normal-case tracking-normal">(Recommended: Pin for accuracy)</span></label>
             <div className="flex gap-2">
               <input 
                 className={inp + " flex-1"}
@@ -997,11 +1016,11 @@ export default function Dashboard() {
               </button>
             </div>
             {hasPreciseLocation && (
-              <div className="mt-1.5 flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5">
-                <svg className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <div className="mt-1.5 flex items-center gap-2 bg-emerald-900/30 border border-emerald-700 rounded-lg px-3 py-1.5">
+                <svg className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
-                <p className="text-[10px] text-emerald-700 font-semibold">
+                <p className="text-[10px] text-emerald-400 font-semibold">
                   ✓ Precise coordinates saved
                 </p>
               </div>
@@ -1018,10 +1037,10 @@ export default function Dashboard() {
         <div><label className={lbl}>Calendar ID (Email)</label><input className={inp} value={biz.calendarId} onChange={function (e) { setField('calendarId', e.target.value); }} /></div>
 
         {showToggles && (
-          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-zinc-100 space-y-4">
+          <div className="bg-zinc-900 p-4 sm:p-6 rounded-2xl border border-zinc-800 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Feature Toggles</h3>
-              <button type="button" onClick={function () { setShowToggles(false); }} className="text-xs text-zinc-400 hover:text-zinc-600">Hide</button>
+              <button type="button" onClick={function () { setShowToggles(false); }} className="text-xs text-zinc-400 hover:text-white transition-colors">Hide</button>
             </div>
             <div className="space-y-3">
               {[
@@ -1033,9 +1052,9 @@ export default function Dashboard() {
                 ['foodEnabled', 'Food Menu', 'Show food ordering section']
               ].map(function (t) {
                 return (
-                  <div key={t[0]} className="flex items-center justify-between">
+                  <div key={'toggle-' + t[0]} className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-semibold text-zinc-800">{t[1]}</p>
+                      <p className="text-sm font-semibold text-white">{t[1]}</p>
                       <p className="text-xs text-zinc-400">{t[2]}</p>
                     </div>
                     <Toggle checked={biz[t[0]]} onChange={function () { setField(t[0], !biz[t[0]]); }} />
@@ -1055,17 +1074,17 @@ export default function Dashboard() {
     return (
       <div className="space-y-6">
         {isSetupRequired && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
+          <div className="bg-red-900/30 border border-red-700 rounded-2xl p-4">
             <div className="flex items-start gap-3">
-              <div className="mt-0.5 text-red-500">
+              <div className="mt-0.5 text-red-400">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
               </div>
               <div>
-                <p className="text-xs font-bold text-red-800 mb-1">Security Not Set Up</p>
-                <p className="text-xs text-red-700 leading-relaxed">
-                  Your dashboard is currently unprotected. Please set a security code and questions below, then click <span className="font-bold">Save Changes</span>.
+                <p className="text-xs font-bold text-red-300 mb-1">Security Not Set Up</p>
+                <p className="text-xs text-red-400 leading-relaxed">
+                  Your dashboard is currently unprotected. Please set a security code and questions below, then click <span className="font-bold text-white">Save Changes</span>.
                 </p>
               </div>
             </div>
@@ -1073,16 +1092,16 @@ export default function Dashboard() {
         )}
 
         {!isSetupRequired && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+          <div className="bg-zinc-900/30 border border-zinc-700 rounded-2xl p-4">
             <div className="flex items-start gap-3">
-              <div className="mt-0.5 text-amber-500">
+              <div className="mt-0.5 text-zinc-400">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
               </div>
               <div>
-                <p className="text-xs font-bold text-amber-800 mb-1">Important</p>
-                <p className="text-xs text-amber-700 leading-relaxed">
+                <p className="text-xs font-bold text-zinc-300 mb-1">Important</p>
+                <p className="text-xs text-zinc-400 leading-relaxed">
                   Changing your security code or questions will take effect immediately. Do not forget these, as they cannot be recovered.
                 </p>
               </div>
@@ -1090,8 +1109,8 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-zinc-100 space-y-6">
-          <h3 className="text-sm font-bold text-zinc-800">4-Digit Security Code</h3>
+        <div className="bg-zinc-900 p-4 sm:p-6 rounded-2xl border border-zinc-800 space-y-6">
+          <h3 className="text-sm font-bold text-white">4-Digit Security Code</h3>
           <div>
             <label className={lbl}>Code</label>
             <input 
@@ -1106,17 +1125,17 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-zinc-100 space-y-6">
-          <h3 className="text-sm font-bold text-zinc-800">Security Questions</h3>
+        <div className="bg-zinc-900 p-4 sm:p-6 rounded-2xl border border-zinc-800 space-y-6">
+          <h3 className="text-sm font-bold text-white">Security Questions</h3>
           
           <div>
             <label className={lbl}>Question 1</label>
             <select className={sel} value={biz.securityQuestion1 || ''} onChange={function(e) { setField('securityQuestion1', e.target.value); }}>
-              <option value="" disabled>Select a question...</option>
-              <option value="What is your pet's name?">What is your pet's name?</option>
-              <option value="What city were you born in?">What city were you born in?</option>
-              <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
-              <option value="What was the name of your first school?">What was the name of your first school?</option>
+              <option value="" disabled className="bg-zinc-800">Select a question...</option>
+              <option value="What is your pet's name?" className="bg-zinc-800">What is your pet's name?</option>
+              <option value="What city were you born in?" className="bg-zinc-800">What city were you born in?</option>
+              <option value="What is your mother's maiden name?" className="bg-zinc-800">What is your mother's maiden name?</option>
+              <option value="What was the name of your first school?" className="bg-zinc-800">What was the name of your first school?</option>
             </select>
             <input className={inp + " mt-2"} placeholder="Your answer" value={biz.securityAnswer1 || ''} onChange={function(e) { setField('securityAnswer1', e.target.value); }} />
           </div>
@@ -1124,11 +1143,11 @@ export default function Dashboard() {
           <div>
             <label className={lbl}>Question 2</label>
             <select className={sel} value={biz.securityQuestion2 || ''} onChange={function(e) { setField('securityQuestion2', e.target.value); }}>
-              <option value="" disabled>Select a question...</option>
-              <option value="What is your favorite childhood movie?">What is your favorite childhood movie?</option>
-              <option value="What street did you grow up on?">What street did you grow up on?</option>
-              <option value="What is the name of your best friend?">What is the name of your best friend?</option>
-              <option value="What was your first car?">What was your first car?</option>
+              <option value="" disabled className="bg-zinc-800">Select a question...</option>
+              <option value="What is your favorite childhood movie?" className="bg-zinc-800">What is your favorite childhood movie?</option>
+              <option value="What street did you grow up on?" className="bg-zinc-800">What street did you grow up on?</option>
+              <option value="What is the name of your best friend?" className="bg-zinc-800">What is the name of your best friend?</option>
+              <option value="What was your first car?" className="bg-zinc-800">What was your first car?</option>
             </select>
             <input className={inp + " mt-2"} placeholder="Your answer" value={biz.securityAnswer2 || ''} onChange={function(e) { setField('securityAnswer2', e.target.value); }} />
           </div>
@@ -1145,34 +1164,34 @@ export default function Dashboard() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-bold text-zinc-800">Gallery</h3>
+            <h3 className="text-sm font-bold text-white">Gallery</h3>
             <span className="text-xs text-zinc-400">{totalImgs} photos</span>
           </div>
-          <button type="button" onClick={addGalleryGroup} className="text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-3 py-2 rounded-lg font-medium transition-colors">+ Add Group</button>
+          <button type="button" onClick={addGalleryGroup} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-2 rounded-lg font-medium transition-colors">+ Add Group</button>
         </div>
 
         {(biz.gallery || []).length === 0 && (
           <p className="text-sm text-zinc-400 text-center py-8">No gallery groups yet.</p>
         )}
 
-        {(biz.gallery || []).map(function (group) {
+        {(biz.gallery || []).map(function (group, gidx) {
           return (
-            <div key={group.id} className="border border-zinc-200 rounded-xl overflow-hidden bg-zinc-50/50">
-              <div className="flex items-center gap-2 px-4 py-3 bg-white border-b border-zinc-100">
-                <input className="flex-1 text-sm font-semibold text-zinc-800 bg-transparent border-0 focus:outline-none" value={group.group} onChange={function (e) { updateGalleryGroup(group.id, 'group', e.target.value); }} placeholder="Group name" />
-                <button type="button" onClick={function () { removeGalleryGroup(group.id); }} className="text-zinc-300 hover:text-red-500 transition-colors p-1 text-lg leading-none">&times;</button>
+            <div key={'grp-' + group.id + '-' + gidx} className="border border-zinc-800 rounded-xl overflow-hidden bg-zinc-900/50">
+              <div className="flex items-center gap-2 px-4 py-3 bg-zinc-900 border-b border-zinc-800">
+                <input className="flex-1 text-sm font-semibold text-white bg-transparent border-0 focus:outline-none placeholder-zinc-500" value={group.group} onChange={function (e) { updateGalleryGroup(group.id, 'group', e.target.value); }} placeholder="Group name" />
+                <button type="button" onClick={function () { removeGalleryGroup(group.id); }} className="text-zinc-500 hover:text-red-400 transition-colors p-1 text-lg leading-none">&times;</button>
               </div>
               <div className="p-3">
                 <div className="grid grid-cols-4 gap-2">
                   {(group.images || []).map(function (img, idx) {
                     return (
-                      <div key={group.id + '-' + idx} className="relative aspect-square rounded-lg overflow-hidden bg-zinc-100 border border-zinc-200 group/img">
+                      <div key={'grpimg-' + group.id + '-' + idx} className="relative aspect-square rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700 group/img">
                         <img src={img} className="w-full h-full object-cover" alt="" />
-                        <button type="button" onClick={function () { removeGalleryImage(group.id, idx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity text-xs">&times;</button>
+                        <button type="button" onClick={function () { removeGalleryImage(group.id, idx); }} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity text-xs">&times;</button>
                       </div>
                     );
                   })}
-                  <button type="button" onClick={function () { uploadImage(function (url) { addGalleryImage(group.id, url); }, true); }} className="aspect-square rounded-lg border-2 border-dashed border-zinc-300 flex items-center justify-center text-zinc-400 hover:border-purple-500 hover:text-purple-500 transition-all text-lg">+</button>
+                  <button type="button" onClick={function () { uploadImage(function (url) { addGalleryImage(group.id, url); }, true); }} className="aspect-square rounded-lg border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all text-lg">+</button>
                 </div>
               </div>
             </div>
@@ -1186,22 +1205,22 @@ export default function Dashboard() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h3 className="text-sm font-bold text-zinc-800">Services ({(biz.services || []).length})</h3>
-          <button type="button" onClick={function () { addItem('services', { id: Date.now(), name: '', duration: '', price: '', description: '', image: '', images: [], showDetails: true, discount_enabled: false, discount_price: 0 }); }} className="text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-3 py-2 rounded-lg font-medium">+ Add</button>
+          <h3 className="text-sm font-bold text-white">Services ({(biz.services || []).length})</h3>
+          <button type="button" onClick={function () { addItem('services', { id: uid(), name: '', duration: '', price: '', description: '', image: '', images: [], showDetails: true, discount_enabled: false, discount_price: 0 }); }} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-2 rounded-lg font-medium">+ Add</button>
         </div>
-        {(biz.services || []).map(function (s) {
+        {(biz.services || []).map(function (s, sidx) {
           return (
-            <div key={s.id} className="relative p-4 rounded-xl border border-zinc-100 bg-zinc-50 space-y-2">
-              <button type="button" onClick={function () { removeItem('services', s.id); }} className="absolute top-2 right-2 text-zinc-400 hover:text-red-500">&times;</button>
+            <div key={'svc-' + s.id + '-' + sidx} className="relative p-4 rounded-xl border border-zinc-800 bg-zinc-900/50 space-y-2">
+              <button type="button" onClick={function () { removeItem('services', s.id); }} className="absolute top-2 right-2 text-zinc-500 hover:text-red-400">&times;</button>
               <input className={inp} placeholder="Name" value={s.name} onChange={function (e) { setNested('services', s.id, { name: e.target.value }); }} />
               <div className="grid grid-cols-2 gap-2">
                 <input className={inp} placeholder="Price" type="number" value={s.price} onChange={function (e) { setNested('services', s.id, { price: parseInt(e.target.value) || 0 }); }} />
                 <input className={inp} placeholder="Duration" value={s.duration} onChange={function (e) { setNested('services', s.id, { duration: e.target.value }); }} />
               </div>
               
-              <div className="border-t border-zinc-200 pt-3 mt-3">
+              <div className="border-t border-zinc-800 pt-3 mt-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-zinc-600 uppercase tracking-wider">Discount Settings</span>
+                  <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Discount Settings</span>
                   <Toggle 
                     checked={s.discount_enabled || false} 
                     onChange={function () { setNested('services', s.id, { discount_enabled: !s.discount_enabled }); }} 
@@ -1217,7 +1236,7 @@ export default function Dashboard() {
                       onChange={function (e) { setNested('services', s.id, { discount_price: parseInt(e.target.value) || 0 }); }} 
                     />
                     {s.discount_price > 0 && s.price > 0 && (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-xs text-green-700">
+                      <div className="bg-green-900/30 border border-green-700 rounded-lg p-2 text-xs text-green-400">
                         <span className="font-semibold">Discount: {Math.round(((s.price - s.discount_price) / s.price) * 100)}% off</span>
                         <span className="block mt-0.5">Customers will pay ₦{s.discount_price.toLocaleString()} instead of ₦{s.price.toLocaleString()}</span>
                       </div>
@@ -1230,14 +1249,14 @@ export default function Dashboard() {
               <div className="grid grid-cols-3 gap-2">
                 {(s.images || []).map(function (img, idx) {
                   return (
-                    <div key={s.id + '-' + idx} className="aspect-square bg-white border border-zinc-200 rounded-lg overflow-hidden relative group/si">
+                    <div key={'svcimg-' + s.id + '-' + idx} className="aspect-square bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group/si">
                       <img src={img} className="w-full h-full object-cover" alt="" />
-                      <button type="button" onClick={function () { removeServiceImage(s.id, idx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/si:opacity-100 text-xs">&times;</button>
+                      <button type="button" onClick={function () { removeServiceImage(s.id, idx); }} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/si:opacity-100 text-xs">&times;</button>
                     </div>
                   );
                 })}
                 {(s.images || []).length < 3 && (
-                  <button type="button" onClick={function () { addServiceImage(s); }} className="aspect-square bg-zinc-100 border-2 border-dashed border-zinc-300 flex items-center justify-center text-zinc-400 hover:border-purple-500 hover:text-purple-500 transition-all text-sm">+</button>
+                  <button type="button" onClick={function () { addServiceImage(s); }} className="aspect-square bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all text-sm">+</button>
                 )}
               </div>
             </div>
@@ -1251,13 +1270,13 @@ export default function Dashboard() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h3 className="text-sm font-bold text-zinc-800">Products ({(biz.products || []).length})</h3>
-          <button type="button" onClick={function () { addItem('products', { id: Date.now(), name: '', price: '', description: '', image: '', images: [], showDetails: true, product_code: '', discount_enabled: false, discount_price: 0 }); }} className="text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-3 py-2 rounded-lg font-medium">+ Add</button>
+          <h3 className="text-sm font-bold text-white">Products ({(biz.products || []).length})</h3>
+          <button type="button" onClick={function () { addItem('products', { id: uid(), name: '', price: '', description: '', image: '', images: [], showDetails: true, product_code: '', discount_enabled: false, discount_price: 0 }); }} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-2 rounded-lg font-medium">+ Add</button>
         </div>
-        {(biz.products || []).map(function (p) {
+        {(biz.products || []).map(function (p, pidx) {
           return (
-            <div key={p.id} className="relative p-4 rounded-xl border border-zinc-100 bg-zinc-50 space-y-2">
-              <button type="button" onClick={function () { removeItem('products', p.id); }} className="absolute top-2 right-2 text-zinc-400 hover:text-red-500">&times;</button>
+            <div key={'prod-' + p.id + '-' + pidx} className="relative p-4 rounded-xl border border-zinc-800 bg-zinc-900/50 space-y-2">
+              <button type="button" onClick={function () { removeItem('products', p.id); }} className="absolute top-2 right-2 text-zinc-500 hover:text-red-400">&times;</button>
               <input className={inp} placeholder="Name" value={p.name} onChange={function (e) { setNested('products', p.id, { name: e.target.value }); }} />
               
               <div>
@@ -1270,26 +1289,26 @@ export default function Dashboard() {
                     onChange={function (e) { setNested('products', p.id, { product_code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') }); }} 
                   />
                   {p.product_code && (
-                    <div className="flex items-center gap-1.5 px-3 bg-blue-50 border border-blue-200 rounded-xl">
-                      <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <div className="flex items-center gap-1.5 px-3 bg-blue-900/30 border border-blue-700 rounded-xl">
+                      <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span className="text-[10px] text-blue-700 font-medium hidden sm:inline">Shareable</span>
+                      <span className="text-[10px] text-blue-300 font-medium hidden sm:inline">Shareable</span>
                     </div>
                   )}
                 </div>
                 {p.product_code && (
-                  <p className="text-[10px] text-zinc-500 mt-1">
-                    Share: <span className="font-mono bg-zinc-100 px-1.5 py-0.5 rounded">/{biz.slug}?code={p.product_code}</span>
+                  <p className="text-[10px] text-zinc-400 mt-1">
+                    Share: <span className="font-mono bg-zinc-800 px-1.5 py-0.5 rounded">/{biz.slug}?code={p.product_code}</span>
                   </p>
                 )}
               </div>
               
               <input className={inp} placeholder="Price" type="number" value={p.price} onChange={function (e) { setNested('products', p.id, { price: parseInt(e.target.value) || 0 }); }} />
               
-              <div className="border-t border-zinc-200 pt-3 mt-3">
+              <div className="border-t border-zinc-800 pt-3 mt-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-zinc-600 uppercase tracking-wider">Discount Settings</span>
+                  <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Discount Settings</span>
                   <Toggle 
                     checked={p.discount_enabled || false} 
                     onChange={function () { setNested('products', p.id, { discount_enabled: !p.discount_enabled }); }} 
@@ -1305,7 +1324,7 @@ export default function Dashboard() {
                       onChange={function (e) { setNested('products', p.id, { discount_price: parseInt(e.target.value) || 0 }); }} 
                     />
                     {p.discount_price > 0 && p.price > 0 && (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-xs text-green-700">
+                      <div className="bg-green-900/30 border border-green-700 rounded-lg p-2 text-xs text-green-400">
                         <span className="font-semibold">Discount: {Math.round(((p.price - p.discount_price) / p.price) * 100)}% off</span>
                         <span className="block mt-0.5">Customers will pay ₦{p.discount_price.toLocaleString()} instead of ₦{p.price.toLocaleString()}</span>
                       </div>
@@ -1318,14 +1337,14 @@ export default function Dashboard() {
               <div className="grid grid-cols-3 gap-2">
                 {(p.images || []).map(function (img, idx) {
                   return (
-                    <div key={p.id + '-' + idx} className="aspect-square bg-white border border-zinc-200 rounded-lg overflow-hidden relative group/pi">
+                    <div key={'prodimg-' + p.id + '-' + idx} className="aspect-square bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group/pi">
                       <img src={img} className="w-full h-full object-cover" alt="" />
-                      <button type="button" onClick={function () { removeProductImage(p.id, idx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/pi:opacity-100 text-xs">&times;</button>
+                      <button type="button" onClick={function () { removeProductImage(p.id, idx); }} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/pi:opacity-100 text-xs">&times;</button>
                     </div>
                   );
                 })}
                 {(p.images || []).length < 3 && (
-                  <button type="button" onClick={function () { addProductImage(p); }} className="aspect-square bg-zinc-100 border-2 border-dashed border-zinc-300 flex items-center justify-center text-zinc-400 hover:border-purple-500 hover:text-purple-500 transition-all text-sm">+</button>
+                  <button type="button" onClick={function () { addProductImage(p); }} className="aspect-square bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all text-sm">+</button>
                 )}
               </div>
             </div>
@@ -1339,16 +1358,16 @@ export default function Dashboard() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h3 className="text-sm font-bold text-zinc-800">Cars ({(biz.cars || []).length})</h3>
-          <button type="button" onClick={function () { addItem('cars', { id: Date.now(), name: '', type: 'rent', year: '', price: '', mileage: '', transmission: '', fuel: '', description: '', image: '', images: [] }); }} className="text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-3 py-2 rounded-lg font-medium">+ Add</button>
+          <h3 className="text-sm font-bold text-white">Cars ({(biz.cars || []).length})</h3>
+          <button type="button" onClick={function () { addItem('cars', { id: uid(), name: '', type: 'rent', year: '', price: '', mileage: '', transmission: '', fuel: '', description: '', image: '', images: [] }); }} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-2 rounded-lg font-medium">+ Add</button>
         </div>
-        {(biz.cars || []).map(function (c) {
+        {(biz.cars || []).map(function (c, cidx) {
           return (
-            <div key={c.id} className="relative p-4 rounded-xl border border-zinc-100 bg-zinc-50 space-y-2">
-              <button type="button" onClick={function () { removeItem('cars', c.id); }} className="absolute top-2 right-2 text-zinc-400 hover:text-red-500">&times;</button>
+            <div key={'car-' + c.id + '-' + cidx} className="relative p-4 rounded-xl border border-zinc-800 bg-zinc-900/50 space-y-2">
+              <button type="button" onClick={function () { removeItem('cars', c.id); }} className="absolute top-2 right-2 text-zinc-500 hover:text-red-400">&times;</button>
               <div className="flex gap-2 items-center">
-                <label className="flex items-center gap-1 text-xs"><input type="radio" name={"dt-" + c.id} checked={c.type === 'rent'} onChange={function () { setNested('cars', c.id, { type: 'rent' }); }} className="accent-purple-600" /> Rent</label>
-                <label className="flex items-center gap-1 text-xs"><input type="radio" name={"dt-" + c.id} checked={c.type === 'sale'} onChange={function () { setNested('cars', c.id, { type: 'sale' }); }} className="accent-purple-600" /> Sale</label>
+                <label className="flex items-center gap-1 text-xs text-zinc-300"><input type="radio" name={"dt-" + c.id} checked={c.type === 'rent'} onChange={function () { setNested('cars', c.id, { type: 'rent' }); }} className="accent-white" /> Rent</label>
+                <label className="flex items-center gap-1 text-xs text-zinc-300"><input type="radio" name={"dt-" + c.id} checked={c.type === 'sale'} onChange={function () { setNested('cars', c.id, { type: 'sale' }); }} className="accent-white" /> Sale</label>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <input className={inp} placeholder="Name" value={c.name} onChange={function (e) { setNested('cars', c.id, { name: e.target.value }); }} />
@@ -1362,13 +1381,13 @@ export default function Dashboard() {
               <div className="grid grid-cols-3 gap-2">
                 {(c.images || []).map(function (img, idx) {
                   return (
-                    <div key={c.id + '-' + idx} className="aspect-video bg-white border border-zinc-200 rounded-lg overflow-hidden relative group/ci">
+                    <div key={'carimg-' + c.id + '-' + idx} className="aspect-video bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group/ci">
                       <img src={img} className="w-full h-full object-cover" alt="" />
-                      <button type="button" onClick={function () { removeCarImage(c.id, idx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/ci:opacity-100 text-xs">&times;</button>
+                      <button type="button" onClick={function () { removeCarImage(c.id, idx); }} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/ci:opacity-100 text-xs">&times;</button>
                     </div>
                   );
                 })}
-                <button type="button" onClick={function () { addCarImage(c); }} className="aspect-video bg-zinc-100 border-2 border-dashed border-zinc-300 flex items-center justify-center text-zinc-400 hover:border-purple-500 hover:text-purple-500 transition-all text-sm">+</button>
+                <button type="button" onClick={function () { addCarImage(c); }} className="aspect-video bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all text-sm">+</button>
               </div>
             </div>
           );
@@ -1381,58 +1400,58 @@ export default function Dashboard() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h3 className="text-sm font-bold text-zinc-800">Food Menu ({(biz.food || []).length})</h3>
-          <button type="button" onClick={function () { addItem('food', { id: Date.now(), name: '', price: '', description: '', image: '', images: [], addons: [] }); }} className="text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-3 py-2 rounded-lg font-medium">+ Add</button>
+          <h3 className="text-sm font-bold text-white">Food Menu ({(biz.food || []).length})</h3>
+          <button type="button" onClick={function () { addItem('food', { id: uid(), name: '', price: '', description: '', image: '', images: [], addons: [] }); }} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-2 rounded-lg font-medium">+ Add</button>
         </div>
-        {(biz.food || []).map(function (f) {
+        {(biz.food || []).map(function (f, fidx) {
           return (
-            <div key={f.id} className="relative p-4 rounded-xl border border-zinc-100 bg-zinc-50 space-y-2">
-              <button type="button" onClick={function () { removeItem('food', f.id); }} className="absolute top-2 right-2 text-zinc-400 hover:text-red-500 z-10">&times;</button>
+            <div key={'food-' + f.id + '-' + fidx} className="relative p-4 rounded-xl border border-zinc-800 bg-zinc-900/50 space-y-2">
+              <button type="button" onClick={function () { removeItem('food', f.id); }} className="absolute top-2 right-2 text-zinc-500 hover:text-red-400 z-10">&times;</button>
               <input className={inp} placeholder="Name" value={f.name} onChange={function (e) { setNested('food', f.id, { name: e.target.value }); }} />
               <input className={inp} placeholder="Price" type="number" value={f.price} onChange={function (e) { setNested('food', f.id, { price: parseInt(e.target.value) || 0 }); }} />
               <textarea className={inp + " h-16 resize-none"} placeholder="Description" value={f.description} onChange={function (e) { setNested('food', f.id, { description: e.target.value }); }} />
               <div className="grid grid-cols-3 gap-2">
                 {(f.images || []).map(function (img, idx) {
                   return (
-                    <div key={f.id + '-' + idx} className="aspect-square bg-white border border-zinc-200 rounded-lg overflow-hidden relative group/fi">
+                    <div key={'foodimg-' + f.id + '-' + idx} className="aspect-square bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group/fi">
                       <img src={img} className="w-full h-full object-cover" alt="" />
-                      <button type="button" onClick={function () { removeFoodImage(f.id, idx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/fi:opacity-100 text-xs">&times;</button>
+                      <button type="button" onClick={function () { removeFoodImage(f.id, idx); }} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/fi:opacity-100 text-xs">&times;</button>
                     </div>
                   );
                 })}
                 {(f.images || []).length < 3 && (
-                  <button type="button" onClick={function () { addFoodImage(f); }} className="aspect-square bg-zinc-100 border-2 border-dashed border-zinc-300 flex items-center justify-center text-zinc-400 hover:border-purple-500 hover:text-purple-500 transition-all text-sm">+</button>
+                  <button type="button" onClick={function () { addFoodImage(f); }} className="aspect-square bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all text-sm">+</button>
                 )}
               </div>
-              <div className="pt-3 border-t border-zinc-200 space-y-3">
+              <div className="pt-3 border-t border-zinc-800 space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Addons</span>
-                  <button type="button" onClick={function () { addAddonGroup(f.id); }} className="text-xs text-purple-600 hover:text-purple-800 font-medium">+ Add Group</button>
+                  <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Addons</span>
+                  <button type="button" onClick={function () { addAddonGroup(f.id); }} className="text-xs text-white hover:text-zinc-200 font-medium">+ Add Group</button>
                 </div>
-                {(f.addons || []).map(function (addon) {
+                {(f.addons || []).map(function (addon, aidx) {
                   return (
-                    <div key={addon.id} className="bg-white rounded-xl border border-zinc-200 p-3 space-y-2">
+                    <div key={'addon-' + addon.id + '-' + aidx} className="bg-zinc-800 rounded-xl border border-zinc-700 p-3 space-y-2">
                       <div className="flex items-center gap-2">
                         <input className={inp + " flex-1 py-2 text-sm"} placeholder="Group name" value={addon.label} onChange={function (e) { updateAddonGroup(f.id, addon.id, 'label', e.target.value); }} />
                         <select className={sel + " w-24 py-2 text-sm"} value={addon.type} onChange={function (e) { updateAddonGroup(f.id, addon.id, 'type', e.target.value); }}>
-                          <option value="single">Single</option>
-                          <option value="multi">Multi</option>
+                          <option value="single" className="bg-zinc-800">Single</option>
+                          <option value="multi" className="bg-zinc-800">Multi</option>
                         </select>
-                        <button type="button" onClick={function () { removeAddonGroup(f.id, addon.id); }} className="text-zinc-300 hover:text-red-500 p-1">&times;</button>
+                        <button type="button" onClick={function () { removeAddonGroup(f.id, addon.id); }} className="text-zinc-500 hover:text-red-400 p-1">&times;</button>
                       </div>
-                      {(addon.options || []).map(function (opt) {
+                      {(addon.options || []).map(function (opt, oidx) {
                         return (
-                          <div key={opt.id} className="flex items-center gap-2">
+                          <div key={'opt-' + opt.id + '-' + oidx} className="flex items-center gap-2">
                             <input className={inp + " flex-1 py-2 text-sm"} placeholder="Option" value={opt.name} onChange={function (e) { updateAddonOption(f.id, addon.id, opt.id, 'name', e.target.value); }} />
                             <div className="relative w-20">
-                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400">+&#8358;</span>
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-zinc-500">+&#8358;</span>
                               <input type="number" className={inp + " pl-7 py-2 text-sm"} value={opt.price || ''} onChange={function (e) { updateAddonOption(f.id, addon.id, opt.id, 'price', e.target.value); }} />
                             </div>
-                            <button type="button" onClick={function () { removeAddonOption(f.id, addon.id, opt.id); }} className="text-zinc-300 hover:text-red-500 p-1">&times;</button>
+                            <button type="button" onClick={function () { removeAddonOption(f.id, addon.id, opt.id); }} className="text-zinc-500 hover:text-red-400 p-1">&times;</button>
                           </div>
                         );
                       })}
-                      <button type="button" onClick={function () { addAddonOption(f.id, addon.id); }} className="w-full py-1.5 text-xs text-zinc-400 hover:text-purple-600 font-medium">+ Add Option</button>
+                      <button type="button" onClick={function () { addAddonOption(f.id, addon.id); }} className="w-full py-1.5 text-xs text-zinc-400 hover:text-white font-medium">+ Add Option</button>
                     </div>
                   );
                 })}
@@ -1460,9 +1479,11 @@ export default function Dashboard() {
   var visibleTabs = getVisibleTabs();
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-zinc-900">
-      <div className="bg-white border-b border-zinc-100 px-4 sm:px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+    <div className="min-h-screen bg-zinc-950 text-white font-sans selection:bg-zinc-700 selection:text-white flex flex-col">
+      
+      {/* Header - White background matching landing page */}
+      <nav className="bg-white border-b border-zinc-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             <a href="/" className="flex-shrink-0">
               <img src="/fav-removebg.png" alt="BookNaija" className="h-9 w-auto sm:h-10 object-contain" />
@@ -1470,16 +1491,17 @@ export default function Dashboard() {
             <div className="h-6 w-px bg-zinc-200 flex-shrink-0"></div>
             <div onClick={handleNameClick} className="cursor-default select-none min-w-0">
               <h1 className="text-sm font-bold text-zinc-900 leading-tight truncate">{biz.name}</h1>
-              <p className="text-[11px] text-zinc-400 truncate">booknaija.com/{biz.slug}</p>
+              <p className="text-[11px] text-zinc-500 truncate">booknaija.com/{biz.slug}</p>
             </div>
           </div>
-          <a href={'/' + biz.slug} target="_blank" rel="noreferrer" className="text-xs text-purple-600 hover:text-purple-800 font-semibold transition-colors flex-shrink-0 ml-2">
+          <a href={'/' + biz.slug} target="_blank" rel="noreferrer" className="text-xs text-zinc-600 hover:text-zinc-900 font-semibold transition-colors flex-shrink-0 ml-2">
             Preview →
           </a>
         </div>
-      </div>
+      </nav>
 
-      <div className="bg-white border-b border-zinc-100 px-4 sm:px-6">
+      {/* Tabs - White background */}
+      <div className="bg-white border-b border-zinc-200">
         <div className="max-w-4xl mx-auto flex gap-1 overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6">
           {visibleTabs.map(function (tab) {
             var isActive = activeTab === tab.id;
@@ -1488,7 +1510,7 @@ export default function Dashboard() {
                 key={tab.id}
                 type="button"
                 onClick={function () { setActiveTab(tab.id); }}
-                className={"px-3 sm:px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-all " + (isActive ? 'border-purple-600 text-purple-600' : 'border-transparent text-zinc-400 hover:text-zinc-600')}
+                className={"px-3 sm:px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-all " + (isActive ? 'border-zinc-900 text-zinc-900' : 'border-transparent text-zinc-500 hover:text-zinc-700')}
               >
                 {tab.label}
               </button>
@@ -1497,19 +1519,21 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <form onSubmit={handleSave}>
+      {/* Form Content - Dark theme */}
+      <form onSubmit={handleSave} className="flex-1">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           {renderTabContent()}
         </div>
 
-        <div className="sticky bottom-0 bg-white border-t border-zinc-100 px-4 sm:px-6 py-3 sm:py-4 z-10">
+        {/* Sticky Save Bar - Dark theme */}
+        <div className="sticky bottom-0 bg-zinc-900 border-t border-zinc-800 px-4 sm:px-6 py-3 sm:py-4 z-10">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
-            {errorMsg && <p className="text-xs text-red-500">{errorMsg}</p>}
-            {saved && <p className="text-xs text-green-600 font-semibold">✓ Saved!</p>}
+            {errorMsg && <p className="text-xs text-red-400">{errorMsg}</p>}
+            {saved && <p className="text-xs text-green-400 font-semibold">✓ Saved!</p>}
             <button
               type="submit"
               disabled={saving}
-              className="ml-auto bg-purple-600 hover:bg-purple-700 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 disabled:bg-zinc-400"
+              className="ml-auto bg-white hover:bg-zinc-200 text-zinc-900 px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:bg-zinc-700 disabled:text-zinc-400"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
@@ -1530,6 +1554,13 @@ export default function Dashboard() {
           onClose={function () { setShowMapPicker(false); }}
         />
       )}
+
+      {/* Footer - White background matching landing page */}
+      <footer className="bg-white border-t border-zinc-200 py-6 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="text-zinc-500 text-sm">© {new Date().getFullYear()} BookNaija Technologies.</p>
+        </div>
+      </footer>
     </div>
   );
 }

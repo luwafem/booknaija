@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
@@ -6,7 +6,7 @@ const steps = [
   { 
     n: '1', 
     t: 'Create Your Storefront', 
-    d: 'Add your business name, services, and products. Your professional link will be live within 24 hours.' 
+    d: 'Add your business name, services, and products. Your professional link will be live within 30 minutes.' 
   },
   { 
     n: '2', 
@@ -84,29 +84,29 @@ export default function Landing() {
   }, [searchQuery]);
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-zinc-100 selection:text-zinc-900">
+    <div className="min-h-screen bg-zinc-950 text-white font-sans selection:bg-zinc-700 selection:text-white">
       
-      {/* Header */}
-      <nav className="bg-white sticky top-0 z-50 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto py-2.5 sm:py-3 flex justify-between items-center">
+      {/* Header - White background */}
+      <nav className="bg-white sticky top-0 z-50 border-b border-zinc-200">
+        <div className="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
           <Link to="/" className="flex items-center flex-shrink-0">
             <img 
               src="/fav-removebg.png" 
               alt="BookNaija Logo" 
-              className="h-12 sm:h-20 w-auto object-contain transition-transform hover:scale-105" 
+              className="h-9 w-auto object-contain" 
             />
           </Link>
           
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <div className="flex items-center gap-4 flex-shrink-0">
             <Link 
               to="/dashboard"
-              className="text-xs sm:text-sm font-semibold text-zinc-600 hover:text-zinc-900 px-3 sm:px-4 py-2.5 rounded-lg border border-zinc-200 hover:border-zinc-300 transition-all active:scale-95 whitespace-nowrap"
+              className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors"
             >
               Manage Business
             </Link>
             <Link 
               to="/signup" 
-              className="text-xs sm:text-sm font-semibold text-white bg-zinc-900 px-3 sm:px-6 py-2.5 rounded-lg hover:bg-zinc-700 transition-all active:scale-95 whitespace-nowrap"
+              className="text-sm font-semibold text-white bg-zinc-900 px-5 py-2.5 rounded-lg hover:bg-zinc-800 transition-all"
             >
               Get Started
             </Link>
@@ -114,190 +114,200 @@ export default function Landing() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6">
+      <main className="max-w-7xl mx-auto">
         
         {/* Hero Section */}
-        <section className="pt-20 pb-24 lg:pt-32 lg:pb-40 grid lg:grid-cols-2 gap-16 items-center">
-          <div className="text-center lg:text-left">
-            
-            <h1 className="text-5xl md:text-6xl font-bold leading-[1.1] tracking-tight text-zinc-900 mb-6">
-              Your business. <br />
-              <span className="text-purple-600">One simple link.</span>
-            </h1>
-            
-            <p className="text-zinc-500 text-lg leading-relaxed max-w-lg mx-auto lg:mx-0 mb-10 font-normal">
-              Stop the  
-              <span className="text-purple-600"> DM to book</span> cycle. Turn your bio into a professional storefront where clients book services, buy products, and pay upfront.
-            </p>
+        <section className="relative pt-16 pb-24 lg:pt-24 lg:pb-32 overflow-hidden">
+          <div className="absolute inset-0  pointer-events-none" />
+          
+          <div className="relative px-6 grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight mb-5">
+                Your business. <br />
+                <span className="text-white">
+                  One simple link.
+                </span>
+              </h1>
+              
+              <p className="text-zinc-400 text-base md:text-lg leading-relaxed max-w-lg mb-8">
+                Stop the <span className="text-white font-medium">DM to book</span> cycle. Turn your bio into a professional storefront where clients book services, buy products, and pay upfront.
+              </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-center lg:justify-start">
-              <Link 
-                to="/signup"
-                className="w-full sm:w-auto bg-zinc-900 text-white px-8 py-4 text-base font-semibold rounded-xl hover:bg-zinc-700 transition-all active:scale-95"
-              >
-                Get Started for ₦2,500
-              </Link>
-              <div className="flex items-center gap-3 text-sm font-medium text-zinc-600">
-                <span>Refer & Earn Free Months</span>
-              </div>
-            </div>
-
-            {/* Search Bar */}
-            <div className="mt-8 max-w-lg mx-auto lg:mx-0">
-              <label htmlFor="business-search" className="block text-sm font-medium text-zinc-700 mb-2">
-                Find a registered business
-              </label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-zinc-400 group-focus-within:text-purple-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+              <div className="flex flex-col sm:flex-row gap-3 mb-10">
+                <Link 
+                  to="/signup"
+                  className="inline-flex items-center justify-center bg-white text-zinc-900 px-7 py-3.5 text-sm md:text-base font-semibold rounded-xl hover:bg-zinc-200 transition-all hover:scale-[1.02]"
+                >
+                  Get Started for ₦2,500
+                </Link>
+                <div className="flex items-center gap-2 text-sm text-zinc-400">
+                  Refer & Earn Free Months
                 </div>
-                <input
-                  type="text"
-                  id="business-search"
-                  className="block w-full pl-10 pr-3 py-3 border border-zinc-300 rounded-lg leading-5 bg-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-600 sm:text-sm shadow-sm transition-all"
-                  placeholder="Search by name"
-                  value={searchQuery}
-                  onChange={function(e) { setSearchQuery(e.target.value); }}
-                />
-                {isSearching && (
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                    <svg className="animate-spin h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </div>
+
+              {/* Search Bar */}
+              <div className="max-w-sm">
+                <label className="block text-sm font-medium text-zinc-400 mb-2.5">
+                  Find a registered business
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <svg className="h-4.5 w-4.5 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
+                  </div>
+                  <input
+                    type="text"
+                    className="block w-full pl-10 pr-3.5 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-transparent transition-all"
+                    placeholder="Search by name"
+                    value={searchQuery}
+                    onChange={function(e) { setSearchQuery(e.target.value); }}
+                  />
+                  {isSearching && (
+                    <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center">
+                      <svg className="animate-spin h-4 w-4 text-zinc-500" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+
+                {searchQuery.trim() && (
+                  <div className="mt-2.5 bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden shadow-xl">
+                    {isSearching ? (
+                      <div className="px-3.5 py-5 text-center">
+                        <p className="text-sm text-zinc-500">Searching...</p>
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      <div className="max-h-64 overflow-y-auto">
+                        {searchResults.map(function (b) {
+                          return (
+                            <Link 
+                              key={b.slug} 
+                              to={'/' + b.slug}
+                              className="block px-3.5 py-2.5 hover:bg-zinc-800 transition-colors border-b border-zinc-800 last:border-0"
+                              onClick={function() { setSearchQuery(''); }}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                {b.logo ? (
+                                  <div className="bg-white rounded-md p-0.5">
+                                    <img 
+                                      src={b.logo} 
+                                      alt="" 
+                                      className="w-7 h-7 object-contain"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div 
+                                    className="w-8 h-8 rounded-md flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
+                                    style={{ backgroundColor: b.accent || '#52525b' }}
+                                  >
+                                    {b.name ? b.name.split(' ').map(function(w) { return w[0]; }).join('').substring(0, 2).toUpperCase() : '??'}
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-white truncate">{b.name}</p>
+                                  <p className="text-xs text-zinc-500 truncate">{b.tagline}</p>
+                                </div>
+                                <div className="text-[10px] font-medium text-zinc-300 bg-zinc-800 px-2.5 py-1 rounded-md flex-shrink-0">
+                                  Visit
+                                </div>
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    ) : hasSearched ? (
+                      <div className="px-3.5 py-5 text-center">
+                        <p className="text-sm text-zinc-500">No businesses found</p>
+                      </div>
+                    ) : null}
                   </div>
                 )}
               </div>
-
-              {searchQuery.trim() && (
-                <div className="mt-2 bg-white border border-zinc-200 rounded-xl shadow-lg overflow-hidden">
-                  {isSearching ? (
-                    <div className="px-4 py-6 text-center">
-                      <p className="text-sm text-zinc-400">Searching...</p>
-                    </div>
-                  ) : searchResults.length > 0 ? (
-                    <div className="max-h-72 overflow-y-auto">
-                      {searchResults.map(function (b) {
-                        return (
-                          <Link 
-                            key={b.slug} 
-                            to={'/' + b.slug}
-                            className="block px-4 py-3 hover:bg-zinc-50 transition-colors border-b border-zinc-100 last:border-0"
-                            onClick={function() { setSearchQuery(''); }}
-                          >
-                            <div className="flex items-center gap-3">
-                              {b.logo ? (
-                                <img 
-                                  src={b.logo} 
-                                  alt="" 
-                                  className="w-9 h-9 rounded-lg object-contain bg-zinc-50 border border-zinc-100 flex-shrink-0 p-1"
-                                />
-                              ) : (
-                                <div 
-                                  className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                                  style={{ backgroundColor: b.accent || '#c8a97e' }}
-                                >
-                                  {b.name ? b.name.split(' ').map(function(w) { return w[0]; }).join('').substring(0, 2).toUpperCase() : '??'}
-                                </div>
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-zinc-900 truncate">{b.name}</p>
-                                <p className="text-xs text-zinc-500 truncate">{b.tagline}</p>
-                              </div>
-                              <div className="text-xs font-medium text-purple-600 bg-purple-50 px-2.5 py-1 rounded-md flex-shrink-0">
-                                Visit
-                              </div>
-                            </div>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  ) : hasSearched ? (
-                    <div className="px-4 py-6 text-center">
-                      <p className="text-sm text-zinc-500">No businesses found matching "{searchQuery}"</p>
-                    </div>
-                  ) : null}
-                </div>
-              )}
             </div>
 
-            <p className="mt-4 text-[11px] text-zinc-400 text-center lg:text-left max-w-sm mx-auto lg:mx-0 leading-relaxed">
-              Earnings are paid directly to your bank via Paystack. Settlement takes up to 24 hours on business days (excludes weekends & public holidays).
-            </p>
-          </div>
-
-          {/* Visual Mockup */}
-          <div className="lg:col-span-1 flex justify-center lg:justify-end">
-            <div className="relative w-[300px]">
-              <div className="relative bg-zinc-900 rounded-[2.5rem] p-3 border-[6px] border-zinc-200">
-                <div className="bg-white rounded-[2rem] h-[580px] overflow-hidden flex flex-col relative">
-                  <div className="h-8 w-full bg-white z-10 flex justify-between items-center px-6 pt-2">
-                    <div className="text-[10px] font-bold">9:41</div>
-                    <div className="w-16 h-4 bg-black rounded-full absolute left-1/2 -translate-x-1/2 top-2"></div>
-                    <div className="flex gap-1">
-                      <div className="w-3 h-3 bg-zinc-900 rounded-full opacity-20"></div>
-                      <div className="w-3 h-3 bg-zinc-900 rounded-full opacity-20"></div>
-                    </div>
-                  </div>
-
-                  <div className="flex-1 p-5 pt-4 flex flex-col">
-                    <div className="flex items-center gap-4 mb-6">
-                      <Link to="/" className="flex items-center">
-                        <img 
-                          src="/fav-removebg.png" 
-                          alt="BookNaija Logo" 
-                          className="h-20 w-auto object-contain" 
-                        />
-                      </Link>
-                      <div>
-                        <h3 className="font-bold text-zinc-900 leading-tight">Braid Gallery</h3>
-                        <p className="text-xs text-zinc-500 font-medium">Lagos, Nigeria</p>
+            {/* 3D Phone Mockup - Scaled down */}
+            <div className="relative lg:h-[500px] flex items-center justify-center">
+              <div className="relative scale-90 lg:scale-100" style={{ 
+                transform: 'perspective(1000px) rotateY(-12deg) rotateX(4deg)',
+                transformStyle: 'preserve-3d'
+              }}>
+                {/* Phone Frame */}
+                <div className="relative bg-zinc-800 rounded-[2.5rem] p-2.5 border-3 border-zinc-700 shadow-2xl">
+                  <div className="bg-zinc-950 rounded-[2rem] h-[520px] w-[280px] overflow-hidden flex flex-col">
+                    {/* Status Bar */}
+                    <div className="h-7 bg-zinc-950 flex justify-between items-center px-5 pt-1.5">
+                      <div className="text-[10px] font-medium">9:41</div>
+                      <div className="w-16 h-4 bg-zinc-800 rounded-full absolute left-1/2 -translate-x-1/2 top-1.5" />
+                      <div className="flex gap-0.5">
+                        <div className="w-3 h-3 bg-zinc-700 rounded-full" />
+                        <div className="w-3 h-3 bg-zinc-700 rounded-full" />
                       </div>
                     </div>
 
-                    <div className="space-y-3">
-                      <div className="p-3 border border-zinc-200 rounded-xl flex justify-between items-center bg-white hover:border-purple-300 transition-colors">
-                        <div>
-                          <p className="text-xs font-bold text-zinc-900">Knotless Braids</p>
-                          <p className="text-[10px] text-zinc-500 mt-1">3h • ₦25,000</p>
+                    {/* App Content */}
+                    <div className="flex-1 p-4 pt-3 flex flex-col bg-zinc-950">
+                      <div className="flex items-center gap-3.5 mb-6">
+                        <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center p-1.5">
+                          <img src="/fav-removebg.png" alt="" className="w-10 h-10 object-contain" />
                         </div>
-                        <button className="bg-zinc-900 text-white text-[10px] font-bold px-3 py-2 rounded-lg">Book</button>
+                        <div>
+                          <h3 className="font-semibold text-base">Braid Gallery</h3>
+                          <p className="text-[10px] text-zinc-500">Lagos, Nigeria</p>
+                        </div>
                       </div>
 
-                      <div className="p-3 border border-zinc-200 rounded-xl flex justify-between items-center bg-white hover:border-purple-300 transition-colors">
-                        <div>
-                          <p className="text-xs font-bold text-zinc-900">Silk Bonnet</p>
-                          <p className="text-[10px] text-zinc-500 mt-1">Item • ₦5,000</p>
+                      <div className="space-y-2.5">
+                        <div className="p-3 bg-zinc-900 rounded-xl border border-zinc-800">
+                          <div className="flex justify-between items-start mb-1.5">
+                            <div>
+                              <p className="font-medium text-sm">Knotless Braids</p>
+                              <p className="text-[10px] text-zinc-500 mt-0.5">3h • ₦25,000</p>
+                            </div>
+                            <button className="bg-white text-zinc-900 text-[10px] font-medium px-3 py-1.5 rounded-lg">Book</button>
+                          </div>
                         </div>
-                        <button className="bg-purple-100 text-purple-700 text-[10px] font-bold px-3 py-2 rounded-lg">Buy</button>
-                      </div>
 
-                      <div className="p-3 border border-zinc-200 rounded-xl flex justify-between items-center bg-white hover:border-purple-300 transition-colors opacity-60">
-                        <div>
-                          <p className="text-xs font-bold text-zinc-900">Wig Install</p>
-                          <p className="text-[10px] text-zinc-500 mt-1">1h • ₦10,000</p>
+                        <div className="p-3 bg-zinc-900 rounded-xl border border-zinc-800">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium text-sm">Silk Bonnet</p>
+                              <p className="text-[10px] text-zinc-500 mt-0.5">Item • ₦5,000</p>
+                            </div>
+                            <button className="bg-zinc-800 text-white text-[10px] font-medium px-3 py-1.5 rounded-lg">Buy</button>
+                          </div>
                         </div>
-                        <button className="bg-zinc-100 text-zinc-400 text-[10px] font-bold px-3 py-2 rounded-lg" disabled>Full</button>
+
+                        <div className="p-3 bg-zinc-900/50 rounded-xl border border-zinc-800/50 opacity-60">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium text-sm">Wig Install</p>
+                              <p className="text-[10px] text-zinc-500 mt-0.5">1h • ₦10,000</p>
+                            </div>
+                            <button className="bg-zinc-800 text-zinc-500 text-[10px] font-medium px-3 py-1.5 rounded-lg" disabled>Full</button>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="h-16 border-t border-zinc-100 flex justify-around items-center px-4">
-                    <div className="w-6 h-6 bg-zinc-900 rounded-full"></div>
-                    <div className="w-6 h-6 bg-zinc-100 rounded-full"></div>
-                    <div className="w-6 h-6 bg-zinc-100 rounded-full"></div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="absolute -right-4 top-20 bg-white border border-zinc-200 p-3 rounded-xl">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center text-green-600">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+
+                {/* Floating Badge */}
+                <div className="absolute -right-6 top-24 bg-zinc-900 border border-zinc-800 p-3 rounded-xl shadow-lg" style={{ transform: 'translateZ(40px)' }}>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 bg-green-500/10 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-medium">Payment</p>
+                      <p className="text-xs font-semibold">Received</p>
+                    </div>
                   </div>
-                  <span className="text-xs font-bold text-zinc-900">Payment Received</span>
                 </div>
               </div>
             </div>
@@ -305,106 +315,129 @@ export default function Landing() {
         </section>
 
         {/* Advantage Section */}
-        <section className="py-24 border-y border-zinc-200">
-           <div className="grid md:grid-cols-2 gap-16 items-center">
-             <div className="order-2 md:order-1">
-               <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden">
-                  <div className="bg-zinc-100 px-6 py-3 border-b border-zinc-200 flex items-center gap-2">
-                    <div className="flex gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-full bg-zinc-300"></div>
-                      <div className="w-2.5 h-2.5 rounded-full bg-zinc-300"></div>
+        <section className="py-20 border-t border-zinc-800 ">
+          <div className="px-6">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div className="order-2 lg:order-1">
+                <div className="relative scale-95" style={{ transform: 'perspective(1000px) rotateY(4deg)', transformStyle: 'preserve-3d' }}>
+                  <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6 shadow-xl">
+                    <div className="flex items-center gap-2 mb-5 pb-5 border-b border-zinc-800">
+                      <div className="flex gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
+                      </div>
+                      <div className="flex-1 bg-zinc-950 h-7 rounded-md text-[10px] text-zinc-500 flex items-center px-2.5 font-mono">
+                        booknaija.com/yourname
+                      </div>
                     </div>
-                    <div className="flex-1 bg-white h-5 rounded-md text-[10px] text-zinc-400 flex items-center px-2 font-mono">
-                      booknaija.com/braids
+                    <div className="text-center py-6">
+                      <p className="text-zinc-500 text-sm mb-2">Your Custom Link</p>
+                      <div className="text-3xl md:text-4xl font-bold tracking-tight">
+                        booknaija.com/<span className="text-white">you</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="p-10 text-center">
-                     <p className="text-zinc-400 text-sm font-medium mb-2">Your Custom Link</p>
-                     <div className="text-3xl md:text-4xl font-black text-zinc-900 tracking-tight">
-                       booknaija.com/<span className="text-purple-600">you</span>
-                     </div>
-                  </div>
-               </div>
-             </div>
-             <div className="order-1 md:order-2">
-               <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 mb-6">
-                 Sell more than just your time.
-               </h2>
-               <p className="text-zinc-500 text-lg mb-8 leading-relaxed">
-                 Stop losing sales to missed DMs. Your BookNaija link is a 24/7 storefront that handles bookings, product sales, and payments automatically.
-               </p>
-               <ul className="space-y-4">
-                 {['Custom business URL', 'Secure Paystack Integration', 'Real-time availability', 'Sell services & products'].map(function (item) {
-                   return (
-                     <li key={item} className="flex items-center gap-3 text-sm font-medium text-zinc-700">
-                       <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
-                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                       </div>
-                       {item}
-                     </li>
-                   );
-                 })}
-               </ul>
-             </div>
-           </div>
+                </div>
+              </div>
+              
+              <div className="order-1 lg:order-2">
+                <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-5">
+                  Sell more than just your <span className="text-white">time</span>.
+                </h2>
+                <p className="text-zinc-400 text-base mb-7 leading-relaxed">
+                  Stop losing sales to missed DMs. Your BookNaija link is a 24/7 storefront that handles bookings, product sales, and payments automatically.
+                </p>
+                <ul className="space-y-3.5">
+                  {['Custom business URL', 'Secure Paystack Integration', 'Real-time availability', 'Sell services & products'].map(function (item) {
+                    return (
+                      <li key={item} className="flex items-center gap-3.5 text-sm">
+                        <div className="w-5 h-5 bg-zinc-800 rounded-full flex items-center justify-center flex-shrink-0">
+                          <svg className="w-3 h-3 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <span className="font-medium">{item}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Pricing Section */}
-        <section id="pricing" className="py-24">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <section className="py-24 px-6">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 mb-6">
-                One price. <br />No hidden fees.
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-5">
+                One price. <br />
+                <span className="text-zinc-500">No hidden fees.</span>
               </h2>
-              <p className="text-zinc-500 text-lg mb-8 leading-relaxed">
+              <p className="text-zinc-400 text-base mb-10 leading-relaxed">
                 For the price of a nice lunch, you get a complete booking engine and e-commerce store. We don't take a cut of your earnings.
               </p>
-              <div className="grid grid-cols-2 gap-y-6 gap-x-8">
+              <div className="grid grid-cols-2 gap-5">
                 {['No commissions', 'Unlimited bookings', 'Priority WhatsApp support', 'Auto-reminders', 'Product inventory', 'Refer & Earn'].map(function (item) {
                   return (
-                    <div key={item} className="flex items-center gap-3 text-sm font-semibold text-zinc-800">
-                      <div className="w-1.5 h-1.5 bg-purple-600 rounded-full"></div>
-                      {item}
+                    <div key={item} className="flex items-center gap-2.5">
+                      <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full" />
+                      <span className="font-medium text-sm text-zinc-300">{item}</span>
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            <div className="relative order-2 lg:order-1">
-              <div className="bg-white p-10 rounded-3xl border-2 border-zinc-900 relative">
-                <div className="absolute -top-5 left-8 bg-purple-600 text-white px-4 py-1.5 rounded-full text-xs font-bold tracking-wide uppercase">
+            <div className="relative">
+              <div className="absolute inset-0 bg-zinc-700/20 blur-3xl rounded-full" />
+              <div className="relative bg-zinc-900 p-8 rounded-2xl border border-zinc-800">
+                <div className="absolute -top-4 left-6 bg-white text-zinc-900 px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
                   All Access
                 </div>
-                <div className="pt-4">
-                  <p className="text-zinc-400 text-sm font-semibold uppercase tracking-wider mb-2">Monthly Plan</p>
+                
+                <div className="pt-5">
+                  <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2.5">Monthly Plan</p>
                   
-                  <div className="mb-8">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-6xl font-bold text-zinc-900 tracking-tighter">₦2,500</span>
-                      <span className="text-zinc-400 font-medium">/month</span>
+                  <div className="mb-7">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-5xl font-bold tracking-tighter">₦2,500</span>
+                      <span className="text-zinc-500 font-medium text-sm">/month</span>
                     </div>
                   </div>
 
-                  <ul className="space-y-4 mb-10 text-sm text-zinc-600 font-medium">
-                    <li className="flex items-center gap-3"><svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg> Sell Services & Products</li>
-                    <li className="flex items-center gap-3"><svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg> Secure Paystack Payouts</li>
-                    <li className="flex items-center gap-3"><svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg> Google Calendar Sync</li>
-                    <li className="flex items-center gap-3 text-purple-600 font-bold"> Refer 3 friends = 1 Free Month</li>
+                  <ul className="space-y-3.5 mb-8 text-sm">
+                    <li className="flex items-center gap-2.5 text-zinc-300">
+                      <svg className="w-4 h-4 text-zinc-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      Sell Services & Products
+                    </li>
+                    <li className="flex items-center gap-2.5 text-zinc-300">
+                      <svg className="w-4 h-4 text-zinc-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      Secure Paystack Payouts
+                    </li>
+                    <li className="flex items-center gap-2.5 text-zinc-300">
+                      <svg className="w-4 h-4 text-zinc-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      Google Calendar Sync
+                    </li>
+                    <li className="flex items-center gap-2.5 text-white font-medium">
+                      Refer 3 friends = 1 Free Month
+                    </li>
                   </ul>
+                  
                   <Link 
                     to="/signup" 
-                    className="block w-full bg-zinc-900 text-white py-4 font-bold rounded-xl hover:bg-zinc-700 transition-all active:scale-95 text-center"
+                    className="block w-full bg-white text-zinc-900 py-3.5 font-semibold rounded-xl hover:bg-zinc-200 transition-all text-center hover:scale-[1.02] text-sm"
                   >
                     Start Your Storefront
                   </Link>
                   
-                  <div className="mt-4 text-center">
-                    <p className="text-xs text-zinc-400">Cancel anytime. No contracts.</p>
-                    <p className="mt-1 text-[10px] text-zinc-300 leading-relaxed max-w-xs mx-auto">
-                      Earnings are paid directly to your bank via Paystack. Settlement takes up to 24 hours on business days (excludes weekends & public holidays).
-                    </p>
-                  </div>
+                  <p className="mt-3.5 text-xs text-zinc-500 text-center">Cancel anytime. No contracts.</p>
                 </div>
               </div>
             </div>
@@ -412,22 +445,23 @@ export default function Landing() {
         </section>
 
         {/* Steps Section */}
-        <section className="py-24 border-t border-zinc-100">
+        <section className="py-20 border-t border-zinc-800 px-6">
           <div className="text-center mb-16 max-w-2xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-4 tracking-tight">Ready in 24 hours</h2>
-            <p className="text-zinc-500 font-medium">We handle technical setup. You just handle the business.</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-3 tracking-tight">Ready in <span className="text-white">30 minutes</span></h2>
+            <p className="text-zinc-400 text-base">We handle technical setup. You just handle the business.</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8 relative">
-            <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-0.5 bg-zinc-100 -z-10"></div>
+          
+          <div className="grid md:grid-cols-3 gap-6 relative">
+            <div className="hidden md:block absolute top-14 left-[16%] right-[16%] h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent" />
             
             {steps.map(function (s) {
               return (
-                <div key={s.n} className="relative p-8 rounded-2xl bg-white border border-zinc-100 hover:border-purple-200 transition-all">
-                  <div className="w-10 h-10 bg-white border border-zinc-200 text-zinc-900 rounded-full flex items-center justify-center font-bold mb-6 relative z-10">
+                <div key={s.n} className="relative bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800 hover:border-zinc-700 transition-all group">
+                  <div className="w-10 h-10 bg-zinc-800 border border-zinc-700 text-white rounded-xl flex items-center justify-center font-bold text-base mb-5 relative z-10 group-hover:scale-105 transition-transform">
                     {s.n}
                   </div>
-                  <h4 className="text-lg font-bold mb-3 text-zinc-900">{s.t}</h4>
-                  <p className="text-zinc-500 text-sm leading-relaxed font-medium">{s.d}</p>
+                  <h4 className="text-lg font-semibold mb-2">{s.t}</h4>
+                  <p className="text-zinc-400 text-sm leading-relaxed">{s.d}</p>
                 </div>
               );
             })}
@@ -435,20 +469,21 @@ export default function Landing() {
         </section>
 
         {/* Features Grid */}
-        <section className="py-24 border-y border-zinc-200">
-          <div className="max-w-4xl mx-auto text-center mb-20">
-            <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-4 tracking-tight">Included in your plan</h2>
-            <p className="text-zinc-500 text-lg font-medium">Everything you need to run your business from your phone.</p>
+        <section className="py-24 border-y border-zinc-800 px-6 ">
+          <div className="max-w-4xl mx-auto text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-3 tracking-tight">Included in your plan</h2>
+            <p className="text-zinc-400 text-base">Everything you need to run your business from your phone.</p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {features.map(function (f) {
               return (
-                <div key={f.t} className="p-6 bg-white border border-zinc-200 rounded-2xl hover:-translate-y-1 transition-transform duration-200">
-                   <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center mb-4">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">{f.icon}</svg>
-                   </div>
-                   <h4 className="text-base font-bold mb-2 text-zinc-900 tracking-tight">{f.t}</h4>
-                   <p className="text-zinc-500 text-sm font-medium leading-relaxed">{f.d}</p>
+                <div key={f.t} className="p-5 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-all group hover:-translate-y-0.5">
+                  <div className="w-10 h-10 bg-zinc-800 text-zinc-400 rounded-lg flex items-center justify-center mb-3.5 group-hover:scale-105 transition-transform">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">{f.icon}</svg>
+                  </div>
+                  <h4 className="text-base font-semibold mb-1.5">{f.t}</h4>
+                  <p className="text-zinc-400 text-sm leading-relaxed">{f.d}</p>
                 </div>
               );
             })}
@@ -456,56 +491,51 @@ export default function Landing() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white pt-20 pb-12 px-6">
+      {/* Footer - White background */}
+      <footer className="bg-white border-t border-zinc-200 pt-16 pb-10 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-10 mb-16">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-10 mb-14">
             <div>
               <Link to="/" className="flex items-center">
-                <img 
-                  src="/fav-removebg.png" 
-                  alt="BookNaija Logo" 
-                  className="h-20 w-auto object-contain" 
-                />
+                <img src="/fav-removebg.png" alt="BookNaija Logo" className="h-11 w-auto object-contain" />
               </Link>
             </div>
             
-            <div className="flex gap-16">
-              <div className="space-y-4">
+            <div className="flex gap-14">
+              <div className="space-y-3.5">
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Product</p>
-                <ul className="space-y-3 text-sm font-medium text-zinc-600">
-                  <li><Link to="/#pricing" className="hover:text-zinc-900 transition-colors">Pricing</Link></li>
-                  <li><Link to="/#features" className="hover:text-zinc-900 transition-colors">Features</Link></li>
-                  <li><Link to="/signup" className="hover:text-zinc-900 transition-colors">Sign Up</Link></li>
+                <ul className="space-y-2.5 text-sm">
+                  <li><Link to="/#pricing" className="text-zinc-600 hover:text-zinc-900 transition-colors">Pricing</Link></li>
+                  <li><Link to="/#features" className="text-zinc-600 hover:text-zinc-900 transition-colors">Features</Link></li>
+                  <li><Link to="/signup" className="text-zinc-600 hover:text-zinc-900 transition-colors">Sign Up</Link></li>
                 </ul>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-3.5">
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Partners</p>
-                <ul className="space-y-3 text-sm font-medium text-zinc-600">
-                  <li><Link to="/affiliate-signup" className="hover:text-zinc-900 font-bold text-purple-600 transition-colors">Become an Affiliate</Link></li>
+                <ul className="space-y-2.5 text-sm">
+                  <li><Link to="/affiliate-signup" className="text-zinc-700 font-medium hover:text-zinc-900 transition-colors">Become an Affiliate</Link></li>
                 </ul>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3.5">
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Company</p>
-                <ul className="space-y-3 text-sm font-medium text-zinc-600">
-                  {/* ADDED BLOG LINK HERE */}
-                  <li><Link to="/blog" className="hover:text-zinc-900 transition-colors">Blog</Link></li>
-                  <li><Link to="/privacy" className="hover:text-zinc-900 transition-colors">Privacy Policy</Link></li>
-                  <li><Link to="/terms" className="hover:text-zinc-900 transition-colors">Terms of Service</Link></li>
+                <ul className="space-y-2.5 text-sm">
+                  <li><Link to="/blog" className="text-zinc-600 hover:text-zinc-900 transition-colors">Blog</Link></li>
+                  <li><Link to="/privacy" className="text-zinc-600 hover:text-zinc-900 transition-colors">Privacy Policy</Link></li>
+                  <li><Link to="/terms" className="text-zinc-600 hover:text-zinc-900 transition-colors">Terms of Service</Link></li>
                 </ul>
               </div>
             </div>
           </div>
           
-          <div className="pt-8 border-t border-zinc-50 flex flex-col md:flex-row justify-between gap-6 items-center">
-            <p className="text-zinc-400 text-xs font-medium">
+          <div className="pt-7 border-t border-zinc-100 flex flex-col md:flex-row justify-between gap-5 items-center">
+            <p className="text-zinc-500 text-sm">
               © {new Date().getFullYear()} BookNaija Technologies.
             </p>
-            <div className="flex gap-6 text-xs font-medium text-zinc-400">
-              <Link to="/terms" className="hover:text-zinc-900 transition-colors">Terms</Link>
-              <Link to="/privacy" className="hover:text-zinc-900 transition-colors">Privacy</Link>
+            <div className="flex gap-5 text-sm text-zinc-500">
+              <Link to="/terms" className="hover:text-zinc-700 transition-colors">Terms</Link>
+              <Link to="/privacy" className="hover:text-zinc-700 transition-colors">Privacy</Link>
             </div>
           </div>
         </div>

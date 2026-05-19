@@ -12,37 +12,78 @@ exports.handler = async (event) => {
     const { slug, business_name, settlement_bank, account_number, account_name, email, phone } = JSON.parse(event.body);
 
     if (!slug || !settlement_bank || !account_number) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
+      return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields: slug, settlement_bank, account_number' }) };
     }
 
-    // 1. Try creating a new subaccount on Paystack
-    const subRes = await fetch('https://api.paystack.co/subaccount', {
-      method: 'POST',
-      headers: { 
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`, 
-        'Content-Type': 'application/json' 
-      },
-      body: JSON.stringify({
-        business_name: business_name,
-        settlement_bank: settlement_bank,
-        account_number: account_number,
-        percentage_charge: 5,
-        primary_contact_name: account_name || business_name,
-        primary_contact_email: email,
-        primary_contact_phone: phone,
-      })
-    });
-
-    const subData = await subRes.json();
-
-    if (!subRes.ok || !subData.subaccount_code) {
-      return { statusCode: 400, body: JSON.stringify({ error: subData.message || 'Failed to verify bank details. Please check your account number and bank.' }) };
+    const secretKey = process.env.PAYSTACK_SECRET_KEY;
+    if (!secretKey) {
+      return { statusCode: 500, body: JSON.stringify({ error: 'Payment not configured' }) };
     }
 
-    // 2. Update the business record in Supabase with the valid subaccount code
+    // 1. Get the existing subaccount code from Supabase
+    const { data: biz, error: bizErr } = await supabase
+      .from('businesses')
+      .select('subaccount_code')
+      .eq('slug', slug)
+      .single();
+
+    if (bizErr || !biz) {
+      return { statusCode: 404, body: JSON.stringify({ error: 'Business not found' }) };
+    }
+
+    const existingCode = biz.subaccount_code;
+    const hasRealCode = existingCode && existingCode !== 'ACCT_PENDING' && existingCode.startsWith('ACCT_');
+
+    let finalSubaccountCode = null;
+
+    if (hasRealCode) {
+      // ── UPDATE existing subaccount ──
+      const updateRes = await fetch(`https://api.paystack.co/subaccount/${existingCode}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${secretKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          business_name: business_name,
+          settlement_bank: settlement_bank,
+          account_number: account_number,
+          primary_contact_name: account_name || business_name,
+          primary_contact_email: email,
+          primary_contact_phone: phone,
+        })
+      });
+
+      const updateData = await updateRes.json();
+
+      if (!updateData.status) {
+        // If update fails, try creating a new one as fallback
+        console.log('Update failed, trying create:', updateData.message);
+        const createResult = await createNewSubaccount(secretKey, business_name, settlement_bank, account_number, account_name, email, phone);
+        if (createResult.error) {
+          return { statusCode: 400, body: JSON.stringify({ error: createResult.error }) };
+        }
+        finalSubaccountCode = createResult.subaccount_code;
+      } else {
+        finalSubaccountCode = updateData.data?.subaccount_code || existingCode;
+      }
+    } else {
+      // ── CREATE new subaccount ──
+      const createResult = await createNewSubaccount(secretKey, business_name, settlement_bank, account_number, account_name, email, phone);
+      if (createResult.error) {
+        return { statusCode: 400, body: JSON.stringify({ error: createResult.error }) };
+      }
+      finalSubaccountCode = createResult.subaccount_code;
+    }
+
+    if (!finalSubaccountCode) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'Failed to get subaccount code from Paystack' }) };
+    }
+
+    // 2. Update Supabase with the new subaccount code
     const { error: updateErr } = await supabase
       .from('businesses')
-      .update({ subaccount_code: subData.subaccount_code })
+      .update({ subaccount_code: finalSubaccountCode })
       .eq('slug', slug);
 
     if (updateErr) {
@@ -50,12 +91,46 @@ exports.handler = async (event) => {
       return { statusCode: 500, body: JSON.stringify({ error: 'Verified, but failed to save. Please contact support.' }) };
     }
 
-    return { 
-      statusCode: 200, 
-      body: JSON.stringify({ ok: true, subaccount_code: subData.subaccount_code }) 
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ ok: true, subaccount_code: finalSubaccountCode })
     };
 
   } catch (err) {
+    console.error('update-subaccount error:', err);
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };
+
+// ── Helper: Create a new subaccount ──
+async function createNewSubaccount(secretKey, business_name, settlement_bank, account_number, account_name, email, phone) {
+  const res = await fetch('https://api.paystack.co/subaccount', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${secretKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      business_name: business_name,
+      settlement_bank: settlement_bank,
+      account_number: account_number,
+      percentage_charge: 5,
+      primary_contact_name: account_name || business_name,
+      primary_contact_email: email,
+      primary_contact_phone: phone,
+    })
+  });
+
+  const data = await res.json();
+
+  if (!data.status || !data.data?.subaccount_code) {
+    // Check if error is "already exists" — try to extract useful message
+    const msg = data.message || 'Failed to verify bank details';
+    if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('duplicate')) {
+      return { error: 'This bank account is already linked to another subaccount. Please contact support.' };
+    }
+    return { error: msg };
+  }
+
+  return { subaccount_code: data.data.subaccount_code };
+}

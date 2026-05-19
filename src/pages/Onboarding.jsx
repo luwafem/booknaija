@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 function updateNestedState(state, id, updates) {
   return state.map(function(item) {
@@ -40,19 +40,63 @@ function updateNestedOption(state, foodId, addonId, optIdx, updates) {
 }
 
 export default function Onboarding() {
-  const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const slugFromUrl = searchParams.get('slug');
 
-  // --- UPDATED TO GRAB DATA FROM SESSION STORAGE AFTER PAYSTACK REDIRECT ---
-  var bizData = location.state || JSON.parse(sessionStorage.getItem('pending_signup_data')) || {};
-  
-  // --- CLEANUP SESSION STORAGE SO THEY DON'T GET STUCK HERE IF THEY REFRESH ---
-  if (!location.state && sessionStorage.getItem('pending_signup_data')) {
-    sessionStorage.removeItem('pending_signup_data');
+  // ── Robust data loading: localStorage (survives Paystack redirect) → sessionStorage fallback ──
+  var bizData = null;
+
+  // 1. Try localStorage with slug-based key (most reliable after Paystack redirect)
+  if (slugFromUrl) {
+    var storedBySlug = localStorage.getItem('pending_signup_' + slugFromUrl);
+    if (storedBySlug) {
+      try { bizData = JSON.parse(storedBySlug); } catch(e) { bizData = null; }
+    }
   }
 
+  // 2. Fallback: old sessionStorage key (for backward compat / same-tab navigation)
+  if (!bizData) {
+    var sessionData = sessionStorage.getItem('pending_signup_data');
+    if (sessionData) {
+      try { bizData = JSON.parse(sessionData); } catch(e) { bizData = null; }
+      sessionStorage.removeItem('pending_signup_data');
+    }
+  }
+
+  // 3. Fallback: old localStorage key without slug
+  if (!bizData) {
+    var localData = localStorage.getItem('pending_signup_data');
+    if (localData) {
+      try { bizData = JSON.parse(localData); } catch(e) { bizData = null; }
+      localStorage.removeItem('pending_signup_data');
+    }
+  }
+
+  // 4. If still no data and no slug in URL, redirect to signup
+  if (!bizData && !slugFromUrl) {
+    return (
+      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center px-6">
+        <div className="text-center max-w-sm">
+          <div className="w-16 h-16 bg-red-900/40 border border-red-700 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold mb-2">Session expired</h2>
+          <p className="text-zinc-400 text-sm mb-6">Your signup data wasn't found. This can happen if the page was open too long or refreshed incorrectly.</p>
+          <Link to="/signup" className="inline-flex items-center justify-center bg-white hover:bg-zinc-200 text-zinc-900 px-6 py-3 rounded-xl text-sm font-semibold transition-colors">
+            Start Over
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!bizData) bizData = {};
+
   var businessName = (bizData && bizData.businessName) ? bizData.businessName : 'New Business';
-  var businessSlug = (bizData && bizData.businessSlug) ? bizData.businessSlug : 'new-business';
+  var businessSlug = (bizData && bizData.businessSlug) ? bizData.businessSlug : (slugFromUrl || 'new-business');
   var businessType = (bizData && bizData.businessType) ? bizData.businessType : '';
   var brandColor = (bizData && bizData.brandColor) ? bizData.brandColor : '#c8a97e';
   var logoUrl = (bizData && bizData.logoUrl) ? bizData.logoUrl : '';
@@ -69,56 +113,31 @@ export default function Onboarding() {
   var isAutoBusiness = businessType === 'Auto' || businessType === 'Auto Dealer / Rental';
   var isFoodBusiness = businessType === 'Restaurant' || businessType === 'Restaurant / Food';
 
-  // ─── NEW SECURITY STATES ───
-  var securityCodeArr = useState('');
-  var securityCode = securityCodeArr[0];
-  var setSecurityCode = securityCodeArr[1];
+  var [currentStep, setCurrentStep] = useState(1);
+  var [securityCode, setSecurityCode] = useState('');
+  var [securityQuestion1, setSecurityQuestion1] = useState('');
+  var [securityAnswer1, setSecurityAnswer1] = useState('');
+  var [securityQuestion2, setSecurityQuestion2] = useState('');
+  var [securityAnswer2, setSecurityAnswer2] = useState('');
+  var [loading, setLoading] = useState(false);
+  var [error, setError] = useState('');
 
-  var securityQuestion1Arr = useState('');
-  var securityQuestion1 = securityQuestion1Arr[0];
-  var setSecurityQuestion1 = securityQuestion1Arr[1];
-
-  var securityAnswer1Arr = useState('');
-  var securityAnswer1 = securityAnswer1Arr[0];
-  var setSecurityAnswer1 = securityAnswer1Arr[1];
-
-  var securityQuestion2Arr = useState('');
-  var securityQuestion2 = securityQuestion2Arr[0];
-  var setSecurityQuestion2 = securityQuestion2Arr[1];
-
-  var securityAnswer2Arr = useState('');
-  var securityAnswer2 = securityAnswer2Arr[0];
-  var setSecurityAnswer2 = securityAnswer2Arr[1];
-
-  var loadingArr = useState(false);
-  var loading = loadingArr[0];
-  var setLoading = loadingArr[1];
-  var errorArr = useState('');
-  var errorMsg = errorArr[0];
-  var setError = errorArr[1];
-
-  var galleryArr = useState([{ id: 'default', group: 'Gallery', images: [] }]);
-  var gallery = galleryArr[0];
-  var setGallery = galleryArr[1];
-
-  var servicesArr = useState([{ id: 1, name: '', duration: '', price: '', description: '', image: '', images: [] }]);
-  var services = servicesArr[0];
-  var setServices = servicesArr[1];
-
-  var productsArr = useState([{ id: 1, name: '', price: '', description: '', image: '', images: [] }]);
-  var products = productsArr[0];
-  var setProducts = productsArr[1];
-
-  var carsArr = useState([]);
-  var cars = carsArr[0];
-  var setCars = carsArr[1];
-
-  var foodsArr = useState([]);
-  var foods = foodsArr[0];
-  var setFoods = foodsArr[1];
+  var [gallery, setGallery] = useState([{ id: 'default', group: 'Gallery', images: [] }]);
+  var [services, setServices] = useState([{ id: 1, name: '', duration: '', price: '', description: '', image: '', images: [] }]);
+  var [products, setProducts] = useState([{ id: 1, name: '', price: '', description: '', image: '', images: [] }]);
+  var [cars, setCars] = useState([]);
+  var [foods, setFoods] = useState([]);
 
   var CLOUD_NAME = 'deexaiik4';
   var UPLOAD_PRESET = 'BizUploads';
+
+  var steps = [
+    { id: 1, title: 'Security', desc: 'Dashboard access' },
+    { id: 2, title: 'Gallery', desc: 'Your photos' },
+    { id: 3, title: isAutoBusiness ? 'Cars' : isFoodBusiness ? 'Menu' : 'Services', desc: 'What you offer' },
+    { id: 4, title: isAutoBusiness || isFoodBusiness ? 'Review' : 'Products', desc: isAutoBusiness || isFoodBusiness ? 'Final check' : 'Items for sale' },
+    ...(isAutoBusiness || isFoodBusiness ? [] : [{ id: 5, title: 'Review', desc: 'Final check' }])
+  ];
 
   useEffect(function() {
     if (!window.cloudinary) {
@@ -476,12 +495,25 @@ export default function Onboarding() {
     });
   }
 
+  function nextStep() {
+    if (currentStep < steps.length) {
+      setCurrentStep(c => c + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  function prevStep() {
+    if (currentStep > 1) {
+      setCurrentStep(c => c - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    // ─── SECURITY VALIDATION ───
     if (securityCode.length !== 4) {
       setError('Please set a valid 4-digit security code.');
       setLoading(false);
@@ -503,8 +535,6 @@ export default function Onboarding() {
       if (!val) return 0;
       return parseInt(String(val).replace(/,/g, '')) || 0;
     }
-
-    // ─── Build clean JSON arrays ───
 
     var servicesData = services.filter(function(s) { return s.name; }).map(function(s) {
       return {
@@ -593,8 +623,6 @@ export default function Onboarding() {
       ? galleryData
       : [{ group: 'Gallery', images: [] }];
 
-    // ─── Build the full JSON payload for Supabase ───
-
     var payload = {
       slug: businessSlug,
       name: businessName,
@@ -606,7 +634,7 @@ export default function Onboarding() {
       whatsapp: whatsapp,
       email: email,
       location: locationAddr,
-      hours: 'Mon\u2013Sun, 9 AM \u2013 6 PM',
+      hours: 'Mon–Sun, 9 AM – 6 PM',
       accent: brandColor,
       hero: 'https://picsum.photos/seed/' + businessSlug + '/800/600',
       socials: { instagram: instagram, tiktok: tiktok },
@@ -618,13 +646,11 @@ export default function Onboarding() {
       servicesEnabled: !isAutoBusiness,
       productsEnabled: !isAutoBusiness,
       foodEnabled: isFoodBusiness,
-      // ─── NEW SECURITY PAYLOAD ───
       securityCode: securityCode,
       securityQuestion1: securityQuestion1,
       securityAnswer1: securityAnswer1.trim().toLowerCase(),
       securityQuestion2: securityQuestion2,
       securityAnswer2: securityAnswer2.trim().toLowerCase(),
-      // ─── END SECURITY PAYLOAD ───
       gallery: finalGallery,
       services: servicesData,
       products: productsData,
@@ -632,13 +658,10 @@ export default function Onboarding() {
       food: foodsData
     };
 
-    // ─── Build FormData (summary only for email notification) ───
     var formData = new FormData();
-
     formData.append('_subject', 'New Business Setup: ' + businessName);
     formData.append('_replyto', email);
     formData.append('_gotcha', '');
-
     formData.append('business_name', businessName);
     formData.append('business_slug', businessSlug);
     formData.append('business_type', businessType);
@@ -652,9 +675,7 @@ export default function Onboarding() {
     formData.append('cars_count', String(carsData.length));
     formData.append('food_count', String(foodsData.length));
 
-    // ─── Send both requests concurrently ───
     Promise.all([
-      // 1. Email notification (lightweight summary)
       fetch('https://formspree.io/f/xyklbbqy', {
         method: 'POST',
         body: formData,
@@ -663,8 +684,6 @@ export default function Onboarding() {
         console.warn('Formspree email notification failed:', err);
         return { ok: true };
       }),
-
-      // 2. Save to Supabase via Netlify function
       fetch('/.netlify/functions/save-business', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -676,10 +695,13 @@ export default function Onboarding() {
     })
     .then(function(data) {
       if (data.ok) {
-        // Save to sessionStorage so the success page survives a refresh
+        // ✅ Clean up ALL storage keys
+        localStorage.removeItem('pending_signup_' + businessSlug);
+        localStorage.removeItem('pending_signup_data');
+        sessionStorage.removeItem('pending_signup_data');
+
         sessionStorage.setItem('new_biz_slug', businessSlug);
         sessionStorage.setItem('new_biz_name', businessName);
-
         navigate('/onboarding-success', {
           state: {
             businessName: businessName,
@@ -698,10 +720,11 @@ export default function Onboarding() {
     });
   }
 
-  var inputBase = "w-full bg-white border border-zinc-200 text-zinc-900 text-sm rounded-xl px-4 py-3 placeholder-zinc-400 focus:outline-none focus:border-purple-600 transition-all";
-  var selectBase = "w-full appearance-none bg-white border border-zinc-200 text-zinc-900 text-sm rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-purple-600 transition-all cursor-pointer";
-  var sectionTitle = "text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1 mt-6";
+  var inputBase = "w-full bg-zinc-800 border border-zinc-700 text-white text-sm rounded-xl px-4 py-3 placeholder-zinc-400 focus:outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500 transition-all duration-200";
+  var selectBase = "w-full appearance-none bg-zinc-800 border border-zinc-700 text-white text-sm rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500 transition-all duration-200 cursor-pointer";
+  var sectionTitle = "text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2 mt-1";
   var sectionDesc = "text-xs text-zinc-400 mb-3 -mt-1";
+  var labelBase = "block text-sm font-medium text-zinc-200 mb-1.5";
 
   var totalGalleryImages = 0;
   for (var gi = 0; gi < gallery.length; gi++) {
@@ -709,374 +732,567 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-zinc-900 font-sans py-12 px-4">
-      <div className="max-w-3xl mx-auto">
-        <header className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-zinc-900">Setup {businessName}</h1>
-          <p className="text-zinc-500">Add your inventory, services, cars, and food.</p>
-        </header>
+    <div className="min-h-screen bg-zinc-950 text-white font-sans selection:bg-zinc-700 selection:text-white">
+      
+      <nav className="bg-white sticky top-0 z-50 border-b border-zinc-200">
+        <div className="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
+          <Link to="/" className="flex items-center flex-shrink-0">
+            <img src="/fav-removebg.png" alt="BookNaija Logo" className="h-9 w-auto object-contain" />
+          </Link>
+          <div className="flex items-center gap-4 flex-shrink-0">
+            <Link to="/dashboard" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">
+              Manage Business
+            </Link>
+            <Link to="/signup" className="text-sm font-semibold text-white bg-zinc-900 px-5 py-2.5 rounded-lg hover:bg-zinc-800 transition-all">
+              Get Started
+            </Link>
+          </div>
+        </div>
+      </nav>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-
-          {/* HONEYPOT */}
-          <input
-            type="text"
-            id="formspree_gotcha"
-            name="_gotcha"
-            style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, width: 0 }}
-            tabIndex={-1}
-            autoComplete="off"
-          />
-
-          {/* ─── DASHBOARD SECURITY SECTION ─── */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100">
-            <h2 className={sectionTitle}>Dashboard Security</h2>
-            <p className={sectionDesc}>You will need these to log into your management dashboard.</p>
-            
-            <div className="space-y-5">
-              <div>
-                <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">4-Digit Security Code</label>
-                <input 
-                  className={inputBase + " font-mono tracking-widest text-center text-xl"} 
-                  placeholder="••••" 
-                  type="password"
-                  maxLength={4}
-                  inputMode="numeric"
-                  value={securityCode}
-                  onChange={function(e) { setSecurityCode(e.target.value.replace(/\D/g, '')); }}
-                  autoFocus
+      <main className="flex items-start justify-center px-4 py-8 md:py-12">
+        <div className="w-full max-w-2xl">
+          
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium text-zinc-400">
+                Step {currentStep} of {steps.length}
+              </span>
+              <span className="text-xs text-zinc-500">
+                {steps.find(s => s.id === currentStep)?.title}
+              </span>
+            </div>
+            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-white rounded-full transition-all duration-300"
+                style={{ width: `${(currentStep / steps.length) * 100}%` }}
+              />
+            </div>
+            <div className="flex justify-center gap-1.5 mt-3 md:hidden">
+              {steps.map(step => (
+                <button
+                  key={step.id}
+                  type="button"
+                  onClick={() => setCurrentStep(step.id)}
+                  className={`w-2 h-2 rounded-full transition-all ${
+                    currentStep === step.id ? 'bg-white w-4' : 'bg-zinc-700 hover:bg-zinc-600'
+                  }`}
                 />
-              </div>
-              
-              <div className="border-t border-zinc-100 pt-5">
-                <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Security Question 1</label>
-                <select className={selectBase} value={securityQuestion1} onChange={function(e) { setSecurityQuestion1(e.target.value); }}>
-                  <option value="" disabled>Select a question...</option>
-                  <option value="What is your pet's name?">What is your pet's name?</option>
-                  <option value="What city were you born in?">What city were you born in?</option>
-                  <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
-                  <option value="What was the name of your first school?">What was the name of your first school?</option>
-                </select>
-                <input className={inputBase + " mt-2"} placeholder="Your answer" value={securityAnswer1} onChange={function(e) { setSecurityAnswer1(e.target.value); }} />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Security Question 2</label>
-                <select className={selectBase} value={securityQuestion2} onChange={function(e) { setSecurityQuestion2(e.target.value); }}>
-                  <option value="" disabled>Select a question...</option>
-                  <option value="What is your favorite childhood movie?">What is your favorite childhood movie?</option>
-                  <option value="What street did you grow up on?">What street did you grow up on?</option>
-                  <option value="What is the name of your best friend?">What is the name of your best friend?</option>
-                  <option value="What was your first car?">What was your first car?</option>
-                </select>
-                <input className={inputBase + " mt-2"} placeholder="Your answer" value={securityAnswer2} onChange={function(e) { setSecurityAnswer2(e.target.value); }} />
-              </div>
+              ))}
             </div>
           </div>
 
-          {/* GALLERY */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100">
-            <div className="flex items-center justify-between mb-1">
-              <h2 className={sectionTitle}>Gallery Images</h2>
-              <span className="text-[10px] text-zinc-400 font-medium bg-zinc-100 px-2 py-0.5 rounded-full">
-                {totalGalleryImages} photo{totalGalleryImages !== 1 ? 's' : ''}
-              </span>
+          <form onSubmit={handleSubmit} className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-xl overflow-hidden">
+            
+            <div className="px-6 py-4 border-b border-zinc-800 bg-zinc-800/50">
+              <h2 className="text-lg font-bold text-white">
+                {steps.find(s => s.id === currentStep)?.title}
+              </h2>
+              <p className="text-sm text-zinc-400 mt-0.5">
+                {steps.find(s => s.id === currentStep)?.desc}
+              </p>
             </div>
-            <p className={sectionDesc}>Organise your photos into groups.</p>
-            <div className="space-y-6">
-              {gallery.map(function(group) {
-                return (
-                  <div key={group.id} className="border border-zinc-200 rounded-xl overflow-hidden bg-zinc-50/50">
-                    <div className="flex items-center gap-2 px-4 py-3 bg-white border-b border-zinc-100">
-                      <input
-                        type="text"
-                        value={group.group}
-                        onChange={function(e) { updateGroupName(group.id, e.target.value); }}
-                        placeholder="Group name (e.g. Our Work)"
-                        className="flex-1 text-sm font-semibold text-zinc-800 bg-transparent border-0 focus:outline-none placeholder-zinc-400"
-                      />
-                      {group.images.length > 0 && (
-                        <span className="text-[10px] text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">{group.images.length}</span>
-                      )}
-                      <button type="button" onClick={function() { removeGroup(group.id); }} className="text-zinc-300 hover:text-red-500 transition-colors p-1">✕</button>
-                    </div>
-                    <div className="p-3">
-                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                        {group.images.map(function(img, imgIdx) {
+
+            <div className="p-6">
+              
+              {currentStep === 1 && (
+                <div className="space-y-5">
+                  <div>
+                    <label className={labelBase}>4-Digit Security Code *</label>
+                    <input 
+                      className={inputBase + " font-mono tracking-widest text-center text-xl"} 
+                      placeholder="••••" 
+                      type="password"
+                      maxLength={4}
+                      inputMode="numeric"
+                      value={securityCode}
+                      onChange={function(e) { setSecurityCode(e.target.value.replace(/\D/g, '')); }}
+                      autoFocus
+                    />
+                    <p className="text-xs text-zinc-500 mt-1.5">You'll use this to access your dashboard</p>
+                  </div>
+                  
+                  <div className="border-t border-zinc-800 pt-5">
+                    <label className={labelBase}>Security Question 1 *</label>
+                    <select className={selectBase} value={securityQuestion1} onChange={function(e) { setSecurityQuestion1(e.target.value); }}>
+                      <option value="" disabled className="bg-zinc-800">Select a question...</option>
+                      <option value="What is your pet's name?" className="bg-zinc-800">What is your pet's name?</option>
+                      <option value="What city were you born in?" className="bg-zinc-800">What city were you born in?</option>
+                      <option value="What is your mother's maiden name?" className="bg-zinc-800">What is your mother's maiden name?</option>
+                      <option value="What was the name of your first school?" className="bg-zinc-800">What was the name of your first school?</option>
+                    </select>
+                    <input className={inputBase + " mt-2"} placeholder="Your answer" value={securityAnswer1} onChange={function(e) { setSecurityAnswer1(e.target.value); }} />
+                  </div>
+
+                  <div>
+                    <label className={labelBase}>Security Question 2 *</label>
+                    <select className={selectBase} value={securityQuestion2} onChange={function(e) { setSecurityQuestion2(e.target.value); }}>
+                      <option value="" disabled className="bg-zinc-800">Select a question...</option>
+                      <option value="What is your favorite childhood movie?" className="bg-zinc-800">What is your favorite childhood movie?</option>
+                      <option value="What street did you grow up on?" className="bg-zinc-800">What street did you grow up on?</option>
+                      <option value="What is the name of your best friend?" className="bg-zinc-800">What is the name of your best friend?</option>
+                      <option value="What was your first car?" className="bg-zinc-800">What was your first car?</option>
+                    </select>
+                    <input className={inputBase + " mt-2"} placeholder="Your answer" value={securityAnswer2} onChange={function(e) { setSecurityAnswer2(e.target.value); }} />
+                  </div>
+                </div>
+              )}
+
+              {currentStep === 2 && (
+                <div className="space-y-5">
+                  <div>
+                    <p className={sectionTitle}>Photo Gallery</p>
+                    <p className={sectionDesc}>Organize your photos into groups. Add at least one group.</p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {gallery.map(function(group) {
+                      return (
+                        <div key={group.id} className="border border-zinc-700 rounded-xl overflow-hidden bg-zinc-800/50">
+                          <div className="flex items-center gap-2 px-4 py-3 bg-zinc-800 border-b border-zinc-700">
+                            <input
+                              type="text"
+                              value={group.group}
+                              onChange={function(e) { updateGroupName(group.id, e.target.value); }}
+                              placeholder="Group name (e.g. Our Work)"
+                              className="flex-1 text-sm font-semibold text-white bg-transparent border-0 focus:outline-none placeholder-zinc-500"
+                            />
+                            {group.images.length > 0 && (
+                              <span className="text-[10px] text-zinc-400 bg-zinc-700 px-2 py-0.5 rounded-full">{group.images.length}</span>
+                            )}
+                            <button type="button" onClick={function() { removeGroup(group.id); }} className="text-zinc-500 hover:text-red-400 transition-colors p-1">✕</button>
+                          </div>
+                          <div className="p-3">
+                            <div className="grid grid-cols-3 gap-2">
+                              {group.images.map(function(img, imgIdx) {
+                                return (
+                                  <div key={imgIdx} className="relative aspect-square rounded-lg overflow-hidden bg-zinc-700 border border-zinc-700 group">
+                                    <img src={img} className="w-full h-full object-cover" alt="" />
+                                    <button type="button" onClick={function() { removeGalleryImage(group.id, imgIdx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 text-xs">✕</button>
+                                  </div>
+                                );
+                              })}
+                              <button type="button" onClick={function() { handleGalleryUpload(group.id); }} className="aspect-square rounded-lg border-2 border-dashed border-zinc-700 flex flex-col items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all">
+                                <svg className="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                                <span className="text-[10px]">Add</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <button type="button" onClick={addGroup} className="w-full py-2.5 rounded-xl border-2 border-dashed border-zinc-700 text-zinc-400 text-xs font-semibold hover:border-zinc-500 hover:text-zinc-300 transition-all flex items-center justify-center gap-1.5">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                    Add New Group
+                  </button>
+                </div>
+              )}
+
+              {currentStep === 3 && (
+                <div className="space-y-5">
+                  
+                  {!isAutoBusiness && !isFoodBusiness && (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className={sectionTitle}>Services</p>
+                          <p className={sectionDesc}>Add the services you offer.</p>
+                        </div>
+                        <button type="button" onClick={addService} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors">+ Add</button>
+                      </div>
+                      <div className="space-y-4">
+                        {services.map(function(service) {
                           return (
-                            <div key={imgIdx} className="relative aspect-square rounded-lg overflow-hidden bg-zinc-100 border border-zinc-200 group">
-                              <img src={img} className="w-full h-full object-cover" alt="" />
-                              <button type="button" onClick={function() { removeGalleryImage(group.id, imgIdx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 text-xs">✕</button>
+                            <div key={service.id} className="relative p-4 rounded-xl border border-zinc-700 bg-zinc-800/50">
+                              <button type="button" onClick={function() { removeService(service.id); }} className="absolute top-2 right-2 text-zinc-500 hover:text-red-400">✕</button>
+                              <div className="space-y-2">
+                                <input className={inputBase} placeholder="Service Name" value={service.name} onChange={function(e) { updateService(service.id, 'name', e.target.value); }} />
+                                <div className="grid grid-cols-2 gap-2">
+                                  <input className={inputBase} placeholder="Price (₦)" type="number" value={service.price} onChange={function(e) { updateService(service.id, 'price', e.target.value); }} />
+                                  <input className={inputBase} placeholder="Duration" value={service.duration} onChange={function(e) { updateService(service.id, 'duration', e.target.value); }} />
+                                </div>
+                                <textarea className={inputBase + " h-16 resize-none"} placeholder="Description" value={service.description} onChange={function(e) { updateService(service.id, 'description', e.target.value); }} />
+                              </div>
+                              <div className="mt-3">
+                                <p className="text-xs font-semibold text-zinc-400 mb-2">Images (Max 3)</p>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {(service.images || []).map(function(img, idx) {
+                                    return (
+                                      <div key={idx} className="aspect-square bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group">
+                                        <img src={img} className="w-full h-full object-cover" alt="" />
+                                        <button type="button" onClick={function() { removeServiceImage(service.id, idx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-xs">✕</button>
+                                      </div>
+                                    );
+                                  })}
+                                  {(service.images || []).length < 3 && (
+                                    <button type="button" onClick={function() { handleServiceImageUpload(service); }} className="aspect-square bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center hover:border-zinc-500 hover:text-zinc-300 transition-all">
+                                      <span className="text-xs">+ Photo</span>
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           );
                         })}
-                        <button type="button" onClick={function() { handleGalleryUpload(group.id); }} className="aspect-square rounded-lg border-2 border-dashed border-zinc-300 flex flex-col items-center justify-center text-zinc-400 hover:border-purple-500 hover:text-purple-500 transition-all">
-                          <svg className="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                          <span className="text-[10px]">Add</span>
-                        </button>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <button type="button" onClick={addGroup} className="mt-4 w-full py-2.5 rounded-xl border-2 border-dashed border-zinc-200 text-zinc-400 text-xs font-semibold hover:border-purple-500 hover:text-purple-500 transition-all flex items-center justify-center gap-1.5">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-              Add New Group
-            </button>
-          </div>
+                    </>
+                  )}
 
-          {/* SERVICES */}
-          {!isAutoBusiness && (
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className={sectionTitle}>Services</h2>
-                <button type="button" onClick={addService} className="text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-3 py-1.5 rounded-lg font-medium transition-colors">+ Add Service</button>
-              </div>
-              <div className="space-y-6">
-                {services.map(function(service) {
-                  return (
-                    <div key={service.id} className="relative p-4 rounded-xl border border-zinc-100 bg-zinc-50">
-                      <button type="button" onClick={function() { removeService(service.id); }} className="absolute top-2 right-2 text-zinc-400 hover:text-red-500">✕</button>
-                      <div className="space-y-2">
-                        <input className={inputBase} placeholder="Service Name" value={service.name} onChange={function(e) { updateService(service.id, 'name', e.target.value); }} />
-                        <div className="grid grid-cols-2 gap-2">
-                          <input className={inputBase} placeholder="Price" type="number" value={service.price} onChange={function(e) { updateService(service.id, 'price', e.target.value); }} />
-                          <input className={inputBase} placeholder="Duration" value={service.duration} onChange={function(e) { updateService(service.id, 'duration', e.target.value); }} />
+                  {isAutoBusiness && (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className={sectionTitle}>Cars</p>
+                          <p className={sectionDesc}>Add vehicles for rent or sale.</p>
                         </div>
-                        <textarea className={inputBase + " h-16 resize-none"} placeholder="Description" value={service.description} onChange={function(e) { updateService(service.id, 'description', e.target.value); }} />
+                        <button type="button" onClick={addCar} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors">+ Add</button>
                       </div>
-
-                      <div className="mt-3">
-                        <p className="text-xs font-semibold text-zinc-500 mb-2">Images (Max 3)</p>
-                        <div className="grid grid-cols-3 gap-2">
-                          {(service.images || []).map(function(img, idx) {
-                            return (
-                              <div key={idx} className="aspect-square bg-white border border-zinc-200 rounded-lg overflow-hidden relative group">
-                                <img src={img} className="w-full h-full object-cover" alt="" />
-                                <button type="button" onClick={function() { removeServiceImage(service.id, idx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-xs">✕</button>
-                              </div>
-                            );
-                          })}
-                          {(service.images || []).length < 3 && (
-                            <button type="button" onClick={function() { handleServiceImageUpload(service); }} className="aspect-square bg-zinc-100 border-2 border-dashed border-zinc-300 flex items-center justify-center hover:border-purple-500 hover:text-purple-500 transition-all">
-                              <span className="text-xs">+ Add Photo</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* PRODUCTS */}
-          {!isAutoBusiness && (
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className={sectionTitle}>Products</h2>
-                <button type="button" onClick={addProduct} className="text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-3 py-1.5 rounded-lg font-medium transition-colors">+ Add Product</button>
-              </div>
-              <div className="space-y-6">
-                {products.map(function(product) {
-                  return (
-                    <div key={product.id} className="relative p-4 rounded-xl border border-zinc-100 bg-zinc-50">
-                      <button type="button" onClick={function() { removeProduct(product.id); }} className="absolute top-2 right-2 text-zinc-400 hover:text-red-500">✕</button>
-                      <div className="space-y-2">
-                        <input className={inputBase} placeholder="Product Name" value={product.name} onChange={function(e) { updateProduct(product.id, 'name', e.target.value); }} />
-                        <input className={inputBase} placeholder="Price" type="number" value={product.price} onChange={function(e) { updateProduct(product.id, 'price', e.target.value); }} />
-                        <textarea className={inputBase + " h-16 resize-none"} placeholder="Description" value={product.description} onChange={function(e) { updateProduct(product.id, 'description', e.target.value); }} />
-                      </div>
-
-                      <div className="mt-3">
-                        <p className="text-xs font-semibold text-zinc-500 mb-2">Images (Max 3)</p>
-                        <div className="grid grid-cols-3 gap-2">
-                          {(product.images || []).map(function(img, idx) {
-                            return (
-                              <div key={idx} className="aspect-square bg-white border border-zinc-200 rounded-lg overflow-hidden relative group">
-                                <img src={img} className="w-full h-full object-cover" alt="" />
-                                <button type="button" onClick={function() { removeProductImage(product.id, idx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-xs">✕</button>
-                              </div>
-                            );
-                          })}
-                          {(product.images || []).length < 3 && (
-                            <button type="button" onClick={function() { handleProductImageUpload(product); }} className="aspect-square bg-zinc-100 border-2 border-dashed border-zinc-300 flex items-center justify-center hover:border-purple-500 hover:text-purple-500 transition-all">
-                              <span className="text-xs">+ Add Photo</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* CARS */}
-          {isAutoBusiness && (
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className={sectionTitle}>Cars</h2>
-                <button type="button" onClick={addCar} className="text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-3 py-1.5 rounded-lg font-medium transition-colors">+ Add Car</button>
-              </div>
-              <div className="space-y-6">
-                {cars.map(function(car) {
-                  return (
-                    <div key={car.id} className="relative p-4 rounded-xl border border-zinc-100 bg-zinc-50">
-                      <button type="button" onClick={function() { removeCar(car.id); }} className="absolute top-2 right-2 text-zinc-400 hover:text-red-500">✕</button>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-xs font-semibold text-zinc-500">Type</label>
-                          <div className="flex gap-2">
-                            <label className="flex items-center gap-1">
-                              <input type="radio" name={"type-" + car.id} checked={car.type === 'rent'} onChange={function() { updateCar(car.id, 'type', 'rent'); }} className="accent-purple-600" /> Rent
-                            </label>
-                            <label className="flex items-center gap-1">
-                              <input type="radio" name={"type-" + car.id} checked={car.type === 'sale'} onChange={function() { updateCar(car.id, 'type', 'sale'); }} className="accent-purple-600" /> Sale
-                            </label>
-                          </div>
-                          <input className={inputBase} placeholder="Car Name" value={car.name} onChange={function(e) { updateCar(car.id, 'name', e.target.value); }} />
-                          <input className={inputBase} placeholder="Year" type="number" value={car.year} onChange={function(e) { updateCar(car.id, 'year', e.target.value); }} />
-                        </div>
-                        <div className="space-y-2">
-                          <input className={inputBase} placeholder="Daily Rate / Price" type="number" value={car.price} onChange={function(e) { updateCar(car.id, 'price', e.target.value); }} />
-                          <div className="grid grid-cols-2 gap-2">
-                            <input className={inputBase} placeholder="Mileage" value={car.mileage} onChange={function(e) { updateCar(car.id, 'mileage', e.target.value); }} />
-                            <input className={inputBase} placeholder="Transmission" value={car.transmission} onChange={function(e) { updateCar(car.id, 'transmission', e.target.value); }} />
-                          </div>
-                          <input className={inputBase} placeholder="Fuel" value={car.fuel} onChange={function(e) { updateCar(car.id, 'fuel', e.target.value); }} />
-                        </div>
-                      </div>
-                      <textarea className={inputBase + " h-16 resize-none mt-2"} placeholder="Description" value={car.description} onChange={function(e) { updateCar(car.id, 'description', e.target.value); }} />
-                      <div className="mt-3">
-                        <p className="text-xs font-semibold text-zinc-500 mb-2">Images (Max 3)</p>
-                        <div className="grid grid-cols-3 gap-2">
-                          {(car.images || []).map(function(img, idx) {
-                            return (
-                              <div key={idx} className="aspect-video bg-white border border-zinc-200 rounded-lg overflow-hidden relative group">
-                                <img src={img} className="w-full h-full object-cover" alt="" />
-                                <button type="button" onClick={function() { setCarImages(car.id, car.images.filter(function(_, i) { return i !== idx; })); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-xs">✕</button>
-                              </div>
-                            );
-                          })}
-                          <button type="button" onClick={function() { handleCarImageUpload(car); }} className="aspect-video bg-zinc-100 border-2 border-dashed border-zinc-300 flex items-center justify-center hover:border-purple-500 hover:text-purple-500 transition-all">
-                            <span className="text-xs">+ Add Photo</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* FOOD MENU */}
-          {isFoodBusiness && (
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className={sectionTitle}>Food Menu</h2>
-                <button type="button" onClick={addFood} className="text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-3 py-1.5 rounded-lg font-medium transition-colors">+ Add Food Item</button>
-              </div>
-              <div className="space-y-6">
-                {foods.map(function(item) {
-                  return (
-                    <div key={item.id} className="relative p-4 rounded-xl border border-zinc-100 bg-zinc-50">
-                      <button type="button" onClick={function() { removeFood(item.id); }} className="absolute top-2 right-2 text-zinc-400 hover:text-red-500 z-10">✕</button>
-                      <div className="space-y-2">
-                        <input className={inputBase} placeholder="Food Name" value={item.name} onChange={function(e) { updateFood(item.id, 'name', e.target.value); }} />
-                        <input className={inputBase} placeholder="Price" type="number" value={item.price} onChange={function(e) { updateFood(item.id, 'price', e.target.value); }} />
-                        <textarea className={inputBase + " h-16 resize-none"} placeholder="Description / Addons Info" value={item.description} onChange={function(e) { updateFood(item.id, 'description', e.target.value); }} />
-                      </div>
-
-                      <div className="mt-3">
-                        <p className="text-xs font-semibold text-zinc-500 mb-2">Images (Max 3)</p>
-                        <div className="grid grid-cols-3 gap-2">
-                          {(item.images || []).map(function(img, idx) {
-                            return (
-                              <div key={idx} className="aspect-square bg-white border border-zinc-200 rounded-lg overflow-hidden relative group">
-                                <img src={img} className="w-full h-full object-cover" alt="" />
-                                <button type="button" onClick={function() { removeFoodImage(item.id, idx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-xs">✕</button>
-                              </div>
-                            );
-                          })}
-                          {(item.images || []).length < 3 && (
-                            <button type="button" onClick={function() { handleFoodImageUpload(item); }} className="aspect-square bg-zinc-100 border-2 border-dashed border-zinc-300 flex items-center justify-center hover:border-purple-500 hover:text-purple-500 transition-all">
-                              <span className="text-xs">+ Add Photo</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* ADDONS */}
-                      <div className="mt-4 pt-4 border-t border-zinc-200">
-                        <div className="flex justify-between items-center mb-3">
-                          <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Variations &amp; Addons</span>
-                          <button type="button" onClick={function() { addFoodAddonGroup(item.id); }} className="text-xs text-purple-600 hover:text-purple-800 font-medium transition-colors">+ Add Group</button>
-                        </div>
-                        {item.addons && item.addons.length > 0 && (
-                          <div className="space-y-4">
-                            {item.addons.map(function(addon) {
-                              return (
-                                <div key={addon.id} className="bg-white rounded-xl border border-zinc-200 p-4 space-y-3">
-                                  <div className="flex items-center gap-2">
-                                    <input className={inputBase + " flex-1 font-medium"} placeholder="Group Name (e.g. Size, Toppings)" value={addon.label} onChange={function(e) { updateFoodAddonGroup(item.id, addon.id, 'label', e.target.value); }} />
-                                    <select className={selectBase + " w-28"} value={addon.type} onChange={function(e) { updateFoodAddonGroup(item.id, addon.id, 'type', e.target.value); }}>
-                                      <option value="single">Single</option>
-                                      <option value="multi">Multi</option>
-                                    </select>
-                                    <button type="button" onClick={function() { removeFoodAddonGroup(item.id, addon.id); }} className="text-zinc-300 hover:text-red-500 transition-colors p-1 shrink-0" title="Delete group">
-                                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                    </button>
+                      <div className="space-y-4">
+                        {cars.map(function(car) {
+                          return (
+                            <div key={car.id} className="relative p-4 rounded-xl border border-zinc-700 bg-zinc-800/50">
+                              <button type="button" onClick={function() { removeCar(car.id); }} className="absolute top-2 right-2 text-zinc-500 hover:text-red-400">✕</button>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <label className="text-xs font-semibold text-zinc-400">Type</label>
+                                  <div className="flex gap-3">
+                                    <label className="flex items-center gap-2 text-sm">
+                                      <input type="radio" name={"type-" + car.id} checked={car.type === 'rent'} onChange={function() { updateCar(car.id, 'type', 'rent'); }} className="accent-white" /> Rent
+                                    </label>
+                                    <label className="flex items-center gap-2 text-sm">
+                                      <input type="radio" name={"type-" + car.id} checked={car.type === 'sale'} onChange={function() { updateCar(car.id, 'type', 'sale'); }} className="accent-white" /> Sale
+                                    </label>
                                   </div>
-                                  <p className="text-[10px] text-zinc-400 -mt-1 ml-1">
-                                    {addon.type === 'single' ? 'Customer can select ONE option' : 'Customer can select MULTIPLE options'}
-                                  </p>
-                                  <div className="space-y-2 pl-1 border-l-2 border-zinc-100 ml-1">
-                                    {addon.options.map(function(opt, optIdx) {
+                                  <input className={inputBase} placeholder="Car Name" value={car.name} onChange={function(e) { updateCar(car.id, 'name', e.target.value); }} />
+                                  <input className={inputBase} placeholder="Year" type="number" value={car.year} onChange={function(e) { updateCar(car.id, 'year', e.target.value); }} />
+                                </div>
+                                <div className="space-y-2">
+                                  <input className={inputBase} placeholder="Price (₦)" type="number" value={car.price} onChange={function(e) { updateCar(car.id, 'price', e.target.value); }} />
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <input className={inputBase} placeholder="Mileage" value={car.mileage} onChange={function(e) { updateCar(car.id, 'mileage', e.target.value); }} />
+                                    <input className={inputBase} placeholder="Transmission" value={car.transmission} onChange={function(e) { updateCar(car.id, 'transmission', e.target.value); }} />
+                                  </div>
+                                  <input className={inputBase} placeholder="Fuel Type" value={car.fuel} onChange={function(e) { updateCar(car.id, 'fuel', e.target.value); }} />
+                                </div>
+                              </div>
+                              <textarea className={inputBase + " h-16 resize-none mt-2"} placeholder="Description" value={car.description} onChange={function(e) { updateCar(car.id, 'description', e.target.value); }} />
+                              <div className="mt-3">
+                                <p className="text-xs font-semibold text-zinc-400 mb-2">Images (Max 3)</p>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {(car.images || []).map(function(img, idx) {
+                                    return (
+                                      <div key={idx} className="aspect-video bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group">
+                                        <img src={img} className="w-full h-full object-cover" alt="" />
+                                        <button type="button" onClick={function() { setCarImages(car.id, car.images.filter(function(_, i) { return i !== idx; })); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-xs">✕</button>
+                                      </div>
+                                    );
+                                  })}
+                                  <button type="button" onClick={function() { handleCarImageUpload(car); }} className="aspect-video bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center hover:border-zinc-500 hover:text-zinc-300 transition-all">
+                                    <span className="text-xs">+ Photo</span>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+
+                  {isFoodBusiness && (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className={sectionTitle}>Food Menu</p>
+                          <p className={sectionDesc}>Add menu items with variations.</p>
+                        </div>
+                        <button type="button" onClick={addFood} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors">+ Add</button>
+                      </div>
+                      <div className="space-y-4">
+                        {foods.map(function(item) {
+                          return (
+                            <div key={item.id} className="relative p-4 rounded-xl border border-zinc-700 bg-zinc-800/50">
+                              <button type="button" onClick={function() { removeFood(item.id); }} className="absolute top-2 right-2 text-zinc-500 hover:text-red-400 z-10">✕</button>
+                              <div className="space-y-2">
+                                <input className={inputBase} placeholder="Food Name" value={item.name} onChange={function(e) { updateFood(item.id, 'name', e.target.value); }} />
+                                <input className={inputBase} placeholder="Price (₦)" type="number" value={item.price} onChange={function(e) { updateFood(item.id, 'price', e.target.value); }} />
+                                <textarea className={inputBase + " h-16 resize-none"} placeholder="Description" value={item.description} onChange={function(e) { updateFood(item.id, 'description', e.target.value); }} />
+                              </div>
+                              <div className="mt-3">
+                                <p className="text-xs font-semibold text-zinc-400 mb-2">Images (Max 3)</p>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {(item.images || []).map(function(img, idx) {
+                                    return (
+                                      <div key={idx} className="aspect-square bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group">
+                                        <img src={img} className="w-full h-full object-cover" alt="" />
+                                        <button type="button" onClick={function() { removeFoodImage(item.id, idx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 text-xs">✕</button>
+                                      </div>
+                                    );
+                                  })}
+                                  {(item.images || []).length < 3 && (
+                                    <button type="button" onClick={function() { handleFoodImageUpload(item); }} className="aspect-square bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center hover:border-zinc-500 hover:text-zinc-300 transition-all">
+                                      <span className="text-xs">+ Photo</span>
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="mt-4 pt-4 border-t border-zinc-700">
+                                <div className="flex justify-between items-center mb-3">
+                                  <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Variations & Addons</span>
+                                  <button type="button" onClick={function() { addFoodAddonGroup(item.id); }} className="text-xs text-white hover:text-zinc-300 font-medium transition-colors">+ Add Group</button>
+                                </div>
+                                {item.addons && item.addons.length > 0 && (
+                                  <div className="space-y-3">
+                                    {item.addons.map(function(addon) {
                                       return (
-                                        <div key={optIdx} className="flex items-center gap-2">
-                                          <input className={inputBase + " flex-1 py-2.5 text-sm"} placeholder="Option name" value={opt.name} onChange={function(e) { updateFoodAddonOption(item.id, addon.id, optIdx, 'name', e.target.value); }} />
-                                          <div className="relative w-24 shrink-0">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 pointer-events-none">+&#8358;</span>
-                                            <input type="number" className={inputBase + " pl-8 py-2.5 text-sm"} placeholder="0" value={opt.price || ''} onChange={function(e) { updateFoodAddonOption(item.id, addon.id, optIdx, 'price', e.target.value); }} />
+                                        <div key={addon.id} className="bg-zinc-800 rounded-xl border border-zinc-700 p-3 space-y-2">
+                                          <div className="flex items-center gap-2">
+                                            <input className={inputBase + " flex-1 font-medium"} placeholder="Group Name (e.g. Size)" value={addon.label} onChange={function(e) { updateFoodAddonGroup(item.id, addon.id, 'label', e.target.value); }} />
+                                            <select className={selectBase + " w-24"} value={addon.type} onChange={function(e) { updateFoodAddonGroup(item.id, addon.id, 'type', e.target.value); }}>
+                                              <option value="single" className="bg-zinc-800">Single</option>
+                                              <option value="multi" className="bg-zinc-800">Multi</option>
+                                            </select>
+                                            <button type="button" onClick={function() { removeFoodAddonGroup(item.id, addon.id); }} className="text-zinc-500 hover:text-red-400 transition-colors p-1 shrink-0">
+                                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                            </button>
                                           </div>
-                                          <button type="button" onClick={function() { removeFoodAddonOption(item.id, addon.id, optIdx); }} className="text-zinc-300 hover:text-red-500 transition-colors p-1 shrink-0">
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                          </button>
+                                          <div className="space-y-2 pl-1 border-l-2 border-zinc-700 ml-1">
+                                            {addon.options.map(function(opt, optIdx) {
+                                              return (
+                                                <div key={optIdx} className="flex items-center gap-2">
+                                                  <input className={inputBase + " flex-1 py-2.5 text-sm"} placeholder="Option name" value={opt.name} onChange={function(e) { updateFoodAddonOption(item.id, addon.id, optIdx, 'name', e.target.value); }} />
+                                                  <div className="relative w-24 shrink-0">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500 pointer-events-none">+₦</span>
+                                                    <input type="number" className={inputBase + " pl-7 py-2.5 text-sm"} placeholder="0" value={opt.price || ''} onChange={function(e) { updateFoodAddonOption(item.id, addon.id, optIdx, 'price', e.target.value); }} />
+                                                  </div>
+                                                  <button type="button" onClick={function() { removeFoodAddonOption(item.id, addon.id, optIdx); }} className="text-zinc-500 hover:text-red-400 transition-colors p-1 shrink-0">
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                  </button>
+                                                </div>
+                                              );
+                                            })}
+                                            <button type="button" onClick={function() { addFoodAddonOption(item.id, addon.id); }} className="w-full py-2 text-xs text-zinc-400 hover:text-white font-medium transition-colors flex items-center justify-center gap-1 rounded-lg hover:bg-zinc-700">+ Add Option</button>
+                                          </div>
                                         </div>
                                       );
                                     })}
-                                    <button type="button" onClick={function() { addFoodAddonOption(item.id, addon.id); }} className="w-full py-2 text-xs text-zinc-400 hover:text-purple-600 font-medium transition-colors flex items-center justify-center gap-1 rounded-lg hover:bg-zinc-50">+ Add Option</button>
                                   </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+
+                  {!isAutoBusiness && !isFoodBusiness && (
+                    <>
+                      <div className="flex justify-between items-center pt-4 border-t border-zinc-800">
+                        <div>
+                          <p className={sectionTitle}>Products</p>
+                          <p className={sectionDesc}>Items you sell.</p>
+                        </div>
+                        <button type="button" onClick={addProduct} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors">+ Add</button>
+                      </div>
+                      <div className="space-y-4">
+                        {products.map(function(product) {
+                          return (
+                            <div key={product.id} className="relative p-4 rounded-xl border border-zinc-700 bg-zinc-800/50">
+                              <button type="button" onClick={function() { removeProduct(product.id); }} className="absolute top-2 right-2 text-zinc-500 hover:text-red-400">✕</button>
+                              <div className="space-y-2">
+                                <input className={inputBase} placeholder="Product Name" value={product.name} onChange={function(e) { updateProduct(product.id, 'name', e.target.value); }} />
+                                <input className={inputBase} placeholder="Price (₦)" type="number" value={product.price} onChange={function(e) { updateProduct(product.id, 'price', e.target.value); }} />
+                                <textarea className={inputBase + " h-16 resize-none"} placeholder="Description" value={product.description} onChange={function(e) { updateProduct(product.id, 'description', e.target.value); }} />
+                              </div>
+                              <div className="mt-3">
+                                <p className="text-xs font-semibold text-zinc-400 mb-2">Images (Max 3)</p>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {(product.images || []).map(function(img, idx) {
+                                    return (
+                                      <div key={idx} className="aspect-square bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group">
+                                        <img src={img} className="w-full h-full object-cover" alt="" />
+                                        <button type="button" onClick={function() { removeProductImage(product.id, idx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-xs">✕</button>
+                                      </div>
+                                    );
+                                  })}
+                                  {(product.images || []).length < 3 && (
+                                    <button type="button" onClick={function() { handleProductImageUpload(product); }} className="aspect-square bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center hover:border-zinc-500 hover:text-zinc-300 transition-all">
+                                      <span className="text-xs">+ Photo</span>
+                                    </button>
+                                  )}
                                 </div>
-                              );
-                            })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {(currentStep === steps.length) && (
+                <div className="space-y-5">
+                  <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
+                    <h3 className="text-sm font-semibold text-white mb-3">Review Your Setup</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between py-2 border-b border-zinc-700">
+                        <span className="text-zinc-400">Business</span>
+                        <span className="text-white font-medium">{businessName}</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-zinc-700">
+                        <span className="text-zinc-400">Slug</span>
+                        <span className="text-white font-mono text-xs">{businessSlug}</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-zinc-700">
+                        <span className="text-zinc-400">Type</span>
+                        <span className="text-white font-medium">{businessType}</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-zinc-700">
+                        <span className="text-zinc-400">Gallery Groups</span>
+                        <span className="text-white font-medium">{gallery.length} groups ({totalGalleryImages} photos)</span>
+                      </div>
+                      {!isAutoBusiness && !isFoodBusiness && (
+                        <>
+                          <div className="flex justify-between py-2 border-b border-zinc-700">
+                            <span className="text-zinc-400">Services</span>
+                            <span className="text-white font-medium">{services.filter(s => s.name).length} items</span>
                           </div>
-                        )}
+                          <div className="flex justify-between py-2 border-b border-zinc-700">
+                            <span className="text-zinc-400">Products</span>
+                            <span className="text-white font-medium">{products.filter(p => p.name).length} items</span>
+                          </div>
+                        </>
+                      )}
+                      {isAutoBusiness && (
+                        <div className="flex justify-between py-2 border-b border-zinc-700">
+                          <span className="text-zinc-400">Cars</span>
+                          <span className="text-white font-medium">{cars.filter(c => c.name).length} vehicles</span>
+                        </div>
+                      )}
+                      {isFoodBusiness && (
+                        <div className="flex justify-between py-2 border-b border-zinc-700">
+                          <span className="text-zinc-400">Menu Items</span>
+                          <span className="text-white font-medium">{foods.filter(f => f.name).length} items</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between py-2">
+                        <span className="text-zinc-400">Security</span>
+                        <span className="text-green-400 font-medium">✓ Configured</span>
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+
+                  {error && (
+                    <div className="bg-red-900/40 border border-red-700 rounded-xl p-3">
+                      <p className="text-xs text-red-300">{error}</p>
+                    </div>
+                  )}
+
+                  <div className="bg-zinc-800/30 border border-zinc-700 rounded-xl p-4">
+                    <p className="text-xs text-zinc-400 leading-relaxed">
+                      By clicking "Finish Setup", you confirm that all information is accurate. Your business will be live within 24 hours after payment verification.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 border-t border-zinc-800 bg-zinc-800/50 flex gap-3">
+              {currentStep > 1 && (
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white py-3 rounded-xl text-sm font-semibold transition-all"
+                >
+                  Back
+                </button>
+              )}
+              {currentStep < steps.length ? (
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  className="flex-1 bg-white hover:bg-zinc-200 text-zinc-900 py-3 rounded-xl text-sm font-semibold transition-all"
+                >
+                  Continue
+                </button>
+              ) : (
+                <button 
+                  type="submit" 
+                  disabled={loading} 
+                  className="flex-1 bg-white hover:bg-zinc-200 text-zinc-900 py-3 rounded-xl text-sm font-semibold transition-all disabled:bg-zinc-700 disabled:text-zinc-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    'Finish Setup'
+                  )}
+                </button>
+              )}
+            </div>
+          </form>
+
+          <div className="mt-6 text-center">
+            <Link to="/" className="inline-flex items-center text-sm text-zinc-400 hover:text-white transition-colors font-medium">
+              <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7 7m-7 7h18" />
+              </svg>
+              Back to home
+            </Link>
+          </div>
+        </div>
+      </main>
+
+      <footer className="bg-white border-t border-zinc-200 pt-12 pb-8 px-6 mt-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-10">
+            <div>
+              <Link to="/" className="flex items-center">
+                <img src="/fav-removebg.png" alt="BookNaija Logo" className="h-10 w-auto object-contain" />
+              </Link>
+            </div>
+            <div className="flex gap-10 text-sm">
+              <div className="space-y-2.5">
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Product</p>
+                <ul className="space-y-2">
+                  <li><Link to="/#pricing" className="text-zinc-600 hover:text-zinc-900 transition-colors">Pricing</Link></li>
+                  <li><Link to="/#features" className="text-zinc-600 hover:text-zinc-900 transition-colors">Features</Link></li>
+                  <li><Link to="/signup" className="text-zinc-600 hover:text-zinc-900 transition-colors">Sign Up</Link></li>
+                </ul>
+              </div>
+              <div className="space-y-2.5">
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Partners</p>
+                <ul className="space-y-2">
+                  <li><Link to="/affiliate-signup" className="text-zinc-700 font-medium hover:text-zinc-900 transition-colors">Affiliate</Link></li>
+                </ul>
+              </div>
+              <div className="space-y-2.5">
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Company</p>
+                <ul className="space-y-2">
+                  <li><Link to="/blog" className="text-zinc-600 hover:text-zinc-900 transition-colors">Blog</Link></li>
+                  <li><Link to="/privacy" className="text-zinc-600 hover:text-zinc-900 transition-colors">Privacy</Link></li>
+                  <li><Link to="/terms" className="text-zinc-600 hover:text-zinc-900 transition-colors">Terms</Link></li>
+                </ul>
               </div>
             </div>
-          )}
-
-          {/* SUBMIT */}
-          <div className="sticky bottom-6 z-10">
-            <button type="submit" disabled={loading} className="w-full bg-purple-600 hover:bg-purple-700 text-white py-4 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 disabled:bg-zinc-400 disabled:scale-100">
-              {loading ? 'Saving...' : 'Finish Setup'}
-            </button>
           </div>
-
-          {errorMsg && (
-            <div className="p-4 bg-red-100 text-red-600 rounded-xl text-center text-sm">{errorMsg}</div>
-          )}
-        </form>
-      </div>
+          <div className="pt-6 border-t border-zinc-100 flex flex-col md:flex-row justify-between gap-4 items-center">
+            <p className="text-zinc-500 text-sm">© {new Date().getFullYear()} BookNaija Technologies.</p>
+            <div className="flex gap-4 text-sm text-zinc-500">
+              <Link to="/terms" className="hover:text-zinc-700 transition-colors">Terms</Link>
+              <Link to="/privacy" className="hover:text-zinc-700 transition-colors">Privacy</Link>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
