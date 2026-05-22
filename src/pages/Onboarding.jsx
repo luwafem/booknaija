@@ -122,6 +122,12 @@ export default function Onboarding() {
   var [loading, setLoading] = useState(false);
   var [error, setError] = useState('');
 
+  // --- BANKING DETAILS STATE (initialized from stored bizData) ---
+  var [accountName, setAccountName] = useState((bizData && bizData.accountName) ? bizData.accountName : '');
+  var [accountNumber, setAccountNumber] = useState((bizData && bizData.accountNumber) ? bizData.accountNumber : '');
+  var [settlementBankName, setSettlementBankName] = useState((bizData && bizData.settlementBank) ? bizData.settlementBank : '');
+  // ---------------------------------
+
   var [gallery, setGallery] = useState([{ id: 'default', group: 'Gallery', images: [] }]);
   var [services, setServices] = useState([{ id: 1, name: '', duration: '', price: '', description: '', image: '', images: [] }]);
   var [products, setProducts] = useState([{ id: 1, name: '', price: '', description: '', image: '', images: [] }]);
@@ -643,14 +649,19 @@ export default function Onboarding() {
       calendarId: email,
       adsEnabled: true,
       carsEnabled: isAutoBusiness,
-      servicesEnabled: !isAutoBusiness,
-      productsEnabled: !isAutoBusiness,
+      servicesEnabled: !isAutoBusiness && !isFoodBusiness,
+      productsEnabled: !isAutoBusiness && !isFoodBusiness,
       foodEnabled: isFoodBusiness,
       securityCode: securityCode,
       securityQuestion1: securityQuestion1,
       securityAnswer1: securityAnswer1.trim().toLowerCase(),
       securityQuestion2: securityQuestion2,
       securityAnswer2: securityAnswer2.trim().toLowerCase(),
+      // --- BANKING FIELDS ---
+      account_name: accountName,
+      account_number: accountNumber,
+      settlement_bank: settlementBankName,
+      // ---------------------
       gallery: finalGallery,
       services: servicesData,
       products: productsData,
@@ -695,7 +706,6 @@ export default function Onboarding() {
     })
     .then(function(data) {
       if (data.ok) {
-        // ✅ Clean up ALL storage keys
         localStorage.removeItem('pending_signup_' + businessSlug);
         localStorage.removeItem('pending_signup_data');
         sessionStorage.removeItem('pending_signup_data');
@@ -835,6 +845,46 @@ export default function Onboarding() {
                     </select>
                     <input className={inputBase + " mt-2"} placeholder="Your answer" value={securityAnswer2} onChange={function(e) { setSecurityAnswer2(e.target.value); }} />
                   </div>
+
+                  {/* --- BANKING DETAILS SECTION --- */}
+                  <div className="border-t border-zinc-800 pt-5 mt-6">
+                    <p className="text-sm font-bold text-zinc-200 mb-4">Banking Details (for Offline Transfers)</p>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className={labelBase}>Bank Name</label>
+                        <input 
+                          className={inputBase} 
+                          placeholder="e.g. Zenith Bank" 
+                          value={settlementBankName} 
+                          onChange={function(e) { setSettlementBankName(e.target.value); }} 
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className={labelBase}>Account Name</label>
+                          <input 
+                            className={inputBase} 
+                            placeholder="Business Account Name" 
+                            value={accountName} 
+                            onChange={function(e) { setAccountName(e.target.value); }} 
+                          />
+                        </div>
+                        <div>
+                          <label className={labelBase}>Account Number</label>
+                          <input 
+                            className={inputBase} 
+                            placeholder="10 Digit Number" 
+                            value={accountNumber} 
+                            maxLength={10}
+                            onChange={function(e) { setAccountNumber(e.target.value.replace(/\D/g, '')); }} 
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* ----------------------------------- */}
+
                 </div>
               )}
 

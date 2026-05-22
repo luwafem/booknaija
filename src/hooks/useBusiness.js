@@ -80,6 +80,13 @@ function transformBusiness(row) {
     paystackPublicKey: row.paystack_public_key || PLATFORM_PAYSTACK_KEY,
     subaccountCode: row.subaccount_code || '',
     calendarId: row.calendar_id || '',
+    
+    // ─── ADDED: BANK DETAILS FOR OFFLINE PAYMENTS ───
+    accountName: row.account_name || '',
+    accountNumber: row.account_number || '',
+    settlementBank: row.settlement_bank || '',
+    // ────────────────────────────────────────────────────
+
     active: row.active,
     adsEnabled: row.ads_enabled !== false,
     carsEnabled: row.cars_enabled,

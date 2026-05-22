@@ -1,6 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { XIcon, CalendarIcon } from './Icons';
 
+// Cloudinary Config (Must match your Signup.jsx)
+const CLOUD_NAME = 'deexaiik4';
+const UPLOAD_PRESET = 'BizUploads';
+
 function formatWhatsAppNumber(num) {
   if (!num) return '';
   let digits = num.replace(/\D/g, '');
@@ -39,6 +43,16 @@ export default function BookingForm({
   const [err, setErr] = useState('');
   const [booking, setBooking] = useState(null);
 
+  // --- OFFLINE PAYMENT STATE ---
+  const [paymentMethod, setPaymentMethod] = useState('offline');
+  const [proofImage, setProofImage] = useState('');
+  const [offlineSubmitting, setOfflineSubmitting] = useState(false);
+  // ----------------------------------
+
+  // --- DYNAMIC BANK LIST STATE ---
+  const [allBanks, setAllBanks] = useState([]);
+  // ------------------------------------
+
   const [productQuantities, setProductQuantities] = useState({});
 
   useEffect(() => {
@@ -55,6 +69,29 @@ export default function BookingForm({
     });
   }, [selectedProducts]);
 
+  // Ensure Cloudinary script is loaded
+  useEffect(() => {
+    if (!window.cloudinary) {
+      const script = document.createElement('script');
+      script.src = 'https://widget.cloudinary.com/v2.0/global/all.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // --- FETCH BANKS FOR DISPLAY ---
+  useEffect(function() {
+    fetch('/.netlify/functions/list-banks')
+      .then(function(res) { return res.json(); })
+      .then(function(data) { 
+        if (Array.isArray(data)) setAllBanks(data); 
+      })
+      .catch(function(err) { 
+        console.error('Failed to load bank names:', err); 
+      });
+  }, []);
+  // -------------------------------------
+
   function updateProductQty(productId, delta) {
     setProductQuantities(prev => {
       const current = prev[productId] || 1;
@@ -63,6 +100,47 @@ export default function BookingForm({
       return { ...prev, [productId]: nextVal };
     });
   }
+
+  // --- HANDLE PROOF UPLOAD ---
+  const handleProofUpload = () => {
+    if (!window.cloudinary) {
+      alert('Image upload widget is still loading, please wait a moment.');
+      return;
+    }
+    const widget = window.cloudinary.createUploadWidget(
+      {
+        cloudName: CLOUD_NAME,
+        uploadPreset: UPLOAD_PRESET,
+        sources: ['local', 'camera'],
+        multiple: false,
+        maxFiles: 1,
+      },
+      (error, result) => {
+        if (!error && result.event === 'success') {
+          setProofImage(result.info.secure_url);
+        }
+      }
+    );
+    widget.open();
+  };
+  // ---------------------------------
+
+  // --- HELPER TO RESOLVE BANK NAME ---
+  // biz.settlementBank could be either:
+  //   - A human-readable name like "Zenith Bank" (new flow from Signup.jsx)
+  //   - A bank code like "058" (old data or direct DB entry)
+  // This function handles both cases.
+  function resolveBankName(value) {
+    if (!value) return 'Contact Business';
+    // If it looks like a code (all digits, short), try to resolve it
+    if (/^\d{2,6}$/.test(value)) {
+      var found = allBanks.find(function(b) { return b.code === value; });
+      return found ? found.name : value;
+    }
+    // Otherwise it's already a human-readable name
+    return value;
+  }
+  // ---------------------------------
 
   const accent = biz.accent || '#c8a97e';
   const theme = biz.theme || 'light';
@@ -192,6 +270,102 @@ export default function BookingForm({
   async function pay(e) {
     e.preventDefault();
     if (!hasSelection) return;
+    
+    // --- OFFLINE FLOW ---
+    if (paymentMethod === 'offline') {
+      if (!proofImage) {
+        setErr('Please upload a screenshot of your transfer.');
+        return;
+      }
+      setOfflineSubmitting(true);
+      setErr('');
+
+      try {
+        const res = await fetch('/.netlify/functions/submit-offline-booking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            slug: biz.slug,
+            name, email, phone, address,
+            date: (isProduct || isRental) ? 'N/A' : date,
+            time: (isProduct || isRental) ? 'N/A' : time,
+            amount: totalAmount,
+            proofImageUrl: proofImage,
+            type: isCar ? (isRental ? 'car_rental' : 'car_viewing') : (isFood ? 'food' : (isProduct ? 'product' : 'service')),
+            items: { 
+               products: isProduct ? selectedPrds.map(p => ({ ...p, qty: productQuantities[p.id]||1 })) : [],
+               food: isFood ? selectedFd.map(f => ({ ...f, ...foodVariants[f.id] })) : [],
+               car: isCar ? selectedCar : null,
+               service: svc
+            },
+            summary: itemNames
+          }),
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            localStorage.setItem('payCtx', JSON.stringify({
+                amount: totalAmount,
+                type: isCar ? (isRental ? 'car_rental' : 'car_viewing') : (isFood ? 'food' : (isProduct ? 'product' : 'service')),
+                serviceName: itemNames,
+                date: (isProduct || isRental) ? 'N/A' : (isRental ? rentalStart : date),
+                time: (isProduct || isRental) ? 'N/A' : time,
+                address: (isProduct || isFood || isRental) ? address : 'N/A',
+                customerName: name,
+                customerEmail: email,
+                customerPhone: phone,
+                proofImage: proofImage,
+                products: isProduct ? selectedPrds.map(p => {
+                  const v = getProductVariant(p.id);
+                  const hasDiscount = p.discount_enabled && p.discount_price > 0;
+                  const qty = productQuantities[p.id] || 1;
+                  return {
+                    name: p.name,
+                    price: hasDiscount ? p.discount_price : p.price,
+                    originalPrice: hasDiscount ? p.price : null,
+                    size: v.size || null,
+                    color: v.color || null,
+                    productCode: p.product_code || null,
+                    quantity: qty
+                  };
+                }) : [],
+                food: isFood ? selectedFd.map(f => {
+                  const v = foodVariants[f.id];
+                  return { name: f.name, quantity: v.quantity, addons: v.addons, finalPrice: v.finalPrice };
+                }) : [],
+                car: isCar ? {
+                  name: selectedCar.name,
+                  type: selectedCar.type,
+                  price: selectedCar.price,
+                  dates: isRental ? `${rentalStart} to ${rentalEnd}` : null
+                } : null,
+            }));
+
+            setBooking({ 
+                serviceName: itemNames, 
+                type: isCar ? (isRental ? 'car_rental' : 'car_viewing') : (isFood ? 'food' : (isProduct ? 'product' : 'service')),
+                amount: totalAmount,
+                date: date,
+                time: time,
+                name: name,
+                email: email,
+                phone: phone,
+                address: address
+            });
+            setOk(true);
+        } else {
+            setErr(data.error || 'Failed to submit booking.');
+        }
+      } catch (err) {
+        setErr('Network error.');
+      } finally {
+        setOfflineSubmitting(false);
+      }
+      return;
+    }
+    // -------------------
+
+    // --- EXISTING PAYSTACK FLOW ---
     setLoading(true);
     setErr('');
 
@@ -302,6 +476,7 @@ export default function BookingForm({
     const isProductOk = booking.type === 'product' || ctx.type === 'product';
     const isFoodOk = booking.type === 'food' || ctx.type === 'food';
     const isCarOk = booking.type === 'car_rental' || booking.type === 'car_viewing' || ctx.type === 'car_rental' || ctx.type === 'car_viewing';
+    const isOffline = !!ctx.proofImage;
 
     const paymentAmount = Number(booking.amount) || ctx.amount || 0;
 
@@ -319,6 +494,10 @@ export default function BookingForm({
     waMessage += `Name: ${booking.name || ctx.customerName || name}\n`;
     waMessage += `Email: ${booking.email || ctx.customerEmail || email}\n`;
     waMessage += `Phone: ${booking.phone || ctx.customerPhone || phone}\n\n`;
+
+    if (isOffline && ctx.proofImage) {
+      waMessage += `*💳 Payment Proof (Screenshot):*\n${ctx.proofImage}\n\n`;
+    }
 
     if (isCarOk) {
       const car = ctx.car || {};
@@ -408,13 +587,13 @@ export default function BookingForm({
             ✓
           </div>
           <h2 className={`text-2xl font-bold tracking-tight ${textPrimary}`}>
-             {isCarOk ? (ctx.car?.type === 'rent' ? 'Rental Reserved!' : 'Viewing Scheduled!') : (isFoodOk ? 'Order Placed!' : (isProductOk ? 'Order Confirmed!' : 'Booking Confirmed!'))}
+             {isCarOk ? (ctx.car?.type === 'rent' ? 'Rental Reserved!' : 'Scheduled') : (isFoodOk ? 'Order Placed!' : (isProductOk ? 'Order Confirmed!' : (isOffline ? 'Booking Submitted!' : 'Booking Confirmed!')))}
           </h2>
           <p className={`${textMuted} mt-3 text-sm leading-relaxed`}>{booking.serviceName}</p>
-          <p className={`${textDim} mt-1.5 text-sm`}>Check your email for your Paystack receipt.</p>
+          <p className={`${textDim} mt-1.5 text-sm`}>{isOffline ? 'Please confirm on whatsapp.' : 'Check your email for your Paystack receipt.'}</p>
 
           <div className="mt-8 flex flex-col items-center gap-3">
-            {!isProductOk && !isFoodOk && !isCarOk && (
+            {!isProductOk && !isFoodOk && !isCarOk && !isOffline && (
               <a href={calUrl} target="_blank" rel="noreferrer"
                 className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 rounded-xl text-sm font-medium transition-all hover:brightness-110"
                 style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}30` }}>
@@ -426,7 +605,7 @@ export default function BookingForm({
               <a href={waLink} target="_blank" rel="noreferrer"
                 className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl text-sm font-bold transition-all bg-[#25D366] text-white hover:bg-[#1ebe57] active:scale-[0.98] shadow-lg shadow-[#25D366]/20">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                Confirm on WhatsApp
+                {isOffline ? 'Confirm on WhatsApp' : 'Confirm on WhatsApp'}
               </a>
             )}
           </div>
@@ -468,6 +647,12 @@ export default function BookingForm({
   );
 
   const totalProductItems = selectedPrds.reduce((sum, p) => sum + (productQuantities[p.id] || 1), 0);
+
+  // ── Resolve bank details from biz object ──
+  // useBusiness hook maps: account_name → accountName, account_number → accountNumber, settlement_bank → settlementBank
+  const displayBankName = resolveBankName(biz.settlementBank);
+  const displayAccountName = biz.accountName || 'Contact Business';
+  const displayAccountNumber = biz.accountNumber || 'Contact Business';
 
   return (
     <form onSubmit={pay} className="space-y-5 mt-2">
@@ -537,7 +722,7 @@ export default function BookingForm({
       )}
 
       {isProduct && (
-        <div className={`p-4 rounded-2xl ${cardBg} border ${cardBorder} backdrop-blur-sm space-y-3`} style={{ borderColor: `${accent}20` }}>
+        <div className={`p-4 rounded-2xl ${cardBg} border ${cardBorder} backdrop-blur-sm space-y-3`} style={{ borderColor: `${accent}20`}}>
           <div className="flex items-center justify-between">
             <h3 className={`text-[11px] font-bold ${textFaint} uppercase tracking-widest`}>
               Your Order ({totalProductItems} {totalProductItems === 1 ? 'item' : 'items'})
@@ -667,7 +852,7 @@ export default function BookingForm({
       )}
 
       {isFood && (
-        <div className={`p-4 rounded-2xl ${cardBg} border ${cardBorder} backdrop-blur-sm space-y-4`} style={{ borderColor: `${accent}20` }}>
+        <div className={`p-4 rounded-2xl ${cardBg} border ${cardBorder} backdrop-blur-sm space-y-4`} style={{ borderColor: `${accent}20`}}>
           <div className="flex items-center justify-between">
             <h3 className={`text-[11px] font-bold ${textFaint} uppercase tracking-widest`}>Your Order</h3>
             <button
@@ -726,6 +911,71 @@ export default function BookingForm({
           <p className={`text-sm ${isDark ? 'text-red-400' : 'text-red-600'}`}>{err}</p>
         </div>
       )}
+
+      {/* --- PAYMENT METHOD TOGGLE --- */}
+      <div className={`flex gap-2 p-1 rounded-xl ${isDark ? 'bg-white/5 border border-white/5' : 'bg-stone-100 border border-stone-200'}`}>
+        <button
+          type="button"
+          onClick={() => setPaymentMethod('offline')}
+          className={`flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${paymentMethod === 'offline' ? (isDark ? 'bg-zinc-800 text-white shadow' : 'bg-white text-stone-900 shadow-sm') : (isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-stone-500 hover:text-stone-900')}`}
+        >
+          Bank Transfer
+        </button>
+        <button
+          type="button"
+          onClick={() => setPaymentMethod('paystack')}
+          className={`flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${paymentMethod === 'paystack' ? (isDark ? 'bg-zinc-800 text-white shadow' : 'bg-white text-stone-900 shadow-sm') : (isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-stone-500 hover:text-stone-900')}`}
+        >
+          Pay with Card
+        </button>
+      </div>
+
+      {/* --- OFFLINE PAYMENT DETAILS SECTION --- */}
+      {paymentMethod === 'offline' && (
+        <div className={`p-4 rounded-2xl ${isDark ? 'bg-white/5 border border-white/10' : 'bg-white border border-stone-200'} space-y-4`}>
+          <div>
+            <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${textFaint}`}>Transfer Details</h4>
+            
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between items-center border-b pb-2" style={{borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}}>
+                <span className={`text-xs ${textMuted}`}>Bank Name:</span>
+                <span className={`text-xs font-bold ${textSecondary}`}>{displayBankName}</span>
+              </div>
+              <div className="flex justify-between items-center border-b pb-2" style={{borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}}>
+                <span className={`text-xs ${textMuted}`}>Account Name:</span>
+                <span className={`text-xs font-bold ${textSecondary}`}>{displayAccountName}</span>
+              </div>
+              <div className="flex justify-between items-center pb-1">
+                <span className={`text-xs ${textMuted}`}>Account Number:</span>
+                <span className={`text-xs font-bold font-mono ${textSecondary}`}>{displayAccountNumber}</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+             <label className={labelStyle}>Upload Payment Receipt</label>
+             <div className="flex gap-3">
+                <button 
+                  type="button" 
+                  onClick={handleProofUpload}
+                  className="flex-1 py-3 border-2 border-dashed rounded-xl text-xs font-bold transition-colors hover:border-zinc-400 flex items-center justify-center gap-2"
+                  style={{borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'}}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  {proofImage ? 'Change Screenshot' : 'Upload Screenshot'}
+                </button>
+                {proofImage && (
+                  <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-zinc-300 shrink-0">
+                    <img src={proofImage} alt="Proof" className="w-full h-full object-cover" />
+                    <button type="button" onClick={() => setProofImage('')} className="absolute top-0 right-0 bg-red-500 text-white p-0.5 text-[10px]">×</button>
+                  </div>
+                )}
+             </div>
+             {!proofImage && <p className={`text-[10px] ${textDim} mt-1`}>Screenshot required to confirm booking.</p>}
+          </div>
+        </div>
+      )}
+      {/* ----------------------------------- */}
 
       {isRental && (
         <div className="grid grid-cols-2 gap-3">
@@ -792,16 +1042,18 @@ export default function BookingForm({
 
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || offlineSubmitting || (paymentMethod === 'offline' && !proofImage)}
         className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide transition-all duration-200 disabled:opacity-50 hover:brightness-110 active:scale-[0.98] mt-2 shadow-lg"
         style={{
           background: accent,
           color: isDark ? '#0a0a0a' : '#ffffff'
         }}>
-        {loading ? 'Processing…' :
-         isCar
+        {(loading || offlineSubmitting) ? 'Processing…' : 
+         paymentMethod === 'offline' ? 'Submit Booking Request' :
+         (isCar
           ? (isRental ? `Pay ₦${totalAmount.toLocaleString()}` : 'Book Viewing')
           : `Pay ₦${totalAmount.toLocaleString()}`
+        )
         }
       </button>
     </form>

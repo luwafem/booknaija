@@ -17,24 +17,10 @@ exports.handler = async function (event) {
     }
 
     // ─── SPAM PROTECTION ───
-    // 1. Honeypot check (if _gotcha is filled, a bot did it)
     if (d._gotcha) {
       console.log('Honeypot triggered. Rejecting spam.');
-      return { statusCode: 200, body: JSON.stringify({ ok: true, spam: true }) }; // Fake success to trick bots
+      return { statusCode: 200, body: JSON.stringify({ ok: true, spam: true }) };
     }
-
-    // 2. Duplicate Signup Rate Limit (Check if this email signed up in the last 2 minutes)
-    const twoMinsAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
-    const { data: recentSignups } = await supabase
-      .from('businesses')
-      .select('id')
-      .eq('email', d.email)
-      .gte('created_at', twoMinsAgo);
-    
-    if (recentSignups && recentSignups.length > 0) {
-      return { statusCode: 429, body: JSON.stringify({ error: 'Too many signup attempts. Please wait a minute.' }) };
-    }
-    // ─── END SPAM PROTECTION ───
 
     // 1. Check if this is a brand new business or an update
     const { data: existingBiz } = await supabase
@@ -43,7 +29,24 @@ exports.handler = async function (event) {
       .eq('slug', d.slug)
       .single();
 
-    // 2. Upsert the business row
+    // 2. Rate limit ONLY for brand new signups (not updates to existing slugs)
+    if (!existingBiz) {
+      const twoMinsAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      const { data: recentSignups } = await supabase
+        .from('businesses')
+        .select('id')
+        .eq('email', d.email)
+        .gte('created_at', twoMinsAgo);
+      
+      if (recentSignups && recentSignups.length > 0) {
+        console.log('Rate limited: email', d.email, 'already signed up recently');
+        return { statusCode: 429, body: JSON.stringify({ error: 'Too many signup attempts. Please wait a minute.' }) };
+      }
+    } else {
+      console.log('Existing business found. Skipping rate limit (this is an update).');
+    }
+    // ─── END SPAM PROTECTION ───
+
     var bizPayload = {
       slug: d.slug,
       name: d.name,
@@ -65,6 +68,14 @@ exports.handler = async function (event) {
       paystack_public_key: d.paystackPublicKey || 'pk_live_2ba1413aaaf5091188571ea6f87cca34945d943c',
       subaccount_code: d.subaccountCode || '',
       calendar_id: d.calendarId || '',
+
+      // ─── BANK DETAILS FOR OFFLINE PAYMENTS ───
+      // Accept both snake_case (from Onboarding.jsx) and camelCase (from Dashboard)
+      account_name: d.account_name || d.accountName || '',
+      account_number: d.account_number || d.accountNumber || '',
+      settlement_bank: d.settlement_bank || d.settlementBank || '',
+      // ─────────────────────────────────────────────
+
       active: true,
       ads_enabled: d.adsEnabled !== false,
       cars_enabled: d.carsEnabled === true,
@@ -79,15 +90,10 @@ exports.handler = async function (event) {
       security_question_2: d.securityQuestion2 || '',
       security_answer_2: (d.securityAnswer2 || '').toLowerCase().trim(),
       
-      // --- AFFILIATE TRACKING (UPDATED FOR FLAT 2500 PRICING) ---
       referred_by_affiliate: (d.referredBy && d.referredBy.startsWith('aff_')) ? d.referredBy : null,
-      
-      // If they were referred by an affiliate, the bounty is instantly considered paid because 
-      // everyone pays 2500 upfront now, and Paystack handles the split on the frontend.
       affiliate_bounty_paid: !!(d.referredBy && d.referredBy.startsWith('aff_'))
     };
 
-    // --- SUBSCRIPTION TIMER LOGIC ---
     if (!existingBiz) {
       bizPayload.subscription_ends_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     }
@@ -140,7 +146,7 @@ exports.handler = async function (event) {
       console.log('Affiliate referral detected. Saved to database during upsert. Skipping standard referral count.');
     }
 
-    // 2. Clear old related data
+    // Clear old related data
     await supabase.from('business_services').delete().eq('business_id', businessId);
     await supabase.from('business_products').delete().eq('business_id', businessId);
     await supabase.from('business_cars').delete().eq('business_id', businessId);
@@ -178,7 +184,7 @@ exports.handler = async function (event) {
           price: parseInt(String(p.price).replace(/,/g, '')) || 0,
           product_code: (p.product_code || '').toUpperCase().trim(), 
           discount_enabled: p.discount_enabled === true,               
-          discount_price: parseInt(String(p.discount_price).replace(/,/g, '')) || 0, 
+          discount_price: parseInt(String(p.discount_price).replace(/,/g, '')) || 0,
           image: p.image || '',
           images: p.images || [],
           sizes: p.sizes || [],

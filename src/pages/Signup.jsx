@@ -221,7 +221,11 @@ export default function Signup() {
       finalSubaccountCode = 'ACCT_PENDING';
     }
 
-    // 2. Save to sessionStorage
+    // 2. Look up the human-readable bank name from the bank code
+    const selectedBank = banks.find((b) => b.code === settlement_bank);
+    const settlementBankName = selectedBank ? selectedBank.name : settlement_bank;
+
+    // 3. Save to localStorage (survives Paystack redirect)
     const tempBusinessData = {
       businessName: business_name,
       businessSlug,
@@ -238,11 +242,16 @@ export default function Signup() {
       tiktok: tiktok_link,
       referredBy: referralParam,
       initialPaymentAmount: signupAmount,
+      // ─── BANK DETAILS FOR ONBOARDING PRE-FILL ───
+      accountName: account_name,
+      accountNumber: account_number,
+      settlementBank: settlementBankName,
+      // ──────────────────────────────────────────────
     };
 
     localStorage.setItem(`pending_signup_${businessSlug}`, JSON.stringify(tempBusinessData));
 
-    // 3. Initialize Payment with timeout
+    // 4. Initialize Payment with timeout
     try {
       const payRes = await fetchWithTimeout(
         '/.netlify/functions/initialize-payment',

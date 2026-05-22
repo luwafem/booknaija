@@ -10,7 +10,7 @@ import FoodList from '../components/bio/FoodList';
 import CarList from '../components/bio/CarList';
 
 // --- ADSENSE CONFIGURATION (GLOBAL) ---
-const ADSENSE_CLIENT = 'ca-pub-XXXXXXXXXXXXXXXX';
+const ADSENSE_CLIENT = 'ca-pub-1898000452698308';
 const AD_SLOT_PRIMARY = '1234567890';
 const AD_SLOT_SECONDARY = '1111111111';
 const AD_SLOT_FOOTER = '0987654321';
@@ -92,7 +92,7 @@ const GoogleAd = ({ slot, className = '' }) => {
   );
 };
 
-const ReferralLink = ({ slug, accent, theme }) => {
+const ReferralLink = ({ slug, accent = '#c8a97e', theme = 'light' }) => {
   const [copied, setCopied] = useState(false);
   const referralUrl = `${window.location.origin}/signup?ref=${slug}`;
   const isDark = theme === 'dark';
@@ -188,6 +188,11 @@ export default function BioPage() {
     setActiveCar(cart.car || null);
   }
 
+  // --- SAFELY GET VALUES (FIXED ERROR HERE) ---
+  const theme = biz?.theme || 'light';
+  const isDark = theme === 'dark';
+  const accent = biz?.accent ?? '#c8a97e'; // ✅ Optional chaining + nullish coalescing
+
   const filteredProducts = searchQuery
     ? (biz?.products || []).filter(p =>
         (p.product_code && p.product_code.toLowerCase() === searchQuery.toLowerCase()) ||
@@ -217,10 +222,7 @@ export default function BioPage() {
       )
     : (biz?.cars || []);
 
-  const theme = biz?.theme || 'light';
-  const isDark = theme === 'dark';
-  const accent = biz.accent || '#c8a97e';
-
+  // --- LOADING STATE ---
   if (loading) {
     return (
       <div className={`min-h-screen flex items-center justify-center px-6 ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}`} role="status">
@@ -232,6 +234,7 @@ export default function BioPage() {
     );
   }
 
+  // --- NO BUSINESS / INACTIVE ---
   if (!biz || !biz.active) {
     return (
       <div className={`min-h-screen flex items-center justify-center px-6 ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}`} role="alert">
@@ -345,8 +348,7 @@ export default function BioPage() {
         : `Booking or purchasing from ${biz.name} is simple. Browse the listings above, select your preferred option, and proceed to secure checkout.`
     },
     {
-      q: `Where is ${biz.name} located?`,
-      a: biz.location 
+      q: `Where is ${biz.name} located?`,      a: biz.location 
         ? `${biz.name} is located in ${biz.location}. You can find more details and contact them directly through this page.` 
         : `You can find location details and contact information for ${biz.name} on this page.`
     },
@@ -481,7 +483,7 @@ export default function BioPage() {
                   <svg className={`w-6 h-6 ${isDark ? 'text-stone-600' : 'text-stone-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
                 <p className="text-sm font-medium" style={{ color: isDark ? '#d6d3d1' : '#78716c' }}>No results found</p>
-                <button onClick={clearSearch} className="mt-4 px-4 py-2 rounded-lg text-xs font-medium transition-colors" style={{ color: accent, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f4' }}>View</button>
+                <button onClick={clearSearch} className="mt-4 px-4 py-2 rounded-lg text-xs font-medium transition-colors" style={{ color: accent, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f4' }}>View All</button>
               </div>
             )}
 
@@ -527,7 +529,7 @@ export default function BioPage() {
         {faqs.map((faq, index) => (
           <div key={index} className="rounded-xl p-4 transition-colors" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#fafaf9', border: `1px solid ${isDark ? accent + '1a' : accent + '20'}` }}>
             <h3 className="text-sm font-semibold mb-2" style={{ color: isDark ? '#e7e5e4' : accent }}>{faq.q}</h3>
-            <p className="text-xs leading-relaxed" style={{ color: isDark ? '#a8a29e' : '#78716c' }}>{faq.a}</p>
+            <p className="text-xs leading-relaxed" style={{ color: isDark ? '#a8a2e4' : '#78716c' }}>{faq.a}</p>
           </div>
         ))}
       </div>
