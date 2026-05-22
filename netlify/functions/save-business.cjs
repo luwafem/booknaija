@@ -5,6 +5,32 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// ─── DERIVE FEATURE FLAGS FROM BUSINESS TYPE ───
+// Safety net: if the frontend doesn't send explicit flags,
+// the server derives them from the business type.
+function getFeaturesForType(type) {
+  switch (type) {
+    case 'Fashion':
+      return { services_enabled: true, products_enabled: true, cars_enabled: false, food_enabled: false };
+    case 'Lash Artist':
+    case 'Hair Stylist':
+    case 'Makeup Artist':
+    case 'Nail Technician':
+    case 'Skin Care':
+      return { services_enabled: true, products_enabled: true, cars_enabled: false, food_enabled: false };
+    case 'Cleaner':
+    case 'Tutor':
+      return { services_enabled: true, products_enabled: false, cars_enabled: false, food_enabled: false };
+    case 'Restaurant':
+      return { services_enabled: false, products_enabled: false, cars_enabled: false, food_enabled: true };
+    case 'Auto':
+      return { services_enabled: false, products_enabled: false, cars_enabled: true, food_enabled: false };
+    default:
+      return { services_enabled: true, products_enabled: true, cars_enabled: false, food_enabled: false };
+  }
+}
+// ────────────────────────────────────────────────
+
 exports.handler = async function (event) {
   console.log('=== SAVE-BUSINESS TO SUPABASE ===');
 
@@ -47,6 +73,31 @@ exports.handler = async function (event) {
     }
     // ─── END SPAM PROTECTION ───
 
+    // ─── RESOLVE FEATURE FLAGS ───
+    // If the frontend sends explicit flags (from Dashboard or Onboarding), use those.
+    // If no flags are sent (first-time signup fallback), derive them from businessType.
+    const businessType = d.businessType || d.business_type || '';
+    const derivedFeatures = getFeaturesForType(businessType);
+
+    const servicesEnabled = (d.servicesEnabled !== undefined) 
+      ? d.servicesEnabled === true 
+      : (d.services_enabled !== undefined ? d.services_enabled === true : derivedFeatures.services_enabled);
+
+    const productsEnabled = (d.productsEnabled !== undefined) 
+      ? d.productsEnabled === true 
+      : (d.products_enabled !== undefined ? d.products_enabled === true : derivedFeatures.products_enabled);
+
+    const carsEnabled = (d.carsEnabled !== undefined) 
+      ? d.carsEnabled === true 
+      : (d.cars_enabled !== undefined ? d.cars_enabled === true : derivedFeatures.cars_enabled);
+
+    const foodEnabled = (d.foodEnabled !== undefined) 
+      ? d.foodEnabled === true 
+      : (d.food_enabled !== undefined ? d.food_enabled === true : derivedFeatures.food_enabled);
+
+    console.log('Feature flags resolved:', { businessType, servicesEnabled, productsEnabled, carsEnabled, foodEnabled });
+    // ────────────────────────────
+
     var bizPayload = {
       slug: d.slug,
       name: d.name,
@@ -78,10 +129,14 @@ exports.handler = async function (event) {
 
       active: true,
       ads_enabled: d.adsEnabled !== false,
-      cars_enabled: d.carsEnabled === true,
-      services_enabled: d.servicesEnabled !== false,
-      products_enabled: d.productsEnabled !== false,
-      food_enabled: d.foodEnabled === true,
+      
+      // ─── USE RESOLVED FEATURE FLAGS ───
+      services_enabled: servicesEnabled,
+      products_enabled: productsEnabled,
+      cars_enabled: carsEnabled,
+      food_enabled: foodEnabled,
+      // ───────────────────────────────────
+
       socials: d.socials || {},
       gallery: d.gallery || [],
       security_code: d.securityCode || '',

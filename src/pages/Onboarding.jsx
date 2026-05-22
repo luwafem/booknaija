@@ -113,6 +113,24 @@ export default function Onboarding() {
   var isAutoBusiness = businessType === 'Auto' || businessType === 'Auto Dealer / Rental';
   var isFoodBusiness = businessType === 'Restaurant' || businessType === 'Restaurant / Food';
 
+  // ─── READ FEATURE FLAGS FROM bizData (set by Signup.jsx) ───
+  // These override the old isAutoBusiness/isFoodBusiness logic
+  var servicesEnabled = (bizData && bizData.servicesEnabled !== undefined) 
+    ? bizData.servicesEnabled === true 
+    : (!isAutoBusiness && !isFoodBusiness);
+  var productsEnabled = (bizData && bizData.productsEnabled !== undefined) 
+    ? bizData.productsEnabled === true 
+    : (!isAutoBusiness && !isFoodBusiness);
+  var carsEnabled = (bizData && bizData.carsEnabled !== undefined) 
+    ? bizData.carsEnabled === true 
+    : isAutoBusiness;
+  var foodEnabled = (bizData && bizData.foodEnabled !== undefined) 
+    ? bizData.foodEnabled === true 
+    : isFoodBusiness;
+  // ────────────────────────────────────────────────────────────
+
+  var hasProductsStep = productsEnabled && !carsEnabled && !foodEnabled;
+
   var [currentStep, setCurrentStep] = useState(1);
   var [securityCode, setSecurityCode] = useState('');
   var [securityQuestion1, setSecurityQuestion1] = useState('');
@@ -130,20 +148,42 @@ export default function Onboarding() {
 
   var [gallery, setGallery] = useState([{ id: 'default', group: 'Gallery', images: [] }]);
   var [services, setServices] = useState([{ id: 1, name: '', duration: '', price: '', description: '', image: '', images: [] }]);
-  var [products, setProducts] = useState([{ id: 1, name: '', price: '', description: '', image: '', images: [] }]);
+  var [products, setProducts] = useState([{ id: 1, name: '', price: '', description: '', image: '', images: [], sizes: [], colors: [] }]);
   var [cars, setCars] = useState([]);
   var [foods, setFoods] = useState([]);
 
   var CLOUD_NAME = 'deexaiik4';
   var UPLOAD_PRESET = 'BizUploads';
 
-  var steps = [
-    { id: 1, title: 'Security', desc: 'Dashboard access' },
-    { id: 2, title: 'Gallery', desc: 'Your photos' },
-    { id: 3, title: isAutoBusiness ? 'Cars' : isFoodBusiness ? 'Menu' : 'Services', desc: 'What you offer' },
-    { id: 4, title: isAutoBusiness || isFoodBusiness ? 'Review' : 'Products', desc: isAutoBusiness || isFoodBusiness ? 'Final check' : 'Items for sale' },
-    ...(isAutoBusiness || isFoodBusiness ? [] : [{ id: 5, title: 'Review', desc: 'Final check' }])
-  ];
+  // ─── BUILD STEPS BASED ON FEATURE FLAGS ───
+  var steps;
+  if (carsEnabled || foodEnabled) {
+    // Auto or Food business: Security → Gallery → Cars/Menu → Review
+    steps = [
+      { id: 1, title: 'Security', desc: 'Dashboard access' },
+      { id: 2, title: 'Gallery', desc: 'Your photos' },
+      { id: 3, title: carsEnabled ? 'Cars' : 'Menu', desc: 'What you offer' },
+      { id: 4, title: 'Review', desc: 'Final check' }
+    ];
+  } else if (hasProductsStep) {
+    // Services + Products (Fashion, Lash, Hair, etc.): Security → Gallery → Services → Products → Review
+    steps = [
+      { id: 1, title: 'Security', desc: 'Dashboard access' },
+      { id: 2, title: 'Gallery', desc: 'Your photos' },
+      { id: 3, title: 'Services', desc: 'What you offer' },
+      { id: 4, title: 'Products', desc: 'Items for sale' },
+      { id: 5, title: 'Review', desc: 'Final check' }
+    ];
+  } else {
+    // Services only (Cleaner, Tutor): Security → Gallery → Services → Review
+    steps = [
+      { id: 1, title: 'Security', desc: 'Dashboard access' },
+      { id: 2, title: 'Gallery', desc: 'Your photos' },
+      { id: 3, title: 'Services', desc: 'What you offer' },
+      { id: 4, title: 'Review', desc: 'Final check' }
+    ];
+  }
+  // ──────────────────────────────────────────
 
   useEffect(function() {
     if (!window.cloudinary) {
@@ -301,7 +341,7 @@ export default function Onboarding() {
 
   function addProduct() {
     setProducts(function(p) {
-      return p.concat([{ id: Date.now(), name: '', price: '', description: '', image: '', images: [] }]);
+      return p.concat([{ id: Date.now(), name: '', price: '', description: '', image: '', images: [], sizes: [], colors: [] }]);
     });
   }
 
@@ -316,6 +356,18 @@ export default function Onboarding() {
       var u = {};
       u[field] = value;
       return updateNestedState(p, id, u);
+    });
+  }
+
+  function updateProductSizes(id, value) {
+    setProducts(function(p) {
+      return updateNestedState(p, id, { sizes: value.split(',').map(function(s) { return s.trim(); }).filter(Boolean) });
+    });
+  }
+
+  function updateProductColors(id, value) {
+    setProducts(function(p) {
+      return updateNestedState(p, id, { colors: value.split(',').map(function(s) { return s.trim(); }).filter(Boolean) });
     });
   }
 
@@ -562,12 +614,14 @@ export default function Onboarding() {
         price: cleanPrice(p.price),
         image: p.image || '',
         images: p.images || [],
+        sizes: p.sizes || [],
+        colors: p.colors || [],
         showDetails: true,
         description: p.description || ''
       };
     });
 
-    var carsData = (isAutoBusiness ? cars : []).filter(function(c) { return c.name; }).map(function(c) {
+    var carsData = (carsEnabled ? cars : []).filter(function(c) { return c.name; }).map(function(c) {
       return {
         id: businessSlug + '-' + c.id,
         type: c.type,
@@ -583,7 +637,7 @@ export default function Onboarding() {
       };
     });
 
-    var foodsData = (isFoodBusiness ? foods : []).filter(function(f) { return f.name; }).map(function(f) {
+    var foodsData = (foodEnabled ? foods : []).filter(function(f) { return f.name; }).map(function(f) {
       var cleanAddons = [];
       if (f.addons && f.addons.length > 0) {
         for (var i = 0; i < f.addons.length; i++) {
@@ -648,10 +702,15 @@ export default function Onboarding() {
       subaccountCode: subaccountCode,
       calendarId: email,
       adsEnabled: true,
-      carsEnabled: isAutoBusiness,
-      servicesEnabled: !isAutoBusiness && !isFoodBusiness,
-      productsEnabled: !isAutoBusiness && !isFoodBusiness,
-      foodEnabled: isFoodBusiness,
+
+      // ─── FEATURE FLAGS: Read from bizData (set by Signup.jsx) ───
+      businessType: businessType,
+      servicesEnabled: servicesEnabled,
+      productsEnabled: productsEnabled,
+      carsEnabled: carsEnabled,
+      foodEnabled: foodEnabled,
+      // ────────────────────────────────────────────────────────────
+
       securityCode: securityCode,
       securityQuestion1: securityQuestion1,
       securityAnswer1: securityAnswer1.trim().toLowerCase(),
@@ -741,6 +800,11 @@ export default function Onboarding() {
     totalGalleryImages += gallery[gi].images.length;
   }
 
+  // ─── Determine if current step is the products step ───
+  var isProductsStep = hasProductsStep && currentStep === 4;
+  var isReviewStep = currentStep === steps.length;
+  // ──────────────────────────────────────────────────────
+
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans selection:bg-zinc-700 selection:text-white">
       
@@ -805,6 +869,7 @@ export default function Onboarding() {
 
             <div className="p-6">
               
+              {/* ── STEP 1: SECURITY ── */}
               {currentStep === 1 && (
                 <div className="space-y-5">
                   <div>
@@ -888,6 +953,7 @@ export default function Onboarding() {
                 </div>
               )}
 
+              {/* ── STEP 2: GALLERY ── */}
               {currentStep === 2 && (
                 <div className="space-y-5">
                   <div>
@@ -939,10 +1005,12 @@ export default function Onboarding() {
                 </div>
               )}
 
+              {/* ── STEP 3: SERVICES / CARS / MENU ── */}
               {currentStep === 3 && (
                 <div className="space-y-5">
                   
-                  {!isAutoBusiness && !isFoodBusiness && (
+                  {/* Services form (for non-car, non-food businesses) */}
+                  {servicesEnabled && !carsEnabled && !foodEnabled && (
                     <>
                       <div className="flex justify-between items-center">
                         <div>
@@ -989,7 +1057,8 @@ export default function Onboarding() {
                     </>
                   )}
 
-                  {isAutoBusiness && (
+                  {/* Cars form */}
+                  {carsEnabled && (
                     <>
                       <div className="flex justify-between items-center">
                         <div>
@@ -1050,7 +1119,8 @@ export default function Onboarding() {
                     </>
                   )}
 
-                  {isFoodBusiness && (
+                  {/* Food form */}
+                  {foodEnabled && (
                     <>
                       <div className="flex justify-between items-center">
                         <div>
@@ -1136,54 +1206,75 @@ export default function Onboarding() {
                       </div>
                     </>
                   )}
-
-                  {!isAutoBusiness && !isFoodBusiness && (
-                    <>
-                      <div className="flex justify-between items-center pt-4 border-t border-zinc-800">
-                        <div>
-                          <p className={sectionTitle}>Products</p>
-                          <p className={sectionDesc}>Items you sell.</p>
-                        </div>
-                        <button type="button" onClick={addProduct} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors">+ Add</button>
-                      </div>
-                      <div className="space-y-4">
-                        {products.map(function(product) {
-                          return (
-                            <div key={product.id} className="relative p-4 rounded-xl border border-zinc-700 bg-zinc-800/50">
-                              <button type="button" onClick={function() { removeProduct(product.id); }} className="absolute top-2 right-2 text-zinc-500 hover:text-red-400">✕</button>
-                              <div className="space-y-2">
-                                <input className={inputBase} placeholder="Product Name" value={product.name} onChange={function(e) { updateProduct(product.id, 'name', e.target.value); }} />
-                                <input className={inputBase} placeholder="Price (₦)" type="number" value={product.price} onChange={function(e) { updateProduct(product.id, 'price', e.target.value); }} />
-                                <textarea className={inputBase + " h-16 resize-none"} placeholder="Description" value={product.description} onChange={function(e) { updateProduct(product.id, 'description', e.target.value); }} />
-                              </div>
-                              <div className="mt-3">
-                                <p className="text-xs font-semibold text-zinc-400 mb-2">Images (Max 3)</p>
-                                <div className="grid grid-cols-3 gap-2">
-                                  {(product.images || []).map(function(img, idx) {
-                                    return (
-                                      <div key={idx} className="aspect-square bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group">
-                                        <img src={img} className="w-full h-full object-cover" alt="" />
-                                        <button type="button" onClick={function() { removeProductImage(product.id, idx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-xs">✕</button>
-                                      </div>
-                                    );
-                                  })}
-                                  {(product.images || []).length < 3 && (
-                                    <button type="button" onClick={function() { handleProductImageUpload(product); }} className="aspect-square bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center hover:border-zinc-500 hover:text-zinc-300 transition-all">
-                                      <span className="text-xs">+ Photo</span>
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
                 </div>
               )}
 
-              {(currentStep === steps.length) && (
+              {/* ── STEP 4: PRODUCTS (only for services+products businesses) ── */}
+              {isProductsStep && (
+                <div className="space-y-5">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className={sectionTitle}>Products</p>
+                      <p className={sectionDesc}>
+                        {businessType === 'Fashion' 
+                          ? 'Add your clothing & accessories. Include sizes and colors.' 
+                          : 'Items you sell.'}
+                      </p>
+                    </div>
+                    <button type="button" onClick={addProduct} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors">+ Add</button>
+                  </div>
+                  <div className="space-y-4">
+                    {products.map(function(product) {
+                      return (
+                        <div key={product.id} className="relative p-4 rounded-xl border border-zinc-700 bg-zinc-800/50">
+                          <button type="button" onClick={function() { removeProduct(product.id); }} className="absolute top-2 right-2 text-zinc-500 hover:text-red-400">✕</button>
+                          <div className="space-y-2">
+                            <input className={inputBase} placeholder="Product Name" value={product.name} onChange={function(e) { updateProduct(product.id, 'name', e.target.value); }} />
+                            <input className={inputBase} placeholder="Price (₦)" type="number" value={product.price} onChange={function(e) { updateProduct(product.id, 'price', e.target.value); }} />
+                            <textarea className={inputBase + " h-16 resize-none"} placeholder="Description" value={product.description} onChange={function(e) { updateProduct(product.id, 'description', e.target.value); }} />
+                            
+                            {/* ─── FASHION-READY: Sizes & Colors fields ─── */}
+                            <input 
+                              className={inputBase} 
+                              placeholder="Sizes (comma separated, e.g. S, M, L, XL)" 
+                              value={(product.sizes || []).join(', ')} 
+                              onChange={function(e) { updateProductSizes(product.id, e.target.value); }} 
+                            />
+                            <input 
+                              className={inputBase} 
+                              placeholder="Colors (comma separated, e.g. Red, Blue, Black)" 
+                              value={(product.colors || []).join(', ')} 
+                              onChange={function(e) { updateProductColors(product.id, e.target.value); }} 
+                            />
+                            {/* ──────────────────────────────────────────── */}
+                          </div>
+                          <div className="mt-3">
+                            <p className="text-xs font-semibold text-zinc-400 mb-2">Images (Max 3)</p>
+                            <div className="grid grid-cols-3 gap-2">
+                              {(product.images || []).map(function(img, idx) {
+                                return (
+                                  <div key={idx} className="aspect-square bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group">
+                                    <img src={img} className="w-full h-full object-cover" alt="" />
+                                    <button type="button" onClick={function() { removeProductImage(product.id, idx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-xs">✕</button>
+                                  </div>
+                                );
+                              })}
+                              {(product.images || []).length < 3 && (
+                                <button type="button" onClick={function() { handleProductImageUpload(product); }} className="aspect-square bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center hover:border-zinc-500 hover:text-zinc-300 transition-all">
+                                  <span className="text-xs">+ Photo</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ── REVIEW STEP ── */}
+              {isReviewStep && (
                 <div className="space-y-5">
                   <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700">
                     <h3 className="text-sm font-semibold text-white mb-3">Review Your Setup</h3>
@@ -1204,30 +1295,34 @@ export default function Onboarding() {
                         <span className="text-zinc-400">Gallery Groups</span>
                         <span className="text-white font-medium">{gallery.length} groups ({totalGalleryImages} photos)</span>
                       </div>
-                      {!isAutoBusiness && !isFoodBusiness && (
-                        <>
-                          <div className="flex justify-between py-2 border-b border-zinc-700">
-                            <span className="text-zinc-400">Services</span>
-                            <span className="text-white font-medium">{services.filter(s => s.name).length} items</span>
-                          </div>
-                          <div className="flex justify-between py-2 border-b border-zinc-700">
-                            <span className="text-zinc-400">Products</span>
-                            <span className="text-white font-medium">{products.filter(p => p.name).length} items</span>
-                          </div>
-                        </>
+                      
+                      {/* ─── Feature-aware review items ─── */}
+                      {servicesEnabled && (
+                        <div className="flex justify-between py-2 border-b border-zinc-700">
+                          <span className="text-zinc-400">Services</span>
+                          <span className="text-white font-medium">{services.filter(s => s.name).length} items</span>
+                        </div>
                       )}
-                      {isAutoBusiness && (
+                      {productsEnabled && (
+                        <div className="flex justify-between py-2 border-b border-zinc-700">
+                          <span className="text-zinc-400">Products</span>
+                          <span className="text-white font-medium">{products.filter(p => p.name).length} items</span>
+                        </div>
+                      )}
+                      {carsEnabled && (
                         <div className="flex justify-between py-2 border-b border-zinc-700">
                           <span className="text-zinc-400">Cars</span>
                           <span className="text-white font-medium">{cars.filter(c => c.name).length} vehicles</span>
                         </div>
                       )}
-                      {isFoodBusiness && (
+                      {foodEnabled && (
                         <div className="flex justify-between py-2 border-b border-zinc-700">
                           <span className="text-zinc-400">Menu Items</span>
                           <span className="text-white font-medium">{foods.filter(f => f.name).length} items</span>
                         </div>
                       )}
+                      {/* ─────────────────────────────────── */}
+
                       <div className="flex justify-between py-2">
                         <span className="text-zinc-400">Security</span>
                         <span className="text-green-400 font-medium">✓ Configured</span>

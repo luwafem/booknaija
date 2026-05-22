@@ -1,5 +1,34 @@
 import { useState } from 'react';
 
+// ─── COLOR MAP: Resolves text names to CSS-friendly hex codes ───
+const colorHexMap = {
+  'red': '#ef4444', 'blue': '#3b82f6', 'green': '#22c55e', 
+  'black': '#000000', 'white': '#ffffff', 'yellow': '#eab308',
+  'pink': '#ec4899', 'purple': '#a855f7', 'orange': '#f97316',
+  'brown': '#92400e', 'gray': '#6b7280', 'grey': '#6b7280',
+  'gold': '#d4af37', 'silver': '#c0c0c0', 'beige': '#f5f5dc',
+  'navy': '#000080', 'coral': '#ff7f50', 'teal': '#14b8a6',
+  'cream': '#fffdd0', 'ivory': '#fffff0', 'khaki': '#c3b091',
+  'maroon': '#800000', 'olive': '#808000', 'tan': '#d2b48c',
+  'turquoise': '#40e0d0', 'burgundy': '#800020', 'multi': 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)',
+  'assorted': 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)',
+  'mixed': 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)',
+  'print': 'repeating-linear-gradient(45deg, #ccc, #ccc 2px, #fff 2px, #fff 4px)',
+  'ankara': 'repeating-linear-gradient(45deg, #ef4444, #ef4444 2px, #f59e0b 2px, #f59e0b 4px)',
+};
+
+function resolveColor(colorStr, isDark) {
+  if (!colorStr) return isDark ? '#333333' : '#cccccc';
+  
+  const lower = colorStr.toLowerCase().trim();
+  
+  if (lower.startsWith('#') && (lower.length === 4 || lower.length === 7)) return lower;
+  if (colorHexMap[lower]) return colorHexMap[lower];
+  
+  return isDark ? '#444444' : '#aaaaaa'; 
+}
+// ────────────────────────────────────────────────────────────────
+
 export default function ProductList({ products, selectedProducts, onSelect, accent, label, location, theme }) {
   const isDark = theme === 'dark';
 
@@ -79,19 +108,36 @@ function ProductCard({ product, active, accent, onClick, location, theme }) {
 
   const canShowDetails = product.showDetails !== false && product.description;
   const isWide = product.layout === 'wide';
+  
+  // ─── FASHION VARIANT LOGIC ───
+  // Check if the product has fashion variants (sizes or colors)
+  const isFashionVariant = hasSizes || hasColors;
+
+  // On mobile (grid-cols-2), col-span-2 makes it full width (1 per row). 
+  // On sm+ (grid-cols-3/4), sm:col-span-1 resets it to standard size.
+  const gridSpanClass = isWide 
+    ? 'col-span-2' 
+    : (isFashionVariant ? 'col-span-2 sm:col-span-1' : 'col-span-1');
+
+  // Use portrait ratio for fashion items so they aren't giant squares on mobile.
+  // Standard items stay square.
+  const imageAspectClass = isWide 
+    ? 'aspect-[4/5]' 
+    : (isFashionVariant ? 'aspect-[4/5]' : 'aspect-square');
+  // ────────────────────────────
 
   return (
     <div
       onClick={() => onClick(product.id, selectedSize, selectedColor)}
       className={`
         w-full text-left rounded-xl sm:rounded-2xl border transition-all duration-300 group relative overflow-hidden flex flex-col cursor-pointer
-        ${isWide ? 'col-span-2' : 'col-span-1'}
+        ${gridSpanClass}
         ${cardBg}
       `}
       style={cardBorder}
     >
       {/* Image Container */}
-      <div className={`w-full relative overflow-hidden ${imageBg} border-b ${borderSubtle} ${isWide ? 'aspect-[4/5]' : 'aspect-square'}`}>
+      <div className={`w-full relative overflow-hidden ${imageBg} border-b ${borderSubtle} ${imageAspectClass}`}>
         {allImages.length > 0 ? (
           <img 
             src={allImages[currentImgIndex]} 
@@ -182,12 +228,12 @@ function ProductCard({ product, active, accent, onClick, location, theme }) {
                   key={color}
                   onClick={handleColorClick(color)}
                   title={color} 
-                  className={`rounded-full transition-transform duration-200 relative ${isDark ? 'border-white/20' : 'border-stone-300'} ${selectedColor === color ? 'scale-110 shadow-lg' : 'hover:scale-105'}`}
+                  className={`rounded-full transition-transform duration-200 relative border ${selectedColor === color ? 'scale-110 shadow-lg' : 'hover:scale-105'} ${isDark ? 'border-white/10' : 'border-stone-200'}`}
                   style={{
-                    backgroundColor: color,
+                    backgroundColor: resolveColor(color, isDark),
                     boxShadow: selectedColor === color ? `0 0 0 2px ${isDark ? '#0a0a0a' : '#ffffff'}, 0 0 0 4px ${accent}` : 'none',
-                    width: '14px',
-                    height: '14px',
+                    width: '16px',
+                    height: '16px',
                   }}
                 />
               ))}

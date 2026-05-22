@@ -50,6 +50,60 @@ export default function Signup() {
     setFormValues((prev) => ({ ...prev, [name]: value }));
   };
 
+  // ─── DERIVE FEATURE FLAGS FROM BUSINESS TYPE ───
+  const getFeaturesForType = (type) => {
+    switch (type) {
+      case 'Fashion':
+        return {
+          servicesEnabled: true,
+          productsEnabled: true,
+          carsEnabled: false,
+          foodEnabled: false,
+        };
+      case 'Lash Artist':
+      case 'Hair Stylist':
+      case 'Makeup Artist':
+      case 'Nail Technician':
+      case 'Skin Care':
+        return {
+          servicesEnabled: true,
+          productsEnabled: true,
+          carsEnabled: false,
+          foodEnabled: false,
+        };
+      case 'Cleaner':
+      case 'Tutor':
+        return {
+          servicesEnabled: true,
+          productsEnabled: false,
+          carsEnabled: false,
+          foodEnabled: false,
+        };
+      case 'Restaurant':
+        return {
+          servicesEnabled: false,
+          productsEnabled: false,
+          carsEnabled: false,
+          foodEnabled: true,
+        };
+      case 'Auto':
+        return {
+          servicesEnabled: false,
+          productsEnabled: false,
+          carsEnabled: true,
+          foodEnabled: false,
+        };
+      default:
+        return {
+          servicesEnabled: true,
+          productsEnabled: true,
+          carsEnabled: false,
+          foodEnabled: false,
+        };
+    }
+  };
+  // ────────────────────────────────────────────────
+
   useEffect(() => {
     const fetchBanks = async () => {
       try {
@@ -174,6 +228,7 @@ export default function Signup() {
       business_address,
       instagram_link,
       tiktok_link,
+      has_products,
     } = formValues;
 
     const colorToUse = brandColor || '#c8a97e';
@@ -185,6 +240,18 @@ export default function Signup() {
       setLoading(false);
       return;
     }
+
+    // ─── Derive feature flags from business type ───
+    const typeFeatures = getFeaturesForType(business_type);
+
+    // Allow manual override: if they explicitly said "No" to products, respect it
+    // Otherwise use the auto-derived default from business_type
+    if (has_products === 'No') {
+      typeFeatures.productsEnabled = false;
+    } else if (has_products === 'Yes') {
+      typeFeatures.productsEnabled = true;
+    }
+    // ────────────────────────────────────────────────
 
     let finalSubaccountCode = null;
 
@@ -247,6 +314,10 @@ export default function Signup() {
       accountNumber: account_number,
       settlementBank: settlementBankName,
       // ──────────────────────────────────────────────
+
+      // ─── FEATURE FLAGS: Auto-derived from business type ───
+      ...typeFeatures,
+      // ───────────────────────────────────────────────────────
     };
 
     localStorage.setItem(`pending_signup_${businessSlug}`, JSON.stringify(tempBusinessData));
@@ -301,6 +372,10 @@ export default function Signup() {
   const sectionTitle = 'text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2 mt-1';
   const sectionDesc = 'text-xs text-zinc-400 mb-3 -mt-1';
   const labelBase = 'block text-sm font-medium text-zinc-200 mb-1.5';
+
+  // ─── Auto-set has_products when business_type changes ───
+  const currentTypeFeatures = formValues.business_type ? getFeaturesForType(formValues.business_type) : null;
+  // ────────────────────────────────────────────────────────
 
   const ChevronDown = () => (
     <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-zinc-400">
@@ -453,6 +528,42 @@ export default function Signup() {
                       <ChevronDown />
                     </div>
                   </div>
+
+                  {/* ─── Auto-detected features preview ─── */}
+                  {currentTypeFeatures && (
+                    <div className="bg-zinc-800/50 border border-zinc-700/50 rounded-xl p-3 mt-2">
+                      <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">
+                        Based on your business type, your page will include:
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {currentTypeFeatures.servicesEnabled && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-1 rounded-lg">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                            Services
+                          </span>
+                        )}
+                        {currentTypeFeatures.productsEnabled && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-1 rounded-lg">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                            Products
+                          </span>
+                        )}
+                        {currentTypeFeatures.carsEnabled && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-1 rounded-lg">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                            Car Listings
+                          </span>
+                        )}
+                        {currentTypeFeatures.foodEnabled && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-1 rounded-lg">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                            Food Ordering
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {/* ────────────────────────────────────── */}
                 </div>
               )}
 
@@ -606,6 +717,11 @@ export default function Signup() {
 
                   <div>
                     <p className={sectionTitle}>Do you sell products?</p>
+                    <p className={sectionDesc}>
+                      {currentTypeFeatures?.productsEnabled
+                        ? 'Your business type typically sells products. Override if needed.'
+                        : 'Your business type typically doesn\'t sell products. Enable if you do.'}
+                    </p>
                     <div className="relative">
                       <select
                         name="has_products"
