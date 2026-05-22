@@ -26,6 +26,9 @@ export default function HeroSection({ biz }) {
   const mapQuery = biz.location ? encodeURIComponent(biz.name + ' ' + biz.location) : encodeURIComponent(biz.name || '');
   const waNumber = formatWhatsAppNumber(biz.whatsapp || biz.phone);
 
+  // If there's a background image OR it's dark mode, force high-contrast light text/elements
+  const useOverlayStyle = hasImages || isDark;
+
   return (
     <div className={`relative w-full overflow-hidden text-white ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'} min-h-screen`}
       style={{ minHeight: '100vh' }}
@@ -48,13 +51,18 @@ export default function HeroSection({ biz }) {
         </div>
       )}
 
-      {/* ── DESKTOP: Subtle gradient overlay ── */}
-      <div className={`hidden lg:block absolute inset-0 z-0 ${isDark ? 'bg-gradient-to-b from-[#111] via-[#0a0a0a] to-[#0a0a0a]' : 'bg-gradient-to-b from-stone-100 via-stone-50 to-stone-50'}`} />
+      {/* ── SMART OVERLAY ── */}
+      {hasImages ? (
+        <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/30 via-black/50 to-black/80" aria-hidden="true" />
+      ) : (
+        <div className={`absolute inset-0 z-0 ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}`} />
+      )}
 
       <header className={`
-        relative z-20 mx-auto flex flex-col items-center justify-center
-        px-5 pt-20 sm:pt-24 pb-8 min-h-screen
-        lg:px-8 lg:pt-12 lg:pb-10 lg:min-h-0 lg:w-full lg:max-w-none
+        relative z-20 mx-auto flex flex-col items-center justify-start
+        px-5 pb-8 min-h-screen
+        pt-[20vh] sm:pt-[22vh]
+        lg:px-8 lg:pb-10 lg:min-h-0 lg:w-full lg:max-w-none lg:pt-[18vh]
       `}
       style={{ minHeight: 'auto' }}
       >
@@ -73,9 +81,9 @@ export default function HeroSection({ biz }) {
               relative w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 
               rounded-full overflow-hidden flex items-center justify-center 
               shadow-2xl ring-4 ring-white/10
-              ${isDark ? 'bg-[#0a0a0a] border-2' : 'bg-white border-2'}
+              ${useOverlayStyle ? 'bg-[#0a0a0a] border-2' : 'bg-white border-2'}
             `}
-              style={{ borderColor: isDark ? accent + '40' : accent + '80' }}
+              style={{ borderColor: useOverlayStyle ? accent + '40' : accent + '80' }}
             >
               {biz.logo || biz.avatar ? (
                 <img 
@@ -97,13 +105,13 @@ export default function HeroSection({ biz }) {
         </div>
 
         {/* ── NAME & TAGLINE ── */}
-        <div className="mb-3 sm:mb-5 lg:mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+        <div className="mb-3 sm:mb-5 lg:mb-6 animate-fade-in-up text-center" style={{ animationDelay: '0.1s' }}>
           <h1 
             className={`
               text-3xl sm:text-4xl lg:text-5xl 
               font-heading font-bold tracking-tight mb-2 
               leading-[1.1] capitalize drop-shadow-2xl
-              ${isDark ? 'text-white' : 'text-stone-900'}
+              ${useOverlayStyle ? 'text-white' : 'text-stone-900'}
             `}
             itemProp="name"
           >
@@ -115,9 +123,8 @@ export default function HeroSection({ biz }) {
               text-xs sm:text-sm lg:text-base
               uppercase tracking-[0.25em] lg:tracking-[0.3em] 
               font-semibold
-              ${isDark ? textColorDark : textColor}
+              ${useOverlayStyle ? 'text-white/80' : 'text-stone-600'}
             `}
-            style={{ color: isDark ? textColorDark : textColor }}
           >
             {biz.tagline}
           </p>
@@ -130,11 +137,11 @@ export default function HeroSection({ biz }) {
               text-sm sm:text-base lg:text-lg
               font-sans font-normal leading-relaxed text-center 
               mb-6 sm:mb-8 lg:mb-10
-              max-w-xs sm:max-w-sm lg:max-w-md
+              max-w-xs sm:max-w-sm lg:max-w-md mx-auto
               animate-fade-in-up
-              ${isDark ? textColorDark : textColor}
+              ${useOverlayStyle ? 'text-white/90' : 'text-stone-600'}
             `}
-            style={{ animationDelay: '0.15s', color: isDark ? textColorDark : textColor }}
+            style={{ animationDelay: '0.15s' }}
             itemProp="description"
           >
             {biz.bio}
@@ -154,11 +161,11 @@ export default function HeroSection({ biz }) {
                 px-5 sm:px-6 py-2.5 sm:py-3 lg:py-3.5 
                 border-2 rounded-full flex items-center gap-2.5 
                 shadow-lg transition-all duration-300 cursor-pointer hover:scale-105
-                ${isDark 
+                ${useOverlayStyle 
                   ? 'bg-white/[0.05] backdrop-blur-xl border-white/15 hover:bg-white/[0.1] hover:border-white/25' 
                   : 'bg-white border-stone-300 hover:bg-stone-50 hover:border-stone-400 hover:shadow-xl'}
               `}
-              style={{ borderColor: isDark ? accent + '40' : accent + '80' }}
+              style={{ borderColor: useOverlayStyle ? accent + '40' : accent + '80' }}
               aria-label="View location on map"
             >
               <MapPinIcon className="w-4 h-4 sm:w-5 lg:w-5" style={{ color: accent }} />
@@ -166,9 +173,8 @@ export default function HeroSection({ biz }) {
                 className={`
                   text-xs sm:text-sm lg:text-base
                   font-bold uppercase tracking-widest
-                  ${isDark ? textColorDark : textColor}
+                  ${useOverlayStyle ? 'text-white' : 'text-stone-600'}
                 `}
-                style={{ color: isDark ? textColorDark : textColor }}
               >
                 {biz.location}
               </span>
@@ -180,21 +186,20 @@ export default function HeroSection({ biz }) {
                 px-5 sm:px-6 py-2.5 sm:py-3 lg:py-3.5 
                 border-2 rounded-full flex items-center gap-2.5 
                 shadow-lg
-                ${isDark 
+                ${useOverlayStyle 
                   ? 'bg-white/[0.05] backdrop-blur-xl border-white/15' 
                   : 'bg-white border-stone-300 hover:bg-stone-50 hover:border-stone-400 hover:shadow-xl transition-all duration-300'}
               `}
-              style={{ borderColor: isDark ? accent + '40' : accent + '80' }}
+              style={{ borderColor: useOverlayStyle ? accent + '40' : accent + '80' }}
             >
               <ClockIcon className="w-4 h-4 sm:w-5 lg:w-5" style={{ color: accent }} />
               <time 
                 className={`
                   text-xs sm:text-sm lg:text-base
                   font-bold uppercase tracking-widest
-                  ${isDark ? textColorDark : textColor}
+                  ${useOverlayStyle ? 'text-white' : 'text-stone-600'}
                 `} 
                 itemProp="openingHours"
-                style={{ color: isDark ? textColorDark : textColor }}
               >
                 {biz.hours}
               </time>
@@ -211,11 +216,11 @@ export default function HeroSection({ biz }) {
               rounded-2xl overflow-hidden border-2
               animate-fade-in-up relative
               h-[130px] lg:h-[180px]
-              ${isDark ? 'bg-white/[0.02]' : 'bg-white'}
+              ${useOverlayStyle ? 'bg-white/[0.05] backdrop-blur-md' : 'bg-white'}
             `}
             style={{ 
               animationDelay: '0.25s',
-              borderColor: isDark ? accent + '40' : accent + '80'
+              borderColor: useOverlayStyle ? accent + '40' : accent + '80'
             }}
           >
             <style>{`
@@ -238,7 +243,7 @@ export default function HeroSection({ biz }) {
                 ? `https://maps.google.com/maps?q=${biz.lat},${biz.lng}&t=&z=17&ie=UTF8&iwloc=&output=embed`
                 : `https://maps.google.com/maps?q=${mapQuery}&t=&z=15&ie=UTF8&iwloc=&output=embed`
               }
-              style={isDark ? { filter: 'invert(90%) hue-rotate(180deg) saturate(0.8) contrast(1.1) brightness(0.9)', border: '0' } : { border: '0' }}
+              style={useOverlayStyle ? { filter: 'invert(90%) hue-rotate(180deg) saturate(0.8) contrast(1.1) brightness(0.9)', border: '0' } : { border: '0' }}
               loading="lazy"
             />
             <div 
@@ -246,11 +251,11 @@ export default function HeroSection({ biz }) {
                 absolute bottom-3 right-3 
                 flex items-center gap-1.5 rounded-lg px-3 py-2 
                 border-2 backdrop-blur-md
-                ${isDark ? 'bg-black/70 border-white/15' : 'bg-white border-stone-200 shadow-xl'}
+                ${useOverlayStyle ? 'bg-black/70 border-white/15' : 'bg-white border-stone-200 shadow-xl'}
               `}
-              style={{ borderColor: isDark ? accent + '40' : accent + '80' }}
+              style={{ borderColor: useOverlayStyle ? accent + '40' : accent + '80' }}
             >
-              <svg className={`w-4 h-4 sm:w-5 lg:w-5 ${isDark ? textColorDark : textColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className={`w-4 h-4 sm:w-5 lg:w-5 ${useOverlayStyle ? 'text-stone-300' : 'text-stone-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
@@ -264,9 +269,8 @@ export default function HeroSection({ biz }) {
                 className={`
                   text-xs sm:text-sm lg:text-base
                   font-semibold transition-colors
-                  ${isDark ? 'text-stone-300 hover:text-white' : textColor}
+                  ${useOverlayStyle ? 'text-stone-300 hover:text-white' : 'text-stone-600'}
                 `}
-                style={{ color: isDark ? textColorDark : textColor }}
               >
                 Open in Maps
               </a>
@@ -302,18 +306,18 @@ export default function HeroSection({ biz }) {
                 uppercase tracking-[0.2em] text-sm sm:text-base lg:text-lg
                 hover:scale-105
                 flex-1 sm:flex-none sm:min-w-[220px] lg:min-w-[280px]
-                ${isDark 
+                ${useOverlayStyle 
                   ? 'bg-white/[0.03] backdrop-blur-md text-white hover:bg-white/[0.08]' 
                   : 'bg-white text-stone-900 hover:bg-stone-50 shadow-lg'}
               `}
               style={{ 
-                borderColor: isDark ? accent + '40' : accent + '80'
+                borderColor: useOverlayStyle ? accent + '40' : accent + '80'
               }}
               itemProp="telephone"
               aria-label={`Call ${biz.name} at ${biz.phone}`}
             >
-              <PhoneIcon className={`w-5 h-5 sm:w-6 lg:w-7 ${isDark ? 'opacity-70' : 'opacity-90'}`} style={{ color: accent }} /> 
-              <span style={{ color: isDark ? '#e7e5e4' : textColor }}>Call</span>
+              <PhoneIcon className={`w-5 h-5 sm:w-6 lg:w-7 ${useOverlayStyle ? 'opacity-70' : 'opacity-90'}`} style={{ color: accent }} /> 
+              <span style={{ color: useOverlayStyle ? '#e7e5e4' : textColor }}>Call</span>
             </a>
           )}
         </div>
@@ -325,7 +329,7 @@ export default function HeroSection({ biz }) {
               href={biz.socials.instagram} 
               target="_blank" 
               rel="noreferrer" 
-              className={`transition-all duration-300 hover:scale-110 ${isDark ? 'text-stone-500 hover:text-white' : textColor}`} 
+              className={`transition-all duration-300 hover:scale-110 ${useOverlayStyle ? 'text-stone-500 hover:text-white' : 'text-stone-600'}`} 
               aria-label={`Follow ${biz.name} on Instagram`}
             >
               <InstagramIcon className="w-7 h-7 sm:w-8 lg:w-10" style={{ color: accent }} />
@@ -336,7 +340,7 @@ export default function HeroSection({ biz }) {
               href={biz.socials.tiktok} 
               target="_blank" 
               rel="noreferrer" 
-              className={`transition-all duration-300 hover:scale-110 ${isDark ? 'text-stone-500 hover:text-white' : textColor}`} 
+              className={`transition-all duration-300 hover:scale-110 ${useOverlayStyle ? 'text-stone-500 hover:text-white' : 'text-stone-600'}`} 
               aria-label={`Follow ${biz.name} on TikTok`}
             >
               <TikTokIcon className="w-7 h-7 sm:w-8 lg:w-10" style={{ color: accent }} />
