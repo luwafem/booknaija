@@ -21,7 +21,7 @@ const steps = [
 ];
 
 const features = [
-  { t: 'Upfront Paystack Payments', d: 'Stop chasing money. Clients pay securely via Paystack at the point of booking so you are guaranteed your fee.', icon: <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /> },
+  { t: 'Card & Bank Transfer', d: 'Stop chasing money. Clients pay securely via Paystack or directly via Bank Transfer. Get paid upfront, every time.', icon: <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /> },
   { t: 'Product Sales', d: 'Not just bookings. Sell wigs, care products, or merchandise directly from your storefront.', icon: <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /> },
   { t: 'Google Calendar Sync', d: 'Avoid double-bookings. We automatically block slots when you have personal plans.', icon: <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /> },
   { t: 'Automated Reminders', d: 'We send WhatsApp and Email reminders to your clients so they never miss an appointment.', icon: <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /> },
@@ -348,7 +348,7 @@ export default function Landing() {
                   Stop losing sales to missed DMs. Your BookNaija link is a 24/7 storefront that handles bookings, product sales, and payments automatically.
                 </p>
                 <ul className="space-y-3.5">
-                  {['Custom business URL', 'Secure Paystack Integration', 'Real-time availability', 'Sell services & products'].map(function (item) {
+                  {['Custom business URL', 'Card & Bank Transfer Payments', 'Real-time availability', 'Sell services & products'].map(function (item) {
                     return (
                       <li key={item} className="flex items-center gap-3.5 text-sm">
                         <div className="w-5 h-5 bg-zinc-800 rounded-full flex items-center justify-center flex-shrink-0">
@@ -417,7 +417,7 @@ export default function Landing() {
                       <svg className="w-4 h-4 text-zinc-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                       </svg>
-                      Secure Paystack Payouts
+                      Card & Bank Transfer Payments
                     </li>
                     <li className="flex items-center gap-2.5 text-zinc-300">
                       <svg className="w-4 h-4 text-zinc-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">

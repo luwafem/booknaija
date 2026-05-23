@@ -107,18 +107,26 @@ export default function Legal({ type }) {
               <PolicySection
                 icon={
                   <svg className="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLine="round" d="M3 10h18M7 15h.01M7 10v6a3 3 0 015.97-3.03l.75-6a3 3 0 01-5.95-1.11l-1.04 1.04m0 0l1.04-1.04a3 3 0 015.95 1.11l.75 6a3 3 0 015.97 3.03M21 12a9 9 0 11-18 0 9 9 0 0118 0" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h.01M7 10v6a3 3 0 015.97-3.03l.75-6a3 3 0 01-5.95-1.11l-1.04 1.04m0 0l1.04-1.04a3 3 0 015.95 1.11l.75 6a3 3 0 015.97 3.03M21 12a9 9 0 11-18 0 9 9 0 0118 0" />
                   </svg>
                 }
                 title="Payments & Funds"
               >
                 <p>
-                  All payments are processed securely and directly through Paystack. BookNaija does not collect, hold, or touch your funds at any point during the transaction process.
+                  BookNaija supports payments via Card (secured by Paystack) and Bank Transfer (offline). BookNaija does not collect, hold, or touch your funds at any point during the transaction process.
                 </p>
                 <ul className="mt-2 space-y-1 list-none text-sm text-zinc-500">
                   <li className="flex items-start gap-2">
                     <span className="text-purple-400 mt-0.5">•</span>
-                    <span>Payouts are sent directly to the business's registered bank account by Paystack.</span>
+                    <span><span className="font-medium text-zinc-700">Card Payments:</span> Processed securely by Paystack. Payouts are sent directly to the business's registered bank account.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-400 mt-0.5">•</span>
+                    <span><span className="font-medium text-zinc-700">Bank Transfer:</span> Processed directly between the customer and the business's bank account. BookNaija does not facilitate or guarantee offline transfers.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-400 mt-0.5">•</span>
+                    <span>For Bank Transfers, customers must upload proof of payment. It is the business's sole responsibility to verify this proof before fulfilling the order or booking.</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-purple-400 mt-0.5">•</span>
@@ -184,7 +192,7 @@ export default function Legal({ type }) {
                 }
                 title="Liability Limitation"
               >
-                <p>To the fullest extent permitted by applicable law, BookNaija (and its developers) shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of the use or inability to use the service.</p>
+                <p>To the fullest extent permitted by applicable law, BookNaija (and its developers) shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of the use or inability to use the service. This includes failure or disputes regarding offline Bank Transfer payments.</p>
               </PolicySection>
             </div>
           ) : (
@@ -222,6 +230,10 @@ export default function Legal({ type }) {
                     <span className="text-purple-400 mt-0.5">•</span>
                     <span><span className="font-medium text-zinc-700">Appointment Date & Time.</span> (Sent to the business's calendar).</span>
                   </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-400 mt-0.5">•</span>
+                    <span><span className="font-medium text-zinc-700">Payment Proof Images.</span> (If paying via Bank Transfer, uploaded to verify your payment to the business).</span>
+                  </li>
                 </ul>
                 <p className="mt-2 text-xs text-zinc-400">We do <span className="not-italic font-medium text-zinc-600">not</span> collect sensitive personal identity documents (like ID cards).</p>
               </PolicySection>
@@ -236,7 +248,7 @@ export default function Legal({ type }) {
                 title="Direct to Business"
               >
                 <p>
-                  Your booking data is shared <span className="font-medium text-zinc-700">directly and only</span> with the business you selected. We do not route your information through our servers, databases, or any third-party analytics tools.
+                  Your booking data (including Bank Transfer payment proof if applicable) is shared <span className="font-medium text-zinc-700">directly and only</span> with the business you selected. We do not route your information through our servers, databases, or any third-party analytics tools.
                 </p>
               </PolicySection>
 
