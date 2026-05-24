@@ -39,6 +39,14 @@ function updateNestedOption(state, foodId, addonId, optIdx, updates) {
   });
 }
 
+// ─── OPTIMIZE CLOUDINARY URLs FOR INSTANT LOADING ───
+// Inserts q_auto (auto quality), f_auto (WebP/AVIF), w_800 into the URL
+// This reduces image size by 60-80% with no visible quality loss
+function optimizeCloudinaryUrl(url) {
+  if (!url || url.indexOf('/upload/') === -1) return url;
+  return url.replace('/upload/', '/upload/q_auto,f_auto,w_800/');
+}
+
 export default function Onboarding() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -47,7 +55,6 @@ export default function Onboarding() {
   // ── Robust data loading: localStorage (survives Paystack redirect) → sessionStorage fallback ──
   var bizData = null;
 
-  // 1. Try localStorage with slug-based key (most reliable after Paystack redirect)
   if (slugFromUrl) {
     var storedBySlug = localStorage.getItem('pending_signup_' + slugFromUrl);
     if (storedBySlug) {
@@ -55,7 +62,6 @@ export default function Onboarding() {
     }
   }
 
-  // 2. Fallback: old sessionStorage key (for backward compat / same-tab navigation)
   if (!bizData) {
     var sessionData = sessionStorage.getItem('pending_signup_data');
     if (sessionData) {
@@ -64,7 +70,6 @@ export default function Onboarding() {
     }
   }
 
-  // 3. Fallback: old localStorage key without slug
   if (!bizData) {
     var localData = localStorage.getItem('pending_signup_data');
     if (localData) {
@@ -73,7 +78,6 @@ export default function Onboarding() {
     }
   }
 
-  // 4. If still no data and no slug in URL, redirect to signup
   if (!bizData && !slugFromUrl) {
     return (
       <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center px-6">
@@ -113,8 +117,6 @@ export default function Onboarding() {
   var isAutoBusiness = businessType === 'Auto' || businessType === 'Auto Dealer / Rental';
   var isFoodBusiness = businessType === 'Restaurant' || businessType === 'Restaurant / Food';
 
-  // ─── READ FEATURE FLAGS FROM bizData (set by Signup.jsx) ───
-  // These override the old isAutoBusiness/isFoodBusiness logic
   var servicesEnabled = (bizData && bizData.servicesEnabled !== undefined) 
     ? bizData.servicesEnabled === true 
     : (!isAutoBusiness && !isFoodBusiness);
@@ -127,7 +129,6 @@ export default function Onboarding() {
   var foodEnabled = (bizData && bizData.foodEnabled !== undefined) 
     ? bizData.foodEnabled === true 
     : isFoodBusiness;
-  // ────────────────────────────────────────────────────────────
 
   var hasProductsStep = productsEnabled && !carsEnabled && !foodEnabled;
 
@@ -140,11 +141,9 @@ export default function Onboarding() {
   var [loading, setLoading] = useState(false);
   var [error, setError] = useState('');
 
-  // --- BANKING DETAILS STATE (initialized from stored bizData) ---
   var [accountName, setAccountName] = useState((bizData && bizData.accountName) ? bizData.accountName : '');
   var [accountNumber, setAccountNumber] = useState((bizData && bizData.accountNumber) ? bizData.accountNumber : '');
   var [settlementBankName, setSettlementBankName] = useState((bizData && bizData.settlementBank) ? bizData.settlementBank : '');
-  // ---------------------------------
 
   var [gallery, setGallery] = useState([{ id: 'default', group: 'Gallery', images: [] }]);
   var [services, setServices] = useState([{ id: 1, name: '', duration: '', price: '', description: '', image: '', images: [] }]);
@@ -155,10 +154,8 @@ export default function Onboarding() {
   var CLOUD_NAME = 'deexaiik4';
   var UPLOAD_PRESET = 'BizUploads';
 
-  // ─── BUILD STEPS BASED ON FEATURE FLAGS ───
   var steps;
   if (carsEnabled || foodEnabled) {
-    // Auto or Food business: Security → Gallery → Cars/Menu → Review
     steps = [
       { id: 1, title: 'Security', desc: 'Dashboard access' },
       { id: 2, title: 'Gallery', desc: 'Your photos' },
@@ -166,7 +163,6 @@ export default function Onboarding() {
       { id: 4, title: 'Review', desc: 'Final check' }
     ];
   } else if (hasProductsStep) {
-    // Services + Products (Fashion, Lash, Hair, etc.): Security → Gallery → Services → Products → Review
     steps = [
       { id: 1, title: 'Security', desc: 'Dashboard access' },
       { id: 2, title: 'Gallery', desc: 'Your photos' },
@@ -175,7 +171,6 @@ export default function Onboarding() {
       { id: 5, title: 'Review', desc: 'Final check' }
     ];
   } else {
-    // Services only (Cleaner, Tutor): Security → Gallery → Services → Review
     steps = [
       { id: 1, title: 'Security', desc: 'Dashboard access' },
       { id: 2, title: 'Gallery', desc: 'Your photos' },
@@ -183,7 +178,6 @@ export default function Onboarding() {
       { id: 4, title: 'Review', desc: 'Final check' }
     ];
   }
-  // ──────────────────────────────────────────
 
   useEffect(function() {
     if (!window.cloudinary) {
@@ -194,12 +188,14 @@ export default function Onboarding() {
     }
   }, []);
 
-  function handleUpload(onSuccess, isMultiple) {
+  // ─── FASTER UPLOAD: Multi-select, optimized URLs, size limits ───
+  function handleUpload(onSuccess, isMultiple, maxImages) {
     if (!window.cloudinary) {
       alert('Widget is still loading.');
       return;
     }
-    if (isMultiple === undefined) isMultiple = false;
+    if (isMultiple === undefined) isMultiple = true; // ← Default to multi-select
+    if (!maxImages) maxImages = isMultiple ? 10 : 1;
     var uploadedUrls = [];
 
     var widget = window.cloudinary.createUploadWidget({
@@ -207,21 +203,32 @@ export default function Onboarding() {
       uploadPreset: UPLOAD_PRESET,
       sources: ['local', 'url', 'camera'],
       multiple: isMultiple,
-      maxFiles: isMultiple ? 10 : 1
+      maxFiles: maxImages,
+      // ─── SPEED: Reject huge files at the widget level ───
+      maxImageFileSize: 10000000, // 10MB max — prevents slow uploads
+      clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
+      // ─── SPEED: Auto-crop to reasonable dimensions server-side ───
+      transformation: [{ width: 1200, crop: 'limit' }]
     }, function(err, res) {
       if (err) return;
+
+      // Single file success
       if (!isMultiple && res.event === 'success') {
         if (res.info && res.info.secure_url && typeof onSuccess === 'function') {
-          onSuccess(res.info.secure_url);
+          onSuccess(optimizeCloudinaryUrl(res.info.secure_url));
         }
       }
+
+      // Multi-select: each file as it completes
       if (isMultiple && res.event === 'success') {
         var url = res.info && res.info.secure_url;
         if (url && uploadedUrls.indexOf(url) === -1) {
           uploadedUrls.push(url);
-          onSuccess(url);
+          onSuccess(optimizeCloudinaryUrl(url));
         }
       }
+
+      // Multi-select: batch catch-up (in case individual events were missed)
       if (isMultiple && res.event === 'upload-finish' && res.info && res.info.files) {
         var newUrls = [];
         for (var i = 0; i < res.info.files.length; i++) {
@@ -234,7 +241,7 @@ export default function Onboarding() {
         if (newUrls.length > 0) {
           for (var j = 0; j < newUrls.length; j++) {
             uploadedUrls.push(newUrls[j]);
-            onSuccess(newUrls[j]);
+            onSuccess(optimizeCloudinaryUrl(newUrls[j]));
           }
         }
       }
@@ -243,6 +250,7 @@ export default function Onboarding() {
     widget.open();
   }
 
+  // ─── GALLERY: Already worked, now with optimized URLs ───
   function handleGalleryUpload(groupId) {
     handleUpload(function(url) {
       setGallery(function(p) {
@@ -253,7 +261,7 @@ export default function Onboarding() {
           return g;
         });
       });
-    }, true);
+    }, true, 10);
   }
 
   function addGroup() {
@@ -292,6 +300,7 @@ export default function Onboarding() {
     });
   }
 
+  // ─── SERVICES: Multi-select + stale closure fix ───
   function addService() {
     setServices(function(p) {
       return p.concat([{ id: Date.now(), name: '', duration: '', price: '', description: '', image: '', images: [] }]);
@@ -314,19 +323,16 @@ export default function Onboarding() {
 
   function handleServiceImageUpload(service) {
     handleUpload(function(url) {
-      var current = service.images || [];
-      if (current.length < 3) {
-        var newImages = current.concat([url]);
-        setServices(function(p) {
-          return p.map(function(s) {
-            if (s.id !== service.id) return s;
-            return Object.assign({}, s, { images: newImages, image: newImages[0] });
-          });
+      setServices(function(p) {
+        return p.map(function(s) {
+          if (s.id !== service.id) return s;
+          var current = s.images || [];
+          if (current.length >= 3) return s; // Skip if full (reads LIVE state)
+          var newImages = current.concat([url]);
+          return Object.assign({}, s, { images: newImages, image: newImages[0] });
         });
-      } else {
-        alert("Max 3 images");
-      }
-    });
+      });
+    }, true, 3); // ← Multi-select, max 3
   }
 
   function removeServiceImage(serviceId, idx) {
@@ -339,6 +345,7 @@ export default function Onboarding() {
     });
   }
 
+  // ─── PRODUCTS: Multi-select + stale closure fix ───
   function addProduct() {
     setProducts(function(p) {
       return p.concat([{ id: Date.now(), name: '', price: '', description: '', image: '', images: [], sizes: [], colors: [] }]);
@@ -373,19 +380,16 @@ export default function Onboarding() {
 
   function handleProductImageUpload(product) {
     handleUpload(function(url) {
-      var current = product.images || [];
-      if (current.length < 3) {
-        var newImages = current.concat([url]);
-        setProducts(function(p) {
-          return p.map(function(pr) {
-            if (pr.id !== product.id) return pr;
-            return Object.assign({}, pr, { images: newImages, image: newImages[0] });
-          });
+      setProducts(function(p) {
+        return p.map(function(pr) {
+          if (pr.id !== product.id) return pr;
+          var current = pr.images || [];
+          if (current.length >= 3) return pr;
+          var newImages = current.concat([url]);
+          return Object.assign({}, pr, { images: newImages, image: newImages[0] });
         });
-      } else {
-        alert("Max 3 images");
-      }
-    });
+      });
+    }, true, 3); // ← Multi-select, max 3
   }
 
   function removeProductImage(productId, idx) {
@@ -398,6 +402,7 @@ export default function Onboarding() {
     });
   }
 
+  // ─── CARS: Multi-select + stale closure fix ───
   function addCar() {
     setCars(function(p) {
       return p.concat([{ id: Date.now(), name: '', type: 'rent', year: '', price: '', mileage: '', transmission: '', fuel: '', description: '', images: [] }]);
@@ -426,15 +431,18 @@ export default function Onboarding() {
 
   function handleCarImageUpload(car) {
     handleUpload(function(url) {
-      var current = car.images || [];
-      if (current.length < 3) {
-        setCarImages(car.id, current.concat([url]));
-      } else {
-        alert("Max 3 images");
-      }
-    });
+      setCars(function(p) {
+        return p.map(function(c) {
+          if (c.id !== car.id) return c;
+          var current = c.images || [];
+          if (current.length >= 3) return c;
+          return Object.assign({}, c, { images: current.concat([url]) });
+        });
+      });
+    }, true, 3); // ← Multi-select, max 3
   }
 
+  // ─── FOODS: Multi-select + stale closure fix ───
   function addFood() {
     setFoods(function(p) {
       return p.concat([{ id: Date.now(), name: '', price: '', description: '', image: '', images: [], addons: [] }]);
@@ -457,19 +465,16 @@ export default function Onboarding() {
 
   function handleFoodImageUpload(food) {
     handleUpload(function(url) {
-      var current = food.images || [];
-      if (current.length < 3) {
-        var newImages = current.concat([url]);
-        setFoods(function(p) {
-          return p.map(function(f) {
-            if (f.id !== food.id) return f;
-            return Object.assign({}, f, { images: newImages, image: newImages[0] });
-          });
+      setFoods(function(p) {
+        return p.map(function(f) {
+          if (f.id !== food.id) return f;
+          var current = f.images || [];
+          if (current.length >= 3) return f;
+          var newImages = current.concat([url]);
+          return Object.assign({}, f, { images: newImages, image: newImages[0] });
         });
-      } else {
-        alert("Max 3 images");
-      }
-    });
+      });
+    }, true, 3); // ← Multi-select, max 3
   }
 
   function removeFoodImage(foodId, idx) {
@@ -703,24 +708,20 @@ export default function Onboarding() {
       calendarId: email,
       adsEnabled: true,
 
-      // ─── FEATURE FLAGS: Read from bizData (set by Signup.jsx) ───
       businessType: businessType,
       servicesEnabled: servicesEnabled,
       productsEnabled: productsEnabled,
       carsEnabled: carsEnabled,
       foodEnabled: foodEnabled,
-      // ────────────────────────────────────────────────────────────
 
       securityCode: securityCode,
       securityQuestion1: securityQuestion1,
       securityAnswer1: securityAnswer1.trim().toLowerCase(),
       securityQuestion2: securityQuestion2,
       securityAnswer2: securityAnswer2.trim().toLowerCase(),
-      // --- BANKING FIELDS ---
       account_name: accountName,
       account_number: accountNumber,
       settlement_bank: settlementBankName,
-      // ---------------------
       gallery: finalGallery,
       services: servicesData,
       products: productsData,
@@ -800,10 +801,8 @@ export default function Onboarding() {
     totalGalleryImages += gallery[gi].images.length;
   }
 
-  // ─── Determine if current step is the products step ───
   var isProductsStep = hasProductsStep && currentStep === 4;
   var isReviewStep = currentStep === steps.length;
-  // ──────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans selection:bg-zinc-700 selection:text-white">
@@ -948,7 +947,6 @@ export default function Onboarding() {
                       </div>
                     </div>
                   </div>
-                  {/* ----------------------------------- */}
 
                 </div>
               )}
@@ -983,7 +981,7 @@ export default function Onboarding() {
                               {group.images.map(function(img, imgIdx) {
                                 return (
                                   <div key={imgIdx} className="relative aspect-square rounded-lg overflow-hidden bg-zinc-700 border border-zinc-700 group">
-                                    <img src={img} className="w-full h-full object-cover" alt="" />
+                                    <img src={img} className="w-full h-full object-cover" alt="" loading="lazy" />
                                     <button type="button" onClick={function() { removeGalleryImage(group.id, imgIdx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 text-xs">✕</button>
                                   </div>
                                 );
@@ -1009,7 +1007,6 @@ export default function Onboarding() {
               {currentStep === 3 && (
                 <div className="space-y-5">
                   
-                  {/* Services form (for non-car, non-food businesses) */}
                   {servicesEnabled && !carsEnabled && !foodEnabled && (
                     <>
                       <div className="flex justify-between items-center">
@@ -1038,14 +1035,14 @@ export default function Onboarding() {
                                   {(service.images || []).map(function(img, idx) {
                                     return (
                                       <div key={idx} className="aspect-square bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group">
-                                        <img src={img} className="w-full h-full object-cover" alt="" />
+                                        <img src={img} className="w-full h-full object-cover" alt="" loading="lazy" />
                                         <button type="button" onClick={function() { removeServiceImage(service.id, idx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-xs">✕</button>
                                       </div>
                                     );
                                   })}
                                   {(service.images || []).length < 3 && (
                                     <button type="button" onClick={function() { handleServiceImageUpload(service); }} className="aspect-square bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center hover:border-zinc-500 hover:text-zinc-300 transition-all">
-                                      <span className="text-xs">+ Photo</span>
+                                      <span className="text-xs">+ Photos</span>
                                     </button>
                                   )}
                                 </div>
@@ -1057,7 +1054,6 @@ export default function Onboarding() {
                     </>
                   )}
 
-                  {/* Cars form */}
                   {carsEnabled && (
                     <>
                       <div className="flex justify-between items-center">
@@ -1102,13 +1098,13 @@ export default function Onboarding() {
                                   {(car.images || []).map(function(img, idx) {
                                     return (
                                       <div key={idx} className="aspect-video bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group">
-                                        <img src={img} className="w-full h-full object-cover" alt="" />
+                                        <img src={img} className="w-full h-full object-cover" alt="" loading="lazy" />
                                         <button type="button" onClick={function() { setCarImages(car.id, car.images.filter(function(_, i) { return i !== idx; })); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-xs">✕</button>
                                       </div>
                                     );
                                   })}
                                   <button type="button" onClick={function() { handleCarImageUpload(car); }} className="aspect-video bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center hover:border-zinc-500 hover:text-zinc-300 transition-all">
-                                    <span className="text-xs">+ Photo</span>
+                                    <span className="text-xs">+ Photos</span>
                                   </button>
                                 </div>
                               </div>
@@ -1119,7 +1115,6 @@ export default function Onboarding() {
                     </>
                   )}
 
-                  {/* Food form */}
                   {foodEnabled && (
                     <>
                       <div className="flex justify-between items-center">
@@ -1145,14 +1140,14 @@ export default function Onboarding() {
                                   {(item.images || []).map(function(img, idx) {
                                     return (
                                       <div key={idx} className="aspect-square bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group">
-                                        <img src={img} className="w-full h-full object-cover" alt="" />
+                                        <img src={img} className="w-full h-full object-cover" alt="" loading="lazy" />
                                         <button type="button" onClick={function() { removeFoodImage(item.id, idx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 text-xs">✕</button>
                                       </div>
                                     );
                                   })}
                                   {(item.images || []).length < 3 && (
                                     <button type="button" onClick={function() { handleFoodImageUpload(item); }} className="aspect-square bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center hover:border-zinc-500 hover:text-zinc-300 transition-all">
-                                      <span className="text-xs">+ Photo</span>
+                                      <span className="text-xs">+ Photos</span>
                                     </button>
                                   )}
                                 </div>
@@ -1209,7 +1204,7 @@ export default function Onboarding() {
                 </div>
               )}
 
-              {/* ── STEP 4: PRODUCTS (only for services+products businesses) ── */}
+              {/* ── STEP 4: PRODUCTS ── */}
               {isProductsStep && (
                 <div className="space-y-5">
                   <div className="flex justify-between items-center">
@@ -1233,7 +1228,6 @@ export default function Onboarding() {
                             <input className={inputBase} placeholder="Price (₦)" type="number" value={product.price} onChange={function(e) { updateProduct(product.id, 'price', e.target.value); }} />
                             <textarea className={inputBase + " h-16 resize-none"} placeholder="Description" value={product.description} onChange={function(e) { updateProduct(product.id, 'description', e.target.value); }} />
                             
-                            {/* ─── FASHION-READY: Sizes & Colors fields ─── */}
                             <input 
                               className={inputBase} 
                               placeholder="Sizes (comma separated, e.g. S, M, L, XL)" 
@@ -1246,7 +1240,6 @@ export default function Onboarding() {
                               value={(product.colors || []).join(', ')} 
                               onChange={function(e) { updateProductColors(product.id, e.target.value); }} 
                             />
-                            {/* ──────────────────────────────────────────── */}
                           </div>
                           <div className="mt-3">
                             <p className="text-xs font-semibold text-zinc-400 mb-2">Images (Max 3)</p>
@@ -1254,14 +1247,14 @@ export default function Onboarding() {
                               {(product.images || []).map(function(img, idx) {
                                 return (
                                   <div key={idx} className="aspect-square bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group">
-                                    <img src={img} className="w-full h-full object-cover" alt="" />
+                                    <img src={img} className="w-full h-full object-cover" alt="" loading="lazy" />
                                     <button type="button" onClick={function() { removeProductImage(product.id, idx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-xs">✕</button>
                                   </div>
                                 );
                               })}
                               {(product.images || []).length < 3 && (
                                 <button type="button" onClick={function() { handleProductImageUpload(product); }} className="aspect-square bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center hover:border-zinc-500 hover:text-zinc-300 transition-all">
-                                  <span className="text-xs">+ Photo</span>
+                                  <span className="text-xs">+ Photos</span>
                                 </button>
                               )}
                             </div>
@@ -1296,7 +1289,6 @@ export default function Onboarding() {
                         <span className="text-white font-medium">{gallery.length} groups ({totalGalleryImages} photos)</span>
                       </div>
                       
-                      {/* ─── Feature-aware review items ─── */}
                       {servicesEnabled && (
                         <div className="flex justify-between py-2 border-b border-zinc-700">
                           <span className="text-zinc-400">Services</span>
@@ -1321,7 +1313,6 @@ export default function Onboarding() {
                           <span className="text-white font-medium">{foods.filter(f => f.name).length} items</span>
                         </div>
                       )}
-                      {/* ─────────────────────────────────── */}
 
                       <div className="flex justify-between py-2">
                         <span className="text-zinc-400">Security</span>

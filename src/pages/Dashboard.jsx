@@ -6,6 +6,12 @@ import LocationPicker from '../components/LocationPicker';
 var CLOUD_NAME = 'deexaiik4';
 var UPLOAD_PRESET = 'BizUploads';
 
+// ─── OPTIMIZE CLOUDINARY URLs FOR INSTANT LOADING ───
+function optimizeCloudinaryUrl(url) {
+  if (!url || url.indexOf('/upload/') === -1) return url;
+  return url.replace('/upload/', '/upload/q_auto,f_auto,w_800/');
+}
+
 export default function Dashboard() {
   var params = useParams();
   var navigate = useNavigate();
@@ -360,28 +366,49 @@ export default function Dashboard() {
     return tabs;
   }
 
-  function uploadImage(onSuccess, isMultiple) {
+  // ─── FASTER UPLOAD: Multi-select, optimized URLs, size limits ───
+  function uploadImage(onSuccess, isMultiple, maxImages) {
     if (!window.cloudinary) { alert('Widget loading...'); return; }
+    if (isMultiple === undefined) isMultiple = true; // ← Default to multi-select
+    if (!maxImages) maxImages = isMultiple ? 10 : 1;
     var urls = [];
+
     var widget = window.cloudinary.createUploadWidget({
       cloudName: CLOUD_NAME,
       uploadPreset: UPLOAD_PRESET,
       sources: ['local', 'url', 'camera'],
-      multiple: !!isMultiple,
-      maxFiles: isMultiple ? 10 : 1
+      multiple: isMultiple,
+      maxFiles: maxImages,
+      // ─── SPEED: Reject huge files at the widget level ───
+      maxImageFileSize: 10000000, // 10MB max
+      clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
+      // ─── SPEED: Auto-crop to reasonable dimensions server-side ───
+      transformation: [{ width: 1200, crop: 'limit' }]
     }, function (err, res) {
       if (err) return;
+
+      // Single file success
       if (!isMultiple && res.event === 'success' && res.info.secure_url) {
-        onSuccess(res.info.secure_url);
+        onSuccess(optimizeCloudinaryUrl(res.info.secure_url));
       }
+
+      // Multi-select: each file as it completes
       if (isMultiple && res.event === 'success') {
         var u = res.info && res.info.secure_url;
-        if (u && urls.indexOf(u) === -1) { urls.push(u); onSuccess(u); }
+        if (u && urls.indexOf(u) === -1) {
+          urls.push(u);
+          onSuccess(optimizeCloudinaryUrl(u));
+        }
       }
+
+      // Multi-select: batch catch-up
       if (isMultiple && res.event === 'upload-finish' && res.info && res.info.files) {
         res.info.files.forEach(function (f) {
           var u2 = f.uploadInfo && f.uploadInfo.secure_url;
-          if (u2 && urls.indexOf(u2) === -1) { urls.push(u2); onSuccess(u2); }
+          if (u2 && urls.indexOf(u2) === -1) {
+            urls.push(u2);
+            onSuccess(optimizeCloudinaryUrl(u2));
+          }
         });
       }
     });
@@ -436,13 +463,21 @@ export default function Dashboard() {
     });
   }
 
+  // ─── SERVICE IMAGES: Multi-select + stale closure fix ───
   function addServiceImage(svc) {
     uploadImage(function (url) {
-      var imgs = (svc.images || []).concat([url]);
-      if (imgs.length <= 3) {
-        setNested('services', svc.id, { images: imgs, image: imgs[0] || '' });
-      } else { alert('Max 3 images'); }
-    });
+      setBiz(function (p) {
+        return Object.assign({}, p, {
+          services: p.services.map(function (s) {
+            if (s.id !== svc.id) return s;
+            var current = s.images || [];
+            if (current.length >= 3) return s; // reads LIVE state
+            var imgs = current.concat([url]);
+            return Object.assign({}, s, { images: imgs, image: imgs[0] || '' });
+          })
+        });
+      });
+    }, true, 3); // ← Multi-select, max 3
   }
   function removeServiceImage(svcId, idx) {
     setBiz(function (p) {
@@ -456,13 +491,21 @@ export default function Dashboard() {
     });
   }
 
+  // ─── PRODUCT IMAGES: Multi-select + stale closure fix ───
   function addProductImage(prod) {
     uploadImage(function (url) {
-      var imgs = (prod.images || []).concat([url]);
-      if (imgs.length <= 3) {
-        setNested('products', prod.id, { images: imgs, image: imgs[0] || '' });
-      } else { alert('Max 3 images'); }
-    });
+      setBiz(function (p) {
+        return Object.assign({}, p, {
+          products: p.products.map(function (pr) {
+            if (pr.id !== prod.id) return pr;
+            var current = pr.images || [];
+            if (current.length >= 3) return pr;
+            var imgs = current.concat([url]);
+            return Object.assign({}, pr, { images: imgs, image: imgs[0] || '' });
+          })
+        });
+      });
+    }, true, 3);
   }
   function removeProductImage(prodId, idx) {
     setBiz(function (p) {
@@ -476,13 +519,21 @@ export default function Dashboard() {
     });
   }
 
+  // ─── CAR IMAGES: Multi-select + stale closure fix ───
   function addCarImage(car) {
     uploadImage(function (url) {
-      var imgs = (car.images || []).concat([url]);
-      if (imgs.length <= 3) {
-        setNested('cars', car.id, { images: imgs, image: imgs[0] || '' });
-      } else { alert('Max 3 images'); }
-    });
+      setBiz(function (p) {
+        return Object.assign({}, p, {
+          cars: p.cars.map(function (c) {
+            if (c.id !== car.id) return c;
+            var current = c.images || [];
+            if (current.length >= 3) return c;
+            var imgs = current.concat([url]);
+            return Object.assign({}, c, { images: imgs, image: imgs[0] || '' });
+          })
+        });
+      });
+    }, true, 3);
   }
   function removeCarImage(carId, idx) {
     setBiz(function (p) {
@@ -496,13 +547,21 @@ export default function Dashboard() {
     });
   }
 
+  // ─── FOOD IMAGES: Multi-select + stale closure fix ───
   function addFoodImage(food) {
     uploadImage(function (url) {
-      var imgs = (food.images || []).concat([url]);
-      if (imgs.length <= 3) {
-        setNested('food', food.id, { images: imgs, image: imgs[0] || '' });
-      } else { alert('Max 3 images'); }
-    });
+      setBiz(function (p) {
+        return Object.assign({}, p, {
+          food: p.food.map(function (f) {
+            if (f.id !== food.id) return f;
+            var current = f.images || [];
+            if (current.length >= 3) return f;
+            var imgs = current.concat([url]);
+            return Object.assign({}, f, { images: imgs, image: imgs[0] || '' });
+          })
+        });
+      });
+    }, true, 3);
   }
   function removeFoodImage(foodId, idx) {
     setBiz(function (p) {
@@ -592,11 +651,11 @@ export default function Dashboard() {
     });
   }
 
+  // ─── LOGO: Single select, optimized URL ───
   function handleLogoUpload() {
-    uploadImage(function (url) { setField('logo', url); });
+    uploadImage(function (url) { setField('logo', url); }, false, 1);
   }
 
-  // ── HELPER: resolve bank name from code or name ──
   function resolveBankName(value) {
     if (!value) return '';
     if (/^\d{2,6}$/.test(value)) {
@@ -606,7 +665,6 @@ export default function Dashboard() {
     return value;
   }
 
-  // ── HELPER: resolve bank code from name ──
   function resolveBankCode(value) {
     if (!value) return '';
     if (/^\d{2,6}$/.test(value)) return value;
@@ -621,10 +679,6 @@ export default function Dashboard() {
     setSaved(false);
 
     try {
-      // ── ENSURE BANK FIELDS USE CONSISTENT KEYS ──
-      // The biz object uses camelCase from useBusiness hook.
-      // save-business reads both camelCase and snake_case now,
-      // but we ensure both are sent so nothing gets lost.
       var payload = Object.assign({}, biz, {
         account_name: biz.accountName || biz.account_name || '',
         account_number: biz.accountNumber || biz.account_number || '',
@@ -775,8 +829,6 @@ export default function Dashboard() {
     var mapsClaimed = biz.googleMapsClaimed || false;
     var hasPreciseLocation = biz.lat && biz.lng;
 
-    // ── RESOLVE CURRENT BANK VALUES ──
-    // biz.settlementBank could be a name or a code
     var currentSettlementBankCode = resolveBankCode(biz.settlementBank);
     var currentSettlementBankName = resolveBankName(biz.settlementBank);
 
@@ -805,7 +857,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ===== PAYOUT DETAILS PENDING ===== */}
         {(biz.subaccount_code === 'ACCT_PENDING' || !biz.subaccount_code) && (
           <div className="bg-zinc-700/30 border border-zinc-700 rounded-2xl p-4 sm:p-5">
             <div className="flex items-start gap-3 mb-4">
@@ -842,7 +893,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ===== OFFLINE BANK TRANSFER DETAILS ===== */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-5">
           <div className="flex items-start gap-3 mb-4">
             <div className="flex-shrink-0 w-10 h-10 bg-blue-900/50 rounded-xl flex items-center justify-center">
@@ -875,7 +925,6 @@ export default function Dashboard() {
                   className={sel} 
                   value={currentSettlementBankCode} 
                   onChange={function(e) {
-                    // Store the bank NAME (not code) so BookingForm can display it directly
                     var selectedBank = banks.find(function(b) { return b.code === e.target.value; });
                     setField('settlementBank', selectedBank ? selectedBank.name : e.target.value);
                   }}
@@ -925,7 +974,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* ===== GOOGLE MAPS ===== */}
         {!mapsClaimed && (
           <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-4 sm:p-5 text-white relative overflow-hidden">
             <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full"></div>
@@ -1021,7 +1069,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ===== REFERRAL SECTION ===== */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -1079,7 +1126,7 @@ export default function Dashboard() {
           <label className={lbl}>Logo</label>
           <div className="flex items-center gap-3 sm:gap-4">
             {biz.logo ? (
-              <img src={biz.logo} alt="" className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-contain border border-zinc-700 p-1" />
+              <img src={optimizeCloudinaryUrl(biz.logo)} alt="" className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-contain border border-zinc-700 p-1" loading="lazy" />
             ) : (
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 text-xs">No logo</div>
             )}
@@ -1266,12 +1313,12 @@ export default function Dashboard() {
                   {(group.images || []).map(function (img, idx) {
                     return (
                       <div key={'grpimg-' + group.id + '-' + idx} className="relative aspect-square rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700 group/img">
-                        <img src={img} className="w-full h-full object-cover" alt="" />
+                        <img src={img} className="w-full h-full object-cover" alt="" loading="lazy" />
                         <button type="button" onClick={function () { removeGalleryImage(group.id, idx); }} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity text-xs">&times;</button>
                       </div>
                     );
                   })}
-                  <button type="button" onClick={function () { uploadImage(function (url) { addGalleryImage(group.id, url); }, true); }} className="aspect-square rounded-lg border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all text-lg">+</button>
+                  <button type="button" onClick={function () { uploadImage(function (url) { addGalleryImage(group.id, url); }, true, 10); }} className="aspect-square rounded-lg border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all text-lg">+</button>
                 </div>
               </div>
             </div>
@@ -1319,13 +1366,13 @@ export default function Dashboard() {
                 {(s.images || []).map(function (img, idx) {
                   return (
                     <div key={'svcimg-' + s.id + '-' + idx} className="aspect-square bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group/si">
-                      <img src={img} className="w-full h-full object-cover" alt="" />
+                      <img src={img} className="w-full h-full object-cover" alt="" loading="lazy" />
                       <button type="button" onClick={function () { removeServiceImage(s.id, idx); }} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/si:opacity-100 text-xs">&times;</button>
                     </div>
                   );
                 })}
                 {(s.images || []).length < 3 && (
-                  <button type="button" onClick={function () { addServiceImage(s); }} className="aspect-square bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all text-sm">+</button>
+                  <button type="button" onClick={function () { addServiceImage(s); }} className="aspect-square bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all text-sm">+ Photos</button>
                 )}
               </div>
             </div>
@@ -1385,13 +1432,13 @@ export default function Dashboard() {
                 {(p.images || []).map(function (img, idx) {
                   return (
                     <div key={'prodimg-' + p.id + '-' + idx} className="aspect-square bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group/pi">
-                      <img src={img} className="w-full h-full object-cover" alt="" />
+                      <img src={img} className="w-full h-full object-cover" alt="" loading="lazy" />
                       <button type="button" onClick={function () { removeProductImage(p.id, idx); }} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/pi:opacity-100 text-xs">&times;</button>
                     </div>
                   );
                 })}
                 {(p.images || []).length < 3 && (
-                  <button type="button" onClick={function () { addProductImage(p); }} className="aspect-square bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all text-sm">+</button>
+                  <button type="button" onClick={function () { addProductImage(p); }} className="aspect-square bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all text-sm">+ Photos</button>
                 )}
               </div>
             </div>
@@ -1429,12 +1476,12 @@ export default function Dashboard() {
                 {(c.images || []).map(function (img, idx) {
                   return (
                     <div key={'carimg-' + c.id + '-' + idx} className="aspect-video bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group/ci">
-                      <img src={img} className="w-full h-full object-cover" alt="" />
+                      <img src={img} className="w-full h-full object-cover" alt="" loading="lazy" />
                       <button type="button" onClick={function () { removeCarImage(c.id, idx); }} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/ci:opacity-100 text-xs">&times;</button>
                     </div>
                   );
                 })}
-                <button type="button" onClick={function () { addCarImage(c); }} className="aspect-video bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all text-sm">+</button>
+                <button type="button" onClick={function () { addCarImage(c); }} className="aspect-video bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all text-sm">+ Photos</button>
               </div>
             </div>
           );
@@ -1461,13 +1508,13 @@ export default function Dashboard() {
                 {(f.images || []).map(function (img, idx) {
                   return (
                     <div key={'foodimg-' + f.id + '-' + idx} className="aspect-square bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group/fi">
-                      <img src={img} className="w-full h-full object-cover" alt="" />
+                      <img src={img} className="w-full h-full object-cover" alt="" loading="lazy" />
                       <button type="button" onClick={function () { removeFoodImage(f.id, idx); }} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/fi:opacity-100 text-xs">&times;</button>
                     </div>
                   );
                 })}
                 {(f.images || []).length < 3 && (
-                  <button type="button" onClick={function () { addFoodImage(f); }} className="aspect-square bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all text-sm">+</button>
+                  <button type="button" onClick={function () { addFoodImage(f); }} className="aspect-square bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all text-sm">+ Photos</button>
                 )}
               </div>
               <div className="pt-3 border-t border-zinc-800 space-y-3">

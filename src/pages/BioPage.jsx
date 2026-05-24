@@ -129,7 +129,7 @@ const ReferralLink = ({ slug, accent = '#c8a97e', theme = 'light' }) => {
           }}
           aria-label="Copy referral link"
         >
-          <span className="text-xs font-medium truncate max-w-[180px] sm:max-w-[260px] transition-colors" style={{ color: isDark ? '#a8a29e' : '#78716c' }}>
+          <span className="text-xs font-medium truncate max-w-[140px] sm:max-w-[180px] md:max-w-[140px] lg:max-w-[260px] transition-colors" style={{ color: isDark ? '#a8a29e' : '#78716c' }}>
             {referralUrl.replace(/^https?:\/\//, '')}
           </span>
           <div className="h-4 w-px" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#d6d3d1' }} aria-hidden="true" />
@@ -188,10 +188,9 @@ export default function BioPage() {
     setActiveCar(cart.car || null);
   }
 
-  // --- SAFELY GET VALUES (FIXED ERROR HERE) ---
   const theme = biz?.theme || 'light';
   const isDark = theme === 'dark';
-  const accent = biz?.accent ?? '#c8a97e'; // ✅ Optional chaining + nullish coalescing
+  const accent = biz?.accent ?? '#c8a97e';
 
   const filteredProducts = searchQuery
     ? (biz?.products || []).filter(p =>
@@ -222,7 +221,6 @@ export default function BioPage() {
       )
     : (biz?.cars || []);
 
-  // --- LOADING STATE ---
   if (loading) {
     return (
       <div className={`min-h-screen flex items-center justify-center px-6 ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}`} role="status">
@@ -234,7 +232,6 @@ export default function BioPage() {
     );
   }
 
-  // --- NO BUSINESS / INACTIVE ---
   if (!biz || !biz.active) {
     return (
       <div className={`min-h-screen flex items-center justify-center px-6 ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}`} role="alert">
@@ -399,35 +396,32 @@ export default function BioPage() {
         }
       `}</style>
 
-     <div className="flex flex-col lg:flex-row lg:h-screen overflow-hidden">
+      {/* ── LAYOUT: Split on Tablet (md) and Desktop (lg) ── */}
+      <div className="flex flex-col md:flex-row md:h-screen overflow-hidden">
   
-      <aside 
-        className={`
-          lg:sticky lg:top-0 h-screen lg:overflow-y-auto lg:overflow-x-hidden scrollbar-hide
-           lg:shrink-0 lg:w-[35%]
-        `}
-       
-      >
-        <HeroSection biz={{
-          logo: biz.logo, name: biz.name, slug: biz.slug, tagline: biz.tagline,
-          bio: biz.bio, phone: biz.phone, whatsapp: biz.whatsapp, location: biz.location,
-          hours: biz.hours, accent: biz.accent, avatar: biz.avatar, hero: biz.hero,
-          gallery: biz.gallery, socials: biz.socials, theme: biz.theme
-        }} />
-      </aside>
+        <aside 
+          className="md:sticky md:top-0 h-screen md:overflow-y-auto md:overflow-x-hidden scrollbar-hide md:shrink-0 md:w-[42%] lg:w-[35%]"
+        >
+          <HeroSection biz={{
+            logo: biz.logo, name: biz.name, slug: biz.slug, tagline: biz.tagline,
+            bio: biz.bio, phone: biz.phone, whatsapp: biz.whatsapp, location: biz.location,
+            hours: biz.hours, accent: biz.accent, avatar: biz.avatar, hero: biz.hero,
+            gallery: biz.gallery, socials: biz.socials, theme: biz.theme
+          }} />
+        </aside>
 
-      <main className="flex-1 lg:w-[65%] lg:min-w-0 overflow-y-auto">
-      <div className="w-full lg:w-full xl:w-full px-4 sm:px-6 lg:px-8 xl:px-14 pb-12 lg:py-8">
+        <main className="flex-1 md:w-[58%] lg:w-[65%] md:min-w-0 overflow-y-auto">
+          <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-14 pb-12 md:py-8">
 
             {biz.gallery && biz.gallery.length > 0 && (
-              <div itemScope itemType="https://schema.org/ImageGallery" aria-label="Photo gallery" className="mt-6 lg:mt-0">
+              <div itemScope itemType="https://schema.org/ImageGallery" aria-label="Photo gallery" className="mt-6 md:mt-0">
                 <meta itemProp="name" content={`${biz.name} Gallery`} />
                 <Gallery gallery={biz.gallery} accent={accent} location={biz.location} theme={theme} />
               </div>
             )}
 
             {/* ── SEARCH BAR ── */}
-            <section className="w-full max-w-2xl mx-auto xl:max-w-none xl:mx-0 mt-6" aria-label="Search">
+            <section className="w-full max-w-2xl mx-auto md:max-w-none md:mx-0 mt-6" aria-label="Search">
               <div className="rounded-2xl p-4 sm:p-5" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
                 <form onSubmit={handleSearch} className="relative" role="search" aria-label="Search services and products">
                   <label htmlFor="business-search" className="sr-only">Search by name, code, or description</label>
@@ -457,10 +451,10 @@ export default function BioPage() {
               </div>
             </section>
 
-            <div className="mt-6 border-t max-w-2xl mx-auto" style={{ borderColor: isDark ? accent + '1a' : accent + '33' }} aria-hidden="true" />
+            <div className="mt-6 border-t max-w-2xl mx-auto md:max-w-none md:mx-0" style={{ borderColor: isDark ? accent + '1a' : accent + '33' }} aria-hidden="true" />
 
             {showPrimaryAd && (
-              <div className="mt-6 w-full max-w-2xl mx-auto xl:max-w-none xl:mx-0">
+              <div className="mt-6 w-full max-w-2xl mx-auto md:max-w-none md:mx-0">
                 <div className="rounded-2xl p-5 flex flex-col items-center" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
                   <span className="text-[10px] uppercase tracking-widest mb-2 font-semibold" style={{ color: isDark ? '#a8a29e' : accent }}>Sponsored</span>
                   <GoogleAd slot={AD_SLOT_PRIMARY} className="w-full max-w-md" />
@@ -469,7 +463,7 @@ export default function BioPage() {
             )}
 
             {biz.bio && (
-              <section className="mt-8 w-full max-w-2xl mx-auto xl:max-w-none xl:mx-0" aria-label="About business">
+              <section className="mt-8 w-full max-w-2xl mx-auto md:max-w-none md:mx-0" aria-label="About business">
                 <div className="rounded-2xl p-5 sm:p-6" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
                   <h2 className="text-xs font-semibold uppercase tracking-[0.2em] mb-3" style={{ color: accent }}>About {biz.name}</h2>
                   <p className="text-sm leading-relaxed" style={{ color: isDark ? '#d6d3d1' : '#78716c' }}>{biz.bio}</p>
@@ -478,7 +472,7 @@ export default function BioPage() {
             )}
 
             {isSearchActive && !hasAnyContent && (
-              <div className="mt-8 text-center w-full max-w-2xl mx-auto xl:max-w-none xl:mx-0" role="status">
+              <div className="mt-8 text-center w-full max-w-2xl mx-auto md:max-w-none md:mx-0" role="status">
                 <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: isDark ? '#1c1917' : '#f5f5f4', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
                   <svg className={`w-6 h-6 ${isDark ? 'text-stone-600' : 'text-stone-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
@@ -487,16 +481,16 @@ export default function BioPage() {
               </div>
             )}
 
-            {showServices && (<section itemScope itemType="https://schema.org/ItemList" aria-label="Services" className="w-full max-w-2xl mx-auto xl:max-w-none xl:mx-0 mt-6"><meta itemProp="name" content={`${biz.name} Services`} /><meta itemProp="numberOfItems" content={filteredServices.length} /><ServiceList services={filteredServices} selectedId={activeService} onSelect={handleServiceSelect} accent={accent} location={biz.location} theme={theme} /></section>)}
+            {showServices && (<section itemScope itemType="https://schema.org/ItemList" aria-label="Services" className="w-full max-w-2xl mx-auto md:max-w-none md:mx-0 mt-6"><meta itemProp="name" content={`${biz.name} Services`} /><meta itemProp="numberOfItems" content={filteredServices.length} /><ServiceList services={filteredServices} selectedId={activeService} onSelect={handleServiceSelect} accent={accent} location={biz.location} theme={theme} /></section>)}
 
-{showProducts && (<section itemScope itemType="https://schema.org/ItemList" aria-label={showServices ? 'Products' : 'Shop'} className="w-full max-w-2xl mx-auto xl:max-w-none xl:mx-0 mt-6"><meta itemProp="name" content={`${biz.name} Products`} /><meta itemProp="numberOfItems" content={filteredProducts.length} /><ProductList products={filteredProducts} selectedProducts={activeProducts} onSelect={handleProductSelect} accent={accent} label={showServices ? 'Products' : 'Shop'} location={biz.location} theme={theme} /></section>)}
+{showProducts && (<section itemScope itemType="https://schema.org/ItemList" aria-label={showServices ? 'Products' : 'Shop'} className="w-full max-w-2xl mx-auto md:max-w-none md:mx-0 mt-6"><meta itemProp="name" content={`${biz.name} Products`} /><meta itemProp="numberOfItems" content={filteredProducts.length} /><ProductList products={filteredProducts} selectedProducts={activeProducts} onSelect={handleProductSelect} accent={accent} label={showServices ? 'Products' : 'Shop'} location={biz.location} theme={theme} /></section>)}
 
-{showFood && (<section itemScope itemType="https://schema.org/ItemList" aria-label="Menu" className="w-full max-w-2xl mx-auto xl:max-w-none xl:mx-0 mt-6"><meta itemProp="name" content={`${biz.name} Menu`} /><meta itemProp="numberOfItems" content={filteredFood.length} /><FoodList food={filteredFood} selectedFood={activeFood} foodVariants={getCart().foodVariants || {}} onSelect={handleFoodSelect} accent={accent} location={biz.location} theme={theme} /></section>)}
+{showFood && (<section itemScope itemType="https://schema.org/ItemList" aria-label="Menu" className="w-full max-w-2xl mx-auto md:max-w-none md:mx-0 mt-6"><meta itemProp="name" content={`${biz.name} Menu`} /><meta itemProp="numberOfItems" content={filteredFood.length} /><FoodList food={filteredFood} selectedFood={activeFood} foodVariants={getCart().foodVariants || {}} onSelect={handleFoodSelect} accent={accent} location={biz.location} theme={theme} /></section>)}
 
-{showCars && (<section itemScope itemType="https://schema.org/ItemList" aria-label="Vehicles" className="w-full max-w-2xl mx-auto xl:max-w-none xl:mx-0 mt-6"><meta itemProp="name" content={`${biz.name} Vehicles`} /><meta itemProp="numberOfItems" content={filteredCars.length} /><CarList cars={filteredCars} selectedCar={activeCar ? biz.cars.find(c => c.id === activeCar) : null} onSelect={handleCarSelect} accent={accent} location={biz.location} theme={theme} /></section>)}
+{showCars && (<section itemScope itemType="https://schema.org/ItemList" aria-label="Vehicles" className="w-full max-w-2xl mx-auto md:max-w-none md:mx-0 mt-6"><meta itemProp="name" content={`${biz.name} Vehicles`} /><meta itemProp="numberOfItems" content={filteredCars.length} /><CarList cars={filteredCars} selectedCar={activeCar ? biz.cars.find(c => c.id === activeCar) : null} onSelect={handleCarSelect} accent={accent} location={biz.location} theme={theme} /></section>)}
 
 {showSecondaryAd && (
-  <div className="mt-8 mb-6 w-full max-w-2xl mx-auto xl:max-w-none xl:mx-0">
+  <div className="mt-8 mb-6 w-full max-w-2xl mx-auto md:max-w-none md:mx-0">
     <div className="rounded-2xl p-4 flex flex-col items-center" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
       <span className="text-[10px] uppercase tracking-widest mb-2 font-semibold" style={{ color: isDark ? '#a8a29e' : accent }}>Sponsored</span>
       <GoogleAd slot={AD_SLOT_SECONDARY} className="w-full max-w-md" />
@@ -504,7 +498,7 @@ export default function BioPage() {
   </div>
 )}
 
-<section className="mt-8 w-full max-w-2xl mx-auto xl:max-w-none xl:mx-0" aria-label="Trust and Security">
+<section className="mt-8 w-full max-w-2xl mx-auto md:max-w-none md:mx-0" aria-label="Trust and Security">
   <div className="rounded-2xl p-5 sm:p-6 text-center" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
     <h3 className="text-sm font-bold mb-2" style={{ color: accent }}>Secure & Verified Booking</h3>
     <p className="text-xs leading-relaxed" style={{ color: isDark ? '#a8a29e' : '#78716c' }}>All transactions are encrypted and processed securely via Paystack. Your booking is confirmed instantly, and you will receive a digital receipt.</p>
@@ -512,7 +506,7 @@ export default function BioPage() {
 </section>
 
 {showFooterAd && (
-  <div className="mt-8 border-t pt-6 w-full max-w-2xl mx-auto xl:max-w-none xl:mx-0" style={{ borderColor: isDark ? accent + '1a' : accent + '33' }}>
+  <div className="mt-8 border-t pt-6 w-full max-w-2xl mx-auto md:max-w-none md:mx-0" style={{ borderColor: isDark ? accent + '1a' : accent + '33' }}>
     <div className="rounded-2xl p-4 flex flex-col items-center" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
       <span className="text-[10px] uppercase tracking-widest mb-2 font-semibold" style={{ color: isDark ? '#a8a29e' : accent }}>Sponsored</span>
       <GoogleAd slot={AD_SLOT_FOOTER} className="w-full max-w-md mx-auto" />
@@ -521,7 +515,7 @@ export default function BioPage() {
 )}
 
 {/* ── FAQ ── */}
-<section className="mt-16 w-full max-w-2xl mx-auto xl:max-w-none xl:mx-0" aria-label="Frequently Asked Questions">
+<section className="mt-16 w-full max-w-2xl mx-auto md:max-w-none md:mx-0" aria-label="Frequently Asked Questions">
   <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
     <div className="p-5 sm:p-6">
       <h2 className="text-xs font-semibold uppercase tracking-[0.2em] mb-4" style={{ color: accent }}>Frequently Asked Questions</h2>
@@ -538,7 +532,7 @@ export default function BioPage() {
 </section>
 
 {/* ── FOOTER ── */}
-<footer className="mt-12 w-full max-w-2xl mx-auto xl:max-w-none xl:mx-0">
+<footer className="mt-12 w-full max-w-2xl mx-auto md:max-w-none md:mx-0">
   <div className="rounded-2xl p-6 sm:p-8" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
     <ReferralLink slug={biz.slug} accent={accent} theme={theme} />
     <nav className="flex justify-center gap-6 mb-6" aria-label="Legal links">

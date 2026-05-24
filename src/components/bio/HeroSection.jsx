@@ -62,7 +62,7 @@ export default function HeroSection({ biz }) {
         relative z-20 mx-auto flex flex-col items-center justify-start
         px-5 pb-8 min-h-screen
         pt-[20vh] sm:pt-[22vh]
-        lg:px-8 lg:pb-10 lg:min-h-0 lg:w-full lg:max-w-none lg:pt-[18vh]
+        lg:px-8 lg:pb-10 lg:min-h-0 lg:w-full lg:max-w-none lg:pt-[11vh]
       `}
       style={{ minHeight: 'auto' }}
       >
