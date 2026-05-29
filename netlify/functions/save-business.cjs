@@ -6,30 +6,30 @@ const supabase = createClient(
 );
 
 // ─── DERIVE FEATURE FLAGS FROM BUSINESS TYPE ───
-// Safety net: if the frontend doesn't send explicit flags,
-// the server derives them from the business type.
 function getFeaturesForType(type) {
   switch (type) {
     case 'Fashion':
-      return { services_enabled: true, products_enabled: true, cars_enabled: false, food_enabled: false };
+      return { services_enabled: true, products_enabled: true, cars_enabled: false, food_enabled: false, properties_enabled: false };
     case 'Lash Artist':
     case 'Hair Stylist':
     case 'Makeup Artist':
     case 'Nail Technician':
     case 'Skin Care':
-      return { services_enabled: true, products_enabled: true, cars_enabled: false, food_enabled: false };
+      return { services_enabled: true, products_enabled: true, cars_enabled: false, food_enabled: false, properties_enabled: false };
     case 'Cleaner':
     case 'Tutor':
-      return { services_enabled: true, products_enabled: false, cars_enabled: false, food_enabled: false };
+      return { services_enabled: true, products_enabled: false, cars_enabled: false, food_enabled: false, properties_enabled: false };
     case 'Restaurant':
-      return { services_enabled: false, products_enabled: false, cars_enabled: false, food_enabled: true };
+      return { services_enabled: false, products_enabled: false, cars_enabled: false, food_enabled: true, properties_enabled: false };
     case 'Auto':
-      return { services_enabled: false, products_enabled: false, cars_enabled: true, food_enabled: false };
+      return { services_enabled: false, products_enabled: false, cars_enabled: true, food_enabled: false, properties_enabled: false };
+    case 'Real Estate':
+    case 'Shortlet':
+      return { services_enabled: false, products_enabled: false, cars_enabled: false, food_enabled: false, properties_enabled: true };
     default:
-      return { services_enabled: true, products_enabled: true, cars_enabled: false, food_enabled: false };
+      return { services_enabled: true, products_enabled: true, cars_enabled: false, food_enabled: false, properties_enabled: false };
   }
 }
-// ────────────────────────────────────────────────
 
 exports.handler = async function (event) {
   console.log('=== SAVE-BUSINESS TO SUPABASE ===');
@@ -48,14 +48,12 @@ exports.handler = async function (event) {
       return { statusCode: 200, body: JSON.stringify({ ok: true, spam: true }) };
     }
 
-    // 1. Check if this is a brand new business or an update
     const { data: existingBiz } = await supabase
       .from('businesses')
       .select('id')
       .eq('slug', d.slug)
       .single();
 
-    // 2. Rate limit ONLY for brand new signups (not updates to existing slugs)
     if (!existingBiz) {
       const twoMinsAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
       const { data: recentSignups } = await supabase
@@ -74,8 +72,6 @@ exports.handler = async function (event) {
     // ─── END SPAM PROTECTION ───
 
     // ─── RESOLVE FEATURE FLAGS ───
-    // If the frontend sends explicit flags (from Dashboard or Onboarding), use those.
-    // If no flags are sent (first-time signup fallback), derive them from businessType.
     const businessType = d.businessType || d.business_type || '';
     const derivedFeatures = getFeaturesForType(businessType);
 
@@ -95,7 +91,11 @@ exports.handler = async function (event) {
       ? d.foodEnabled === true 
       : (d.food_enabled !== undefined ? d.food_enabled === true : derivedFeatures.food_enabled);
 
-    console.log('Feature flags resolved:', { businessType, servicesEnabled, productsEnabled, carsEnabled, foodEnabled });
+    const propertiesEnabled = (d.propertiesEnabled !== undefined) 
+      ? d.propertiesEnabled === true 
+      : (d.properties_enabled !== undefined ? d.properties_enabled === true : derivedFeatures.properties_enabled);
+
+    console.log('Feature flags resolved:', { businessType, servicesEnabled, productsEnabled, carsEnabled, foodEnabled, propertiesEnabled });
     // ────────────────────────────
 
     var bizPayload = {
@@ -116,12 +116,13 @@ exports.handler = async function (event) {
       google_maps_claimed: d.googleMapsClaimed === true,
       avatar: '',
       hero: d.hero || '',
+      hero_slides: d.hero_slides || [],
+      team: d.team || [], // ─── ADDED: Save team members array ───
       paystack_public_key: d.paystackPublicKey || 'pk_live_2ba1413aaaf5091188571ea6f87cca34945d943c',
       subaccount_code: d.subaccountCode || '',
       calendar_id: d.calendarId || '',
 
       // ─── BANK DETAILS FOR OFFLINE PAYMENTS ───
-      // Accept both snake_case (from Onboarding.jsx) and camelCase (from Dashboard)
       account_name: d.account_name || d.accountName || '',
       account_number: d.account_number || d.accountNumber || '',
       settlement_bank: d.settlement_bank || d.settlementBank || '',
@@ -129,12 +130,14 @@ exports.handler = async function (event) {
 
       active: true,
       ads_enabled: d.adsEnabled !== false,
+      business_type: businessType,
       
       // ─── USE RESOLVED FEATURE FLAGS ───
       services_enabled: servicesEnabled,
       products_enabled: productsEnabled,
       cars_enabled: carsEnabled,
       food_enabled: foodEnabled,
+      properties_enabled: propertiesEnabled,
       // ───────────────────────────────────
 
       socials: d.socials || {},
@@ -206,6 +209,7 @@ exports.handler = async function (event) {
     await supabase.from('business_products').delete().eq('business_id', businessId);
     await supabase.from('business_cars').delete().eq('business_id', businessId);
     await supabase.from('business_food').delete().eq('business_id', businessId);
+    await supabase.from('business_properties').delete().eq('business_id', businessId);
 
     // 3. Insert services
     if (d.services && d.services.length > 0) {
@@ -295,6 +299,27 @@ exports.handler = async function (event) {
       });
       var { error: fErr } = await supabase.from('business_food').insert(foodRows);
       if (fErr) console.error('Food error:', fErr);
+    }
+
+    // 7. Insert properties
+    if (d.properties && d.properties.length > 0) {
+      var propertyRows = d.properties.map(function (p, i) {
+        return {
+          business_id: businessId,
+          property_id: p.id,
+          name: p.name,
+          type: p.type || 'sale',
+          price: parseInt(String(p.price).replace(/,/g, '')) || 0,
+          location: p.location || '',
+          bedrooms: p.bedrooms || '',
+          bathrooms: p.bathrooms || '',
+          description: p.description || '',
+          images: p.images || [],
+          sort_order: i
+        };
+      });
+      var { error: propErr } = await supabase.from('business_properties').insert(propertyRows);
+      if (propErr) console.error('Properties error:', propErr);
     }
 
     console.log('=== DONE: ' + d.slug + ' ===');

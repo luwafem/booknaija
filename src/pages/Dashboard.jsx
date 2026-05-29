@@ -363,13 +363,14 @@ export default function Dashboard() {
     if (biz.productsEnabled) tabs.push({ id: 'products', label: 'Products' });
     if (biz.carsEnabled) tabs.push({ id: 'cars', label: 'Cars' });
     if (biz.foodEnabled) tabs.push({ id: 'food', label: 'Food' });
+    if (biz.propertiesEnabled) tabs.push({ id: 'properties', label: 'Properties' });
     return tabs;
   }
 
   // ─── FASTER UPLOAD: Multi-select, optimized URLs, size limits ───
   function uploadImage(onSuccess, isMultiple, maxImages) {
     if (!window.cloudinary) { alert('Widget loading...'); return; }
-    if (isMultiple === undefined) isMultiple = true; // ← Default to multi-select
+    if (isMultiple === undefined) isMultiple = true; 
     if (!maxImages) maxImages = isMultiple ? 10 : 1;
     var urls = [];
 
@@ -379,20 +380,16 @@ export default function Dashboard() {
       sources: ['local', 'url', 'camera'],
       multiple: isMultiple,
       maxFiles: maxImages,
-      // ─── SPEED: Reject huge files at the widget level ───
-      maxImageFileSize: 10000000, // 10MB max
+      maxImageFileSize: 10000000, 
       clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
-      // ─── SPEED: Auto-crop to reasonable dimensions server-side ───
       transformation: [{ width: 1200, crop: 'limit' }]
     }, function (err, res) {
       if (err) return;
 
-      // Single file success
       if (!isMultiple && res.event === 'success' && res.info.secure_url) {
         onSuccess(optimizeCloudinaryUrl(res.info.secure_url));
       }
 
-      // Multi-select: each file as it completes
       if (isMultiple && res.event === 'success') {
         var u = res.info && res.info.secure_url;
         if (u && urls.indexOf(u) === -1) {
@@ -401,7 +398,6 @@ export default function Dashboard() {
         }
       }
 
-      // Multi-select: batch catch-up
       if (isMultiple && res.event === 'upload-finish' && res.info && res.info.files) {
         res.info.files.forEach(function (f) {
           var u2 = f.uploadInfo && f.uploadInfo.secure_url;
@@ -463,7 +459,81 @@ export default function Dashboard() {
     });
   }
 
-  // ─── SERVICE IMAGES: Multi-select + stale closure fix ───
+  // ─── HERO SLIDES MANAGEMENT ───
+  function addHeroSlide() {
+    var existingHero = biz.hero || '';
+    setBiz(function (p) {
+      var newSlide = { id: uid('hs-'), image: existingHero, mobileImage: '' };
+      return Object.assign({}, p, {
+        hero_slides: (p.hero_slides || []).concat([newSlide]),
+        hero: ''
+      });
+    });
+  }
+
+  function removeHeroSlide(slideId) {
+    setBiz(function (p) {
+      var newSlides = (p.hero_slides || []).filter(function (s) { return s.id !== slideId; });
+      return Object.assign({}, p, { hero_slides: newSlides });
+    });
+  }
+
+  function uploadHeroSlideImage(slideId, field) {
+    uploadImage(function (url) {
+      setBiz(function (p) {
+        return Object.assign({}, p, {
+          hero_slides: (p.hero_slides || []).map(function (s) {
+            if (s.id !== slideId) return s;
+            return Object.assign({}, s, { [field]: url });
+          })
+        });
+      });
+    }, false, 1);
+  }
+
+  function revertToSingleHero() {
+    var firstSlide = (biz.hero_slides || [])[0];
+    setBiz(function (p) {
+      return Object.assign({}, p, {
+        hero: firstSlide ? (firstSlide.image || firstSlide.mobileImage || '') : '',
+        hero_slides: []
+      });
+    });
+  }
+
+  // ─── TEAM MEMBERS MANAGEMENT ───
+  function addTeamMember() {
+    setBiz(function(p) {
+      return Object.assign({}, p, {
+        team: (p.team || []).concat([{ id: uid('tm-'), name: '', position: '', headshot: '', bio: '' }])
+      });
+    });
+  }
+
+  function removeTeamMember(memberId) {
+    setBiz(function(p) {
+      return Object.assign({}, p, {
+        team: (p.team || []).filter(function(m) { return m.id !== memberId; })
+      });
+    });
+  }
+
+  function updateTeamMember(memberId, field, value) {
+    setBiz(function(p) {
+      return Object.assign({}, p, {
+        team: (p.team || []).map(function(m) {
+          return m.id === memberId ? Object.assign({}, m, { [field]: value }) : m;
+        })
+      });
+    });
+  }
+
+  function uploadTeamHeadshot(member) {
+    uploadImage(function(url) {
+      updateTeamMember(member.id, 'headshot', url);
+    }, false, 1);
+  }
+
   function addServiceImage(svc) {
     uploadImage(function (url) {
       setBiz(function (p) {
@@ -471,13 +541,13 @@ export default function Dashboard() {
           services: p.services.map(function (s) {
             if (s.id !== svc.id) return s;
             var current = s.images || [];
-            if (current.length >= 3) return s; // reads LIVE state
+            if (current.length >= 3) return s; 
             var imgs = current.concat([url]);
             return Object.assign({}, s, { images: imgs, image: imgs[0] || '' });
           })
         });
       });
-    }, true, 3); // ← Multi-select, max 3
+    }, true, 3); 
   }
   function removeServiceImage(svcId, idx) {
     setBiz(function (p) {
@@ -491,7 +561,6 @@ export default function Dashboard() {
     });
   }
 
-  // ─── PRODUCT IMAGES: Multi-select + stale closure fix ───
   function addProductImage(prod) {
     uploadImage(function (url) {
       setBiz(function (p) {
@@ -519,7 +588,6 @@ export default function Dashboard() {
     });
   }
 
-  // ─── CAR IMAGES: Multi-select + stale closure fix ───
   function addCarImage(car) {
     uploadImage(function (url) {
       setBiz(function (p) {
@@ -547,7 +615,6 @@ export default function Dashboard() {
     });
   }
 
-  // ─── FOOD IMAGES: Multi-select + stale closure fix ───
   function addFoodImage(food) {
     uploadImage(function (url) {
       setBiz(function (p) {
@@ -570,6 +637,34 @@ export default function Dashboard() {
           if (f.id !== foodId) return f;
           var imgs = f.images.filter(function (_, i) { return i !== idx; });
           return Object.assign({}, f, { images: imgs, image: imgs[0] || '' });
+        })
+      });
+    });
+  }
+
+  // ─── PROPERTY IMAGES: Multi-select (max 5) ───
+  function addPropertyImage(prop) {
+    uploadImage(function (url) {
+      setBiz(function (p) {
+        return Object.assign({}, p, {
+          properties: p.properties.map(function (pr) {
+            if (pr.id !== prop.id) return pr;
+            var current = pr.images || [];
+            if (current.length >= 5) return pr;
+            var imgs = current.concat([url]);
+            return Object.assign({}, pr, { images: imgs });
+          })
+        });
+      });
+    }, true, 5); 
+  }
+  function removePropertyImage(propId, idx) {
+    setBiz(function (p) {
+      return Object.assign({}, p, {
+        properties: p.properties.map(function (pr) {
+          if (pr.id !== propId) return pr;
+          var imgs = pr.images.filter(function (_, i) { return i !== idx; });
+          return Object.assign({}, pr, { images: imgs });
         })
       });
     });
@@ -651,7 +746,6 @@ export default function Dashboard() {
     });
   }
 
-  // ─── LOGO: Single select, optimized URL ───
   function handleLogoUpload() {
     uploadImage(function (url) { setField('logo', url); }, false, 1);
   }
@@ -1164,8 +1258,171 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div><label className={lbl}>Tagline</label><input className={inp} value={biz.tagline} onChange={function (e) { setField('tagline', e.target.value); }} /></div>
-        <div><label className={lbl}>Bio</label><textarea className={inp + " h-24 resize-none"} value={biz.bio} onChange={function (e) { setField('bio', e.target.value); }} /></div>
+        {/* ─── PROPERTY WEBSITE SETTINGS: HERO, ABOUT & TEAM ─── */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-5">
+          <div className="flex items-start gap-3 mb-5">
+            <div className="flex-shrink-0 w-10 h-10 bg-purple-900/50 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Property Website Content</h3>
+              <p className="text-xs text-zinc-400 mt-0.5">Manage the Hero banner, About section, and Team for your real estate page.</p>
+            </div>
+          </div>
+
+          <div className="space-y-5">
+            {/* Hero Mode Toggle */}
+            <div>
+              <label className={lbl}>Hero Banner Type</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={revertToSingleHero} className={"p-3 rounded-xl border-2 text-left transition-all " + (!(biz.hero_slides || []).length ? 'border-white bg-zinc-800' : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-600')}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <svg className="w-4 h-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    <span className="text-xs font-bold text-white">Single Image</span>
+                  </div>
+                  <p className="text-[10px] text-zinc-400">Slow cinematic zoom</p>
+                </button>
+                <button type="button" onClick={addHeroSlide} className={"p-3 rounded-xl border-2 text-left transition-all " + ((biz.hero_slides || []).length > 0 ? 'border-white bg-zinc-800' : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-600')}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <svg className="w-4 h-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                    <span className="text-xs font-bold text-white">Image Slider</span>
+                  </div>
+                  <p className="text-[10px] text-zinc-400">Auto-crossfade carousel</p>
+                </button>
+              </div>
+            </div>
+
+            {/* SINGLE IMAGE UI */}
+            {!(biz.hero_slides || []).length && (
+              <div>
+                <label className={lbl}>Hero Banner Image</label>
+                <div className="flex items-center gap-3 sm:gap-4">
+                  {biz.hero ? (
+                    <img src={optimizeCloudinaryUrl(biz.hero)} alt="" className="w-24 h-14 sm:w-28 sm:h-16 rounded-xl object-cover border border-zinc-700" loading="lazy" />
+                  ) : (
+                    <div className="w-24 h-14 sm:w-28 sm:h-16 rounded-xl border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 text-[10px] px-2 text-center">No image</div>
+                  )}
+                  <div className="flex gap-2">
+                    <button type="button" onClick={function () { uploadImage(function (url) { setField('hero', url); }, false, 1); }} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-2 rounded-lg font-medium transition-colors">Upload</button>
+                    {biz.hero && (
+                      <button type="button" onClick={function () { setField('hero', ''); }} className="text-xs bg-red-900/50 hover:bg-red-900 text-red-400 px-3 py-2 rounded-lg font-medium transition-colors">Remove</button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SLIDER UI */}
+            {(biz.hero_slides || []).length > 0 && (
+              <div className="space-y-3">
+                {biz.hero_slides.map(function (slide, idx) {
+                  return (
+                    <div key={slide.id} className="bg-zinc-800 rounded-xl p-3 border border-zinc-700 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-zinc-400">Slide {idx + 1}</span>
+                        <button type="button" onClick={function () { removeHeroSlide(slide.id); }} className="text-zinc-500 hover:text-red-400 text-xs font-medium">Remove</button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <span className="text-[10px] text-zinc-500 font-medium uppercase mb-1 block">Desktop (Landscape)</span>
+                          {slide.image ? (
+                            <div className="relative h-20 rounded-lg overflow-hidden border border-zinc-600 group/slideDesk">
+                              <img src={optimizeCloudinaryUrl(slide.image)} className="w-full h-full object-cover" alt="" />
+                              <button type="button" onClick={function () { uploadHeroSlideImage(slide.id, 'image'); }} className="absolute inset-0 bg-black/60 flex items-center justify-center text-xs text-white font-medium opacity-0 group-hover/slideDesk:opacity-100 transition-opacity">Replace</button>
+                            </div>
+                          ) : (
+                            <button type="button" onClick={function () { uploadHeroSlideImage(slide.id, 'image'); }} className="h-20 w-full rounded-lg border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 text-xs transition-colors">+ Upload Desktop</button>
+                          )}
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] text-zinc-500 font-medium uppercase mb-1 block">Mobile (Portrait/Square)</span>
+                          {slide.mobileImage ? (
+                            <div className="relative h-20 rounded-lg overflow-hidden border border-zinc-600 group/slideMob">
+                              <img src={optimizeCloudinaryUrl(slide.mobileImage)} className="w-full h-full object-cover" alt="" />
+                              <button type="button" onClick={function () { uploadHeroSlideImage(slide.id, 'mobileImage'); }} className="absolute inset-0 bg-black/60 flex items-center justify-center text-xs text-white font-medium opacity-0 group-hover/slideMob:opacity-100 transition-opacity">Replace</button>
+                            </div>
+                          ) : (
+                            <button type="button" onClick={function () { uploadHeroSlideImage(slide.id, 'mobileImage'); }} className="h-20 w-full rounded-lg border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 text-xs transition-colors">+ Upload Mobile</button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                
+                <button type="button" onClick={addHeroSlide} className="w-full p-3 rounded-xl border-2 border-dashed border-zinc-700 flex items-center justify-center gap-2 text-zinc-400 hover:border-zinc-500 hover:text-zinc-300 text-xs font-medium transition-colors">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                  Add Another Slide
+                </button>
+              </div>
+            )}
+
+            {/* Hero Tagline */}
+            <div>
+              <label className={lbl}>Hero Tagline <span className="text-zinc-500 font-normal normal-case tracking-normal">(Appears above title)</span></label>
+              <input className={inp} value={biz.tagline} onChange={function (e) { setField('tagline', e.target.value); }} placeholder="e.g. Premium Real Estate" />
+            </div>
+
+            {/* About Section Bio */}
+            <div>
+              <label className={lbl}>About Section Text <span className="text-zinc-500 font-normal normal-case tracking-normal">(Bio)</span></label>
+              <textarea className={inp + " h-24 resize-none"} value={biz.bio} onChange={function (e) { setField('bio', e.target.value); }} placeholder="Tell potential buyers about your agency..." />
+            </div>
+
+            {/* ─── TEAM MEMBERS ─── */}
+            <div className="pt-5 border-t border-zinc-800">
+              <div className="flex items-center justify-between mb-3">
+                <label className={lbl + " mb-0"}>Team Members</label>
+                <button type="button" onClick={addTeamMember} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors">+ Add Member</button>
+              </div>
+
+              {(biz.team || []).length === 0 && (
+                <p className="text-xs text-zinc-500 text-center py-6 border-2 border-dashed border-zinc-800 rounded-xl">
+                  No team members yet. Add your first team member.
+                </p>
+              )}
+
+              <div className="space-y-3">
+                {(biz.team || []).map(function (member, midx) {
+                  return (
+                    <div key={member.id || midx} className="bg-zinc-800 rounded-xl p-3 border border-zinc-700 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-zinc-400">Member {midx + 1}</span>
+                        <button type="button" onClick={function() { removeTeamMember(member.id); }} className="text-zinc-500 hover:text-red-400 text-xs font-medium">Remove</button>
+                      </div>
+
+                      <div className="flex items-start gap-3">
+                        {/* Headshot */}
+                        <div className="flex-shrink-0">
+                          {member.headshot ? (
+                            <div className="relative w-16 h-16 rounded-full overflow-hidden border border-zinc-600 group/tm">
+                              <img src={optimizeCloudinaryUrl(member.headshot)} className="w-full h-full object-cover" alt="" />
+                              <button type="button" onClick={function() { uploadTeamHeadshot(member); }} className="absolute inset-0 bg-black/60 flex items-center justify-center text-[9px] text-white font-medium opacity-0 group-hover/tm:opacity-100 transition-opacity">Replace</button>
+                            </div>
+                          ) : (
+                            <button type="button" onClick={function() { uploadTeamHeadshot(member); }} className="w-16 h-16 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 text-lg transition-colors">+</button>
+                          )}
+                        </div>
+
+                        {/* Name & Position */}
+                        <div className="flex-1 space-y-2">
+                          <input className={inp + " py-2"} placeholder="Full Name" value={member.name || ''} onChange={function(e) { updateTeamMember(member.id, 'name', e.target.value); }} />
+                          <input className={inp + " py-2"} placeholder="Position (e.g. Lead Agent)" value={member.position || ''} onChange={function(e) { updateTeamMember(member.id, 'position', e.target.value); }} />
+                        </div>
+                      </div>
+
+                      <textarea className={inp + " h-16 resize-none"} placeholder="Short bio about this team member..." value={member.bio || ''} onChange={function(e) { updateTeamMember(member.id, 'bio', e.target.value); }} />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><label className={lbl}>Phone</label><input className={inp} value={biz.phone} onChange={function (e) { setField('phone', e.target.value); }} /></div>
@@ -1210,7 +1467,8 @@ export default function Dashboard() {
                 ['servicesEnabled', 'Services', 'Allow clients to book services'],
                 ['productsEnabled', 'Products', 'Allow clients to buy products'],
                 ['carsEnabled', 'Cars', 'Show car rental/sales section'],
-                ['foodEnabled', 'Food Menu', 'Show food ordering section']
+                ['foodEnabled', 'Food Menu', 'Show food ordering section'],
+                ['propertiesEnabled', 'Properties', 'Show real estate / shortlet listings']
               ].map(function (t) {
                 return (
                   <div key={'toggle-' + t[0]} className="flex items-center justify-between">
@@ -1557,6 +1815,53 @@ export default function Dashboard() {
     );
   }
 
+  // ─── PROPERTIES TAB ───
+  function renderPropertiesTab() {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h3 className="text-sm font-bold text-white">Properties ({(biz.properties || []).length})</h3>
+          <button type="button" onClick={function () { addItem('properties', { id: uid(), name: '', type: 'sale', price: '', location: '', bedrooms: '', bathrooms: '', description: '', images: [] }); }} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-2 rounded-lg font-medium">+ Add Property</button>
+        </div>
+        {(biz.properties || []).map(function (p, pidx) {
+          return (
+            <div key={'prop-' + p.id + '-' + pidx} className="relative p-4 rounded-xl border border-zinc-800 bg-zinc-900/50 space-y-2">
+              <button type="button" onClick={function () { removeItem('properties', p.id); }} className="absolute top-2 right-2 text-zinc-500 hover:text-red-400">&times;</button>
+              <input className={inp} placeholder="Property Name (e.g. 3 Bed Detached Duplex)" value={p.name} onChange={function (e) { setNested('properties', p.id, { name: e.target.value }); }} />
+              <input className={inp} placeholder="Location (e.g. Lekki Phase 1)" value={p.location} onChange={function (e) { setNested('properties', p.id, { location: e.target.value }); }} />
+              <div className="grid grid-cols-2 gap-2">
+                <input className={inp} placeholder="Price (₦)" type="number" value={p.price} onChange={function (e) { setNested('properties', p.id, { price: parseInt(e.target.value) || 0 }); }} />
+                <select className={sel} value={p.type} onChange={function (e) { setNested('properties', p.id, { type: e.target.value }); }}>
+                  <option value="sale" className="bg-zinc-800">For Sale</option>
+                  <option value="rent" className="bg-zinc-800">For Rent</option>
+                  <option value="shortlet" className="bg-zinc-800">Shortlet</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input className={inp} placeholder="Bedrooms" type="number" value={p.bedrooms} onChange={function (e) { setNested('properties', p.id, { bedrooms: e.target.value }); }} />
+                <input className={inp} placeholder="Bathrooms" type="number" value={p.bathrooms} onChange={function (e) { setNested('properties', p.id, { bathrooms: e.target.value }); }} />
+              </div>
+              <textarea className={inp + " h-20 resize-none"} placeholder="Description" value={p.description} onChange={function (e) { setNested('properties', p.id, { description: e.target.value }); }} />
+              <div className="grid grid-cols-3 gap-2">
+                {(p.images || []).map(function (img, idx) {
+                  return (
+                    <div key={'propimg-' + p.id + '-' + idx} className="aspect-video bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group/pt">
+                      <img src={img} className="w-full h-full object-cover" alt="" loading="lazy" />
+                      <button type="button" onClick={function () { removePropertyImage(p.id, idx); }} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/pt:opacity-100 text-xs">&times;</button>
+                    </div>
+                  );
+                })}
+                {(p.images || []).length < 5 && (
+                  <button type="button" onClick={function () { addPropertyImage(p); }} className="aspect-video bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all text-sm">+ Photos</button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   function renderTabContent() {
     switch (activeTab) {
       case 'info': return renderInfoTab();
@@ -1566,6 +1871,7 @@ export default function Dashboard() {
       case 'products': return renderProductsTab();
       case 'cars': return renderCarsTab();
       case 'food': return renderFoodTab();
+      case 'properties': return renderPropertiesTab();
       case 'offline-payments': return renderOfflinePaymentsTab();
       default: return null;
     }

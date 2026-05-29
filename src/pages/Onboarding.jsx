@@ -40,8 +40,6 @@ function updateNestedOption(state, foodId, addonId, optIdx, updates) {
 }
 
 // ─── OPTIMIZE CLOUDINARY URLs FOR INSTANT LOADING ───
-// Inserts q_auto (auto quality), f_auto (WebP/AVIF), w_800 into the URL
-// This reduces image size by 60-80% with no visible quality loss
 function optimizeCloudinaryUrl(url) {
   if (!url || url.indexOf('/upload/') === -1) return url;
   return url.replace('/upload/', '/upload/q_auto,f_auto,w_800/');
@@ -52,7 +50,6 @@ export default function Onboarding() {
   const [searchParams] = useSearchParams();
   const slugFromUrl = searchParams.get('slug');
 
-  // ── Robust data loading: localStorage (survives Paystack redirect) → sessionStorage fallback ──
   var bizData = null;
 
   if (slugFromUrl) {
@@ -116,21 +113,25 @@ export default function Onboarding() {
 
   var isAutoBusiness = businessType === 'Auto' || businessType === 'Auto Dealer / Rental';
   var isFoodBusiness = businessType === 'Restaurant' || businessType === 'Restaurant / Food';
+  var isPropertyBusiness = businessType === 'Real Estate' || businessType === 'Shortlet';
 
   var servicesEnabled = (bizData && bizData.servicesEnabled !== undefined) 
     ? bizData.servicesEnabled === true 
-    : (!isAutoBusiness && !isFoodBusiness);
+    : (!isAutoBusiness && !isFoodBusiness && !isPropertyBusiness);
   var productsEnabled = (bizData && bizData.productsEnabled !== undefined) 
     ? bizData.productsEnabled === true 
-    : (!isAutoBusiness && !isFoodBusiness);
+    : (!isAutoBusiness && !isFoodBusiness && !isPropertyBusiness);
   var carsEnabled = (bizData && bizData.carsEnabled !== undefined) 
     ? bizData.carsEnabled === true 
     : isAutoBusiness;
   var foodEnabled = (bizData && bizData.foodEnabled !== undefined) 
     ? bizData.foodEnabled === true 
     : isFoodBusiness;
+  var propertiesEnabled = (bizData && bizData.propertiesEnabled !== undefined) 
+    ? bizData.propertiesEnabled === true 
+    : isPropertyBusiness;
 
-  var hasProductsStep = productsEnabled && !carsEnabled && !foodEnabled;
+  var hasProductsStep = productsEnabled && !carsEnabled && !foodEnabled && !propertiesEnabled;
 
   var [currentStep, setCurrentStep] = useState(1);
   var [securityCode, setSecurityCode] = useState('');
@@ -150,12 +151,20 @@ export default function Onboarding() {
   var [products, setProducts] = useState([{ id: 1, name: '', price: '', description: '', image: '', images: [], sizes: [], colors: [] }]);
   var [cars, setCars] = useState([]);
   var [foods, setFoods] = useState([]);
+  var [properties, setProperties] = useState([]);
 
   var CLOUD_NAME = 'deexaiik4';
   var UPLOAD_PRESET = 'BizUploads';
 
   var steps;
-  if (carsEnabled || foodEnabled) {
+  if (propertiesEnabled) {
+    steps = [
+      { id: 1, title: 'Security', desc: 'Dashboard access' },
+      { id: 2, title: 'Gallery', desc: 'Your photos' },
+      { id: 3, title: 'Properties', desc: 'Your listings' },
+      { id: 4, title: 'Review', desc: 'Final check' }
+    ];
+  } else if (carsEnabled || foodEnabled) {
     steps = [
       { id: 1, title: 'Security', desc: 'Dashboard access' },
       { id: 2, title: 'Gallery', desc: 'Your photos' },
@@ -188,13 +197,12 @@ export default function Onboarding() {
     }
   }, []);
 
-  // ─── FASTER UPLOAD: Multi-select, optimized URLs, size limits ───
   function handleUpload(onSuccess, isMultiple, maxImages) {
     if (!window.cloudinary) {
       alert('Widget is still loading.');
       return;
     }
-    if (isMultiple === undefined) isMultiple = true; // ← Default to multi-select
+    if (isMultiple === undefined) isMultiple = true;
     if (!maxImages) maxImages = isMultiple ? 10 : 1;
     var uploadedUrls = [];
 
@@ -204,22 +212,18 @@ export default function Onboarding() {
       sources: ['local', 'url', 'camera'],
       multiple: isMultiple,
       maxFiles: maxImages,
-      // ─── SPEED: Reject huge files at the widget level ───
-      maxImageFileSize: 10000000, // 10MB max — prevents slow uploads
+      maxImageFileSize: 10000000,
       clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
-      // ─── SPEED: Auto-crop to reasonable dimensions server-side ───
       transformation: [{ width: 1200, crop: 'limit' }]
     }, function(err, res) {
       if (err) return;
 
-      // Single file success
       if (!isMultiple && res.event === 'success') {
         if (res.info && res.info.secure_url && typeof onSuccess === 'function') {
           onSuccess(optimizeCloudinaryUrl(res.info.secure_url));
         }
       }
 
-      // Multi-select: each file as it completes
       if (isMultiple && res.event === 'success') {
         var url = res.info && res.info.secure_url;
         if (url && uploadedUrls.indexOf(url) === -1) {
@@ -228,7 +232,6 @@ export default function Onboarding() {
         }
       }
 
-      // Multi-select: batch catch-up (in case individual events were missed)
       if (isMultiple && res.event === 'upload-finish' && res.info && res.info.files) {
         var newUrls = [];
         for (var i = 0; i < res.info.files.length; i++) {
@@ -250,7 +253,6 @@ export default function Onboarding() {
     widget.open();
   }
 
-  // ─── GALLERY: Already worked, now with optimized URLs ───
   function handleGalleryUpload(groupId) {
     handleUpload(function(url) {
       setGallery(function(p) {
@@ -300,7 +302,6 @@ export default function Onboarding() {
     });
   }
 
-  // ─── SERVICES: Multi-select + stale closure fix ───
   function addService() {
     setServices(function(p) {
       return p.concat([{ id: Date.now(), name: '', duration: '', price: '', description: '', image: '', images: [] }]);
@@ -327,12 +328,12 @@ export default function Onboarding() {
         return p.map(function(s) {
           if (s.id !== service.id) return s;
           var current = s.images || [];
-          if (current.length >= 3) return s; // Skip if full (reads LIVE state)
+          if (current.length >= 3) return s;
           var newImages = current.concat([url]);
           return Object.assign({}, s, { images: newImages, image: newImages[0] });
         });
       });
-    }, true, 3); // ← Multi-select, max 3
+    }, true, 3);
   }
 
   function removeServiceImage(serviceId, idx) {
@@ -345,7 +346,6 @@ export default function Onboarding() {
     });
   }
 
-  // ─── PRODUCTS: Multi-select + stale closure fix ───
   function addProduct() {
     setProducts(function(p) {
       return p.concat([{ id: Date.now(), name: '', price: '', description: '', image: '', images: [], sizes: [], colors: [] }]);
@@ -389,7 +389,7 @@ export default function Onboarding() {
           return Object.assign({}, pr, { images: newImages, image: newImages[0] });
         });
       });
-    }, true, 3); // ← Multi-select, max 3
+    }, true, 3);
   }
 
   function removeProductImage(productId, idx) {
@@ -402,7 +402,6 @@ export default function Onboarding() {
     });
   }
 
-  // ─── CARS: Multi-select + stale closure fix ───
   function addCar() {
     setCars(function(p) {
       return p.concat([{ id: Date.now(), name: '', type: 'rent', year: '', price: '', mileage: '', transmission: '', fuel: '', description: '', images: [] }]);
@@ -439,10 +438,9 @@ export default function Onboarding() {
           return Object.assign({}, c, { images: current.concat([url]) });
         });
       });
-    }, true, 3); // ← Multi-select, max 3
+    }, true, 3);
   }
 
-  // ─── FOODS: Multi-select + stale closure fix ───
   function addFood() {
     setFoods(function(p) {
       return p.concat([{ id: Date.now(), name: '', price: '', description: '', image: '', images: [], addons: [] }]);
@@ -474,7 +472,7 @@ export default function Onboarding() {
           return Object.assign({}, f, { images: newImages, image: newImages[0] });
         });
       });
-    }, true, 3); // ← Multi-select, max 3
+    }, true, 3);
   }
 
   function removeFoodImage(foodId, idx) {
@@ -555,6 +553,51 @@ export default function Onboarding() {
       var u = {};
       u[field] = value;
       return updateNestedOption(p, foodId, addonId, optIdx, u);
+    });
+  }
+
+  // ─── PROPERTIES ───
+  function addProperty() {
+    setProperties(function(p) {
+      return p.concat([{ id: Date.now(), name: '', type: businessType === 'Shortlet' ? 'shortlet' : 'sale', price: '', location: '', bedrooms: '', bathrooms: '', description: '', images: [] }]);
+    });
+  }
+
+  function removeProperty(id) {
+    setProperties(function(p) {
+      return p.filter(function(x) { return x.id !== id; });
+    });
+  }
+
+  function updateProperty(id, field, value) {
+    setProperties(function(p) {
+      var u = {};
+      u[field] = value;
+      return updateNestedState(p, id, u);
+    });
+  }
+
+  function handlePropertyImageUpload(property) {
+    handleUpload(function(url) {
+      setProperties(function(p) {
+        return p.map(function(pr) {
+          if (pr.id !== property.id) return pr;
+          var current = pr.images || [];
+          if (current.length >= 5) return pr;
+          var newImages = current.concat([url]);
+          return Object.assign({}, pr, { images: newImages });
+        });
+      });
+    }, true, 5);
+  }
+
+  function removePropertyImage(propId, idx) {
+    setProperties(function(p) {
+      return p.map(function(pr) {
+        if (pr.id !== propId) return pr;
+        var newImgs = pr.images.filter(function(_, i) { return i !== idx; });
+        return Object.assign({}, pr, { images: newImgs });
+      });
     });
   }
 
@@ -680,6 +723,20 @@ export default function Onboarding() {
       };
     });
 
+    var propertiesData = (propertiesEnabled ? properties : []).filter(function(p) { return p.name; }).map(function(p) {
+      return {
+        id: businessSlug + '-' + p.id,
+        name: p.name,
+        type: p.type,
+        price: cleanPrice(p.price),
+        location: p.location || '',
+        bedrooms: p.bedrooms || '',
+        bathrooms: p.bathrooms || '',
+        description: p.description || '',
+        images: p.images || []
+      };
+    });
+
     var galleryData = gallery
       .filter(function(g) { return g.group.trim() && g.images.length > 0; })
       .map(function(g) { return { group: g.group.trim(), images: g.images }; });
@@ -706,13 +763,14 @@ export default function Onboarding() {
       paystackPublicKey: 'pk_test_129628160c0fdb0e1e837751e5ff0233872676b8',
       subaccountCode: subaccountCode,
       calendarId: email,
-      adsEnabled: true,
+      adsEnabled: !propertiesEnabled,
 
       businessType: businessType,
       servicesEnabled: servicesEnabled,
       productsEnabled: productsEnabled,
       carsEnabled: carsEnabled,
       foodEnabled: foodEnabled,
+      propertiesEnabled: propertiesEnabled,
 
       securityCode: securityCode,
       securityQuestion1: securityQuestion1,
@@ -726,7 +784,8 @@ export default function Onboarding() {
       services: servicesData,
       products: productsData,
       cars: carsData,
-      food: foodsData
+      food: foodsData,
+      properties: propertiesData
     };
 
     var formData = new FormData();
@@ -745,6 +804,7 @@ export default function Onboarding() {
     formData.append('products_count', String(productsData.length));
     formData.append('cars_count', String(carsData.length));
     formData.append('food_count', String(foodsData.length));
+    formData.append('properties_count', String(propertiesData.length));
 
     Promise.all([
       fetch('https://formspree.io/f/xyklbbqy', {
@@ -910,7 +970,6 @@ export default function Onboarding() {
                     <input className={inputBase + " mt-2"} placeholder="Your answer" value={securityAnswer2} onChange={function(e) { setSecurityAnswer2(e.target.value); }} />
                   </div>
 
-                  {/* --- BANKING DETAILS SECTION --- */}
                   <div className="border-t border-zinc-800 pt-5 mt-6">
                     <p className="text-sm font-bold text-zinc-200 mb-4">Banking Details (for Offline Transfers)</p>
                     
@@ -1003,11 +1062,67 @@ export default function Onboarding() {
                 </div>
               )}
 
-              {/* ── STEP 3: SERVICES / CARS / MENU ── */}
+              {/* ── STEP 3: SERVICES / CARS / MENU / PROPERTIES ── */}
               {currentStep === 3 && (
                 <div className="space-y-5">
                   
-                  {servicesEnabled && !carsEnabled && !foodEnabled && (
+                  {propertiesEnabled && (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className={sectionTitle}>Properties</p>
+                          <p className={sectionDesc}>Add your {businessType === 'Shortlet' ? 'shortlets' : 'listings'}.</p>
+                        </div>
+                        <button type="button" onClick={addProperty} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors">+ Add</button>
+                      </div>
+                      <div className="space-y-4">
+                        {properties.map(function(prop) {
+                          return (
+                            <div key={prop.id} className="relative p-4 rounded-xl border border-zinc-700 bg-zinc-800/50">
+                              <button type="button" onClick={function() { removeProperty(prop.id); }} className="absolute top-2 right-2 text-zinc-500 hover:text-red-400">✕</button>
+                              <div className="space-y-2">
+                                <input className={inputBase} placeholder="Property Name (e.g. 3 Bed Detached Duplex)" value={prop.name} onChange={function(e) { updateProperty(prop.id, 'name', e.target.value); }} />
+                                <input className={inputBase} placeholder="Location (e.g. Lekki Phase 1)" value={prop.location} onChange={function(e) { updateProperty(prop.id, 'location', e.target.value); }} />
+                                <div className="grid grid-cols-2 gap-2">
+                                  <input className={inputBase} placeholder="Price (₦)" type="number" value={prop.price} onChange={function(e) { updateProperty(prop.id, 'price', e.target.value); }} />
+                                  <select className={selectBase} value={prop.type} onChange={function(e) { updateProperty(prop.id, 'type', e.target.value); }}>
+                                    <option value="sale" className="bg-zinc-800">For Sale</option>
+                                    <option value="rent" className="bg-zinc-800">For Rent</option>
+                                    <option value="shortlet" className="bg-zinc-800">Shortlet</option>
+                                  </select>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <input className={inputBase} placeholder="Bedrooms" type="number" value={prop.bedrooms} onChange={function(e) { updateProperty(prop.id, 'bedrooms', e.target.value); }} />
+                                  <input className={inputBase} placeholder="Bathrooms" type="number" value={prop.bathrooms} onChange={function(e) { updateProperty(prop.id, 'bathrooms', e.target.value); }} />
+                                </div>
+                                <textarea className={inputBase + " h-20 resize-none"} placeholder="Description" value={prop.description} onChange={function(e) { updateProperty(prop.id, 'description', e.target.value); }} />
+                              </div>
+                              <div className="mt-3">
+                                <p className="text-xs font-semibold text-zinc-400 mb-2">Images (Max 5)</p>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {(prop.images || []).map(function(img, idx) {
+                                    return (
+                                      <div key={idx} className="aspect-video bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group">
+                                        <img src={img} className="w-full h-full object-cover" alt="" loading="lazy" />
+                                        <button type="button" onClick={function() { removePropertyImage(prop.id, idx); }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-xs">✕</button>
+                                      </div>
+                                    );
+                                  })}
+                                  {(prop.images || []).length < 5 && (
+                                    <button type="button" onClick={function() { handlePropertyImageUpload(prop); }} className="aspect-video bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center hover:border-zinc-500 hover:text-zinc-300 transition-all">
+                                      <span className="text-xs">+ Photos</span>
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+
+                  {servicesEnabled && !carsEnabled && !foodEnabled && !propertiesEnabled && (
                     <>
                       <div className="flex justify-between items-center">
                         <div>
@@ -1311,6 +1426,12 @@ export default function Onboarding() {
                         <div className="flex justify-between py-2 border-b border-zinc-700">
                           <span className="text-zinc-400">Menu Items</span>
                           <span className="text-white font-medium">{foods.filter(f => f.name).length} items</span>
+                        </div>
+                      )}
+                      {propertiesEnabled && (
+                        <div className="flex justify-between py-2 border-b border-zinc-700">
+                          <span className="text-zinc-400">Properties</span>
+                          <span className="text-white font-medium">{properties.filter(p => p.name).length} listings</span>
                         </div>
                       )}
 

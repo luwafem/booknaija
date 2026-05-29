@@ -59,6 +59,7 @@ export default function Signup() {
           productsEnabled: true,
           carsEnabled: false,
           foodEnabled: false,
+          propertiesEnabled: false,
         };
       case 'Lash Artist':
       case 'Hair Stylist':
@@ -70,6 +71,7 @@ export default function Signup() {
           productsEnabled: true,
           carsEnabled: false,
           foodEnabled: false,
+          propertiesEnabled: false,
         };
       case 'Cleaner':
       case 'Tutor':
@@ -78,6 +80,7 @@ export default function Signup() {
           productsEnabled: false,
           carsEnabled: false,
           foodEnabled: false,
+          propertiesEnabled: false,
         };
       case 'Restaurant':
         return {
@@ -85,6 +88,7 @@ export default function Signup() {
           productsEnabled: false,
           carsEnabled: false,
           foodEnabled: true,
+          propertiesEnabled: false,
         };
       case 'Auto':
         return {
@@ -92,6 +96,16 @@ export default function Signup() {
           productsEnabled: false,
           carsEnabled: true,
           foodEnabled: false,
+          propertiesEnabled: false,
+        };
+      case 'Real Estate':
+      case 'Shortlet':
+        return {
+          servicesEnabled: false,
+          productsEnabled: false,
+          carsEnabled: false,
+          foodEnabled: false,
+          propertiesEnabled: true,
         };
       default:
         return {
@@ -99,6 +113,7 @@ export default function Signup() {
           productsEnabled: true,
           carsEnabled: false,
           foodEnabled: false,
+          propertiesEnabled: false,
         };
     }
   };
@@ -523,6 +538,8 @@ export default function Signup() {
                         <option value="Fashion">Fashion / Boutique</option>
                         <option value="Restaurant">Restaurant / Food</option>
                         <option value="Auto">Auto Dealer / Rental</option>
+                        <option value="Real Estate">Real Estate</option>
+                        <option value="Shortlet">Shortlet / Airbnb</option>
                         <option value="Other">Other</option>
                       </select>
                       <ChevronDown />
@@ -558,6 +575,12 @@ export default function Signup() {
                           <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-1 rounded-lg">
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                             Food Ordering
+                          </span>
+                        )}
+                        {currentTypeFeatures.propertiesEnabled && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-1 rounded-lg">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                            Property Listings
                           </span>
                         )}
                       </div>
@@ -694,50 +717,61 @@ export default function Signup() {
               {/* STEP 4: Services & Social */}
               {currentStep === 4 && (
                 <div className="space-y-4">
-                  <div>
-                    <p className={sectionTitle}>Services offered</p>
-                    <div className="relative">
-                      <select
-                        name="num_services"
-                        value={formValues.num_services}
-                        onChange={handleChange}
-                        className={selectBase}
-                      >
-                        <option value="" disabled>
-                          Select range
-                        </option>
-                        <option value="1-2">1 - 2 services</option>
-                        <option value="3-5">3 - 5 services</option>
-                        <option value="6-10">6 - 10 services</option>
-                        <option value="10+">More than 10</option>
-                      </select>
-                      <ChevronDown />
+                  {!currentTypeFeatures?.propertiesEnabled && (
+                    <div>
+                      <p className={sectionTitle}>Services offered</p>
+                      <div className="relative">
+                        <select
+                          name="num_services"
+                          value={formValues.num_services}
+                          onChange={handleChange}
+                          className={selectBase}
+                        >
+                          <option value="" disabled>
+                            Select range
+                          </option>
+                          <option value="1-2">1 - 2 services</option>
+                          <option value="3-5">3 - 5 services</option>
+                          <option value="6-10">6 - 10 services</option>
+                          <option value="10+">More than 10</option>
+                        </select>
+                        <ChevronDown />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div>
-                    <p className={sectionTitle}>Do you sell products?</p>
-                    <p className={sectionDesc}>
-                      {currentTypeFeatures?.productsEnabled
-                        ? 'Your business type typically sells products. Override if needed.'
-                        : 'Your business type typically doesn\'t sell products. Enable if you do.'}
-                    </p>
-                    <div className="relative">
-                      <select
-                        name="has_products"
-                        value={formValues.has_products}
-                        onChange={handleChange}
-                        className={selectBase}
-                      >
-                        <option value="" disabled>
-                          Select option
-                        </option>
-                        <option value="Yes">Yes, I sell products</option>
-                        <option value="No">No, services only</option>
-                      </select>
-                      <ChevronDown />
+                  {!currentTypeFeatures?.propertiesEnabled && (
+                    <div>
+                      <p className={sectionTitle}>Do you sell products?</p>
+                      <p className={sectionDesc}>
+                        {currentTypeFeatures?.productsEnabled
+                          ? 'Your business type typically sells products. Override if needed.'
+                          : 'Your business type typically doesn\'t sell products. Enable if you do.'}
+                      </p>
+                      <div className="relative">
+                        <select
+                          name="has_products"
+                          value={formValues.has_products}
+                          onChange={handleChange}
+                          className={selectBase}
+                        >
+                          <option value="" disabled>
+                            Select option
+                          </option>
+                          <option value="Yes">Yes, I sell products</option>
+                          <option value="No">No, services only</option>
+                        </select>
+                        <ChevronDown />
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {currentTypeFeatures?.propertiesEnabled && (
+                    <div className="bg-purple-900/20 border border-purple-500/30 rounded-xl p-4">
+                      <p className="text-sm font-semibold text-purple-300 mb-1">Property Listings Setup</p>
+                      <p className="text-xs text-zinc-400">You'll add your properties, images, and pricing details after payment in the setup wizard.</p>
+                    </div>
+                  )}
 
                   <div className="pt-2">
                     <p className={sectionTitle}>Social links</p>

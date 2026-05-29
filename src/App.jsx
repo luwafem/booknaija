@@ -18,6 +18,9 @@ import AffiliateDashboard from './pages/AffiliateDashboard';
 import Blog from './pages/Blog';
 import BlogArticle from './pages/BlogArticle';
 
+// NEW: Property Details Import
+import PropertyDetails from './pages/PropertyDetails';
+
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -65,6 +68,9 @@ export default function App() {
         <Route path="/dashboard" element={<DashboardLogin />} />
         <Route path="/dashboard/:slug" element={<Dashboard />} />
         <Route path="/book/:slug" element={<BookingPage />} />
+        
+        {/* NEW: Property Details Page - MUST be before /:slug catch-all */}
+        <Route path="/:slug/property/:propertyId" element={<PropertyDetails />} />
         
         {/* Business Profile Pages */}
         <Route path="/:slug" element={<BioPage />} />

@@ -128,7 +128,6 @@ export function generateBusinessSchema(biz) {
           '@type': 'Offer',
           itemOffered: {
             '@type': 'Service',
-            // User types: "Volume Lashes" -> Google sees: "Volume Lashes in Yaba, Lagos"
             name: location ? `${s.name} in ${location}` : s.name,
             description: s.description 
               ? `${s.description} Located in ${location}.` 
@@ -184,6 +183,22 @@ export function generateBusinessSchema(biz) {
           priceCurrency: 'NGN',
           position: (biz.services?.length || 0) + (biz.products?.length || 0) + (biz.food?.length || 0) + i + 1,
         })),
+        
+        // --- PROPERTIES (Stealth SEO injected here) ---
+        ...(biz.properties || []).slice(0, 10).map((p, i) => ({
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': p.type === 'shortlet' ? 'LodgingBusiness' : 'Product', // Better schema typing for shortlets vs real estate
+            name: location ? `${p.name} in ${location}` : p.name,
+            description: p.description 
+              ? `${p.description} Available in ${location}.` 
+              : `${p.type === 'sale' ? 'Buy' : (p.type === 'rent' ? 'Rent' : 'Book shortlet for')} ${p.name} in ${location} on BookNaija.`,
+            image: p.images?.[0] || undefined,
+          },
+          price: p.price,
+          priceCurrency: 'NGN',
+          position: (biz.services?.length || 0) + (biz.products?.length || 0) + (biz.food?.length || 0) + (biz.cars?.length || 0) + i + 1,
+        })),
       ],
     },
     
@@ -197,6 +212,7 @@ function getPriceRange(biz) {
     ...(biz.products || []).map(p => p.discount_enabled ? p.discount_price : p.price),
     ...(biz.food || []).map(f => f.price),
     ...(biz.cars || []).map(c => c.price),
+    ...(biz.properties || []).map(p => p.price),
   ].filter(p => p > 0);
 
   if (allPrices.length === 0) return undefined;

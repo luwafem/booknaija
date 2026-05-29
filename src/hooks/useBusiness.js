@@ -2,11 +2,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { PLATFORM_PAYSTACK_KEY } from '../data/config';
 
-/**
- * Fetches a business by slug from Supabase.
- * Returns data in the EXACT same shape as the old businesses.js object,
- * so all existing components work without modification.
- */
 export function useBusiness(slug) {
   const [business, setBusiness] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,8 +22,9 @@ export function useBusiness(slug) {
         business_services (*),
         business_products (*),
         business_cars (*),
-        business_food (*)
-      `
+        business_food (*),
+        business_properties (*)
+        `
       )
       .eq('slug', slug)
       .eq('active', true)
@@ -39,7 +35,6 @@ export function useBusiness(slug) {
         var err = result.error;
 
         if (err) {
-          // PGRST116 = no rows returned (not found)
           setError(err.code === 'PGRST116' ? 'not_found' : err.message);
           setBusiness(null);
         } else if (data) {
@@ -81,30 +76,39 @@ function transformBusiness(row) {
     subaccountCode: row.subaccount_code || '',
     calendarId: row.calendar_id || '',
     
-    // ─── ADDED: BANK DETAILS FOR OFFLINE PAYMENTS ───
+    // ─── BANK DETAILS ───
     accountName: row.account_name || '',
     accountNumber: row.account_number || '',
     settlementBank: row.settlement_bank || '',
-    // ────────────────────────────────────────────────────
-
+    
     active: row.active,
     adsEnabled: row.ads_enabled !== false,
     carsEnabled: row.cars_enabled,
     servicesEnabled: row.services_enabled,
     productsEnabled: row.products_enabled,
     foodEnabled: row.food_enabled,
+    propertiesEnabled: row.properties_enabled || false,
+    businessType: row.business_type || '',
     socials: row.socials || {},
     gallery: row.gallery || [],
     
-    // ─── SECURITY FIELDS ───
-    securityCode: row.security_code || '',
+    // ─── SECURITY ───
+    SecurityCode: row.security_code || '',
     securityQuestion1: row.security_question_1 || '',
     securityAnswer1: row.security_answer_1 || '',
     securityQuestion2: row.security_question_2 || '',
     securityAnswer2: row.security_answer_2 || '',
 
-    // ─── REFERRAL FIELD ───
     referralCount: row.referral_count || 0,
+
+    heroSlides: (row.hero_slides && typeof row.hero_slides === 'string') 
+      ? JSON.parse(row.hero_slides) 
+      : (Array.isArray(row.hero_slides) ? row.hero_slides : []),
+
+    // ─── TEAM MEMBERS ───
+    team: (row.team && typeof row.team === 'string') 
+      ? JSON.parse(row.team) 
+      : (Array.isArray(row.team) ? row.team : []),
 
     services: sortByOrder(row.business_services || []).map(function (s) {
       return {
@@ -164,6 +168,20 @@ function transformBusiness(row) {
         images: f.images || [],
         description: f.description || '',
         addons: f.addons || []
+      };
+    }),
+
+    properties: sortByOrder(row.business_properties || []).map(function (p) {
+      return {
+        id: p.property_id,
+        name: p.name,
+        type: p.type,
+        price: p.price,
+        location: p.location || '',
+        bedrooms: p.bedrooms || '',
+        bathrooms: p.bathrooms || '',
+        description: p.description || '',
+        images: p.images || []
       };
     })
   };

@@ -17,12 +17,14 @@ export function useBusinessWithSEO(slug) {
     const productCount = biz.products?.length || 0;
     const foodCount = biz.food?.length || 0;
     const carCount = biz.cars?.length || 0;
+    const propertyCount = biz.properties?.length || 0;
     
     const offerings = [];
     if (serviceCount > 0) offerings.push(`${serviceCount} service${serviceCount > 1 ? 's' : ''}`);
     if (productCount > 0) offerings.push(`${productCount} product${productCount > 1 ? 's' : ''}`);
     if (foodCount > 0) offerings.push(`${foodCount} menu item${foodCount > 1 ? 's' : ''}`);
     if (carCount > 0) offerings.push(`${carCount} vehicle${carCount > 1 ? 's' : ''}`);
+    if (propertyCount > 0) offerings.push(`${propertyCount} propert${propertyCount > 1 ? 'ies' : 'y'}`);
     
     if (offerings.length > 0) {
       parts.push(`Browse ${offerings.join(', ')}. Book and pay securely via Paystack.`);
