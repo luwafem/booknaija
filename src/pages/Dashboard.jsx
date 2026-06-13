@@ -364,6 +364,7 @@ export default function Dashboard() {
     if (biz.carsEnabled) tabs.push({ id: 'cars', label: 'Cars' });
     if (biz.foodEnabled) tabs.push({ id: 'food', label: 'Food' });
     if (biz.propertiesEnabled) tabs.push({ id: 'properties', label: 'Properties' });
+    if (biz.estatesEnabled) tabs.push({ id: 'estates', label: 'Estates' });
     return tabs;
   }
 
@@ -827,6 +828,44 @@ export default function Dashboard() {
       <button type="button" onClick={props.onChange} className={"relative w-10 h-6 rounded-full transition-colors " + (props.checked ? 'bg-white' : 'bg-zinc-700')}>
         <span className={"absolute top-0.5 left-0.5 w-5 h-5 bg-zinc-900 rounded-full shadow transition-transform " + (props.checked ? 'translate-x-4' : '')}></span>
       </button>
+    );
+  }
+
+  function TagInput({ items, onAdd, onRemove, placeholder }) {
+    var inputRef = useRef(null);
+    
+    function handleAdd() {
+      if (inputRef.current && inputRef.current.value.trim()) {
+        onAdd(inputRef.current.value.trim());
+        inputRef.current.value = '';
+        inputRef.current.focus();
+      }
+    }
+
+    return (
+      <div>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {(items || []).map(function(item, idx) {
+            return (
+              <span key={idx} className="inline-flex items-center gap-1.5 bg-zinc-800 border border-zinc-700 text-zinc-200 text-xs px-3 py-1.5 rounded-full">
+                {item}
+                <button type="button" onClick={function() { onRemove(idx); }} className="text-zinc-500 hover:text-red-400 transition-colors leading-none">&times;</button>
+              </span>
+            );
+          })}
+        </div>
+        <div className="flex gap-2">
+          <input 
+            ref={inputRef}
+            className={inp + " flex-1"} 
+            placeholder={placeholder} 
+            onKeyDown={function(e) { if (e.key === 'Enter') { e.preventDefault(); handleAdd(); } }}
+          />
+          <button type="button" onClick={handleAdd} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium rounded-xl transition-colors whitespace-nowrap border border-zinc-700">
+            Add
+          </button>
+        </div>
+      </div>
     );
   }
 
@@ -1424,6 +1463,41 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* ─── REAL ESTATE FEATURES TOGGLE (OBVIOUS) ─── */}
+        {(biz.businessType === 'Real Estate' || biz.businessType === 'Shortlet' || biz.propertiesEnabled || biz.estatesEnabled) && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-5">
+            <div className="flex items-start gap-3 mb-5">
+              <div className="flex-shrink-0 w-10 h-10 bg-amber-900/50 rounded-xl flex items-center justify-center">
+                <svg className="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">Real Estate Features</h3>
+                <p className="text-xs text-zinc-400 mt-0.5">Enable or disable sections on your public property website.</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
+                <div>
+                  <p className="text-sm font-semibold text-white">Properties / Shortlets</p>
+                  <p className="text-xs text-zinc-400">Show individual property listings and shortlets.</p>
+                </div>
+                <Toggle checked={biz.propertiesEnabled} onChange={function () { setField('propertiesEnabled', !biz.propertiesEnabled); }} />
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
+                <div>
+                  <p className="text-sm font-semibold text-white">Grand Estates</p>
+                  <p className="text-xs text-zinc-400">Show exclusive estate developments and projects.</p>
+                </div>
+                <Toggle checked={biz.estatesEnabled} onChange={function () { setField('estatesEnabled', !biz.estatesEnabled); }} />
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><label className={lbl}>Phone</label><input className={inp} value={biz.phone} onChange={function (e) { setField('phone', e.target.value); }} /></div>
           <div><label className={lbl}>WhatsApp</label><input className={inp} value={biz.whatsapp} onChange={function (e) { setField('whatsapp', e.target.value); }} /></div>
@@ -1468,7 +1542,8 @@ export default function Dashboard() {
                 ['productsEnabled', 'Products', 'Allow clients to buy products'],
                 ['carsEnabled', 'Cars', 'Show car rental/sales section'],
                 ['foodEnabled', 'Food Menu', 'Show food ordering section'],
-                ['propertiesEnabled', 'Properties', 'Show real estate / shortlet listings']
+                ['propertiesEnabled', 'Properties', 'Show real estate / shortlet listings'],
+                ['estatesEnabled', 'Estates', 'Show grand estate developments section']
               ].map(function (t) {
                 return (
                   <div key={'toggle-' + t[0]} className="flex items-center justify-between">
@@ -1862,6 +1937,280 @@ export default function Dashboard() {
     );
   }
 
+  // ─── ESTATES TAB ───
+  function renderEstatesTab() {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h3 className="text-sm font-bold text-white">Estates ({(biz.estates || []).length})</h3>
+          <button 
+            type="button" 
+            onClick={function () { 
+              addItem('estates', { 
+                id: uid(), 
+                name: '', 
+                tagline: '', 
+                location: '', 
+                description: '', 
+                heroImage: '', 
+                images: [],
+                priceRange: { min: '', max: '' },
+                totalUnits: '',
+                availableUnits: '',
+                completionDate: '',
+                amenities: [],
+                unitTypes: [],
+                featured: false
+              }); 
+            }} 
+            className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-2 rounded-lg font-medium"
+          >
+            + Add Estate
+          </button>
+        </div>
+
+        {(biz.estates || []).map(function (estate, eidx) {
+          return (
+            <div key={'estate-' + estate.id + '-' + eidx} className="relative p-4 rounded-xl border border-zinc-800 bg-zinc-900/50 space-y-3">
+              <button 
+                type="button" 
+                onClick={function () { removeItem('estates', estate.id); }} 
+                className="absolute top-2 right-2 text-zinc-500 hover:text-red-400"
+              >
+                ×
+              </button>
+              
+              <input 
+                className={inp} 
+                placeholder="Estate Name (e.g. Palm Springs Estate)" 
+                value={estate.name} 
+                onChange={function (e) { setNested('estates', estate.id, { name: e.target.value }); }} 
+              />
+              
+              <input 
+                className={inp} 
+                placeholder="Tagline (e.g. Luxury Living Redefined)" 
+                value={estate.tagline || ''} 
+                onChange={function (e) { setNested('estates', estate.id, { tagline: e.target.value }); }} 
+              />
+
+              <input 
+                className={inp} 
+                placeholder="Location (e.g. Lekki Phase 2, Lagos)" 
+                value={estate.location || ''} 
+                onChange={function (e) { setNested('estates', estate.id, { location: e.target.value }); }} 
+              />
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className={lbl}>Price Range Min (₦)</label>
+                  <input 
+                    className={inp + " font-mono"} 
+                    placeholder="50,000,000" 
+                    type="number"
+                    value={estate.priceRange?.min || ''} 
+                    onChange={function (e) { 
+                      setNested('estates', estate.id, { 
+                        priceRange: Object.assign({}, estate.priceRange, { min: parseInt(e.target.value) || 0 }) 
+                      }); 
+                    }} 
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Price Range Max (₦)</label>
+                  <input 
+                    className={inp + " font-mono"} 
+                    placeholder="150,000,000" 
+                    type="number"
+                    value={estate.priceRange?.max || ''} 
+                    onChange={function (e) { 
+                      setNested('estates', estate.id, { 
+                        priceRange: Object.assign({}, estate.priceRange, { max: parseInt(e.target.value) || 0 }) 
+                      }); 
+                    }} 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className={lbl}>Total Units</label>
+                  <input 
+                    className={inp} 
+                    placeholder="120" 
+                    type="number"
+                    value={estate.totalUnits || ''} 
+                    onChange={function (e) { setNested('estates', estate.id, { totalUnits: e.target.value }); }} 
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Available</label>
+                  <input 
+                    className={inp} 
+                    placeholder="45" 
+                    type="number"
+                    value={estate.availableUnits || ''} 
+                    onChange={function (e) { setNested('estates', estate.id, { availableUnits: e.target.value }); }} 
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Completion</label>
+                  <input 
+                    className={inp} 
+                    placeholder="Q4 2025" 
+                    value={estate.completionDate || ''} 
+                    onChange={function (e) { setNested('estates', estate.id, { completionDate: e.target.value }); }} 
+                  />
+                </div>
+              </div>
+
+              <textarea 
+                className={inp + " h-24 resize-none"} 
+                placeholder="Full description of the estate, location advantages, investment potential..." 
+                value={estate.description || ''} 
+                onChange={function (e) { setNested('estates', estate.id, { description: e.target.value }); }} 
+              />
+
+              {/* Hero Image Upload */}
+              <div>
+                <label className={lbl}>Hero Image (Landscape, High Quality)</label>
+                <div className="flex items-center gap-3">
+                  {estate.heroImage ? (
+                    <div className="relative w-32 h-20 rounded-lg overflow-hidden border border-zinc-700 group/hero">
+                      <img src={optimizeCloudinaryUrl(estate.heroImage)} className="w-full h-full object-cover" alt="" />
+                      <button 
+                        type="button" 
+                        onClick={function () { 
+                          uploadImage(function (url) { 
+                            setNested('estates', estate.id, { heroImage: url }); 
+                          }, false, 1); 
+                        }} 
+                        className="absolute inset-0 bg-black/60 flex items-center justify-center text-xs text-white font-medium opacity-0 group-hover/hero:opacity-100 transition-opacity"
+                      >
+                        Replace
+                      </button>
+                    </div>
+                  ) : (
+                    <button 
+                      type="button" 
+                      onClick={function () { 
+                        uploadImage(function (url) { 
+                          setNested('estates', estate.id, { heroImage: url }); 
+                        }, false, 1); 
+                      }} 
+                      className="w-32 h-20 rounded-lg border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 text-xs transition-colors"
+                    >
+                      + Upload Hero
+                    </button>
+                  )}
+                  {estate.heroImage && (
+                    <button 
+                      type="button" 
+                      onClick={function () { setNested('estates', estate.id, { heroImage: '' }); }} 
+                      className="text-xs bg-red-900/50 hover:bg-red-900 text-red-400 px-3 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Gallery Images */}
+              <div>
+                <label className={lbl}>Gallery Images (up to 8)</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {(estate.images || []).map(function (img, idx) {
+                    return (
+                      <div key={'estimg-' + estate.id + '-' + idx} className="aspect-video bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden relative group/ei">
+                        <img src={img} className="w-full h-full object-cover" alt="" loading="lazy" />
+                        <button 
+                          type="button" 
+                          onClick={function () { 
+                            setNested('estates', estate.id, { 
+                              images: estate.images.filter(function (_, i) { return i !== idx; }) 
+                            }); 
+                          }} 
+                          className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/ei:opacity-100 text-xs"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
+                  {(estate.images || []).length < 8 && (
+                    <button 
+                      type="button" 
+                      onClick={function () { 
+                        uploadImage(function (url) { 
+                          setNested('estates', estate.id, { 
+                            images: (estate.images || []).concat([url]) 
+                          }); 
+                        }, true, 8); 
+                      }} 
+                      className="aspect-video bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-all text-sm"
+                    >
+                      + Photos
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Amenities */}
+              <div>
+                <label className={lbl}>Amenities</label>
+                <TagInput 
+                  items={estate.amenities}
+                  placeholder="Type and press Enter (e.g. Swimming Pool)"
+                  onAdd={function(val) {
+                    setNested('estates', estate.id, {
+                      amenities: (estate.amenities || []).concat([val])
+                    });
+                  }}
+                  onRemove={function(idx) {
+                    setNested('estates', estate.id, {
+                      amenities: estate.amenities.filter(function(_, i) { return i !== idx; })
+                    });
+                  }}
+                />
+              </div>
+
+              {/* Unit Types */}
+              <div>
+                <label className={lbl}>Unit Types</label>
+                <TagInput 
+                  items={estate.unitTypes}
+                  placeholder="Type and press Enter (e.g. 3 Bedroom Duplex)"
+                  onAdd={function(val) {
+                    setNested('estates', estate.id, {
+                      unitTypes: (estate.unitTypes || []).concat([val])
+                    });
+                  }}
+                  onRemove={function(idx) {
+                    setNested('estates', estate.id, {
+                      unitTypes: estate.unitTypes.filter(function(_, i) { return i !== idx; })
+                    });
+                  }}
+                />
+              </div>
+
+              {/* Featured Toggle */}
+              <div className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-white">Featured Estate</p>
+                  <p className="text-xs text-zinc-500">Show as the grand hero section</p>
+                </div>
+                <Toggle 
+                  checked={estate.featured || false} 
+                  onChange={function () { setNested('estates', estate.id, { featured: !estate.featured }); }} 
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   function renderTabContent() {
     switch (activeTab) {
       case 'info': return renderInfoTab();
@@ -1872,6 +2221,7 @@ export default function Dashboard() {
       case 'cars': return renderCarsTab();
       case 'food': return renderFoodTab();
       case 'properties': return renderPropertiesTab();
+      case 'estates': return renderEstatesTab();
       case 'offline-payments': return renderOfflinePaymentsTab();
       default: return null;
     }

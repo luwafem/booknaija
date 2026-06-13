@@ -11,11 +11,10 @@ function formatWhatsAppNumber(num) {
 
 export default function HeroSection({ biz }) {
   const accent = biz.accent || '#c8a97e';
-  const textColor = '#78716c'; // stone-600 - readable on light bg
-  const textColorDark = '#d6d3d1'; // stone-300 - readable on dark bg
-  const initials = biz.name ? biz.name.split(' ').map((w) => w[0]).join('').substring(0, 2) : '??';
   const theme = biz.theme || 'light';
   const isDark = theme === 'dark';
+  
+  const initials = biz.name ? biz.name.split(' ').map((w) => w[0]).join('').substring(0, 2) : '??';
   
   const isGrouped = biz.gallery?.length > 0 && typeof biz.gallery[0] === 'object' && biz.gallery[0].images;
   const heroImages = isGrouped 
@@ -25,16 +24,17 @@ export default function HeroSection({ biz }) {
   const hasImages = heroImages.length > 0;
   const mapQuery = biz.location ? encodeURIComponent(biz.name + ' ' + biz.location) : encodeURIComponent(biz.name || '');
   const waNumber = formatWhatsAppNumber(biz.whatsapp || biz.phone);
-
-  // If there's a background image OR it's dark mode, force high-contrast light text/elements
   const useOverlayStyle = hasImages || isDark;
 
   return (
-    <div className={`relative w-full overflow-hidden text-white ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'} min-h-screen`}
-      style={{ minHeight: '100vh' }}
+    <div 
+      className={`
+        relative w-full overflow-hidden text-white
+        min-h-0 xl:min-h-screen
+        ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}
+      `}
     >
       
-      {/* ── STATIC BACKGROUND IMAGES (NO SCROLL) ── */}
       {hasImages && (
         <div className="absolute inset-0 h-full w-full z-0" aria-hidden="true">
           <img 
@@ -45,13 +45,12 @@ export default function HeroSection({ biz }) {
           />
           <div 
             className="absolute inset-0 z-10 pointer-events-none opacity-[0.15] mix-blend-overlay"
-            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }}
+            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65'/%3E%3Cfilter id='noise'%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }}
             aria-hidden="true"
           />
         </div>
       )}
 
-      {/* ── SMART OVERLAY ── */}
       {hasImages ? (
         <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/30 via-black/50 to-black/80" aria-hidden="true" />
       ) : (
@@ -60,56 +59,50 @@ export default function HeroSection({ biz }) {
 
       <header className={`
         relative z-20 mx-auto flex flex-col items-center justify-start
-        px-5 pb-8 min-h-screen
-        pt-[20vh] sm:pt-[22vh]
-        lg:px-8 lg:pb-10 lg:min-h-0 lg:w-full lg:max-w-none lg:pt-[11vh]
-      `}
-      style={{ minHeight: 'auto' }}
-      >
-        <style>{`
-          @media (min-width: 1024px) {
-            [style*="min-height"] {
-              min-height: unset !important;
-            }
-          }
-        `}</style>
+        px-5 pb-[48px]
+        pt-[58px] sm:pt-[68px] md:pt-[70px]
+        lg:px-10 lg:pt-[77px] lg:pb-[77px]
+        xl:px-8 xl:pt-12 xl:pb-12
+        2xl:px-10
+      `}>
         
-        {/* ── LOGO / AVATAR ── */}
-        <div className="mb-5 sm:mb-7 lg:mb-8 animate-fade-in-up">
-          <div className="relative">
-            <div className={`
-              relative w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 
+        <div className="mb-[24px] sm:mb-6 lg:mb-8 xl:mb-6 animate-fade-in-up">
+          <div 
+            className={`
+              relative w-24 h-24 sm:w-28 sm:h-28 md:w-28 md:h-28
+              lg:w-32 lg:h-32
+              xl:w-28 xl:h-28
               rounded-full overflow-hidden flex items-center justify-center 
               shadow-2xl ring-4 ring-white/10
-              ${useOverlayStyle ? 'bg-[#0a0a0a] border-2' : 'bg-white border-2'}
+              ${useOverlayStyle ? 'bg-[#0a0a0a]' : 'bg-white'}
             `}
-              style={{ borderColor: useOverlayStyle ? accent + '40' : accent + '80' }}
-            >
-              {biz.logo || biz.avatar ? (
-                <img 
-                  src={biz.logo || biz.avatar} 
-                  alt={`${biz.name} logo`}
-                  className="w-full h-full object-cover"
-                  itemProp="logo"
-                />
-              ) : (
-                <span 
-                  className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tighter" 
-                  style={{ color: accent }}
-                >
-                  {initials}
-                </span>
-              )}
-            </div>
+            style={{ border: `2px solid ${useOverlayStyle ? accent + '40' : accent + '80'}` }}
+          >
+            {biz.logo || biz.avatar ? (
+              <img 
+                src={biz.logo || biz.avatar} 
+                alt={`${biz.name} logo`}
+                className="w-full h-full object-cover"
+                itemProp="logo"
+              />
+            ) : (
+              <span 
+                className="text-3xl sm:text-4xl md:text-4xl lg:text-5xl xl:text-4xl font-bold tracking-tighter" 
+                style={{ color: accent }}
+              >
+                {initials}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* ── NAME & TAGLINE ── */}
-        <div className="mb-3 sm:mb-5 lg:mb-6 animate-fade-in-up text-center" style={{ animationDelay: '0.1s' }}>
+        <div className="mb-[14px] sm:mb-4 lg:mb-6 xl:mb-4 animate-fade-in-up text-center" style={{ animationDelay: '0.1s' }}>
           <h1 
             className={`
-              text-3xl sm:text-4xl lg:text-5xl 
-              font-heading font-bold tracking-tight mb-2 
+              text-3xl sm:text-4xl md:text-4xl
+              lg:text-5xl
+              xl:text-4xl 2xl:text-5xl
+              font-heading font-bold tracking-tight mb-[10px]
               leading-[1.1] capitalize drop-shadow-2xl
               ${useOverlayStyle ? 'text-white' : 'text-stone-900'}
             `}
@@ -120,8 +113,9 @@ export default function HeroSection({ biz }) {
           
           <p 
             className={`
-              text-xs sm:text-sm lg:text-base
-              uppercase tracking-[0.25em] lg:tracking-[0.3em] 
+              text-xs sm:text-sm
+              lg:text-base xl:text-sm
+              uppercase tracking-[0.2em]
               font-semibold
               ${useOverlayStyle ? 'text-white/80' : 'text-stone-600'}
             `}
@@ -130,14 +124,17 @@ export default function HeroSection({ biz }) {
           </p>
         </div>
 
-        {/* ── BIO ── */}
         {biz.bio && (
           <p 
             className={`
-              text-sm sm:text-base lg:text-lg
+              text-sm sm:text-sm
+              lg:text-lg xl:text-base
               font-sans font-normal leading-relaxed text-center 
-              mb-6 sm:mb-8 lg:mb-10
-              max-w-xs sm:max-w-sm lg:max-w-md mx-auto
+              mb-[29px] sm:mb-[39px]
+              lg:mb-10 xl:mb-8
+              max-w-xs sm:max-w-sm
+              lg:max-w-lg xl:max-w-md
+              mx-auto
               animate-fade-in-up
               ${useOverlayStyle ? 'text-white/90' : 'text-stone-600'}
             `}
@@ -148,18 +145,17 @@ export default function HeroSection({ biz }) {
           </p>
         )}
 
-        {/* ── LOCATION & HOURS BUTTONS ── */}
-        <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-5 sm:mb-7 lg:mb-8 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+        <div className="flex flex-wrap justify-center gap-[14px] sm:gap-4 mb-[24px] sm:mb-[39px] lg:mb-10 xl:mb-8 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           {biz.location && (
             <button
               type="button"
-              onClick={function() { 
-                var mapEl = document.getElementById('location-map');
-                if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              onClick={() => { 
+                const el = document.getElementById('location-map');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }}
               className={`
-                px-5 sm:px-6 py-2.5 sm:py-3 lg:py-3.5 
-                border-2 rounded-full flex items-center gap-2.5 
+                px-5 sm:px-6 py-[11px] sm:py-3
+                border-2 rounded-full flex items-center gap-2.5
                 shadow-lg transition-all duration-300 cursor-pointer hover:scale-105
                 ${useOverlayStyle 
                   ? 'bg-white/[0.05] backdrop-blur-xl border-white/15 hover:bg-white/[0.1] hover:border-white/25' 
@@ -168,10 +164,10 @@ export default function HeroSection({ biz }) {
               style={{ borderColor: useOverlayStyle ? accent + '40' : accent + '80' }}
               aria-label="View location on map"
             >
-              <MapPinIcon className="w-4 h-4 sm:w-5 lg:w-5" style={{ color: accent }} />
+              <MapPinIcon className="w-4 h-4 sm:w-5" style={{ color: accent }} />
               <span 
                 className={`
-                  text-xs sm:text-sm lg:text-base
+                  text-xs sm:text-sm
                   font-bold uppercase tracking-widest
                   ${useOverlayStyle ? 'text-white' : 'text-stone-600'}
                 `}
@@ -183,8 +179,8 @@ export default function HeroSection({ biz }) {
           {biz.hours && (
             <div 
               className={`
-                px-5 sm:px-6 py-2.5 sm:py-3 lg:py-3.5 
-                border-2 rounded-full flex items-center gap-2.5 
+                px-5 sm:px-6 py-[11px] sm:py-3
+                border-2 rounded-full flex items-center gap-2.5
                 shadow-lg
                 ${useOverlayStyle 
                   ? 'bg-white/[0.05] backdrop-blur-xl border-white/15' 
@@ -192,10 +188,10 @@ export default function HeroSection({ biz }) {
               `}
               style={{ borderColor: useOverlayStyle ? accent + '40' : accent + '80' }}
             >
-              <ClockIcon className="w-4 h-4 sm:w-5 lg:w-5" style={{ color: accent }} />
+              <ClockIcon className="w-4 h-4 sm:w-5" style={{ color: accent }} />
               <time 
                 className={`
-                  text-xs sm:text-sm lg:text-base
+                  text-xs sm:text-sm
                   font-bold uppercase tracking-widest
                   ${useOverlayStyle ? 'text-white' : 'text-stone-600'}
                 `} 
@@ -207,15 +203,16 @@ export default function HeroSection({ biz }) {
           )}
         </div>
 
-        {/* ── MAP ── */}
         {biz.location && (
           <div 
             id="location-map"
             className={`
-              w-full mb-6 sm:mb-8 lg:mb-10
+              w-full mb-[29px] sm:mb-[39px]
+              lg:mb-10 xl:mb-8
               rounded-2xl overflow-hidden border-2
               animate-fade-in-up relative
-              h-[130px] lg:h-[180px]
+              h-[145px] sm:h-[157px]
+              lg:h-[200px] xl:h-[160px]
               ${useOverlayStyle ? 'bg-white/[0.05] backdrop-blur-md' : 'bg-white'}
             `}
             style={{ 
@@ -223,14 +220,6 @@ export default function HeroSection({ biz }) {
               borderColor: useOverlayStyle ? accent + '40' : accent + '80'
             }}
           >
-            <style>{`
-              @media (min-width: 640px) {
-                #location-map { height: 130px !important; }
-              }
-              @media (min-width: 1024px) {
-                #location-map { height: 180px !important; }
-              }
-            `}</style>
             <iframe
               title={`Map showing ${biz.name} located at ${biz.location}`}
               width="100%"
@@ -248,14 +237,14 @@ export default function HeroSection({ biz }) {
             />
             <div 
               className={`
-                absolute bottom-3 right-3 
-                flex items-center gap-1.5 rounded-lg px-3 py-2 
+                absolute bottom-3 right-3
+                flex items-center gap-1.5 rounded-lg px-3 py-2
                 border-2 backdrop-blur-md
                 ${useOverlayStyle ? 'bg-black/70 border-white/15' : 'bg-white border-stone-200 shadow-xl'}
               `}
               style={{ borderColor: useOverlayStyle ? accent + '40' : accent + '80' }}
             >
-              <svg className={`w-4 h-4 sm:w-5 lg:w-5 ${useOverlayStyle ? 'text-stone-300' : 'text-stone-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className={`w-4 h-4 ${useOverlayStyle ? 'text-stone-300' : 'text-stone-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
@@ -267,7 +256,7 @@ export default function HeroSection({ biz }) {
                 target="_blank"
                 rel="noreferrer"
                 className={`
-                  text-xs sm:text-sm lg:text-base
+                  text-xs sm:text-sm
                   font-semibold transition-colors
                   ${useOverlayStyle ? 'text-stone-300 hover:text-white' : 'text-stone-600'}
                 `}
@@ -278,20 +267,19 @@ export default function HeroSection({ biz }) {
           </div>
         )}
 
-        {/* ── WHATSAPP & PHONE ── */}
-        <div className="w-full flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8 sm:mb-8 lg:mb-10 animate-fade-in-up justify-center" style={{ animationDelay: '0.3s' }}>
+        <div className="w-full flex flex-col sm:flex-row gap-[14px] sm:gap-4 mb-[39px] sm:mb-[39px] lg:mb-12 xl:mb-10 animate-fade-in-up justify-center" style={{ animationDelay: '0.3s' }}>
           {waNumber && (
             <a
               href={`https://wa.me/${waNumber}`}
               target="_blank"
               rel="noreferrer"
-              className="group relative flex items-center justify-center gap-3 py-3.5 sm:py-4 lg:py-5 rounded-full overflow-hidden transition-all duration-500 active:scale-[0.97] hover:scale-105 flex-1 sm:flex-none sm:min-w-[220px] lg:min-w-[280px]"
+              className="group relative flex items-center justify-center gap-3 py-[17px] sm:py-4 rounded-full overflow-hidden transition-all duration-500 active:scale-[0.97] hover:scale-105 flex-1 sm:flex-none sm:min-w-[220px] lg:min-w-[260px] xl:min-w-[240px]"
               style={{ backgroundColor: accent }}
               aria-label={`Contact ${biz.name} on WhatsApp`}
             >
               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <WhatsAppIcon className="w-5 h-5 sm:w-6 lg:w-7 text-black relative z-10" />
-              <span className="text-black font-bold uppercase tracking-[0.2em] text-sm sm:text-base lg:text-lg relative z-10">
+              <WhatsAppIcon className="w-5 h-5 sm:w-6 text-black relative z-10" />
+              <span className="text-black font-bold uppercase tracking-[0.2em] text-sm sm:text-base relative z-10">
                 whatsapp
               </span>
             </a>
@@ -301,38 +289,35 @@ export default function HeroSection({ biz }) {
             <a
               href={`tel:${biz.phone}`}
               className={`
-                flex items-center justify-center gap-3 py-3.5 sm:py-4 lg:py-5 
+                flex items-center justify-center gap-3 py-[17px] sm:py-4
                 rounded-full border-2 font-bold transition-all duration-300 
-                uppercase tracking-[0.2em] text-sm sm:text-base lg:text-lg
+                uppercase tracking-[0.2em] text-sm sm:text-base
                 hover:scale-105
-                flex-1 sm:flex-none sm:min-w-[220px] lg:min-w-[280px]
+                flex-1 sm:flex-none sm:min-w-[220px] lg:min-w-[260px] xl:min-w-[240px]
                 ${useOverlayStyle 
                   ? 'bg-white/[0.03] backdrop-blur-md text-white hover:bg-white/[0.08]' 
                   : 'bg-white text-stone-900 hover:bg-stone-50 shadow-lg'}
               `}
-              style={{ 
-                borderColor: useOverlayStyle ? accent + '40' : accent + '80'
-              }}
+              style={{ borderColor: useOverlayStyle ? accent + '40' : accent + '80' }}
               itemProp="telephone"
               aria-label={`Call ${biz.name} at ${biz.phone}`}
             >
-              <PhoneIcon className={`w-5 h-5 sm:w-6 lg:w-7 ${useOverlayStyle ? 'opacity-70' : 'opacity-90'}`} style={{ color: accent }} /> 
-              <span style={{ color: useOverlayStyle ? '#e7e5e4' : textColor }}>Call</span>
+              <PhoneIcon className={`w-5 h-5 sm:w-6 ${useOverlayStyle ? 'opacity-70' : 'opacity-90'}`} style={{ color: accent }} /> 
+              <span style={{ color: useOverlayStyle ? '#e7e5e4' : '#78716c' }}>Call</span>
             </a>
           )}
         </div>
 
-        {/* ── SOCIALS ── */}
         <nav className="flex justify-center gap-6 animate-fade-in-up" style={{ animationDelay: '0.4s' }} aria-label="Social media links">
           {biz.socials?.instagram && (
             <a 
               href={biz.socials.instagram} 
               target="_blank" 
               rel="noreferrer" 
-              className={`transition-all duration-300 hover:scale-110 ${useOverlayStyle ? 'text-stone-500 hover:text-white' : 'text-stone-600'}`} 
+              className="transition-all duration-300 hover:scale-110" 
               aria-label={`Follow ${biz.name} on Instagram`}
             >
-              <InstagramIcon className="w-7 h-7 sm:w-8 lg:w-10" style={{ color: accent }} />
+              <InstagramIcon className="w-7 h-7 sm:w-8 lg:w-9 xl:w-8" style={{ color: accent }} />
             </a>
           )}
           {biz.socials?.tiktok && (
@@ -340,10 +325,10 @@ export default function HeroSection({ biz }) {
               href={biz.socials.tiktok} 
               target="_blank" 
               rel="noreferrer" 
-              className={`transition-all duration-300 hover:scale-110 ${useOverlayStyle ? 'text-stone-500 hover:text-white' : 'text-stone-600'}`} 
+              className="transition-all duration-300 hover:scale-110" 
               aria-label={`Follow ${biz.name} on TikTok`}
             >
-              <TikTokIcon className="w-7 h-7 sm:w-8 lg:w-10" style={{ color: accent }} />
+              <TikTokIcon className="w-7 h-7 sm:w-8 lg:w-9 xl:w-8" style={{ color: accent }} />
             </a>
           )}
         </nav>

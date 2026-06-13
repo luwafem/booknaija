@@ -1,3 +1,4 @@
+// PropertyDetails.jsx — FIXED template literal bug + improved text + image quality
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useBusinessWithSEO } from '../hooks/useBusinessWithSEO';
@@ -22,7 +23,7 @@ export default function PropertyDetails() {
   if (loading) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${biz?.theme === 'dark' ? 'bg-black' : 'bg-stone-50'}`}>
-        <div className={`w-8 h-8 border-2 rounded-full animate-spin ${biz?.theme === 'dark' ? 'border-stone-700 border-t-stone-400' : 'border-stone-200 border-t-stone-500'}`} />
+        <div className={`w-8 h-8 border-2 rounded-full animate-spin ${biz?.theme === 'dark' ? 'border-zinc-700 border-t-zinc-400' : 'border-stone-200 border-t-stone-500'}`} />
       </div>
     );
   }
@@ -34,7 +35,7 @@ export default function PropertyDetails() {
   const property = (biz.properties || []).find(p => p.id === propertyId);
 
   if (!property) {
-    return navigate(`/${slug}`); // Fallback if property ID is invalid
+    return navigate(`/${slug}`);
   }
 
   const isDark = biz.theme === 'dark';
@@ -53,7 +54,6 @@ export default function PropertyDetails() {
 
   const handleBookingAction = () => {
     if (isShortlet) {
-      // Save to cart and go to checkout
       try {
         const cart = JSON.parse(sessionStorage.getItem(`cart_${slug}`)) || {};
         cart.property = property.id;
@@ -62,7 +62,6 @@ export default function PropertyDetails() {
       } catch (e) {}
       navigate(`/book/${slug}`);
     } else if (isInspection && biz.whatsapp) {
-      // Open WhatsApp with pre-filled message
       const message = encodeURIComponent(
         `Hello, I am interested in booking an inspection for: ${property.name} located at ${property.location || 'your listed property'}.`
       );
@@ -71,11 +70,11 @@ export default function PropertyDetails() {
   };
 
   const themeClasses = isDark ? {
-    bg: 'bg-black', text: 'text-white', sub: 'text-zinc-500', 
-    border: 'border-white/[0.06]', card: 'bg-white/[0.02]'
+    bg: 'bg-black', text: 'text-white', sub: 'text-zinc-300', muted: 'text-zinc-400',
+    border: 'border-white/[0.08]', card: 'bg-white/[0.03]', pill: 'bg-white/[0.06] text-zinc-300'
   } : {
-    bg: 'bg-stone-50', text: 'text-stone-900', sub: 'text-stone-500', 
-    border: 'border-stone-200', card: 'bg-white'
+    bg: 'bg-stone-50', text: 'text-stone-900', sub: 'text-stone-600', muted: 'text-stone-500',
+    border: 'border-stone-200', card: 'bg-white', pill: 'bg-stone-100 text-stone-600'
   };
 
   return (
@@ -92,51 +91,46 @@ export default function PropertyDetails() {
       <main className="pt-24 pb-32 md:pb-24">
         <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-14">
           
-          {/* Back Navigation */}
-          <Link to={`/${slug}#listings`} className={`inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.2em] uppercase mb-10 transition-colors`} style={{ color: accent }}>
+          <Link to={`/${slug}#listings`} className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.2em] uppercase mb-10 transition-colors hover:opacity-70" style={{ color: accent }}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             Back to Portfolio
           </Link>
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 lg:gap-16">
             
-            {/* Left Column: Gallery */}
             <div className="lg:col-span-3">
               {/* Main Image */}
-              <div className="relative aspect-[4/3] overflow-hidden border ${themeClasses.border} mb-4">
+              <div className={`relative aspect-[4/3] overflow-hidden rounded-2xl border ${themeClasses.border} mb-4`}>
                 <img 
                   src={images[activeImage]} 
                   alt={property.name} 
                   className="w-full h-full object-cover transition-opacity duration-300"
+                  style={{ imageRendering: 'auto' }}
                 />
                 <div className="absolute top-4 left-4">
-                  <span className="px-3 py-1.5 bg-black/70 backdrop-blur-md text-[9px] font-bold tracking-[0.2em] uppercase text-white">
+                  <span className="px-3 py-1.5 bg-white/90 backdrop-blur-md text-[9px] font-bold tracking-[0.15em] uppercase rounded-full shadow-sm" style={{ color: accent }}>
                     {isShortlet ? 'Shortlet' : property.type === 'rent' ? 'For Rent' : 'For Sale'}
                   </span>
                 </div>
               </div>
 
-              {/* Thumbnails */}
               {images.length > 1 && (
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-4 gap-3">
                   {images.map((img, index) => (
                     <button 
                       key={index} 
                       onClick={() => setActiveImage(index)}
-                      className={`relative aspect-[4/3] overflow-hidden border-2 transition-all duration-300 ${activeImage === index ? 'border-opacity-100' : 'border-opacity-0 hover:border-opacity-50'}`}
+                      className={`relative aspect-[4/3] overflow-hidden rounded-xl border-2 transition-all duration-300 ${activeImage === index ? 'border-opacity-100 scale-[0.98]' : 'border-opacity-0 hover:border-opacity-50 hover:scale-[0.98]'}`}
                       style={{ borderColor: activeImage === index ? accent : 'transparent' }}
                     >
-                      <img src={img} alt="" className="w-full h-full object-cover" />
+                      <img src={img} alt="" className="w-full h-full object-cover" style={{ imageRendering: 'auto' }} />
                     </button>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Right Column: Details */}
             <div className="lg:col-span-2 flex flex-col">
-              
-              {/* Location Micro-label */}
               <div className="flex items-center gap-2 mb-4">
                 <svg className="w-3.5 h-3.5" style={{ color: accent }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 <span className={`text-xs font-medium tracking-wide uppercase ${themeClasses.sub}`}>
@@ -144,12 +138,11 @@ export default function PropertyDetails() {
                 </span>
               </div>
 
-              {/* Title & Price */}
               <h1 className="text-3xl md:text-4xl font-light tracking-tight mb-4">
                 {property.name}
               </h1>
               
-              <div className="mb-8 pb-8 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e7e5e4' }}>
+              <div className="mb-8 pb-8 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e7e5e4' }}>
                 <p className="text-3xl font-light tracking-wide" style={{ color: accent }}>
                   {formatPrice(property.price)}
                 </p>
@@ -160,31 +153,29 @@ export default function PropertyDetails() {
                 )}
               </div>
 
-              {/* Key Metrics Grid */}
-              <div className="grid grid-cols-3 gap-4 mb-8 pb-8 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e7e5e4' }}>
+              <div className="grid grid-cols-3 gap-4 mb-8 pb-8 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e7e5e4' }}>
                 {property.bedrooms !== undefined && property.bedrooms !== '' && (
-                  <div className={`text-center p-4 rounded-sm ${themeClasses.card} border ${themeClasses.border}`}>
+                  <div className={`text-center p-4 rounded-xl ${themeClasses.card} border ${themeClasses.border}`}>
                     <p className="text-2xl font-light mb-1">{property.bedrooms}</p>
-                    <p className={`text-[10px] font-bold tracking-[0.15em] uppercase ${themeClasses.sub}`}>Beds</p>
+                    <p className={`text-[10px] font-bold tracking-[0.15em] uppercase ${themeClasses.muted}`}>Beds</p>
                   </div>
                 )}
                 {property.bathrooms !== undefined && property.bathrooms !== '' && (
-                  <div className={`text-center p-4 rounded-sm ${themeClasses.card} border ${themeClasses.border}`}>
+                  <div className={`text-center p-4 rounded-xl ${themeClasses.card} border ${themeClasses.border}`}>
                     <p className="text-2xl font-light mb-1">{property.bathrooms}</p>
-                    <p className={`text-[10px] font-bold tracking-[0.15em] uppercase ${themeClasses.sub}`}>Baths</p>
+                    <p className={`text-[10px] font-bold tracking-[0.15em] uppercase ${themeClasses.muted}`}>Baths</p>
                   </div>
                 )}
                 {property.square_meters && (
-                  <div className={`text-center p-4 rounded-sm ${themeClasses.card} border ${themeClasses.border}`}>
+                  <div className={`text-center p-4 rounded-xl ${themeClasses.card} border ${themeClasses.border}`}>
                     <p className="text-2xl font-light mb-1">{property.square_meters}</p>
-                    <p className={`text-[10px] font-bold tracking-[0.15em] uppercase ${themeClasses.sub}`}>Sq.M</p>
+                    <p className={`text-[10px] font-bold tracking-[0.15em] uppercase ${themeClasses.muted}`}>Sq.M</p>
                   </div>
                 )}
               </div>
 
-              {/* Description */}
               {property.description && (
-                <div className="mb-8 pb-8 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e7e5e4' }}>
+                <div className="mb-8 pb-8 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e7e5e4' }}>
                   <h3 className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: accent }}>Description</h3>
                   <p className={`text-sm leading-relaxed whitespace-pre-line ${themeClasses.sub}`}>
                     {property.description}
@@ -192,31 +183,29 @@ export default function PropertyDetails() {
                 </div>
               )}
 
-              {/* Amenities */}
               {property.amenities && property.amenities.length > 0 && (
                 <div className="mb-10">
                   <h3 className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: accent }}>Amenities</h3>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-wrap gap-2">
                     {property.amenities.map((amenity, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <svg className="w-3.5 h-3.5 flex-shrink-0 opacity-50" style={{ color: accent }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                        <span className={`text-sm ${themeClasses.sub}`}>{amenity}</span>
-                      </div>
+                      <span key={index} className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg ${themeClasses.pill}`}>
+                        <svg className="w-3 h-3 flex-shrink-0 opacity-60" style={{ color: accent }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                        {amenity}
+                      </span>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Desktop CTA */}
               <div className="hidden lg:block mt-auto">
                 <button 
                   onClick={handleBookingAction}
-                  className="w-full flex items-center justify-center gap-3 px-8 py-4 text-[11px] font-bold tracking-[0.2em] uppercase transition-all duration-300"
-                  style={{ 
-                    backgroundColor: isInspection ? 'transparent' : accent, 
-                    color: isInspection ? (isDark ? 'white' : '#1c1917') : (isDark ? '#000' : '#fff'),
-                    border: isInspection ? `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : '#1c1917'}` : '1px solid transparent'
-                  }}
+                  className={`w-full flex items-center justify-center gap-3 px-8 py-4 text-[11px] font-bold tracking-[0.2em] uppercase transition-all duration-300 rounded-full shadow-sm ${
+                    isInspection 
+                      ? `border ${isDark ? 'border-white/20 text-white hover:bg-white/[0.06]' : 'border-stone-800 text-stone-900 hover:bg-stone-100'}` 
+                      : 'text-white hover:brightness-110 active:scale-[0.98]'
+                  }`}
+                  style={!isInspection ? { backgroundColor: accent } : {}}
                 >
                   {isInspection ? (
                     <>
@@ -226,14 +215,12 @@ export default function PropertyDetails() {
                   ) : 'Book Now'}
                 </button>
               </div>
-
             </div>
           </div>
         </div>
       </main>
 
-      {/* Mobile Sticky CTA Bar (Glassmorphism) */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 p-4 backdrop-blur-xl border-t" style={{ backgroundColor: isDark ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.9)', borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e7e5e4' }}>
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 p-4 backdrop-blur-xl border-t" style={{ backgroundColor: isDark ? 'rgba(0,0,0,0.85)' : 'rgba(250,250,249,0.92)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e7e5e4' }}>
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div>
             <p className="text-lg font-light" style={{ color: accent }}>{formatPrice(property.price)}</p>
@@ -241,8 +228,12 @@ export default function PropertyDetails() {
           </div>
           <button 
             onClick={handleBookingAction}
-            className="flex-1 max-w-[200px] flex items-center justify-center gap-2 px-6 py-3.5 text-[10px] font-bold tracking-[0.15em] uppercase"
-            style={{ backgroundColor: isInspection ? 'transparent' : accent, color: isInspection ? (isDark ? 'white' : '#1c1917') : (isDark ? '#000' : '#fff'), border: isInspection ? `1px solid ${isDark ? 'rgba(255,255,255,0.3)' : '#1c1917'}` : 'none' }}
+            className={`flex-1 max-w-[200px] flex items-center justify-center gap-2 px-6 py-3.5 text-[10px] font-bold tracking-[0.15em] uppercase transition-all duration-300 rounded-full shadow-sm ${
+              isInspection 
+                ? `border ${isDark ? 'border-white/30 text-white' : 'border-stone-800 text-stone-900'}` 
+                : 'text-white hover:brightness-110'
+            }`}
+            style={!isInspection ? { backgroundColor: accent } : {}}
           >
             {isInspection ? 'Inspect' : 'Book Now'}
           </button>

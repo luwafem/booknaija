@@ -23,7 +23,8 @@ export function useBusiness(slug) {
         business_products (*),
         business_cars (*),
         business_food (*),
-        business_properties (*)
+        business_properties (*),
+        business_estates (*)
         `
       )
       .eq('slug', slug)
@@ -88,6 +89,7 @@ function transformBusiness(row) {
     productsEnabled: row.products_enabled,
     foodEnabled: row.food_enabled,
     propertiesEnabled: row.properties_enabled || false,
+    estatesEnabled: row.estates_enabled || false,
     businessType: row.business_type || '',
     socials: row.socials || {},
     gallery: row.gallery || [],
@@ -183,7 +185,34 @@ function transformBusiness(row) {
         description: p.description || '',
         images: p.images || []
       };
-    })
+    }),
+
+    // ─── ESTATES (With Featured Sorting) ───
+    estates: sortByOrder(row.business_estates || [])
+      .map(function (e) {
+        return {
+          id: e.estate_id,
+          name: e.name,
+          tagline: e.tagline || '',
+          location: e.location || '',
+          description: e.description || '',
+          heroImage: e.hero_image || '',
+          images: e.images || [],
+          priceRange: e.price_range || { min: 0, max: 0 },
+          totalUnits: e.total_units || 0,
+          availableUnits: e.available_units || 0,
+          completionDate: e.completion_date || '',
+          amenities: e.amenities || [],
+          unitTypes: e.unit_types || [],
+          featured: e.featured || false
+        };
+      })
+      .sort(function (a, b) {
+        // Always push the "Featured" estate to the very top (index 0)
+        if (a.featured && !b.featured) return -1;
+        if (!a.featured && b.featured) return 1;
+        return 0; // Keep original sort_order for the rest
+      })
   };
 }
 

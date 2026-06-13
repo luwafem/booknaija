@@ -9,25 +9,25 @@ const supabase = createClient(
 function getFeaturesForType(type) {
   switch (type) {
     case 'Fashion':
-      return { services_enabled: true, products_enabled: true, cars_enabled: false, food_enabled: false, properties_enabled: false };
+      return { services_enabled: true, products_enabled: true, cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false };
     case 'Lash Artist':
     case 'Hair Stylist':
     case 'Makeup Artist':
     case 'Nail Technician':
     case 'Skin Care':
-      return { services_enabled: true, products_enabled: true, cars_enabled: false, food_enabled: false, properties_enabled: false };
+      return { services_enabled: true, products_enabled: true, cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false };
     case 'Cleaner':
     case 'Tutor':
-      return { services_enabled: true, products_enabled: false, cars_enabled: false, food_enabled: false, properties_enabled: false };
+      return { services_enabled: true, products_enabled: false, cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false };
     case 'Restaurant':
-      return { services_enabled: false, products_enabled: false, cars_enabled: false, food_enabled: true, properties_enabled: false };
+      return { services_enabled: false, products_enabled: false, cars_enabled: false, food_enabled: true, properties_enabled: false, estates_enabled: false };
     case 'Auto':
-      return { services_enabled: false, products_enabled: false, cars_enabled: true, food_enabled: false, properties_enabled: false };
+      return { services_enabled: false, products_enabled: false, cars_enabled: true, food_enabled: false, properties_enabled: false, estates_enabled: false };
     case 'Real Estate':
     case 'Shortlet':
-      return { services_enabled: false, products_enabled: false, cars_enabled: false, food_enabled: false, properties_enabled: true };
+      return { services_enabled: false, products_enabled: false, cars_enabled: false, food_enabled: false, properties_enabled: true, estates_enabled: true };
     default:
-      return { services_enabled: true, products_enabled: true, cars_enabled: false, food_enabled: false, properties_enabled: false };
+      return { services_enabled: true, products_enabled: true, cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false };
   }
 }
 
@@ -95,7 +95,11 @@ exports.handler = async function (event) {
       ? d.propertiesEnabled === true 
       : (d.properties_enabled !== undefined ? d.properties_enabled === true : derivedFeatures.properties_enabled);
 
-    console.log('Feature flags resolved:', { businessType, servicesEnabled, productsEnabled, carsEnabled, foodEnabled, propertiesEnabled });
+    const estatesEnabled = (d.estatesEnabled !== undefined) 
+      ? d.estatesEnabled === true 
+      : (d.estates_enabled !== undefined ? d.estates_enabled === true : derivedFeatures.estates_enabled);
+
+    console.log('Feature flags resolved:', { businessType, servicesEnabled, productsEnabled, carsEnabled, foodEnabled, propertiesEnabled, estatesEnabled });
     // ────────────────────────────
 
     var bizPayload = {
@@ -117,7 +121,7 @@ exports.handler = async function (event) {
       avatar: '',
       hero: d.hero || '',
       hero_slides: d.hero_slides || [],
-      team: d.team || [], // ─── ADDED: Save team members array ───
+      team: d.team || [],
       paystack_public_key: d.paystackPublicKey || 'pk_live_2ba1413aaaf5091188571ea6f87cca34945d943c',
       subaccount_code: d.subaccountCode || '',
       calendar_id: d.calendarId || '',
@@ -126,7 +130,6 @@ exports.handler = async function (event) {
       account_name: d.account_name || d.accountName || '',
       account_number: d.account_number || d.accountNumber || '',
       settlement_bank: d.settlement_bank || d.settlementBank || '',
-      // ─────────────────────────────────────────────
 
       active: true,
       ads_enabled: d.adsEnabled !== false,
@@ -138,6 +141,7 @@ exports.handler = async function (event) {
       cars_enabled: carsEnabled,
       food_enabled: foodEnabled,
       properties_enabled: propertiesEnabled,
+      estates_enabled: estatesEnabled,
       // ───────────────────────────────────
 
       socials: d.socials || {},
@@ -204,14 +208,15 @@ exports.handler = async function (event) {
       console.log('Affiliate referral detected. Saved to database during upsert. Skipping standard referral count.');
     }
 
-    // Clear old related data
+    // ─── CLEAR OLD RELATED DATA ───
     await supabase.from('business_services').delete().eq('business_id', businessId);
     await supabase.from('business_products').delete().eq('business_id', businessId);
     await supabase.from('business_cars').delete().eq('business_id', businessId);
     await supabase.from('business_food').delete().eq('business_id', businessId);
     await supabase.from('business_properties').delete().eq('business_id', businessId);
+    await supabase.from('business_estates').delete().eq('business_id', businessId);
 
-    // 3. Insert services
+    // ─── 3. INSERT SERVICES ───
     if (d.services && d.services.length > 0) {
       var serviceRows = d.services.map(function (s, i) {
         return {
@@ -233,7 +238,7 @@ exports.handler = async function (event) {
       if (sErr) console.error('Services error:', sErr);
     }
 
-    // 4. Insert products
+    // ─── 4. INSERT PRODUCTS ───
     if (d.products && d.products.length > 0) {
       var productRows = d.products.map(function (p, i) {
         return {
@@ -258,7 +263,7 @@ exports.handler = async function (event) {
       if (pErr) console.error('Products error:', pErr);
     }
 
-    // 5. Insert cars
+    // ─── 5. INSERT CARS ───
     if (d.cars && d.cars.length > 0) {
       var carRows = d.cars.map(function (c, i) {
         var img = c.images && c.images.length > 0 ? c.images[0] : (c.image || '');
@@ -282,7 +287,7 @@ exports.handler = async function (event) {
       if (cErr) console.error('Cars error:', cErr);
     }
 
-    // 6. Insert food items
+    // ─── 6. INSERT FOOD ITEMS ───
     if (d.food && d.food.length > 0) {
       var foodRows = d.food.map(function (f, i) {
         return {
@@ -301,7 +306,7 @@ exports.handler = async function (event) {
       if (fErr) console.error('Food error:', fErr);
     }
 
-    // 7. Insert properties
+    // ─── 7. INSERT PROPERTIES ───
     if (d.properties && d.properties.length > 0) {
       var propertyRows = d.properties.map(function (p, i) {
         return {
@@ -320,6 +325,32 @@ exports.handler = async function (event) {
       });
       var { error: propErr } = await supabase.from('business_properties').insert(propertyRows);
       if (propErr) console.error('Properties error:', propErr);
+    }
+
+    // ─── 8. INSERT ESTATES ───
+    if (d.estates && d.estates.length > 0) {
+      var estateRows = d.estates.map(function (e, i) {
+        return {
+          business_id: businessId,
+          estate_id: e.id,
+          name: e.name,
+          tagline: e.tagline || '',
+          location: e.location || '',
+          description: e.description || '',
+          hero_image: e.heroImage || '',
+          images: e.images || [],
+          price_range: e.priceRange || {},
+          total_units: parseInt(e.totalUnits) || 0,
+          available_units: parseInt(e.availableUnits) || 0,
+          completion_date: e.completionDate || '',
+          amenities: e.amenities || [],
+          unit_types: e.unitTypes || [],
+          featured: e.featured === true,
+          sort_order: i
+        };
+      });
+      var { error: estErr } = await supabase.from('business_estates').insert(estateRows);
+      if (estErr) console.error('Estates error:', estErr);
     }
 
     console.log('=== DONE: ' + d.slug + ' ===');
