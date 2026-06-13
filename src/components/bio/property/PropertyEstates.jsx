@@ -6,6 +6,7 @@ export default function PropertyEstates({ biz, accent, isDark, onSelectProperty 
   const whatsappBase = biz.whatsapp ? `https://wa.me/234${biz.whatsapp.replace(/^0/, '')}` : null;
 
   const [lightbox, setLightbox] = useState({ isOpen: false, images: [], currentIndex: 0, name: '' });
+  const [touchStart, setTouchStart] = useState(null);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -32,6 +33,18 @@ export default function PropertyEstates({ biz, accent, isDark, onSelectProperty 
   };
 
   const closeLightbox = () => setLightbox(prev => ({ ...prev, isOpen: false }));
+
+  // Mobile swipe handling for lightbox
+  const handleTouchStart = (e) => setTouchStart(e.targetTouches[0].clientX);
+  const handleTouchEnd = (e) => {
+    if (touchStart === null || lightbox.images.length <= 1) return;
+    const diff = touchStart - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) setLightbox(prev => ({ ...prev, currentIndex: (prev.currentIndex + 1) % prev.images.length }));
+      else setLightbox(prev => ({ ...prev, currentIndex: (prev.currentIndex - 1 + prev.images.length) % prev.images.length }));
+    }
+    setTouchStart(null);
+  };
 
   const getGalleryImages = (estate) => {
     let imgs = [];
@@ -101,18 +114,17 @@ export default function PropertyEstates({ biz, accent, isDark, onSelectProperty 
     const maxShow = 4;
     const visible = additional.slice(0, maxShow);
     const leftover = additional.length - maxShow;
-    const cols = isFeatured ? 'grid-cols-3 sm:grid-cols-4' : 'grid-cols-3 lg:grid-cols-4';
-    const thumbAspect = isFeatured ? 'aspect-[4/3] sm:aspect-[3/2]' : 'aspect-[4/3]';
-
+    
     return (
-      <div className={`grid ${cols} gap-2 ${isFeatured ? 'sm:gap-3' : ''} mt-2 ${isFeatured ? 'sm:mt-3' : ''}`}>
+      // Horizontal scroll on mobile, grid on desktop
+      <div className={`flex gap-2 mt-2 sm:mt-3 overflow-x-auto no-scrollbar pb-2 sm:pb-0 snap-x snap-mandatory sm:grid sm:grid-cols-4 sm:overflow-visible ${isFeatured ? 'sm:gap-3' : ''}`}>
         {visible.map((img, i) => {
           const globalIdx = skip + i;
           const isLast = i === maxShow - 1 && leftover > 0;
           return (
             <div
               key={i}
-              className={`relative ${thumbAspect} overflow-hidden cursor-zoom-in group/thumb rounded-xl`}
+              className="relative aspect-[4/3] w-32 sm:w-auto flex-shrink-0 overflow-hidden cursor-zoom-in group/thumb rounded-xl snap-start"
               onClick={() => openLightbox(images, globalIdx, name)}
             >
               <img
@@ -140,10 +152,12 @@ export default function PropertyEstates({ biz, accent, isDark, onSelectProperty 
 
   return (
     <section id="estates" className={`relative ${theme.bg} transition-colors duration-500`}>
+      {/* Global style to hide scrollbars on mobile without breaking native scroll on desktop */}
+      <style>{`.no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}`}</style>
 
       <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-14 pt-24 md:pt-32 lg:pt-40 pb-6 sm:pb-10">
         <div className="text-center">
-          <h2 className="text-3xl md:text-5xl font-medium tracking-tight text-black">
+          <h2 className={`text-3xl md:text-5xl font-medium tracking-tight ${theme.text}`}>
             Our Estates
           </h2>
         </div>
@@ -229,12 +243,25 @@ export default function PropertyEstates({ biz, accent, isDark, onSelectProperty 
                 </div>
               </div>
 
+              {/* Desktop Hover Gallery Button */}
               <div className="hidden lg:flex absolute inset-0 bg-black/0 group-hover/banner:bg-black/10 transition-colors duration-500 items-center justify-center pointer-events-none rounded-2xl">
                 <span className="px-5 py-2.5 bg-white text-gray-900 text-xs font-bold tracking-wider uppercase opacity-0 group-hover/banner:opacity-100 translate-y-3 group-hover/banner:translate-y-0 transition-all duration-500 shadow-lg flex items-center gap-2 pointer-events-auto rounded-full">
                   <GalleryIcon className="w-4 h-4" /> View Gallery
                 </span>
               </div>
             </div>
+
+            {/* Mobile Only Gallery CTA */}
+            {fImages.length > 1 && (
+              <button 
+                onClick={() => openLightbox(fImages, 0, featured.name)}
+                className="lg:hidden mt-3 w-full flex items-center justify-center gap-2 py-3 text-xs font-bold tracking-[0.15em] uppercase rounded-full border transition-colors active:scale-[0.98]"
+                style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#e5e5e5', color: theme.sub }}
+              >
+                <GalleryIcon className="w-4 h-4" />
+                View All {fImages.length} Photos
+              </button>
+            )}
 
             <GalleryStrip images={fImages} name={featured.name} isFeatured skip={1} />
 
@@ -274,7 +301,7 @@ export default function PropertyEstates({ biz, accent, isDark, onSelectProperty 
               {featured.amenities?.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-8">
                   {featured.amenities.map((a, i) => (
-                    <span key={i} className={`px-3 py-1.5 text-[11px] font-medium rounded-lg ${theme.pillBg} ${theme.pillText}`}>
+                    <span key={i} className={`px-4 py-1.5 text-[11px] font-medium rounded-full ${theme.pillBg} ${theme.pillText}`}>
                       {a}
                     </span>
                   ))}
@@ -290,19 +317,20 @@ export default function PropertyEstates({ biz, accent, isDark, onSelectProperty 
           <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-14">
 
             <div className="text-center mb-12 sm:mb-16">
-              <h2 className="text-2xl md:text-3xl font-medium tracking-tight text-black">
+              <h2 className={`text-2xl md:text-3xl font-medium tracking-tight ${theme.text}`}>
                 More Estates
               </h2>
             </div>
 
-            <div className="space-y-12 sm:space-y-16 lg:space-y-24">
+            {/* Desktop 2-Column Grid / Mobile Single Column */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
               {others.map((estate) => {
                 const eImages = getGalleryImages(estate);
                 return (
                   <div key={estate.id}>
 
                     <div
-                      className="group/banner relative aspect-[4/3] sm:aspect-[2/1] lg:aspect-[16/7] overflow-hidden cursor-zoom-in rounded-2xl"
+                      className="group/banner relative aspect-[4/3] sm:aspect-[3/2] lg:aspect-[4/3] overflow-hidden cursor-zoom-in rounded-2xl"
                       onClick={() => openLightbox(eImages, 0, estate.name)}
                     >
                       {eImages.length > 0 ? (
@@ -320,7 +348,7 @@ export default function PropertyEstates({ biz, accent, isDark, onSelectProperty 
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/5 pointer-events-none rounded-2xl" />
                       <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent hidden lg:block pointer-events-none" />
 
-                      <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 lg:p-8 xl:p-10 pointer-events-none">
+                      <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 lg:p-8 pointer-events-none">
                         <div className="flex flex-wrap items-center gap-2 mb-2 sm:mb-3">
                           {estate.completionDate && (
                             <span className="px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase text-white rounded-full" style={{ backgroundColor: accent }}>
@@ -348,20 +376,20 @@ export default function PropertyEstates({ biz, accent, isDark, onSelectProperty 
                           </div>
                         )}
 
-                        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3 lg:gap-6">
+                        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
                           <div className="min-w-0">
-                            <h4 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white tracking-tight leading-tight">
+                            <h4 className="text-xl sm:text-2xl font-semibold text-white tracking-tight leading-tight">
                               {estate.name}
                             </h4>
                             {estate.tagline && (
-                              <p className="text-white/70 text-sm mt-1.5 max-w-lg leading-relaxed hidden sm:block">
+                              <p className="text-white/70 text-sm mt-1 max-w-md leading-relaxed hidden sm:line-clamp-2">
                                 {estate.tagline}
                               </p>
                             )}
                           </div>
 
-                          <div className="flex items-center gap-4 pointer-events-auto flex-shrink-0">
-                            <div>
+                          <div className="flex items-center gap-4 pointer-events-auto flex-shrink-0 w-full sm:w-auto">
+                            <div className="min-w-[80px]">
                               <p className="text-white/50 text-[10px] font-bold tracking-[0.15em] uppercase">From</p>
                               <p className="text-white text-lg sm:text-xl font-medium tracking-tight">
                                 {formatPrice(estate.priceRange?.min)}
@@ -372,11 +400,11 @@ export default function PropertyEstates({ biz, accent, isDark, onSelectProperty 
                               target="_blank"
                               rel="noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:brightness-110 active:scale-[0.97] rounded-full shadow-sm"
+                              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:brightness-110 active:scale-[0.97] rounded-full shadow-sm"
                               style={{ backgroundColor: accent }}
                             >
                               Enquire
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <svg className="w-4 h-4 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                               </svg>
                             </a>
@@ -384,6 +412,7 @@ export default function PropertyEstates({ biz, accent, isDark, onSelectProperty 
                         </div>
                       </div>
 
+                      {/* Desktop Hover Gallery Button */}
                       <div className="hidden lg:flex absolute inset-0 bg-black/0 group-hover/banner:bg-black/10 transition-colors duration-500 items-center justify-center pointer-events-none rounded-2xl">
                         <span className="px-4 py-2 bg-white text-gray-900 text-[10px] font-bold tracking-wider uppercase opacity-0 group-hover/banner:opacity-100 translate-y-2 group-hover/banner:translate-y-0 transition-all duration-500 shadow-lg flex items-center gap-1.5 pointer-events-auto rounded-full">
                           <GalleryIcon className="w-3.5 h-3.5" /> View Gallery
@@ -402,12 +431,12 @@ export default function PropertyEstates({ biz, accent, isDark, onSelectProperty 
                       {estate.amenities?.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
                           {estate.amenities.slice(0, 6).map((a, i) => (
-                            <span key={i} className={`px-2.5 py-1 text-[10px] font-medium rounded-lg ${theme.pillBg} ${theme.pillText}`}>
+                            <span key={i} className={`px-4 py-1 text-[10px] font-medium rounded-full ${theme.pillBg} ${theme.pillText}`}>
                               {a}
                             </span>
                           ))}
                           {estate.amenities.length > 6 && (
-                            <span className={`px-2.5 py-1 text-[10px] font-medium rounded-lg ${theme.pillBg} ${theme.pillText}`}>
+                            <span className={`px-4 py-1 text-[10px] font-medium rounded-full ${theme.pillBg} ${theme.pillText}`}>
                               +{estate.amenities.length - 6} more
                             </span>
                           )}
@@ -424,7 +453,7 @@ export default function PropertyEstates({ biz, accent, isDark, onSelectProperty 
 
       <div className="mt-16 sm:mt-24 lg:mt-32">
         <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-14 pb-16 sm:pb-24 lg:pb-32 text-center">
-          <h3 className="text-2xl sm:text-3xl lg:text-4xl font-medium tracking-tight text-black leading-tight mb-4">
+          <h3 className={`text-2xl sm:text-3xl lg:text-4xl font-medium tracking-tight ${theme.text} leading-tight mb-4`}>
             Ready to find your home?
           </h3>
           <p className={`text-sm max-w-md mx-auto leading-relaxed mb-8 ${theme.sub}`}>
@@ -475,11 +504,16 @@ export default function PropertyEstates({ biz, accent, isDark, onSelectProperty 
             </button>
           </div>
 
-          <div className="flex-1 flex items-center justify-center relative min-h-0 px-1 sm:px-4 md:px-16" onClick={e => e.stopPropagation()}>
+          <div 
+            className="flex-1 flex items-center justify-center relative min-h-0 px-1 sm:px-4 md:px-16" 
+            onClick={e => e.stopPropagation()}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             {lightbox.images.length > 1 && (
               <button
                 onClick={() => setLightbox(prev => ({ ...prev, currentIndex: (prev.currentIndex - 1 + prev.images.length) % prev.images.length }))}
-                className="absolute left-1 sm:left-3 md:left-6 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white transition-colors z-10 rounded-full"
+                className="hidden sm:flex absolute left-1 sm:left-3 md:left-6 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-11 sm:h-11 items-center justify-center bg-white/10 hover:bg-white/20 text-white transition-colors z-10 rounded-full"
               >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -487,11 +521,11 @@ export default function PropertyEstates({ biz, accent, isDark, onSelectProperty 
               </button>
             )}
 
-            <div className="max-w-5xl w-full h-full flex items-center justify-center p-2 sm:p-4">
+            <div className="max-w-5xl w-full h-full flex items-center justify-center p-2 sm:p-4 select-none">
               <img
                 src={lightbox.images[lightbox.currentIndex]}
                 alt={`${lightbox.name} — ${lightbox.currentIndex + 1}`}
-                className="max-w-full max-h-full object-contain select-none"
+                className="max-w-full max-h-full object-contain rounded-sm"
                 draggable={false}
                 style={{ imageRendering: 'auto' }}
               />
@@ -500,7 +534,7 @@ export default function PropertyEstates({ biz, accent, isDark, onSelectProperty 
             {lightbox.images.length > 1 && (
               <button
                 onClick={() => setLightbox(prev => ({ ...prev, currentIndex: (prev.currentIndex + 1) % prev.images.length }))}
-                className="absolute right-1 sm:right-3 md:right-6 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white transition-colors z-10 rounded-full"
+                className="hidden sm:flex absolute right-1 sm:right-3 md:right-6 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-11 sm:h-11 items-center justify-center bg-white/10 hover:bg-white/20 text-white transition-colors z-10 rounded-full"
               >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -514,12 +548,12 @@ export default function PropertyEstates({ biz, accent, isDark, onSelectProperty 
               {lightbox.currentIndex + 1} / {lightbox.images.length}
             </p>
             {lightbox.images.length > 1 && (
-              <div className="flex gap-1.5 sm:gap-2 overflow-x-auto max-w-full pb-1 px-1">
+              <div className="flex gap-1.5 sm:gap-2 overflow-x-auto max-w-full pb-1 px-1 no-scrollbar">
                 {lightbox.images.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setLightbox(prev => ({ ...prev, currentIndex: idx }))}
-                    className={`flex-shrink-0 w-11 h-11 sm:w-14 sm:h-14 md:w-[4.5rem] md:h-[4.5rem] overflow-hidden border-2 transition-all duration-200 rounded-lg ${
+                    className={`flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 md:w-[4.5rem] md:h-[4.5rem] overflow-hidden border-2 transition-all duration-200 rounded-lg ${
                       idx === lightbox.currentIndex ? 'border-white opacity-100 scale-105' : 'border-transparent opacity-35 hover:opacity-70'
                     }`}
                   >

@@ -44,20 +44,14 @@ export default function PropertyHeader({ biz, accent, isDark }) {
               </span>
             </a>
 
-            <nav className="hidden md:flex items-center gap-10">
+            <nav className="hidden md:flex items-center gap-2">
               {['Listings', 'About', 'Contact'].map((item) => (
                 <a
                   key={item}
                   href={`#${item.toLowerCase()}`}
-                  className="relative group transition-colors duration-300 text-white/80 hover:text-white py-2"
+                  className="px-4 py-2 text-[11px] font-semibold tracking-[0.2em] uppercase text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-all duration-300"
                 >
-                  <span className="text-[11px] font-semibold tracking-[0.2em] uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">
-                    {item}
-                  </span>
-                  <span
-                    className="absolute -bottom-0.5 left-0 w-0 h-[1px] transition-all duration-300 ease-out group-hover:w-full"
-                    style={{ backgroundColor: accent || '#ffffff' }}
-                  />
+                  {item}
                 </a>
               ))}
             </nav>
@@ -116,26 +110,20 @@ export default function PropertyHeader({ biz, accent, isDark }) {
             </svg>
           </button>
 
-          <nav className="flex flex-col items-center gap-2">
+          <nav className="flex flex-col items-center gap-3">
             {['Listings', 'About', 'Contact'].map((item, i) => (
               <a
                 key={item}
                 href={`#${item.toLowerCase()}`}
                 onClick={() => setMobileOpen(false)}
-                className="group relative block py-3 text-center transition-all duration-300"
+                className="px-8 py-3 text-2xl font-light tracking-[0.04em] text-white/90 hover:text-white hover:bg-white/10 rounded-full transition-all duration-300"
                 style={{
                   transitionDelay: mobileOpen ? `${80 + i * 70}ms` : '0ms',
                   opacity: mobileOpen ? 1 : 0,
                   transform: mobileOpen ? 'translateY(0)' : 'translateY(20px)',
                 }}
               >
-                <span className="text-3xl font-light tracking-[0.04em] text-white/90 group-hover:text-white transition-colors duration-200">
-                  {item}
-                </span>
-                <span
-                  className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-0 h-[1px] transition-all duration-300 ease-out group-hover:w-full"
-                  style={{ backgroundColor: accent || '#ffffff' }}
-                />
+                {item}
               </a>
             ))}
           </nav>

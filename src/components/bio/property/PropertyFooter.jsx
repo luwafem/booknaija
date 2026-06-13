@@ -10,9 +10,9 @@ export default function PropertyFooter({ biz, accent, isDark }) {
         text: 'text-white',
         sub: 'text-zinc-300',
         muted: 'text-zinc-400',
-        hover: 'hover:text-white hover:bg-white/[0.06]',
-        pill: 'px-3 py-1.5 rounded-lg',
-        socialBorder: 'border-white/[0.08] hover:border-white/20 hover:bg-white/[0.06]',
+        hover: 'hover:text-white hover:bg-white/10',
+        pill: 'px-4 py-1.5 rounded-full',
+        socialBorder: 'border-white/[0.08] hover:border-white/20 hover:bg-white/10',
         logoRing: 'ring-white/10',
       }
     : {
@@ -22,7 +22,7 @@ export default function PropertyFooter({ biz, accent, isDark }) {
         sub: 'text-gray-600',
         muted: 'text-gray-500',
         hover: 'hover:text-black hover:bg-gray-100',
-        pill: 'px-3 py-1.5 rounded-lg',
+        pill: 'px-4 py-1.5 rounded-full',
         socialBorder: 'border-gray-200 hover:border-gray-300 hover:bg-gray-50',
         logoRing: 'ring-gray-200/50',
       };
