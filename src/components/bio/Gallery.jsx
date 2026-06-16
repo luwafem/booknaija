@@ -30,53 +30,73 @@ export default function Gallery({ gallery, accent, location, theme }) {
   }
 
   useEffect(() => {
-    document.body.style.overflow = lightbox.isOpen ? 'hidden' : 'unset';
-    return () => { document.body.style.overflow = 'unset'; };
+    document.body.style.overflow = lightbox.isOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
   }, [lightbox.isOpen]);
+
+  const allImages = groups.flatMap(g => g.images);
+  const globalIdx = groups.slice(0, lightbox.groupIdx).reduce((sum, g) => sum + g.images.length, 0) + lightbox.imgIdx;
 
   return (
     <>
-            <section className="mt-20 sm:mt-24 lg:mt-28 xl:mt-16" aria-label="Photo gallery">
-        <h2 
-          className="text-xs sm:text-sm xl:text-xs font-semibold uppercase tracking-[0.2em] mb-3 sm:mb-4 xl:mb-3"
-          style={{ color: accent }}
-        >
-          Our Work
-        </h2>
+      <section className="mt-12 lg:mt-16 xl:mt-0" aria-label="Photo gallery">
         
-        <div className="space-y-4 sm:space-y-5 xl:space-y-4">
+        {/* ─── SECTION LABEL (MATCHED TO SectionHeading) ─── */}
+        <div className="flex items-center gap-4 mb-8 md:mb-10">
+          <div className="h-px flex-1" style={{ backgroundColor: accent + '15' }} />
+          <h2 className="text-2xl md:text-3xl font-medium tracking-tight whitespace-nowrap text-black">
+            {groups.length > 1 ? 'Our Work' : 'Gallery'}
+          </h2>
+          <div className="h-px flex-1" style={{ backgroundColor: accent + '15' }} />
+        </div>
+
+        <div className="space-y-6 xl:space-y-8">
           {groups.map((g, gIdx) => (
             <div key={gIdx}>
               {groups.length > 1 && (
-                <h3 
-                  className="text-xs uppercase tracking-widest font-bold mb-2 sm:mb-3 xl:mb-2"
-                  style={{ color: accent }}
-                >
+                <h3 className="text-[10px] font-bold tracking-[0.2em] uppercase mb-3 xl:mb-4" style={{ color: accent + '80' }}>
                   {g.group}
                 </h3>
               )}
               
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 xl:gap-3 2xl:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-2 sm:gap-3 xl:gap-3 2xl:gap-4">
                 {g.images.map((img, iIdx) => (
                   <button
                     key={iIdx}
                     onClick={() => openLightbox(gIdx, iIdx)}
-                    className={`
-                      aspect-[3/4] rounded-lg sm:rounded-xl overflow-hidden 
-                      transition-all duration-300 group relative shadow-md
-                      ${isDark
-                        ? 'bg-black border border-white/5 hover:border-white/20'
-                        : 'bg-stone-100 border border-stone-200 hover:border-stone-300'}
-                    `}
-                    style={{ borderColor: isDark ? accent + '40' : accent + '80' }}
+                    className="group relative aspect-[3/4] rounded-2xl overflow-hidden transition-all duration-500"
+                    style={{ 
+                      boxShadow: `0 0 0 1px ${accent + '15'}`,
+                    }}
                   >
                     <img
                       src={img}
                       alt={location ? `${g.group} in ${location}` : `${g.group} ${iIdx + 1}`}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       loading="lazy"
+                      style={{ imageRendering: 'auto' }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-500" />
+                    
+                    {/* Zoom icon on hover */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                      <div 
+                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center backdrop-blur-md"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
+                      >
+                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* Subtle accent border on hover */}
+                    <div 
+                      className="absolute inset-0 rounded-2xl transition-opacity duration-500 opacity-0 group-hover:opacity-100 pointer-events-none"
+                      style={{ boxShadow: `inset 0 0 0 1px ${accent}40` }}
+                    />
                   </button>
                 ))}
               </div>
@@ -87,9 +107,8 @@ export default function Gallery({ gallery, accent, location, theme }) {
 
       {lightbox.isOpen && (
         <Lightbox
-          image={groups[lightbox.groupIdx].images[lightbox.imgIdx]}
-          current={lightbox.imgIdx + 1}
-          total={groups[lightbox.groupIdx].images.length}
+          images={allImages}
+          currentIdx={globalIdx}
           onClose={closeLightbox}
           onPrev={prev}
           onNext={next}
@@ -101,7 +120,7 @@ export default function Gallery({ gallery, accent, location, theme }) {
   );
 }
 
-function Lightbox({ image, current, total, onClose, onPrev, onNext, accent, alt }) {
+function Lightbox({ images, currentIdx, onClose, onPrev, onNext, accent, alt }) {
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
   const [controlsVisible, setControlsVisible] = useState(true);
@@ -120,7 +139,7 @@ function Lightbox({ image, current, total, onClose, onPrev, onNext, accent, alt 
   useEffect(() => {
     showControls();
     return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
-  }, [current]);
+  }, [currentIdx]);
 
   useEffect(() => {
     function handleKey(e) {
@@ -148,65 +167,120 @@ function Lightbox({ image, current, total, onClose, onPrev, onNext, accent, alt 
     if (distance < -50) onPrev();
   };
 
+  const goTo = (idx) => {
+    const diff = idx - currentIdx;
+    if (diff > 0) {
+      for (let i = 0; i < diff; i++) onNext();
+    } else if (diff < 0) {
+      for (let i = 0; i < Math.abs(diff); i++) onPrev();
+    }
+    showControls();
+  };
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black overflow-hidden animate-fade-in"
+      className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex flex-col animate-fade-in"
       onMouseMove={handleMouseMove}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       onClick={onClose}
     >
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 100%)' }}
-      />
-      
-      <button
-        onClick={(e) => { e.stopPropagation(); onClose(); }}
-        className={`absolute top-4 right-4 sm:top-6 sm:right-6 z-50 w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-white/10 bg-black/50 backdrop-blur-md flex items-center justify-center text-stone-300 hover:border-white/30 hover:bg-white/10 hover:text-white transition-all duration-300 ${controlsVisible ? 'opacity-100' : 'opacity-0'}`}
-        style={{ borderColor: accent + '40' }}
+      {/* ─── TOP BAR ─── */}
+      <div 
+        className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 relative z-10 flex-shrink-0" 
+        onClick={e => e.stopPropagation()}
       >
-        <XIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-      </button>
-
-      <div
-        className={`absolute top-4 left-1/2 -translate-x-1/2 sm:top-6 z-50 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full backdrop-blur-md border border-white/5 bg-black/40 transition-opacity duration-500 ${controlsVisible ? 'opacity-100' : 'opacity-0'}`}
-        style={{ borderColor: accent + '40' }}
-      >
-        <span className="text-xs sm:text-sm uppercase tracking-widest font-bold text-white">
-          <span style={{ color: accent }}>{current}</span> / {total}
-        </span>
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: accent }} />
+          <span className="text-white/50 text-[11px] font-medium tabular-nums">
+            <span style={{ color: accent }}>{currentIdx + 1}</span> / {images.length}
+          </span>
+        </div>
+        <button
+          onClick={onClose}
+          className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white transition-colors flex-shrink-0 rounded-full"
+        >
+          <XIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+        </button>
       </div>
 
-      <button
-        onClick={(e) => { e.stopPropagation(); onPrev(); }}
-        className={`absolute left-3 sm:left-5 z-50 w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-white/10 bg-black/40 backdrop-blur-md flex items-center justify-center text-stone-300 hover:border-white/30 hover:bg-white/10 hover:text-white transition-all duration-300 ${controlsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}
-        style={{ borderColor: accent + '40' }}
+      {/* ─── IMAGE AREA ─── */}
+      <div 
+        className="flex-1 flex items-center justify-center relative min-h-0 px-1 sm:px-4 md:px-16"
+        onClick={e => e.stopPropagation()}
       >
-        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-        </svg>
-      </button>
+        {images.length > 1 && (
+          <button
+            onClick={onPrev}
+            className={`hidden sm:flex absolute left-2 sm:left-4 md:left-6 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 items-center justify-center bg-white/10 hover:bg-white/20 text-white transition-all duration-300 z-10 rounded-full ${controlsVisible ? 'opacity-100' : 'opacity-0'}`}
+          >
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+          </button>
+        )}
 
-      <div className="relative w-full h-full flex items-center justify-center p-8 sm:p-12 lg:p-16 pointer-events-none">
-        <img
-          src={image}
-          alt={alt || "Gallery full view"}
-          className="max-w-full max-h-full object-contain rounded-lg shadow-2xl select-none pointer-events-auto"
-          draggable="false"
-        />
+        <div className="max-w-5xl w-full h-full flex items-center justify-center p-2 sm:p-4 select-none">
+          <img
+            src={images[currentIdx]}
+            alt={alt || "Gallery full view"}
+            className="max-w-full max-h-full object-contain rounded-sm"
+            draggable="false"
+            style={{ imageRendering: 'auto' }}
+          />
+        </div>
+
+        {images.length > 1 && (
+          <button
+            onClick={onNext}
+            className={`hidden sm:flex absolute right-2 sm:right-4 md:right-6 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 items-center justify-center bg-white/10 hover:bg-white/20 text-white transition-all duration-300 z-10 rounded-full ${controlsVisible ? 'opacity-100' : 'opacity-0'}`}
+          >
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
+        )}
       </div>
 
-      <button
-        onClick={(e) => { e.stopPropagation(); onNext(); }}
-        className={`absolute right-3 sm:right-5 z-50 w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-white/10 bg-black/40 backdrop-blur-md flex items-center justify-center text-stone-300 hover:border-white/30 hover:bg-white/10 hover:text-white transition-all duration-300 ${controlsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2'}`}
-        style={{ borderColor: accent + '40' }}
-      >
-        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-        </svg>
-      </button>
+      {/* ─── BOTTOM THUMBNAIL STRIP ─── */}
+      {images.length > 1 && (
+        <div 
+          className="flex-shrink-0 px-4 py-3 sm:px-6 sm:py-4 flex flex-col items-center gap-2.5 relative z-10"
+          onClick={e => e.stopPropagation()}
+        >
+          {images.length > 8 && (
+            <p className="text-white/40 text-[11px] font-medium tabular-nums">
+              {currentIdx + 1} / {images.length}
+            </p>
+          )}
+          <div className="flex gap-1.5 sm:gap-2 overflow-x-auto max-w-full pb-1 px-1 no-scrollbar">
+            {images.map((img, idx) => (
+              <button
+                key={idx}
+                onClick={() => goTo(idx)}
+                className={`flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 md:w-[4.5rem] md:h-[4.5rem] overflow-hidden rounded-lg transition-all duration-200 ${
+                  idx === currentIdx 
+                    ? 'scale-105' 
+                    : 'opacity-30 hover:opacity-60'
+                }`}
+                style={{ 
+                  border: idx === currentIdx ? `2px solid ${accent}` : '2px solid transparent',
+                }}
+              >
+                <img src={img} alt="" className="w-full h-full object-cover" draggable="false" style={{ imageRendering: 'auto' }} />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar{display:none}
+        .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fade-in { animation: fade-in 0.3s ease-out; }
+      `}</style>
     </div>
   );
 }

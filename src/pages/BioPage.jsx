@@ -93,10 +93,9 @@ const GoogleAd = ({ slot, className = '' }) => {
   );
 };
 
-const ReferralLink = ({ slug, accent = '#c8a97e', theme = 'light' }) => {
+const ReferralLink = ({ slug, accent = '#c8a97e' }) => {
   const [copied, setCopied] = useState(false);
   const referralUrl = `${window.location.origin}/signup?ref=${slug}`;
-  const isDark = theme === 'dark';
 
   const handleCopy = async () => {
     try {
@@ -116,25 +115,25 @@ const ReferralLink = ({ slug, accent = '#c8a97e', theme = 'light' }) => {
   };
 
   return (
-    <div className="mb-6">
-      <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-center block mb-3" style={{ color: isDark ? '#a8a29e' : accent }}>
-        Share your link <br />Refer 3 friends = 1 Free Month
-      </span>
+    <div className="mb-8">
+      <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-center mb-4" style={{ color: accent }}>
+        Refer 3 friends = 1 Free Month
+      </p>
       <div className="flex justify-center">
         <button
           onClick={handleCopy}
-          className="group relative flex items-center gap-3 px-5 py-2.5 rounded-full border transition-all duration-300"
+          className="group flex items-center gap-3 px-5 py-2.5 rounded-full border transition-all duration-300"
           style={{ 
-            backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f5f5f4', 
-            borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#e7e5e4',
+            backgroundColor: accent + '08',
+            borderColor: accent + '15',
           }}
           aria-label="Copy referral link"
         >
-          <span className="text-xs font-medium truncate max-w-[140px] sm:max-w-[180px] lg:max-w-[240px] xl:max-w-[260px] transition-colors" style={{ color: isDark ? '#a8a29e' : '#78716c' }}>
+          <span className="text-xs font-medium truncate max-w-[160px] sm:max-w-[200px]" style={{ color: accent }}>
             {referralUrl.replace(/^https?:\/\//, '')}
           </span>
-          <div className="h-4 w-px" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#d6d3d1' }} aria-hidden="true" />
-          <span className="text-xs font-semibold transition-colors" style={{ color: copied ? accent : (isDark ? '#a8a29e' : '#78716c') }}>
+          <div className="h-4 w-px" style={{ backgroundColor: accent + '18' }} aria-hidden="true" />
+          <span className="text-xs font-semibold transition-all duration-300" style={{ color: accent }}>
             {copied ? 'Copied!' : 'Copy'}
           </span>
         </button>
@@ -143,10 +142,23 @@ const ReferralLink = ({ slug, accent = '#c8a97e', theme = 'light' }) => {
   );
 };
 
-// Tablet-optimized spacing constants
-const sectionW = 'w-full max-w-2xl mx-auto lg:max-w-4xl lg:mx-auto xl:max-w-none xl:mx-0';
-const sectionMt = 'mt-6 lg:mt-10';
-const sectionMtLg = 'mt-8 lg:mt-12';
+const SectionHeading = ({ children, accent, id }) => (
+  <div className="flex items-center gap-4 mb-8 md:mb-10">
+    <div className="h-px flex-1" style={{ backgroundColor: accent + '15' }} />
+    <h2 id={id} className="text-2xl md:text-3xl font-medium tracking-tight whitespace-nowrap text-black">
+      {children}
+    </h2>
+    <div className="h-px flex-1" style={{ backgroundColor: accent + '15' }} />
+  </div>
+);
+
+function isLight(hex) {
+  if (!hex || !hex.startsWith('#') || hex.length < 7) return false;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55;
+}
 
 export default function BioPage() {
   const { slug } = useParams();
@@ -198,6 +210,26 @@ export default function BioPage() {
   const isDark = theme === 'dark';
   const accent = biz?.accent ?? '#c8a97e';
 
+  const ui = isDark
+    ? {
+        bg: 'bg-black',
+        text: 'text-white',
+        sub: 'text-zinc-300',
+        muted: 'text-zinc-500',
+        card: 'bg-white/[0.03]',
+        pill: 'bg-white/[0.06]',
+        border: 'border-white/[0.06]',
+      }
+    : {
+        bg: 'bg-white',
+        text: 'text-black',
+        sub: 'text-gray-600',
+        muted: 'text-gray-400',
+        card: 'bg-gray-50',
+        pill: 'bg-gray-100',
+        border: 'border-gray-100',
+      };
+
   const filteredProducts = searchQuery
     ? (biz?.products || []).filter(p =>
         (p.product_code && p.product_code.toLowerCase() === searchQuery.toLowerCase()) ||
@@ -229,23 +261,20 @@ export default function BioPage() {
 
   if (loading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center px-6 ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}`} role="status">
-        <div className="text-center">
-          <div className={`w-8 h-8 border-2 rounded-full animate-spin mx-auto mb-4 ${isDark ? 'border-stone-700 border-t-stone-400' : 'border-stone-200 border-t-stone-500'}`} />
-          <p className={`text-sm font-medium ${isDark ? 'text-stone-500' : 'text-stone-600'}`}>Loading...</p>
-        </div>
+      <div className={`min-h-screen flex items-center justify-center ${ui.bg}`} role="status">
+        <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: accent + '15', borderTopColor: accent }} />
       </div>
     );
   }
 
   if (!biz || !biz.active) {
     return (
-      <div className={`min-h-screen flex items-center justify-center px-6 ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}`} role="alert">
+      <div className={`min-h-screen flex items-center justify-center px-6 ${ui.bg}`} role="alert">
         <div className="text-center">
-          <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-xl ${isDark ? 'bg-stone-900 border border-stone-800 text-stone-600' : 'bg-white border border-stone-200 text-stone-500'}`}>!</div>
-          <h1 className={`text-sm font-medium ${isDark ? 'text-stone-500' : 'text-stone-700'}`}>Page Unavailable</h1>
-          <p className={`text-xs mt-1 ${isDark ? 'text-stone-700' : 'text-stone-500'}`}>This link is currently inactive.</p>
-          <a href="/" className="inline-block mt-6 px-4 py-2 rounded-lg text-xs font-medium transition-colors" style={{ color: isDark ? '#a8a29e' : accent, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f4' }}>
+          <div className="w-16 h-16 rounded-full mx-auto mb-6 flex items-center justify-center text-xl border" style={{ backgroundColor: accent + '08', borderColor: accent + '15', color: accent }}>!</div>
+          <h1 className={`text-sm font-medium ${ui.sub}`}>Page Unavailable</h1>
+          <p className={`text-xs mt-1 ${ui.muted}`}>This link is currently inactive.</p>
+          <a href="/" className="inline-block mt-6 px-5 py-2.5 text-xs font-semibold tracking-wide rounded-full transition-all duration-300 hover:opacity-80" style={{ backgroundColor: accent + '08', color: accent }}>
             Go to BookNaija
           </a>
         </div>
@@ -346,8 +375,6 @@ export default function BioPage() {
     saveCart(cart);
     navigate(`/book/${slug}`);
   }
-
-  const businessType = showCars ? 'dealership' : (showFood ? 'restaurant' : (showProducts && !showServices ? 'store' : (isPropertyWebsite ? 'real-estate' : 'business')));
   
   const faqs = [
     {
@@ -386,12 +413,22 @@ export default function BioPage() {
     }
   ];
 
+  const faqOnLight = isLight(accent);
+  const faqQ = faqOnLight ? '#000' : '#fff';
+  const faqA = faqOnLight ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.8)';
+  const faqBadge = faqOnLight ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.15)';
+
   return (
     <div
-      className={`min-h-screen ${isDark ? 'bg-[#0a0a0a] text-white' : 'bg-stone-50 text-stone-900'}`}
+      className={`min-h-screen ${ui.bg} ${ui.text} transition-colors duration-500`}
       itemScope
       itemType="https://schema.org/LocalBusiness"
     >
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
+      <style>{`body, body * { font-family: 'DM Sans', system-ui, -apple-system, sans-serif; }`}</style>
+
       <SEO
         title={biz.name}
         description={seoDescription}
@@ -417,20 +454,13 @@ export default function BioPage() {
       ) : (
         <>
           <style>{`
-            .scrollbar-hide {
-              -ms-overflow-style: none;
-              scrollbar-width: none;
-            }
-            .scrollbar-hide::-webkit-scrollbar {
-              display: none;
-            }
+            .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+            .scrollbar-hide::-webkit-scrollbar { display: none; }
           `}</style>
 
           <div className="flex flex-col xl:flex-row xl:h-screen overflow-hidden">
       
-            <aside 
-              className="xl:sticky xl:top-0 h-screen xl:overflow-y-auto xl:overflow-x-hidden scrollbar-hide xl:shrink-0 xl:w-[35%]"
-            >
+            <aside className="xl:sticky xl:top-0 h-screen xl:overflow-y-auto xl:overflow-x-hidden scrollbar-hide xl:shrink-0 xl:w-[35%]">
               <HeroSection biz={{
                 logo: biz.logo, name: biz.name, slug: biz.slug, tagline: biz.tagline,
                 bio: biz.bio, phone: biz.phone, whatsapp: biz.whatsapp, location: biz.location,
@@ -439,137 +469,208 @@ export default function BioPage() {
               }} />
             </aside>
 
-            <main className="flex-1 xl:w-[65%] xl:min-w-0 xl:overflow-y-auto">
-              {/* px: 16→24→40→32→40  pb: 48→80→32 */}
-              <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-8 2xl:px-10 pb-12 lg:pb-20 xl:pb-8">
+            <main className={`flex-1 xl:w-[65%] xl:min-w-0 xl:overflow-y-auto ${ui.bg}`}>
+              <div className="w-full max-w-3xl mx-auto px-6 sm:px-10 lg:px-12 pb-12 xl:pb-16">
 
                 {biz.gallery && biz.gallery.length > 0 && (
-                  <div itemScope itemType="https://schema.org/ImageGallery" aria-label="Photo gallery" className="mt-6 lg:mt-10 xl:mt-0">
+                  <div itemScope itemType="https://schema.org/ImageGallery" aria-label="Photo gallery" className="pt-10 lg:pt-14">
                     <meta itemProp="name" content={`${biz.name} Gallery`} />
                     <Gallery gallery={biz.gallery} accent={accent} location={biz.location} theme={theme} />
                   </div>
                 )}
 
                 {/* ── SEARCH BAR ── */}
-                <section className={`${sectionW} ${sectionMt}`} aria-label="Search">
-                  <div className="rounded-2xl p-4 sm:p-5 lg:p-6" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
-                    <form onSubmit={handleSearch} className="relative" role="search" aria-label="Search services and products">
-                      <label htmlFor="business-search" className="sr-only">Search by name, code, or description</label>
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none" aria-hidden="true">
-                        <svg className={`w-4 h-4 ${isDark ? 'text-stone-500' : 'text-stone-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                      </div>
-                      <input 
-                        id="business-search" 
-                        type="search" 
-                        value={searchQuery} 
-                        onChange={(e) => setSearchQuery(e.target.value)} 
-                        placeholder="Search by name, code, or description..." 
-                        className={`w-full rounded-xl pl-11 pr-10 py-3 text-sm placeholder-stone-400 focus:outline-none transition-colors ${isDark ? 'bg-white/[0.03] border border-white/10 text-white focus:border-white/30' : 'bg-stone-50 border border-stone-200 text-stone-900 focus:border-stone-400'}`} 
-                      />
-                      {searchQuery && (
-                        <button type="button" onClick={clearSearch} className={`absolute inset-y-0 right-0 pr-4 flex items-center transition-colors ${isDark ? 'text-stone-500 hover:text-white' : 'text-stone-400 hover:text-stone-700'}`} aria-label="Clear search">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
-                      )}
-                    </form>
-                    {isSearchActive && searchQuery && (
-                      <div className="mt-3 flex items-center justify-between" role="status" aria-live="polite">
-                        <p className="text-xs" style={{ color: isDark ? '#a8a29e' : accent }}>Showing results for "{searchQuery}"</p>
-                        <button onClick={clearSearch} className="text-xs font-medium transition-colors" style={{ color: isDark ? '#a8a29e' : accent }}>Clear</button>
-                      </div>
+                <section className="mt-12 lg:mt-16" aria-label="Search">
+                  <form onSubmit={handleSearch} className="relative" role="search" aria-label="Search services and products">
+                    <label htmlFor="business-search" className="sr-only">Search by name, code, or description</label>
+                    <div className="absolute inset-y-0 left-0 pl-0 flex items-center pointer-events-none" aria-hidden="true">
+                      <svg className="w-4 h-4 transition-colors duration-300" style={{ color: searchQuery ? accent : accent + '40' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </div>
+                    <input 
+                      id="business-search" 
+                      type="search" 
+                      value={searchQuery} 
+                      onChange={(e) => setSearchQuery(e.target.value)} 
+                      placeholder="Search by name, code, or description..." 
+                      className="w-full rounded-xl pl-6 pr-10 py-3 text-sm border focus:outline-none transition-all duration-300"
+                      style={{ 
+                        backgroundColor: accent + '08',
+                        borderColor: searchQuery ? accent : accent + '15',
+                        color: isDark ? '#fff' : '#000',
+                      }}
+                      onFocus={(e) => { if (!searchQuery) e.target.style.borderColor = accent; }}
+                      onBlur={(e) => { if (!searchQuery) e.target.style.borderColor = accent + '15'; }}
+                    />
+                    {searchQuery && (
+                      <button type="button" onClick={clearSearch} className="absolute inset-y-0 right-0 pr-4 flex items-center transition-opacity hover:opacity-70" style={{ color: accent }} aria-label="Clear search">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
                     )}
-                  </div>
+                  </form>
+                  {isSearchActive && searchQuery && (
+                    <div className="mt-3 flex items-center justify-between" role="status" aria-live="polite">
+                      <p className="text-xs font-medium" style={{ color: accent }}>Showing results for "{searchQuery}"</p>
+                      <button onClick={clearSearch} className="text-xs font-semibold transition-opacity hover:opacity-70" style={{ color: accent }}>Clear</button>
+                    </div>
+                  )}
                 </section>
 
-                <div className={`mt-6 lg:mt-10 border-t ${sectionW}`} style={{ borderColor: isDark ? accent + '1a' : accent + '33' }} aria-hidden="true" />
+                {/* ── ACCENT DIVIDER ── */}
+                <div className="mt-12 lg:mt-16 flex items-center gap-3" aria-hidden="true">
+                  <div className="flex-1 h-px" style={{ backgroundColor: accent + '15' }} />
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent }} />
+                  <div className="flex-1 h-px" style={{ backgroundColor: accent + '15' }} />
+                </div>
 
                 {showPrimaryAd && (
-                  <div className={`${sectionW} ${sectionMt}`}>
-                    <div className="rounded-2xl p-5 lg:p-7 flex flex-col items-center" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
-                      <span className="text-[10px] uppercase tracking-widest mb-2 font-semibold" style={{ color: isDark ? '#a8a29e' : accent }}>Sponsored</span>
+                  <div className="mt-12 lg:mt-16">
+                    <div className="rounded-2xl p-6 lg:p-8 flex flex-col items-center" style={{ backgroundColor: accent + '08', borderColor: accent + '15', borderWidth: '1px' }}>
+                      <span className="text-[10px] uppercase tracking-[0.25em] mb-4 font-semibold text-center block" style={{ color: accent }}>Sponsored</span>
                       <GoogleAd slot={AD_SLOT_PRIMARY} className="w-full max-w-md" />
                     </div>
                   </div>
                 )}
 
+                {/* ── ABOUT ── */}
                 {biz.bio && (
-                  <section className={`${sectionW} ${sectionMtLg}`} aria-label="About business">
-                    <div className="rounded-2xl p-5 sm:p-6 lg:p-8" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
-                      <h2 className="text-xs font-semibold uppercase tracking-[0.2em] mb-3 lg:mb-4" style={{ color: accent }}>About {biz.name}</h2>
-                      <p className="text-sm leading-relaxed" style={{ color: isDark ? '#d6d3d1' : '#78716c' }}>{biz.bio}</p>
+                  <section className="mt-16 lg:mt-24" aria-label="About business">
+                    <div className="border-l-2 pl-6 md:pl-8" style={{ borderColor: accent }}>
+                      <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: accent }}>
+                        About {biz.name}
+                      </h2>
+                      <p className={`text-sm leading-[1.9] ${ui.sub}`}>
+                        {biz.bio}
+                      </p>
                     </div>
                   </section>
                 )}
 
                 {isSearchActive && !hasAnyContent && (
-                  <div className={`${sectionW} ${sectionMtLg} text-center`} role="status">
-                    <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: isDark ? '#1c1917' : '#f5f5f4', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
-                      <svg className={`w-6 h-6 ${isDark ? 'text-stone-600' : 'text-stone-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                  <div className="mt-16 lg:mt-24 text-center" role="status">
+                    <div className="w-16 h-16 rounded-full mx-auto mb-6 flex items-center justify-center" style={{ backgroundColor: accent + '08', boxShadow: `0 0 0 1px ${accent + '15'}` }}>
+                      <svg className="w-6 h-6" style={{ color: accent }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     </div>
-                    <p className="text-sm font-medium" style={{ color: isDark ? '#d6d3d1' : '#78716c' }}>No results found</p>
-                    <button onClick={clearSearch} className="mt-4 px-4 py-2 rounded-lg text-xs font-medium transition-colors" style={{ color: accent, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f4' }}>View All</button>
+                    <p className={`text-sm font-medium ${ui.sub}`}>No results found</p>
+                    <button onClick={clearSearch} className="mt-4 px-5 py-2 text-xs font-semibold tracking-wide rounded-full transition-all duration-300 hover:opacity-80" style={{ backgroundColor: accent + '08', color: accent }}>
+                      View All
+                    </button>
                   </div>
                 )}
 
-                {showServices && (<section itemScope itemType="https://schema.org/ItemList" aria-label="Services" className={`${sectionW} ${sectionMt}`}><meta itemProp="name" content={`${biz.name} Services`} /><meta itemProp="numberOfItems" content={filteredServices.length} /><ServiceList services={filteredServices} selectedId={activeService} onSelect={handleServiceSelect} accent={accent} location={biz.location} theme={theme} /></section>)}
+                {/* ── SERVICES ── */}
+                {showServices && (
+                  <section itemScope itemType="https://schema.org/ItemList" aria-label="Services" className="mt-16 lg:mt-24">
+                    <meta itemProp="name" content={`${biz.name} Services`} />
+                    <meta itemProp="numberOfItems" content={filteredServices.length} />
+                    <SectionHeading accent={accent} id="services">Services</SectionHeading>
+                    <ServiceList services={filteredServices} selectedId={activeService} onSelect={handleServiceSelect} accent={accent} location={biz.location} theme={theme} />
+                  </section>
+                )}
 
-                {showProducts && (<section itemScope itemType="https://schema.org/ItemList" aria-label={showServices ? 'Products' : 'Shop'} className={`${sectionW} ${sectionMt}`}><meta itemProp="name" content={`${biz.name} Products`} /><meta itemProp="numberOfItems" content={filteredProducts.length} /><ProductList products={filteredProducts} selectedProducts={activeProducts} onSelect={handleProductSelect} accent={accent} label={showServices ? 'Products' : 'Shop'} location={biz.location} theme={theme} /></section>)}
+                {/* ── PRODUCTS ── */}
+                {showProducts && (
+                  <section itemScope itemType="https://schema.org/ItemList" aria-label={showServices ? 'Products' : 'Shop'} className="mt-16 lg:mt-24">
+                    <meta itemProp="name" content={`${biz.name} Products`} />
+                    <meta itemProp="numberOfItems" content={filteredProducts.length} />
+                    <SectionHeading accent={accent} id="products">{showServices ? 'Products' : 'Shop'}</SectionHeading>
+                    <ProductList products={filteredProducts} selectedProducts={activeProducts} onSelect={handleProductSelect} accent={accent} label={showServices ? 'Products' : 'Shop'} location={biz.location} theme={theme} />
+                  </section>
+                )}
 
-                {showFood && (<section itemScope itemType="https://schema.org/ItemList" aria-label="Menu" className={`${sectionW} ${sectionMt}`}><meta itemProp="name" content={`${biz.name} Menu`} /><meta itemProp="numberOfItems" content={filteredFood.length} /><FoodList food={filteredFood} selectedFood={activeFood} foodVariants={getCart().foodVariants || {}} onSelect={handleFoodSelect} accent={accent} location={biz.location} theme={theme} /></section>)}
+                {/* ── FOOD ── */}
+                {showFood && (
+                  <section itemScope itemType="https://schema.org/ItemList" aria-label="Menu" className="mt-16 lg:mt-24">
+                    <meta itemProp="name" content={`${biz.name} Menu`} />
+                    <meta itemProp="numberOfItems" content={filteredFood.length} />
+                    <SectionHeading accent={accent} id="menu">Menu</SectionHeading>
+                    <FoodList food={filteredFood} selectedFood={activeFood} foodVariants={getCart().foodVariants || {}} onSelect={handleFoodSelect} accent={accent} location={biz.location} theme={theme} />
+                  </section>
+                )}
 
-                {showCars && (<section itemScope itemType="https://schema.org/ItemList" aria-label="Vehicles" className={`${sectionW} ${sectionMt}`}><meta itemProp="name" content={`${biz.name} Vehicles`} /><meta itemProp="numberOfItems" content={filteredCars.length} /><CarList cars={filteredCars} selectedCar={activeCar ? biz.cars.find(c => c.id === activeCar) : null} onSelect={handleCarSelect} accent={accent} location={biz.location} theme={theme} /></section>)}
+                {/* ── CARS ── */}
+                {showCars && (
+                  <section itemScope itemType="https://schema.org/ItemList" aria-label="Vehicles" className="mt-16 lg:mt-24">
+                    <meta itemProp="name" content={`${biz.name} Vehicles`} />
+                    <meta itemProp="numberOfItems" content={filteredCars.length} />
+                    <SectionHeading accent={accent} id="vehicles">Vehicles</SectionHeading>
+                    <CarList cars={filteredCars} selectedCar={activeCar ? biz.cars.find(c => c.id === activeCar) : null} onSelect={handleCarSelect} accent={accent} location={biz.location} theme={theme} />
+                  </section>
+                )}
 
                 {showSecondaryAd && (
-                  <div className={`${sectionW} ${sectionMtLg} mb-6 lg:mb-8`}>
-                    <div className="rounded-2xl p-4 lg:p-6 flex flex-col items-center" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
-                      <span className="text-[10px] uppercase tracking-widest mb-2 font-semibold" style={{ color: isDark ? '#a8a29e' : accent }}>Sponsored</span>
+                  <div className="mt-16 lg:mt-24">
+                    <div className="rounded-2xl p-6 lg:p-8 flex flex-col items-center" style={{ backgroundColor: accent + '08', borderColor: accent + '15', borderWidth: '1px' }}>
+                      <span className="text-[10px] uppercase tracking-[0.25em] mb-4 font-semibold text-center block" style={{ color: accent }}>Sponsored</span>
                       <GoogleAd slot={AD_SLOT_SECONDARY} className="w-full max-w-md" />
                     </div>
                   </div>
                 )}
 
-                <section className={`${sectionW} ${sectionMtLg}`} aria-label="Trust and Security">
-                  <div className="rounded-2xl p-5 sm:p-6 lg:p-8 text-center" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
-                    <h3 className="text-sm font-bold mb-2 lg:mb-3" style={{ color: accent }}>Secure & Verified Booking</h3>
-                    <p className="text-xs leading-relaxed" style={{ color: isDark ? '#a8a29e' : '#78716c' }}>All transactions are encrypted and processed securely via Paystack. Your booking is confirmed instantly, and you will receive a digital receipt.</p>
+                {/* ── FAQ ── */}
+                <section className="mt-16 lg:mt-24" aria-label="Frequently Asked Questions">
+                  <SectionHeading accent={accent} id="faq">FAQs</SectionHeading>
+                  <div className="space-y-4">
+                    {faqs.map((faq, index) => (
+                      <div 
+                        key={index} 
+                        className="rounded-2xl transition-all duration-500 hover:shadow-lg hover:-translate-y-0.5"
+                        style={{ backgroundColor: accent }}
+                      >
+                        <div className="p-5 md:p-6">
+                          <div className="flex items-start gap-4">
+                            <span 
+                              className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold mt-0.5" 
+                              style={{ backgroundColor: faqBadge, color: '#fff' }}
+                            >
+                              {index + 1}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-sm font-semibold mb-2.5" style={{ color: faqQ }}>
+                                {faq.q}
+                              </h3>
+                              <p className="text-sm leading-relaxed" style={{ color: faqA }}>
+                                {faq.a}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </section>
 
                 {showFooterAd && (
-                  <div className={`${sectionW} ${sectionMtLg} border-t pt-6 lg:pt-8`} style={{ borderColor: isDark ? accent + '1a' : accent + '33' }}>
-                    <div className="rounded-2xl p-4 lg:p-6 flex flex-col items-center" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
-                      <span className="text-[10px] uppercase tracking-widest mb-2 font-semibold" style={{ color: isDark ? '#a8a29e' : accent }}>Sponsored</span>
+                  <div className="mt-16 lg:mt-24 pt-16" style={{ borderTop: `1px solid ${accent + '15'}` }}>
+                    <div className="rounded-2xl p-6 lg:p-8 flex flex-col items-center" style={{ backgroundColor: accent + '08', borderColor: accent + '15', borderWidth: '1px' }}>
+                      <span className="text-[10px] uppercase tracking-[0.25em] mb-4 font-semibold text-center block" style={{ color: accent }}>Sponsored</span>
                       <GoogleAd slot={AD_SLOT_FOOTER} className="w-full max-w-md mx-auto" />
                     </div>
                   </div>
                 )}
 
-                {/* ── FAQ ── */}
-                <section className={`${sectionW} mt-16 lg:mt-24 xl:mt-16`} aria-label="Frequently Asked Questions">
-                  <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
-                    <div className="p-5 sm:p-6 lg:p-8">
-                      <h2 className="text-xs font-semibold uppercase tracking-[0.2em] mb-4 lg:mb-5" style={{ color: accent }}>Frequently Asked Questions</h2>
-                      <div className="space-y-3 lg:space-y-4">
-                        {faqs.map((faq, index) => (
-                          <div key={index} className="rounded-xl p-4 lg:p-6 transition-colors" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#fafaf9', border: `1px solid ${isDark ? accent + '1a' : accent + '20'}` }}>
-                            <h3 className="text-sm font-semibold mb-2" style={{ color: isDark ? '#e7e5e4' : accent }}>{faq.q}</h3>
-                            <p className="text-xs leading-relaxed" style={{ color: isDark ? '#a8a29e' : '#78716c' }}>{faq.a}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
                 {/* ── FOOTER ── */}
-                <footer className={`${sectionW} mt-12 lg:mt-20 xl:mt-12`}>
-                  <div className="rounded-2xl p-6 sm:p-8 lg:p-8" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', border: `1px solid ${isDark ? accent + '33' : accent + '40'}` }}>
-                    <ReferralLink slug={biz.slug} accent={accent} theme={theme} />
-                    <nav className="flex justify-center gap-6 mb-6" aria-label="Legal links">
-                      <a href="/privacy" className="text-[11px] underline underline-offset-4 transition-colors" style={{ color: isDark ? '#a8a29e' : accent, textDecorationColor: isDark ? accent + '40' : accent + '60' }}>Privacy Policy</a>
-                      <a href="/terms" className="text-[11px] underline underline-offset-4 transition-colors" style={{ color: isDark ? '#a8a29e' : accent, textDecorationColor: isDark ? accent + '40' : accent + '60' }}>Terms of Service</a>
+                <footer className="mt-16 lg:mt-24 pt-10" style={{ borderTop: `1px solid ${accent + '15'}` }}>
+                  <div className="flex flex-col items-center text-center">
+                    
+                    <ReferralLink slug={biz.slug} accent={accent} />
+
+                    <nav className="flex items-center gap-2 mb-8" aria-label="Legal links">
+                      <a href="/privacy" className="px-4 py-1.5 text-[10px] font-semibold tracking-[0.15em] uppercase transition-all duration-300 rounded-full" style={{ color: accent, backgroundColor: accent + '08' }}>
+                        Privacy
+                      </a>
+                      <a href="/terms" className="px-4 py-1.5 text-[10px] font-semibold tracking-[0.15em] uppercase transition-all duration-300 rounded-full" style={{ color: accent, backgroundColor: accent + '08' }}>
+                        Terms
+                      </a>
                     </nav>
-                    <p className="text-[10px] uppercase tracking-widest font-semibold text-center" style={{ color: isDark ? '#a8a29e' : accent }}>Secured by Paystack</p>
+
+                    <div className="flex items-center gap-6">
+                      <span className="text-[10px] uppercase tracking-widest flex items-center gap-2 font-semibold" style={{ color: accent }}>
+                        Secured by Paystack
+                      </span>
+                      <span className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: accent }}>
+                        Powered by BookNaija
+                      </span>
+                    </div>
                   </div>
                 </footer>
 

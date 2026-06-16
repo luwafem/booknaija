@@ -1,4 +1,3 @@
-// PropertyCard.jsx
 import { Link } from 'react-router-dom';
 
 export default function PropertyCard({ property, accent, isDark, onSelect, whatsappBase }) {
@@ -24,28 +23,14 @@ export default function PropertyCard({ property, accent, isDark, onSelect, whats
     }
   };
 
-  const theme = isDark
-    ? {
-        card: 'bg-white/[0.03] hover:bg-white/[0.06] border-white/[0.06]',
-        text: 'text-white',
-        sub: 'text-zinc-400',
-        features: 'text-zinc-300',
-        pill: 'bg-white/[0.06]',
-        btnOutline: 'text-white border-white/20 hover:bg-white/10',
-      }
-    : {
-        card: 'bg-white hover:bg-gray-50/50 border-gray-100',
-        text: 'text-gray-900',
-        sub: 'text-gray-500',
-        features: 'text-gray-600',
-        pill: 'bg-gray-50',
-        btnOutline: 'text-gray-700 border-gray-200 hover:bg-gray-100',
-      };
-
   return (
     <Link 
       to={detailLink} 
-      className={`group relative overflow-hidden rounded-2xl border transition-all duration-500 flex flex-col hover:shadow-2xl hover:shadow-black/10 hover:-translate-y-1 ${theme.card}`}
+      className="group relative overflow-hidden rounded-2xl transition-all duration-500 flex flex-col hover:shadow-2xl hover:-translate-y-1"
+      style={{ 
+        backgroundColor: accent + '08',
+        border: '1px solid ' + accent + '15',
+      }}
     >
       {/* ─── IMAGE ─── */}
       <div className="relative aspect-[4/3] overflow-hidden">
@@ -57,7 +42,7 @@ export default function PropertyCard({ property, accent, isDark, onSelect, whats
             loading="lazy"
           />
         ) : (
-          <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-white/[0.03]' : 'bg-gray-100'}`}>
+          <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: accent + '08' }}>
             <svg className="w-12 h-12 opacity-15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
           </div>
         )}
@@ -69,7 +54,7 @@ export default function PropertyCard({ property, accent, isDark, onSelect, whats
         <div className="absolute top-4 left-4">
           <span 
             className="px-3 py-1.5 bg-white/90 backdrop-blur-md text-[9px] font-bold tracking-[0.15em] uppercase rounded-full shadow-sm"
-            style={{ color: isDark ? accent : accent }}
+            style={{ color: accent }}
           >
             {isShortlet ? 'Shortlet' : property.type === 'rent' ? 'For Rent' : 'For Sale'}
           </span>
@@ -78,39 +63,52 @@ export default function PropertyCard({ property, accent, isDark, onSelect, whats
 
       {/* ─── CONTENT ─── */}
       <div className="p-5 sm:p-6 flex flex-col flex-1">
-        <h3 className={`font-semibold text-lg tracking-tight line-clamp-1 mb-1 ${theme.text}`}>
+        <h3 className={"font-semibold text-lg tracking-tight line-clamp-1 mb-1 " + (isDark ? 'text-white' : 'text-gray-900')}>
           {property.name}
         </h3>
 
-        <p className={`text-xs flex items-center gap-1.5 mb-5 ${theme.sub}`}>
-          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: accent }}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+        <p className={"text-xs flex items-center gap-1.5 mb-5 " + (isDark ? 'text-zinc-400' : 'text-gray-500')}>
           <span className="line-clamp-1">{property.location || 'Lagos, Nigeria'}</span>
         </p>
 
         {/* Features as Pills */}
         <div className="flex items-center gap-2 text-xs mb-auto">
           {property.bedrooms !== undefined && property.bedrooms !== '' && (
-            <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${theme.pill} ${theme.features} transition-colors duration-300`}>
-              <svg className="w-3.5 h-3.5 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 7v11M21 7v11M3 11h18M5 11V9a2 2 0 012-2h10a2 2 0 012 2v2M7 13h4m2 0h4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <span 
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors duration-300"
+              style={{ 
+                backgroundColor: accent + '08', 
+                border: '1px solid ' + accent + '15',
+                color: accent
+              }}
+            >
+              <svg className="w-3.5 h-3.5 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 7v11M21 7v11M3 11h18M5 11V9a2 2 0 012-2h10a2 2 0 012 2v2M7 13h4m2 0h4" strokeLinecap="round" strokeLinejoin="round" /></svg>
               {property.bedrooms} Bed
             </span>
           )}
           {property.bathrooms !== undefined && property.bathrooms !== '' && (
-            <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${theme.pill} ${theme.features} transition-colors duration-300`}>
-              <svg className="w-3.5 h-3.5 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 12h16a1 1 0 011 1v1a4 4 0 01-4 4H7a4 4 0 01-4-4v-1a1 1 0 011-1zm2-2V6m0 0a2 2 0 012-2m-2 2a2 2 0 012-2m0 0h0m8 4V6m0 0a2 2 0 00-2-2m2 2a2 2 0 00-2-2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <span 
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors duration-300"
+              style={{ 
+                backgroundColor: accent + '08', 
+                border: '1px solid ' + accent + '15',
+                color: accent
+              }}
+            >
+              <svg className="w-3.5 h-3.5 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 12h16a1 1 0 011 1v1a4 4 0 01-4 4H7a4 4 0 01-4-4v-1a1 1 0 011-1zm2-2V6m0 0a2 2 0 012-2m-2 2a2 2 0 012-2m0 0h0m8 4V6m0 0a2 2 0 00-2-2m2 2a2 2 0 00-2-2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               {property.bathrooms} Bath
             </span>
           )}
         </div>
 
         {/* Price & CTA */}
-        <div className="mt-6 pt-5 flex items-end justify-between" style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#f5f5f4'}` }}>
+        <div className="mt-6 pt-5 flex items-end justify-between" style={{ borderTop: `1px solid ${accent + '15'}` }}>
           <div>
             <p className="text-xl font-bold tracking-tight" style={{ color: accent }}>
               {formatPrice(property.price)}
             </p>
             {(isShortlet || property.type === 'rent') && (
-              <span className={`text-[10px] font-medium uppercase tracking-wider mt-0.5 block ${theme.sub}`}>
+              <span className="text-[10px] font-medium uppercase tracking-wider mt-0.5 block" style={{ color: accent, opacity: 0.6 }}>
                 {isShortlet ? '/ Per Night' : '/ Per Year'}
               </span>
             )}
@@ -118,12 +116,8 @@ export default function PropertyCard({ property, accent, isDark, onSelect, whats
 
           <button
             onClick={handleCtaClick}
-            className={`inline-flex items-center gap-2 px-5 py-2.5 text-[10px] font-bold tracking-[0.15em] uppercase rounded-full transition-all duration-300 ${
-              isInspection 
-                ? `border ${theme.btnOutline}` 
-                : 'text-white shadow-sm hover:shadow-md'
-            }`}
-            style={!isInspection ? { backgroundColor: accent } : {}}
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-[10px] font-bold tracking-[0.15em] uppercase rounded-full text-white shadow-sm hover:shadow-md transition-all duration-300"
+            style={{ backgroundColor: accent }}
           >
             {isInspection ? (
               <>

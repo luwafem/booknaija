@@ -27,56 +27,34 @@ export default function HeroSection({ biz }) {
   const useOverlayStyle = hasImages || isDark;
 
   return (
-    <div 
-      className={`
-        relative w-full overflow-hidden text-white
-        min-h-0 xl:min-h-screen
-        ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}
-      `}
-    >
+    <div className={`relative w-full overflow-hidden min-h-0 xl:min-h-screen transition-colors duration-500 ${isDark ? 'bg-black text-white' : 'bg-white text-black'}`}>
       
+      {/* ─── BACKGROUND IMAGE ─── */}
       {hasImages && (
         <div className="absolute inset-0 h-full w-full z-0" aria-hidden="true">
           <img 
             src={heroImages[0]} 
             alt="" 
-            className="h-full w-full object-cover" 
+            className="h-full w-full object-cover"
             loading="eager"
-          />
-          <div 
-            className="absolute inset-0 z-10 pointer-events-none opacity-[0.15] mix-blend-overlay"
-            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65'/%3E%3Cfilter id='noise'%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }}
-            aria-hidden="true"
           />
         </div>
       )}
 
+      {/* ─── OVERLAY GRADIENT ─── */}
       {hasImages ? (
-        <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/30 via-black/50 to-black/80" aria-hidden="true" />
+        <div className="absolute inset-0 z-[1] bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" aria-hidden="true" />
       ) : (
-        <div className={`absolute inset-0 z-0 ${isDark ? 'bg-[#0a0a0a]' : 'bg-stone-50'}`} />
+        <div className={`absolute inset-0 z-0 ${isDark ? 'bg-black' : 'bg-white'}`} />
       )}
 
-      <header className={`
-        relative z-20 mx-auto flex flex-col items-center justify-start
-        px-5 pb-[48px]
-        pt-[58px] sm:pt-[68px] md:pt-[70px]
-        lg:px-10 lg:pt-[77px] lg:pb-[77px]
-        xl:px-8 xl:pt-12 xl:pb-12
-        2xl:px-10
-      `}>
+      <header className="relative z-20 mx-auto flex flex-col items-center justify-start px-6 sm:px-10 lg:px-8 xl:px-10 pt-[20vh] pb-12 lg:pb-10">
         
-        <div className="mb-[24px] sm:mb-6 lg:mb-8 xl:mb-6 animate-fade-in-up">
+        {/* ─── LOGO / AVATAR ─── */}
+        <div className="mb-6 xl:mb-6 animate-fade-in-up">
           <div 
-            className={`
-              relative w-24 h-24 sm:w-28 sm:h-28 md:w-28 md:h-28
-              lg:w-32 lg:h-32
-              xl:w-28 xl:h-28
-              rounded-full overflow-hidden flex items-center justify-center 
-              shadow-2xl ring-4 ring-white/10
-              ${useOverlayStyle ? 'bg-[#0a0a0a]' : 'bg-white'}
-            `}
-            style={{ border: `2px solid ${useOverlayStyle ? accent + '40' : accent + '80'}` }}
+            className="relative w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 xl:w-28 xl:h-28 rounded-full overflow-hidden flex items-center justify-center transition-transform duration-500 hover:scale-105"
+            style={{ boxShadow: `0 0 0 1px ${useOverlayStyle ? accent + '40' : accent + '60'}` }}
           >
             {biz.logo || biz.avatar ? (
               <img 
@@ -86,66 +64,36 @@ export default function HeroSection({ biz }) {
                 itemProp="logo"
               />
             ) : (
-              <span 
-                className="text-3xl sm:text-4xl md:text-4xl lg:text-5xl xl:text-4xl font-bold tracking-tighter" 
-                style={{ color: accent }}
+              <div 
+                className="w-full h-full flex items-center justify-center"
+                style={{ backgroundColor: accent + '15' }}
               >
-                {initials}
-              </span>
+                <span className="text-3xl sm:text-4xl lg:text-5xl xl:text-4xl font-semibold tracking-tight" style={{ color: accent }}>
+                  {initials}
+                </span>
+              </div>
             )}
           </div>
         </div>
 
-        <div className="mb-[14px] sm:mb-4 lg:mb-6 xl:mb-4 animate-fade-in-up text-center" style={{ animationDelay: '0.1s' }}>
+        {/* ─── NAME & TAGLINE ─── */}
+        <div className="mb-4 xl:mb-4 animate-fade-in-up text-center" style={{ animationDelay: '0.1s' }}>
           <h1 
-            className={`
-              text-3xl sm:text-4xl md:text-4xl
-              lg:text-5xl
-              xl:text-4xl 2xl:text-5xl
-              font-heading font-bold tracking-tight mb-[10px]
-              leading-[1.1] capitalize drop-shadow-2xl
-              ${useOverlayStyle ? 'text-white' : 'text-stone-900'}
-            `}
+            className={`text-3xl sm:text-4xl lg:text-5xl xl:text-4xl 2xl:text-5xl font-semibold tracking-tight mb-2 leading-[1.1] capitalize drop-shadow-2xl ${useOverlayStyle ? 'text-white' : 'text-black'}`}
             itemProp="name"
           >
             {biz.name}
           </h1>
           
-          <p 
-            className={`
-              text-xs sm:text-sm
-              lg:text-base xl:text-sm
-              uppercase tracking-[0.2em]
-              font-semibold
-              ${useOverlayStyle ? 'text-white/80' : 'text-stone-600'}
-            `}
-          >
-            {biz.tagline}
-          </p>
+          {biz.tagline && (
+            <p className="text-xs sm:text-sm lg:text-base xl:text-sm uppercase tracking-[0.2em] font-semibold" style={{ color: useOverlayStyle ? 'rgba(255,255,255,0.8)' : accent }}>
+              {biz.tagline}
+            </p>
+          )}
         </div>
 
-        {biz.bio && (
-          <p 
-            className={`
-              text-sm sm:text-sm
-              lg:text-lg xl:text-base
-              font-sans font-normal leading-relaxed text-center 
-              mb-[29px] sm:mb-[39px]
-              lg:mb-10 xl:mb-8
-              max-w-xs sm:max-w-sm
-              lg:max-w-lg xl:max-w-md
-              mx-auto
-              animate-fade-in-up
-              ${useOverlayStyle ? 'text-white/90' : 'text-stone-600'}
-            `}
-            style={{ animationDelay: '0.15s' }}
-            itemProp="description"
-          >
-            {biz.bio}
-          </p>
-        )}
-
-        <div className="flex flex-wrap justify-center gap-[14px] sm:gap-4 mb-[24px] sm:mb-[39px] lg:mb-10 xl:mb-8 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+        {/* ─── PILLS: LOCATION & HOURS ─── */}
+        <div className="flex flex-wrap justify-center gap-2.5 sm:gap-3 mb-8 xl:mb-8 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           {biz.location && (
             <button
               type="button"
@@ -153,71 +101,37 @@ export default function HeroSection({ biz }) {
                 const el = document.getElementById('location-map');
                 if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }}
-              className={`
-                px-5 sm:px-6 py-[11px] sm:py-3
-                border-2 rounded-full flex items-center gap-2.5
-                shadow-lg transition-all duration-300 cursor-pointer hover:scale-105
-                ${useOverlayStyle 
-                  ? 'bg-white/[0.05] backdrop-blur-xl border-white/15 hover:bg-white/[0.1] hover:border-white/25' 
-                  : 'bg-white border-stone-300 hover:bg-stone-50 hover:border-stone-400 hover:shadow-xl'}
-              `}
-              style={{ borderColor: useOverlayStyle ? accent + '40' : accent + '80' }}
+              className="group px-4 py-2 sm:px-5 sm:py-2.5 rounded-full flex items-center gap-2 transition-all duration-300 hover:opacity-80 cursor-pointer"
+              style={{ backgroundColor: useOverlayStyle ? 'rgba(255,255,255,0.1)' : accent + '10', border: `1px solid ${useOverlayStyle ? 'rgba(255,255,255,0.15)' : accent + '25'}` }}
               aria-label="View location on map"
             >
-              <MapPinIcon className="w-4 h-4 sm:w-5" style={{ color: accent }} />
-              <span 
-                className={`
-                  text-xs sm:text-sm
-                  font-bold uppercase tracking-widest
-                  ${useOverlayStyle ? 'text-white' : 'text-stone-600'}
-                `}
-              >
+              <MapPinIcon className="w-3.5 h-3.5 sm:w-4" style={{ color: accent }} />
+              <span className={`text-[11px] sm:text-xs font-semibold tracking-[0.1em] uppercase ${useOverlayStyle ? 'text-white/90' : ''}`} style={!useOverlayStyle ? { color: accent } : {}}>
                 {biz.location}
               </span>
             </button>
           )}
           {biz.hours && (
             <div 
-              className={`
-                px-5 sm:px-6 py-[11px] sm:py-3
-                border-2 rounded-full flex items-center gap-2.5
-                shadow-lg
-                ${useOverlayStyle 
-                  ? 'bg-white/[0.05] backdrop-blur-xl border-white/15' 
-                  : 'bg-white border-stone-300 hover:bg-stone-50 hover:border-stone-400 hover:shadow-xl transition-all duration-300'}
-              `}
-              style={{ borderColor: useOverlayStyle ? accent + '40' : accent + '80' }}
+              className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-full flex items-center gap-2"
+              style={{ backgroundColor: useOverlayStyle ? 'rgba(255,255,255,0.1)' : accent + '10', border: `1px solid ${useOverlayStyle ? 'rgba(255,255,255,0.15)' : accent + '25'}` }}
             >
-              <ClockIcon className="w-4 h-4 sm:w-5" style={{ color: accent }} />
-              <time 
-                className={`
-                  text-xs sm:text-sm
-                  font-bold uppercase tracking-widest
-                  ${useOverlayStyle ? 'text-white' : 'text-stone-600'}
-                `} 
-                itemProp="openingHours"
-              >
+              <ClockIcon className="w-3.5 h-3.5 sm:w-4" style={{ color: accent }} />
+              <time className={`text-[11px] sm:text-xs font-semibold tracking-[0.1em] uppercase ${useOverlayStyle ? 'text-white/90' : ''}`} style={!useOverlayStyle ? { color: accent } : {}} itemProp="openingHours">
                 {biz.hours}
               </time>
             </div>
           )}
         </div>
 
+        {/* ─── MAP ─── */}
         {biz.location && (
           <div 
             id="location-map"
-            className={`
-              w-full mb-[29px] sm:mb-[39px]
-              lg:mb-10 xl:mb-8
-              rounded-2xl overflow-hidden border-2
-              animate-fade-in-up relative
-              h-[145px] sm:h-[157px]
-              lg:h-[200px] xl:h-[160px]
-              ${useOverlayStyle ? 'bg-white/[0.05] backdrop-blur-md' : 'bg-white'}
-            `}
+            className="w-full mb-8 xl:mb-8 rounded-2xl overflow-hidden animate-fade-in-up relative h-[145px] sm:h-[157px] lg:h-[200px] xl:h-[160px]"
             style={{ 
               animationDelay: '0.25s',
-              borderColor: useOverlayStyle ? accent + '40' : accent + '80'
+              border: `1px solid ${useOverlayStyle ? 'rgba(255,255,255,0.1)' : accent + '20'}`
             }}
           >
             <iframe
@@ -236,15 +150,13 @@ export default function HeroSection({ biz }) {
               loading="lazy"
             />
             <div 
-              className={`
-                absolute bottom-3 right-3
-                flex items-center gap-1.5 rounded-lg px-3 py-2
-                border-2 backdrop-blur-md
-                ${useOverlayStyle ? 'bg-black/70 border-white/15' : 'bg-white border-stone-200 shadow-xl'}
-              `}
-              style={{ borderColor: useOverlayStyle ? accent + '40' : accent + '80' }}
+              className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg px-3 py-2 backdrop-blur-md transition-all duration-300"
+              style={{ 
+                backgroundColor: useOverlayStyle ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.9)', 
+                border: `1px solid ${useOverlayStyle ? 'rgba(255,255,255,0.15)' : accent + '25'}` 
+              }}
             >
-              <svg className={`w-4 h-4 ${useOverlayStyle ? 'text-stone-300' : 'text-stone-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-3.5 h-3.5" style={{ color: accent }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
@@ -255,11 +167,8 @@ export default function HeroSection({ biz }) {
                 }
                 target="_blank"
                 rel="noreferrer"
-                className={`
-                  text-xs sm:text-sm
-                  font-semibold transition-colors
-                  ${useOverlayStyle ? 'text-stone-300 hover:text-white' : 'text-stone-600'}
-                `}
+                className="text-[11px] sm:text-xs font-semibold transition-opacity hover:opacity-70"
+                style={{ color: accent }}
               >
                 Open in Maps
               </a>
@@ -267,20 +176,20 @@ export default function HeroSection({ biz }) {
           </div>
         )}
 
-        <div className="w-full flex flex-col sm:flex-row gap-[14px] sm:gap-4 mb-[39px] sm:mb-[39px] lg:mb-12 xl:mb-10 animate-fade-in-up justify-center" style={{ animationDelay: '0.3s' }}>
+        {/* ─── CTA BUTTONS ─── */}
+        <div className="w-full flex flex-col sm:flex-row gap-3 sm:gap-3 mb-10 xl:mb-10 animate-fade-in-up justify-center" style={{ animationDelay: '0.3s' }}>
           {waNumber && (
             <a
               href={`https://wa.me/${waNumber}`}
               target="_blank"
               rel="noreferrer"
-              className="group relative flex items-center justify-center gap-3 py-[17px] sm:py-4 rounded-full overflow-hidden transition-all duration-500 active:scale-[0.97] hover:scale-105 flex-1 sm:flex-none sm:min-w-[220px] lg:min-w-[260px] xl:min-w-[240px]"
+              className="group relative flex items-center justify-center gap-2.5 px-6 py-3.5 sm:px-7 sm:py-4 rounded-full overflow-hidden transition-all duration-300 active:scale-[0.98] hover:brightness-110 flex-1 sm:flex-none sm:min-w-[220px] lg:min-w-[240px] shadow-sm"
               style={{ backgroundColor: accent }}
               aria-label={`Contact ${biz.name} on WhatsApp`}
             >
-              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <WhatsAppIcon className="w-5 h-5 sm:w-6 text-black relative z-10" />
-              <span className="text-black font-bold uppercase tracking-[0.2em] text-sm sm:text-base relative z-10">
-                whatsapp
+              <WhatsAppIcon className="w-4 h-4 sm:w-5 text-black relative z-10" />
+              <span className="text-black text-[11px] sm:text-xs font-bold tracking-[0.15em] uppercase relative z-10">
+                WhatsApp
               </span>
             </a>
           )}
@@ -288,50 +197,50 @@ export default function HeroSection({ biz }) {
           {biz.phone && (
             <a
               href={`tel:${biz.phone}`}
-              className={`
-                flex items-center justify-center gap-3 py-[17px] sm:py-4
-                rounded-full border-2 font-bold transition-all duration-300 
-                uppercase tracking-[0.2em] text-sm sm:text-base
-                hover:scale-105
-                flex-1 sm:flex-none sm:min-w-[220px] lg:min-w-[260px] xl:min-w-[240px]
-                ${useOverlayStyle 
-                  ? 'bg-white/[0.03] backdrop-blur-md text-white hover:bg-white/[0.08]' 
-                  : 'bg-white text-stone-900 hover:bg-stone-50 shadow-lg'}
-              `}
-              style={{ borderColor: useOverlayStyle ? accent + '40' : accent + '80' }}
+              className="flex items-center justify-center gap-2.5 px-6 py-3.5 sm:px-7 sm:py-4 rounded-full font-bold transition-all duration-300 uppercase tracking-[0.15em] text-[11px] sm:text-xs hover:brightness-110 flex-1 sm:flex-none sm:min-w-[220px] lg:min-w-[240px]"
+              style={{ 
+                border: `1px solid ${useOverlayStyle ? 'rgba(255,255,255,0.2)' : accent + '40'}`,
+                color: useOverlayStyle ? '#fff' : accent,
+                backgroundColor: useOverlayStyle ? 'rgba(255,255,255,0.05)' : accent + '08'
+              }}
               itemProp="telephone"
               aria-label={`Call ${biz.name} at ${biz.phone}`}
             >
-              <PhoneIcon className={`w-5 h-5 sm:w-6 ${useOverlayStyle ? 'opacity-70' : 'opacity-90'}`} style={{ color: accent }} /> 
-              <span style={{ color: useOverlayStyle ? '#e7e5e4' : '#78716c' }}>Call</span>
+              <PhoneIcon className="w-4 h-4 sm:w-5" /> 
+              <span>Call Now</span>
             </a>
           )}
         </div>
 
-        <nav className="flex justify-center gap-6 animate-fade-in-up" style={{ animationDelay: '0.4s' }} aria-label="Social media links">
-          {biz.socials?.instagram && (
-            <a 
-              href={biz.socials.instagram} 
-              target="_blank" 
-              rel="noreferrer" 
-              className="transition-all duration-300 hover:scale-110" 
-              aria-label={`Follow ${biz.name} on Instagram`}
-            >
-              <InstagramIcon className="w-7 h-7 sm:w-8 lg:w-9 xl:w-8" style={{ color: accent }} />
-            </a>
-          )}
-          {biz.socials?.tiktok && (
-            <a 
-              href={biz.socials.tiktok} 
-              target="_blank" 
-              rel="noreferrer" 
-              className="transition-all duration-300 hover:scale-110" 
-              aria-label={`Follow ${biz.name} on TikTok`}
-            >
-              <TikTokIcon className="w-7 h-7 sm:w-8 lg:w-9 xl:w-8" style={{ color: accent }} />
-            </a>
-          )}
-        </nav>
+        {/* ─── SOCIALS ─── */}
+        {biz.socials && (biz.socials.instagram || biz.socials.tiktok) && (
+          <nav className="flex justify-center gap-3 animate-fade-in-up" style={{ animationDelay: '0.4s' }} aria-label="Social media links">
+            {biz.socials.instagram && (
+              <a 
+                href={biz.socials.instagram} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
+                style={{ backgroundColor: useOverlayStyle ? 'rgba(255,255,255,0.1)' : accent + '10', border: `1px solid ${useOverlayStyle ? 'rgba(255,255,255,0.15)' : accent + '20'}` }}
+                aria-label={`Follow ${biz.name} on Instagram`}
+              >
+                <InstagramIcon className="w-4 h-4" style={{ color: accent }} />
+              </a>
+            )}
+            {biz.socials.tiktok && (
+              <a 
+                href={biz.socials.tiktok} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
+                style={{ backgroundColor: useOverlayStyle ? 'rgba(255,255,255,0.1)' : accent + '10', border: `1px solid ${useOverlayStyle ? 'rgba(255,255,255,0.15)' : accent + '20'}` }}
+                aria-label={`Follow ${biz.name} on TikTok`}
+              >
+                <TikTokIcon className="w-4 h-4" style={{ color: accent }} />
+              </a>
+            )}
+          </nav>
+        )}
       </header>
       
       <style>{`
