@@ -47,14 +47,12 @@ try {
 // --- Helper to extract slug from path ---
 function getSlugFromPath(path) {
   if (!path || path === '/') return null;
-  // Remove leading slash and split
   const segments = path.replace(/^\/+/, '').split('/');
-  // First segment is the slug, unless it's "blog" or other reserved paths
   const first = segments[0];
-  if (first === 'blog' || first === 'signup' || first === 'dashboard' || first === 'discover' || first === 'affiliate-signup' || first === 'privacy' || first === 'terms' || first === 'book') {
+  // Skip reserved paths
+  if (['blog', 'signup', 'dashboard', 'discover', 'affiliate-signup', 'privacy', 'terms', 'book'].includes(first)) {
     return null;
   }
-  // Also skip if the path starts with static assets (but these are already bypassed by redirects)
   return first;
 }
 
@@ -119,10 +117,9 @@ export const handler = async (event) => {
     }
   }
 
-  // ---- 2. Main domain (booknaija.com) – inject data if a valid slug is present ----
-  const mainDomains = ['booknaija.com', 'www.booknaija.com'];
+  // ---- 2. Main domains (booknaija.com & netlify.app) – inject data if a valid slug is present ----
+  const mainDomains = ['booknaija.com', 'www.booknaija.com', 'booknaija.netlify.app'];
   if (mainDomains.includes(domain)) {
-    // Extract slug from path
     const slug = getSlugFromPath(event.path);
     if (slug) {
       try {
@@ -134,7 +131,6 @@ export const handler = async (event) => {
           .single();
 
         if (!error && biz) {
-          // Inject business data into the HTML
           const title = `${biz.name} | BookNaija`;
           const description = biz.tagline || `Welcome to ${biz.name}`;
           const image = biz.logo || biz.avatar || biz.hero || 'https://booknaija.com/og-image.png';
@@ -204,12 +200,11 @@ export const handler = async (event) => {
           };
         }
       } catch (e) {
-        // If business not found, fall through to serve plain HTML
         console.warn('Main domain injection failed for slug:', slug, e.message);
       }
     }
 
-    // If no slug or business not found, serve plain index.html
+    // Fallback: serve plain index.html (no redirect)
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'text/html' },
@@ -248,7 +243,7 @@ export const handler = async (event) => {
     };
   }
 
-  // ---- 5. Generate SEO data and inject (same as main domain) ----
+  // ---- 5. Inject metadata and return ----
   const title = `${biz.name} | BookNaija`;
   const description = biz.tagline || `Welcome to ${biz.name}`;
   const image = biz.logo || biz.avatar || biz.hero || 'https://booknaija.com/og-image.png';
