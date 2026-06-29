@@ -1,4 +1,4 @@
-// workbox-config.js
+// workbox-config.cjs
 module.exports = {
   globDirectory: 'dist',
   globPatterns: [

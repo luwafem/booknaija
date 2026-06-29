@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/prerender-blog.js && npm run generate-sw",
-    "generate-sw": "workbox generateSW workbox-config.js",
+    "generate-sw": "workbox generateSW workbox-config.cjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "sitemap": "node -r dotenv/config scripts/generate-sitemap.js",
