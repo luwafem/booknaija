@@ -1,0 +1,66 @@
+// netlify/edge-functions/rate-limit.js
+export default async (request, context) => {
+  const url = new URL(request.url);
+
+  // Only rate-limit POST requests to sensitive endpoints
+  if (request.method !== 'POST') {
+    return; // Pass through non-POST requests
+  }
+
+  // Define which paths to rate-limit (adjust as needed)
+  const protectedPaths = [
+    '/.netlify/functions/initialize-payment',
+    '/.netlify/functions/save-business',
+    '/.netlify/functions/affiliate-login',
+    '/.netlify/functions/save-affiliate',
+    '/.netlify/functions/submit-offline-booking',
+    '/.netlify/functions/verify-offline-booking',
+    '/.netlify/functions/dashboard-login',        // New: secure login
+    '/.netlify/functions/send-reset-otp',         // New: reset OTP
+    '/.netlify/functions/verify-reset-otp',       // New: verify reset
+  ];
+  const isProtected = protectedPaths.some(path => url.pathname.startsWith(path));
+  if (!isProtected) {
+    return; // Ignore other endpoints
+  }
+
+  // Get client IP from Netlify headers
+  const ip = request.headers.get('x-forwarded-for') || 'unknown';
+  const key = `rate:${ip}`;
+
+  // Use Deno's built-in KV store (global across Edge Functions)
+  const kv = await Deno.openKv();
+  const count = await kv.get([key]);
+  const current = count.value || 0;
+
+  // Rate limit: 10 requests per minute per IP
+  const limit = 10;
+  if (current >= limit) {
+    return new Response(
+      JSON.stringify({
+        error: 'Too Many Requests',
+        message: `Rate limit exceeded. Please wait 60 seconds.`,
+        retryAfter: 60,
+      }),
+      {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': '60',
+          'Cache-Control': 'no-store',
+        },
+      }
+    );
+  }
+
+  // Increment the counter and set expiration (60 seconds)
+  await kv.set([key], current + 1, { expireIn: 60 });
+
+  // Continue to the Netlify function
+  return;
+};
+
+// ─── CONFIG: Apply this edge function to all Netlify function paths ───
+export const config = {
+  path: "/.netlify/functions/*", // Matches any request to a Netlify function
+};

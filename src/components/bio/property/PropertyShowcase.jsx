@@ -26,7 +26,9 @@ export default function PropertyShowcase({ property, accent, isDark, index, what
           <img 
             src={property.images[0]} 
             alt={property.name} 
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-105" 
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-105"
+            loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className={`absolute inset-0 ${isDark ? 'bg-zinc-900' : 'bg-stone-100'}`} />

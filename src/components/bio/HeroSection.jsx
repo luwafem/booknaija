@@ -37,6 +37,8 @@ export default function HeroSection({ biz }) {
             alt="" 
             className="h-full w-full object-cover"
             loading="eager"
+            fetchPriority="high"
+            decoding="async"
           />
         </div>
       )}
@@ -62,6 +64,8 @@ export default function HeroSection({ biz }) {
                 alt={`${biz.name} logo`}
                 className="w-full h-full object-cover"
                 itemProp="logo"
+                loading="eager"
+                decoding="async"
               />
             ) : (
               <div 

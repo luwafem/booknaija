@@ -84,6 +84,7 @@ function FoodCard({ item, active, accent, existingVariant, onAdd, location, them
             alt={seoAlt} 
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.05]" 
             loading="lazy"
+            decoding="async"
             style={{ imageRendering: 'auto' }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/15 to-transparent pointer-events-none" />
@@ -168,6 +169,8 @@ function FoodCard({ item, active, accent, existingVariant, onAdd, location, them
                   src={item.image} 
                   alt={seoAlt} 
                   className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl transition-transform duration-500 hover:scale-105" 
+                  loading="lazy"
+                  decoding="async"
                   style={{ imageRendering: 'auto' }}
                 />
               </div>
@@ -198,7 +201,6 @@ function FoodCard({ item, active, accent, existingVariant, onAdd, location, them
                 {item.addons && item.addons.map((group) => (
                   <div key={group.id} className="pt-2">
                     <div className="flex items-center gap-2 mb-3 pb-2" style={{ borderBottom: "1px solid " + accent + '15' }}>
-                      {/* FIX 1: Group label now uses accent color (matches CarList "Specifications") */}
                       <p className="text-xs font-bold tracking-[0.15em] uppercase" style={{ color: accent }}>
                         {group.label}
                       </p>
@@ -239,7 +241,6 @@ function FoodCard({ item, active, accent, existingVariant, onAdd, location, them
                                   <svg className="w-3 h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                                 )}
                               </div>
-                              {/* FIX 2: Unselected option text now uses accent (matches ProductList unselected sizes) */}
                               <span 
                                 className="text-sm font-medium" 
                                 style={{ color: isSelected ? (isDark ? '#ffffff' : '#111827') : accent }}
@@ -274,7 +275,6 @@ function FoodCard({ item, active, accent, existingVariant, onAdd, location, them
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 rounded-xl px-1 py-1" style={{ backgroundColor: accent + '08' }}>
-                    {/* FIX 3: Quantity icons now use accent color */}
                     <button 
                       onClick={() => setTempQuantity(Math.max(1, tempQuantity - 1))} 
                       className="w-8 h-8 flex items-center justify-center transition-colors rounded-lg"

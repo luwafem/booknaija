@@ -1,3 +1,4 @@
+// netlify/functions/paystack-webhook.js
 const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 
@@ -32,10 +33,31 @@ exports.handler = async (event) => {
     // We only care about successful charges right now
     if (eventType === 'charge.success') {
       const data = payload.data;
+      const reference = data.reference; // Paystack transaction reference
       const metadata = data.metadata || {};
       const slug = metadata.slug;
       const paymentType = metadata.payment_type;
 
+      // ─── IDEMPOTENCY CHECK ───
+      // Attempt to insert the reference. If it already exists, skip processing.
+      const { error: insertError } = await supabase
+        .from('processed_webhooks')
+        .insert({ reference });
+
+      if (insertError) {
+        if (insertError.code === '23505') {
+          // Duplicate key – webhook already processed
+          console.log(`Webhook already processed for reference: ${reference}`);
+          return { statusCode: 200, body: JSON.stringify({ received: true, duplicate: true }) };
+        }
+        // For other errors, log but still attempt to process to avoid missing events
+        console.error('Error inserting processed_webhooks record:', insertError.message);
+        // We'll continue processing – but note that if this fails repeatedly,
+        // we might process the same event more than once. However, with
+        // the unique constraint, this is unlikely to happen for duplicate events.
+      }
+
+      // ─── PROCESS THE EVENT ───
       // 1. Handle Monthly Subscription Success
       if (paymentType === 'monthly_subscription' && slug) {
         console.log(`Subscription success for slug: ${slug}`);
@@ -53,11 +75,13 @@ exports.handler = async (event) => {
         if (updateErr) console.error('Webhook DB update error:', updateErr);
 
         // Mark affiliate bounty as paid if applicable
-        await supabase
+        const { error: bountyErr } = await supabase
           .from('businesses')
           .update({ affiliate_bounty_paid: true })
           .eq('slug', slug)
           .eq('affiliate_bounty_paid', false);
+
+        if (bountyErr) console.error('Error marking affiliate bounty paid:', bountyErr);
       }
     }
 

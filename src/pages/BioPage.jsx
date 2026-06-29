@@ -161,13 +161,38 @@ function isLight(hex) {
 }
 
 export default function BioPage() {
-  const { slug } = useParams();
+  const urlSlug = useParams().slug;
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const ref = params.get('reference') || params.get('trxref');
   const codeParam = params.get('code') || '';
 
-  const { business: biz, loading, error, seoDescription, seoImage, structuredData } = useBusinessWithSEO(slug);
+  // ─── Handle pre‑injected data from server (custom domain) ───
+  const [initialData, setInitialData] = useState(null);
+  const [effectiveSlug, setEffectiveSlug] = useState(urlSlug);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.__BUSINESS_DATA__) {
+      const data = window.__BUSINESS_DATA__;
+      setInitialData(data);
+      // If we have data, use its slug (useful for custom domains where URL path is root)
+      if (data.slug) {
+        setEffectiveSlug(data.slug);
+      }
+      // Clear to free memory
+      delete window.__BUSINESS_DATA__;
+    }
+  }, []);
+
+  // ─── Use the hook with optional initialData ───
+  const { 
+    business: biz, 
+    loading, 
+    error, 
+    seoDescription, 
+    seoImage, 
+    structuredData 
+  } = useBusinessWithSEO(effectiveSlug, { initialData });
 
   const [searchQuery, setSearchQuery] = useState(codeParam);
   const [isSearchActive, setIsSearchActive] = useState(!!codeParam);
@@ -190,16 +215,16 @@ export default function BioPage() {
   }, [loading, biz]);
 
   if (ref) {
-    return <Navigate to={`/book/${slug}?reference=${ref}`} replace />;
+    return <Navigate to={`/book/${effectiveSlug}?reference=${ref}`} replace />;
   }
 
   function getCart() {
-    try { return JSON.parse(sessionStorage.getItem(`cart_${slug}`)) || {}; }
+    try { return JSON.parse(sessionStorage.getItem(`cart_${effectiveSlug}`)) || {}; }
     catch { return {}; }
   }
 
   function saveCart(cart) {
-    sessionStorage.setItem(`cart_${slug}`, JSON.stringify(cart));
+    sessionStorage.setItem(`cart_${effectiveSlug}`, JSON.stringify(cart));
     setActiveService(cart.service || '');
     setActiveProducts(cart.products || []);
     setActiveFood(cart.food || []);
@@ -315,7 +340,7 @@ export default function BioPage() {
     }
     saveCart(cart);
     const hasItems = cart.service || cart.products?.length || cart.food?.length || cart.car;
-    if (hasItems) navigate(`/book/${slug}`);
+    if (hasItems) navigate(`/book/${effectiveSlug}`);
   }
 
   function handleProductSelect(id, size, color) {
@@ -335,7 +360,7 @@ export default function BioPage() {
     }
     saveCart(cart);
     const hasItems = cart.products.length > 0;
-    if (hasItems) navigate(`/book/${slug}`);
+    if (hasItems) navigate(`/book/${effectiveSlug}`);
   }
 
   function handleFoodSelect(id, variant) {
@@ -352,7 +377,7 @@ export default function BioPage() {
     }
     saveCart(cart);
     const hasItems = cart.food.length > 0;
-    if (hasItems) navigate(`/book/${slug}`);
+    if (hasItems) navigate(`/book/${effectiveSlug}`);
   }
 
   function handleCarSelect(car) {
@@ -364,7 +389,7 @@ export default function BioPage() {
     }
     saveCart(cart);
     const hasItems = cart.car;
-    if (hasItems) navigate(`/book/${slug}`);
+    if (hasItems) navigate(`/book/${effectiveSlug}`);
   }
 
   function handlePropertySelect(id) {
@@ -373,7 +398,7 @@ export default function BioPage() {
     cart.food = []; cart.foodVariants = {}; cart.car = null;
     cart.property = id;
     saveCart(cart);
-    navigate(`/book/${slug}`);
+    navigate(`/book/${effectiveSlug}`);
   }
   
   const faqs = [
@@ -424,9 +449,6 @@ export default function BioPage() {
       itemScope
       itemType="https://schema.org/LocalBusiness"
     >
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
       <style>{`body, body * { font-family: 'DM Sans', system-ui, -apple-system, sans-serif; }`}</style>
 
       <SEO

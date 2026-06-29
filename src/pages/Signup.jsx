@@ -554,31 +554,31 @@ export default function Signup() {
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {currentTypeFeatures.servicesEnabled && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-1 rounded-lg">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-zinc-400 bg-zinc-800/50 border border-zinc-700/50  px-2 py-1 rounded-lg">
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                             Services
                           </span>
                         )}
                         {currentTypeFeatures.productsEnabled && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-1 rounded-lg">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-zinc-400 bg-zinc-800/50 border border-zinc-700/50  px-2 py-1 rounded-lg">
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                             Products
                           </span>
                         )}
                         {currentTypeFeatures.carsEnabled && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-1 rounded-lg">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-zinc-400 bg-zinc-800/50 border border-zinc-700/50  px-2 py-1 rounded-lg">
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                             Car Listings
                           </span>
                         )}
                         {currentTypeFeatures.foodEnabled && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-1 rounded-lg">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-zinc-400 bg-zinc-800/50 border border-zinc-700/50  px-2 py-1 rounded-lg">
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                             Food Ordering
                           </span>
                         )}
                         {currentTypeFeatures.propertiesEnabled && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-1 rounded-lg">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-zinc-400 bg-zinc-800/50 border border-zinc-700/50  px-2 py-1 rounded-lg">
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                             Property Listings
                           </span>
@@ -767,8 +767,8 @@ export default function Signup() {
                   )}
 
                   {currentTypeFeatures?.propertiesEnabled && (
-                    <div className="bg-purple-900/20 border border-purple-500/30 rounded-xl p-4">
-                      <p className="text-sm font-semibold text-purple-300 mb-1">Property Listings Setup</p>
+                    <div className="bg-zinc-900/20 border border-zinc-500/30 rounded-xl p-4">
+                      <p className="text-sm font-semibold text-zinc-300 mb-1">Property Listings Setup</p>
                       <p className="text-xs text-zinc-400">You'll add your properties, images, and pricing details after payment in the setup wizard.</p>
                     </div>
                   )}

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useBusiness } from '../hooks/useBusiness';
 import LocationPicker from '../components/LocationPicker';
+import DomainManager from '../components/DomainManager';
 
 var CLOUD_NAME = 'deexaiik4';
 var UPLOAD_PRESET = 'BizUploads';
@@ -356,6 +357,7 @@ export default function Dashboard() {
       { id: 'info', label: 'Info' },
       { id: 'security', label: 'Security' },
       { id: 'gallery', label: 'Gallery' },
+      { id: 'domain', label: 'Domain' }, 
       { id: 'offline-payments', label: 'Bank Payments' }
     ];
     if (biz.servicesEnabled) tabs.push({ id: 'services', label: 'Services' });
@@ -366,6 +368,21 @@ export default function Dashboard() {
     if (biz.estatesEnabled) tabs.push({ id: 'estates', label: 'Estates' });
     return tabs;
   }
+
+    // ─── NEW: renderDomainTab() ───
+  function renderDomainTab() {
+    const buttonClass = "px-5 py-3 bg-white/[0.06] hover:bg-white/[0.10] text-white text-[11px] font-semibold tracking-[0.1em] uppercase rounded-xl transition-all duration-300 border border-white/[0.06] whitespace-nowrap disabled:opacity-50";
+    return (
+      <DomainManager
+        biz={biz}
+        accent={accent}
+        inputClassName={inp}
+        cardClassName={card}
+        buttonClassName={buttonClass}
+      />
+    );
+  }
+
 
   function uploadImage(onSuccess, isMultiple, maxImages) {
     if (!window.cloudinary) { alert('Widget loading...'); return; }
@@ -2507,6 +2524,7 @@ export default function Dashboard() {
       case 'info': return renderInfoTab();
       case 'security': return renderSecurityTab();
       case 'gallery': return renderGalleryTab();
+      case 'domain': return renderDomainTab();    
       case 'offline-payments': return renderOfflinePaymentsTab();
       case 'services': return renderServicesTab();
       case 'products': return renderProductsTab();

@@ -105,6 +105,9 @@ export default function PropertyDetails() {
                   src={images[activeImage]} 
                   alt={property.name} 
                   className="w-full h-full object-cover transition-opacity duration-300"
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
                   style={{ imageRendering: 'auto' }}
                 />
                 <div className="absolute top-4 left-4">
@@ -123,7 +126,14 @@ export default function PropertyDetails() {
                       className={`relative aspect-[4/3] overflow-hidden rounded-xl border-2 transition-all duration-300 ${activeImage === index ? 'border-opacity-100 scale-[0.98]' : 'border-opacity-0 hover:border-opacity-50 hover:scale-[0.98]'}`}
                       style={{ borderColor: activeImage === index ? accent : 'transparent' }}
                     >
-                      <img src={img} alt="" className="w-full h-full object-cover" style={{ imageRendering: 'auto' }} />
+                      <img 
+                        src={img} 
+                        alt="" 
+                        className="w-full h-full object-cover" 
+                        loading="lazy" 
+                        decoding="async"
+                        style={{ imageRendering: 'auto' }} 
+                      />
                     </button>
                   ))}
                 </div>

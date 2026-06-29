@@ -41,7 +41,7 @@ export default function Gallery({ gallery, accent, location, theme }) {
     <>
       <section className="mt-12 lg:mt-16 xl:mt-0" aria-label="Photo gallery">
         
-        {/* ─── SECTION LABEL (MATCHED TO SectionHeading) ─── */}
+        {/* ─── SECTION LABEL ─── */}
         <div className="flex items-center gap-4 mb-8 md:mb-10">
           <div className="h-px flex-1" style={{ backgroundColor: accent + '15' }} />
           <h2 className="text-2xl md:text-3xl font-medium tracking-tight whitespace-nowrap text-black">
@@ -74,6 +74,7 @@ export default function Gallery({ gallery, accent, location, theme }) {
                       alt={location ? `${g.group} in ${location}` : `${g.group} ${iIdx + 1}`}
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       loading="lazy"
+                      decoding="async"
                       style={{ imageRendering: 'auto' }}
                     />
                     
@@ -226,6 +227,8 @@ function Lightbox({ images, currentIdx, onClose, onPrev, onNext, accent, alt }) 
             src={images[currentIdx]}
             alt={alt || "Gallery full view"}
             className="max-w-full max-h-full object-contain rounded-sm"
+            loading="lazy"
+            decoding="async"
             draggable="false"
             style={{ imageRendering: 'auto' }}
           />
@@ -268,7 +271,15 @@ function Lightbox({ images, currentIdx, onClose, onPrev, onNext, accent, alt }) 
                   border: idx === currentIdx ? `2px solid ${accent}` : '2px solid transparent',
                 }}
               >
-                <img src={img} alt="" className="w-full h-full object-cover" draggable="false" style={{ imageRendering: 'auto' }} />
+                <img 
+                  src={img} 
+                  alt="" 
+                  className="w-full h-full object-cover" 
+                  loading="lazy" 
+                  decoding="async"
+                  draggable="false" 
+                  style={{ imageRendering: 'auto' }} 
+                />
               </button>
             ))}
           </div>

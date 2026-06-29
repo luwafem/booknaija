@@ -1,60 +1,61 @@
-import { useState, useEffect } from 'react';
+// src/hooks/useBusiness.js
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { PLATFORM_PAYSTACK_KEY } from '../data/config';
 
-export function useBusiness(slug) {
-  const [business, setBusiness] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+// ─── FETCH FUNCTION ───
+async function fetchBusiness(slug) {
+  // 1. Fetch business data
+  const { data, error } = await supabase
+    .from('businesses')
+    .select(
+      `
+      *,
+      business_services (*),
+      business_products (*),
+      business_cars (*),
+      business_food (*),
+      business_properties (*),
+      business_estates (*)
+      `
+    )
+    .eq('slug', slug)
+    .eq('active', true)
+    .single();
 
-  useEffect(function () {
-    if (!slug) return;
+  if (error) throw error;
 
-    var cancelled = false;
-    setLoading(true);
-    setError(null);
+  // 2. Fetch verified domains for this slug
+  const { data: domains, error: domainsError } = await supabase
+    .from('domains')
+    .select('domain, verified')
+    .eq('slug', slug)
+    .eq('verified', true);
 
-    supabase
-      .from('businesses')
-      .select(
-        `
-        *,
-        business_services (*),
-        business_products (*),
-        business_cars (*),
-        business_food (*),
-        business_properties (*),
-        business_estates (*)
-        `
-      )
-      .eq('slug', slug)
-      .eq('active', true)
-      .single()
-      .then(function (result) {
-        if (cancelled) return;
-        var data = result.data;
-        var err = result.error;
+  if (domainsError) {
+    // Log but don't fail; we can still return business without domains
+    console.warn('Failed to fetch domains:', domainsError);
+  }
 
-        if (err) {
-          setError(err.code === 'PGRST116' ? 'not_found' : err.message);
-          setBusiness(null);
-        } else if (data) {
-          setBusiness(transformBusiness(data));
-        }
-        setLoading(false);
-      });
-
-    return function () {
-      cancelled = true;
-    };
-  }, [slug]);
-
-  return { business: business, loading: loading, error: error };
+  return transformBusiness(data, domains || []);
 }
 
-// ─── Transform Supabase rows → existing component shape ───
+// ─── HOOK (accepts options.initialData) ───
+export function useBusiness(slug, options = {}) {
+  const { initialData } = options;
 
-function transformBusiness(row) {
+  return useQuery({
+    queryKey: ['business', slug],
+    queryFn: () => fetchBusiness(slug),
+    enabled: !!slug && !initialData, // skip fetch if we already have data
+    initialData: initialData,         // use pre‑injected data if provided
+    staleTime: 5 * 60 * 1000,        // 5 minutes – data stays fresh
+    retry: 1,
+  });
+}
+
+// ─── TRANSFORM FUNCTIONS ───
+function transformBusiness(row, domains = []) {
   return {
     name: row.name,
     slug: row.slug,
@@ -111,6 +112,9 @@ function transformBusiness(row) {
     team: (row.team && typeof row.team === 'string') 
       ? JSON.parse(row.team) 
       : (Array.isArray(row.team) ? row.team : []),
+
+    // ─── CUSTOM DOMAINS ───
+    domains: domains.map(d => ({ domain: d.domain, verified: d.verified })),
 
     services: sortByOrder(row.business_services || []).map(function (s) {
       return {
@@ -208,10 +212,9 @@ function transformBusiness(row) {
         };
       })
       .sort(function (a, b) {
-        // Always push the "Featured" estate to the very top (index 0)
         if (a.featured && !b.featured) return -1;
         if (!a.featured && b.featured) return 1;
-        return 0; // Keep original sort_order for the rest
+        return 0;
       })
   };
 }

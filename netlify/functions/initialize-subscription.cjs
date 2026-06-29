@@ -1,12 +1,8 @@
 const { createClient } = require('@supabase/supabase-js');
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
+  if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method not allowed' };
   
   try {
     const { slug, email } = JSON.parse(event.body);
@@ -25,7 +21,6 @@ exports.handler = async (event) => {
 
     // 2. The "Big Bounty" Check
     if (biz.referred_by_affiliate && !biz.affiliate_bounty_paid) {
-      // Get the affiliate's subaccount code
       const { data: affiliate, error: affErr } = await supabase
         .from('affiliates')
         .select('subaccount_code')
@@ -33,16 +28,21 @@ exports.handler = async (event) => {
         .single();
 
       if (!affErr && affiliate) {
-        subaccountToUse = affiliate.subaccount_code; // Give affiliate 60% (1,500 Naira)
+        subaccountToUse = affiliate.subaccount_code;
       }
     }
 
-    // 3. Initialize Paystack (NO subaccount = You keep 100% of the 2,500 Naira)
+    // ─── HARDCODE CALLBACK URL ───
+    const baseUrl = process.env.SITE_URL || process.env.URL || 'https://booknaija.netlify.app';
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+    const callbackUrl = `${cleanBaseUrl}/dashboard/${slug}?sub_ref=SUCCESS`;
+
+    // 3. Initialize Paystack
     const payload = {
       email,
-      amount: 2500 * 1000, // 2,500 Naira in kobo
+      amount: 2500 * 100,
       currency: 'NGN',
-      callback_url: `${process.env.URL || 'https://booknaija.netlify.app'}/dashboard/${slug}?sub_ref=SUCCESS`,
+      callback_url: callbackUrl,  // Hardcoded
       metadata: { slug, payment_type: 'monthly_subscription' }
     };
 

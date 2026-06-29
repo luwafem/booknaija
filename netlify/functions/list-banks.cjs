@@ -1,4 +1,4 @@
-// netlify/functions/list-banks.js
+// netlify/functions/list-banks.cjs
 exports.handler = async (event) => {
   try {
     const secretKey = process.env.PAYSTACK_SECRET_KEY;
@@ -36,13 +36,18 @@ exports.handler = async (event) => {
     const banks = data.data.map(b => ({ code: b.code, name: b.name }));
     
     console.log(`Successfully loaded ${banks.length} banks.`);
+    
+    // ─── PERFORMANCE: Cache the response for 24 hours ───
+    // Banks rarely change, so this reduces Paystack API calls and speeds up dashboard loads.
     return { 
       statusCode: 200, 
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=86400', // 24 hours
+      },
       body: JSON.stringify(banks) 
     };
   } catch (err) {
-    // This is the exact error causing your 500
     console.error("FUNCTION CRASH:", err.message);
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }

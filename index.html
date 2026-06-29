@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="google-site-verification" content="F3SK-7i8eBWySBEXBdkntBmUciozFrm2etjCS6lYkbk" />
+    
     <!-- Primary Meta Tags (Fallback before React loads) -->
     <title>BookNaija - Your Business, One Simple Link</title>
     <meta name="title" content="BookNaija - Book Services, Buy Products, Pay Upfront" />
@@ -13,7 +14,7 @@
     <meta name="language" content="English" />
     <meta name="author" content="BookNaija Technologies" />
     
-    <!-- Open Graph / Facebook (Using relative paths so it works on .netlify.app AND your future custom domain) -->
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="/" />
     <meta property="og:title" content="BookNaija - Your Business, One Simple Link" />
@@ -41,11 +42,48 @@
     <!-- Theme Color -->
     <meta name="theme-color" content="#0a0a0a" />
     
-    <!-- Preconnect for performance -->
+    <!-- ─── PERFORMANCE: Preconnect to critical third‑party origins ─── -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />   <!-- Keep crossorigin for fonts.gstatic.com -->
+    <link rel="preconnect" href="https://api.paystack.co" />
+    <link rel="preconnect" href="https://res.cloudinary.com" />
     <link rel="preconnect" href="https://pagead2.googlesyndication.com" />
+    <link rel="preconnect" href="https://drmmnfvldgfszslvtnee.supabase.co" /> <!-- Supabase hostname -->
     
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1898000452698308"
-     crossorigin="anonymous"></script>
+    <!-- ─── PERFORMANCE: Preload critical static assets (optional, remove if warnings bother you) ─── -->
+    <!--
+    <link rel="preload" as="image" href="/fav-removebg.png" type="image/png" />
+    <link rel="preload" as="image" href="/og-image.png" type="image/png" />
+    <link rel="preload" as="image" href="/fav.png" type="image/png" />
+    -->
+    
+    <!-- ─── PERFORMANCE: Preload the combined Google Fonts stylesheet ─── -->
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap"
+    />
+    
+    <!-- ─── PERFORMANCE: Load fonts non‑blocking ─── -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap"
+      />
+    </noscript>
+    
+    <!-- ─── AdSense (async, non‑blocking) ─── -->
+    <script
+      async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1898000452698308"
+      crossorigin="anonymous"
+    ></script>
 
     <!-- Tell Netlify Prerendering to wait for React to load before taking a snapshot -->
     <script>

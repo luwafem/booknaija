@@ -145,6 +145,7 @@ function ProductCard({ product, active, accent, onClick, location, theme }) {
               alt={seoAlt} 
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.05]" 
               loading="lazy"
+              decoding="async"
               style={{ imageRendering: 'auto' }}
             />
           ) : (
@@ -341,6 +342,8 @@ function ProductCard({ product, active, accent, onClick, location, theme }) {
                   src={allImages[modalImgIdx]} 
                   alt={seoAlt} 
                   className="max-w-full max-h-full object-contain transition-transform duration-300 hover:scale-105" 
+                  loading="lazy"
+                  decoding="async"
                   style={{ imageRendering: 'auto' }}
                 />
               </div>
@@ -375,7 +378,14 @@ function ProductCard({ product, active, accent, onClick, location, theme }) {
                         outlineOffset: "2px"
                       }}
                     >
-                      <img src={img} className="w-full h-full object-cover" alt="" style={{ imageRendering: 'auto' }} />
+                      <img 
+                        src={img} 
+                        className="w-full h-full object-cover" 
+                        alt="" 
+                        loading="lazy"
+                        decoding="async"
+                        style={{ imageRendering: 'auto' }} 
+                      />
                     </button>
                   ))}
                 </div>
@@ -538,7 +548,15 @@ function ProductCard({ product, active, accent, onClick, location, theme }) {
               </>
             )}
             <div className="max-w-6xl w-full h-full flex items-center justify-center p-4 select-none">
-              <img src={allImages[modalImgIdx]} alt={seoAlt} className="max-w-full max-h-full object-contain rounded-lg" draggable="false" style={{ imageRendering: 'auto' }} />
+              <img 
+                src={allImages[modalImgIdx]} 
+                alt={seoAlt} 
+                className="max-w-full max-h-full object-contain rounded-lg" 
+                loading="lazy"
+                decoding="async"
+                draggable="false" 
+                style={{ imageRendering: 'auto' }} 
+              />
             </div>
           </div>
 
@@ -552,7 +570,15 @@ function ProductCard({ product, active, accent, onClick, location, theme }) {
                     className={"flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 overflow-hidden rounded-xl transition-all duration-300 " + (idx === modalImgIdx ? 'opacity-100 scale-105' : 'opacity-30 hover:opacity-60')}
                     style={{ border: idx === modalImgIdx ? "2px solid " + accent : "2px solid transparent" }}
                   >
-                    <img src={img} alt="" className="w-full h-full object-cover" draggable="false" style={{ imageRendering: 'auto' }} />
+                    <img 
+                      src={img} 
+                      alt="" 
+                      className="w-full h-full object-cover" 
+                      loading="lazy"
+                      decoding="async"
+                      draggable="false" 
+                      style={{ imageRendering: 'auto' }} 
+                    />
                   </button>
                 ))}
               </div>

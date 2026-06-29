@@ -51,6 +51,7 @@ function ServiceCard({ service, active, accent, onClick, location, theme }) {
             alt={seoAlt} 
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.05]" 
             loading="lazy"
+            decoding="async"
             style={{ imageRendering: 'auto' }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/15 to-transparent pointer-events-none" />
@@ -165,6 +166,7 @@ function ServiceCard({ service, active, accent, onClick, location, theme }) {
                         alt={seoAlt + ' - Image ' + (index + 1)} 
                         className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
                         loading="lazy"
+                        decoding="async"
                         style={{ imageRendering: 'auto' }}
                       />
                     </div>

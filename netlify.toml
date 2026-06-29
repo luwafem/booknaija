@@ -4,7 +4,65 @@
 
 [build.environment]
   NODE_VERSION = "20"
-  # ❌ REMOVE: NETLIFY_PRERENDER = "true" (deprecated)
+
+# ─── FUNCTIONS PERFORMANCE ───
+[functions]
+  node_bundler = "esbuild"
+  included_files = [
+    "!node_modules/.cache/**",
+    "!**/*.test.js",
+    "!**/*.spec.js"
+  ]
+
+  [functions."*.js"]
+    memory = 1024
+    timeout = 30
+
+# ─── RATE LIMITING ───
+[[rate_limit]]
+  pattern = "/.netlify/functions/initialize-payment"
+  rate = "10 per minute"
+
+[[rate_limit]]
+  pattern = "/.netlify/functions/save-business"
+  rate = "10 per minute"
+
+[[rate_limit]]
+  pattern = "/.netlify/functions/affiliate-login"
+  rate = "5 per minute"
+
+[[rate_limit]]
+  pattern = "/.netlify/functions/save-affiliate"
+  rate = "5 per minute"
+
+[[rate_limit]]
+  pattern = "/.netlify/functions/submit-offline-booking"
+  rate = "10 per minute"
+
+[[rate_limit]]
+  pattern = "/.netlify/functions/verify-offline-booking"
+  rate = "10 per minute"
+
+[[rate_limit]]
+  pattern = "/.netlify/functions/dashboard-login"
+  rate = "5 per minute"
+
+[[rate_limit]]
+  pattern = "/.netlify/functions/send-reset-otp"
+  rate = "3 per minute"
+
+[[rate_limit]]
+  pattern = "/.netlify/functions/verify-reset-otp"
+  rate = "3 per minute"
+
+[[rate_limit]]
+  pattern = "/.netlify/functions/get-dashboard-questions"
+  rate = "5 per minute"
+
+# Optional: add rate limit for domain verification
+[[rate_limit]]
+  pattern = "/.netlify/functions/verify-domain"
+  rate = "5 per minute"
 
 # ─── BLOG POSTS: Serve static HTML files directly ───
 [[redirects]]
@@ -13,11 +71,18 @@
   status = 200
   force = true
 
-# ─── SPA FALLBACK: Only for non-blog routes ───
+# ─── STATIC ASSETS: Serve directly (bypass the function for performance) ───
+[[redirects]]
+  from = "/*.{js,css,png,jpg,jpeg,svg,gif,ico,webp,woff,woff2,ttf,otf,eot,json,map}"
+  to = "/:splat.:ext"
+  status = 200
+
+# ─── CUSTOM DOMAIN & SPA FALLBACK: Route all other requests to the serverless function ───
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to = "/.netlify/functions/serve-custom-domain"
   status = 200
+  force = true
 
 # ─── SECURITY HEADERS ───
 [[headers]]
@@ -29,11 +94,14 @@
     Permissions-Policy = "camera=(), microphone=()"
 
 # ─── CACHE POLICIES ───
+
+# Static assets (JS, CSS, images) – long-term cache
 [[headers]]
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
+# HTML pages (including blog) – no cache (serve fresh on each visit)
 [[headers]]
   for = "/*.html"
   [headers.values]
@@ -43,3 +111,20 @@
   for = "/blog/*/index.html"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
+
+# Sitemap & robots.txt – cache for 24 hours
+[[headers]]
+  for = "/sitemap.xml"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/robots.txt"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+# Favicon and other static root files – cache for 1 week
+[[headers]]
+  for = "/fav*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"

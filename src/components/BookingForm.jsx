@@ -126,18 +126,12 @@ export default function BookingForm({
   // ---------------------------------
 
   // --- HELPER TO RESOLVE BANK NAME ---
-  // biz.settlementBank could be either:
-  //   - A human-readable name like "Zenith Bank" (new flow from Signup.jsx)
-  //   - A bank code like "058" (old data or direct DB entry)
-  // This function handles both cases.
   function resolveBankName(value) {
     if (!value) return 'Contact Business';
-    // If it looks like a code (all digits, short), try to resolve it
     if (/^\d{2,6}$/.test(value)) {
       var found = allBanks.find(function(b) { return b.code === value; });
       return found ? found.name : value;
     }
-    // Otherwise it's already a human-readable name
     return value;
   }
   // ---------------------------------
@@ -365,7 +359,7 @@ export default function BookingForm({
     }
     // -------------------
 
-    // --- EXISTING PAYSTACK FLOW ---
+    // --- EXISTING PAYSTACK FLOW (with server-side price validation) ---
     setLoading(true);
     setErr('');
 
@@ -383,17 +377,39 @@ export default function BookingForm({
         }
       }
 
+      // ─── BUILD STRUCTURED ITEMS FOR SERVER VALIDATION ───
+      const itemsPayload = {
+        service: isService ? { id: selectedId, quantity: 1 } : null,
+        products: isProduct ? selectedPrds.map(p => ({
+          id: p.id,
+          quantity: productQuantities[p.id] || 1,
+          size: productVariants[p.id]?.size || null,
+          color: productVariants[p.id]?.color || null,
+        })) : [],
+        food: isFood ? selectedFd.map(f => ({
+          id: f.id,
+          quantity: foodVariants[f.id]?.quantity || 1,
+          addons: foodVariants[f.id]?.addons || {},
+        })) : [],
+        car: isCar ? {
+          id: selectedCar.id,
+          type: selectedCar.type,
+          startDate: isRental ? rentalStart : null,
+          endDate: isRental ? rentalEnd : null,
+        } : null,
+      };
+
       const r = await fetch('/.netlify/functions/initialize-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           slug: biz.slug,
-          serviceId: isCar ? selectedCar.id : (isFood ? selectedFood.join(',') : (isProduct ? selectedProducts.join(',') : selectedId)),
-          serviceName: itemNames,
+          type: isCar ? (isRental ? 'car_rental' : 'car_viewing') : (isFood ? 'food' : (isProduct ? 'product' : 'service')),
+          items: itemsPayload,
+          // Keep amount as client-side reference (server will ignore it)
           amount: totalAmount,
           date: (isProduct || isRental) ? 'N/A' : bookingDate,
           time: (isProduct || isRental) ? 'N/A' : bookingTime,
-          type: isCar ? (isRental ? 'car_rental' : 'car_viewing') : (isFood ? 'food' : (isProduct ? 'product' : 'service')),
           address: (isProduct || isFood || isRental) ? address : 'N/A',
           name, email, phone, calendarId: biz.calendarId,
         }),
@@ -649,7 +665,6 @@ export default function BookingForm({
   const totalProductItems = selectedPrds.reduce((sum, p) => sum + (productQuantities[p.id] || 1), 0);
 
   // ── Resolve bank details from biz object ──
-  // useBusiness hook maps: account_name → accountName, account_number → accountNumber, settlement_bank → settlementBank
   const displayBankName = resolveBankName(biz.settlementBank);
   const displayAccountName = biz.accountName || 'Contact Business';
   const displayAccountNumber = biz.accountNumber || 'Contact Business';

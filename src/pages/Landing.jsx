@@ -13,15 +13,15 @@ const moreCategories = ['Nail Technician', 'Makeup Artist', 'Skin Care', 'Cleane
 
 const features = [
   { t: 'Card & Bank Transfer', d: 'Stop chasing money. Clients pay securely via Paystack or Bank Transfer. Get paid upfront, every time.', icon: <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /> },
-  { t: 'Product Sales', d: 'Not just bookings. Sell wigs, care products, or merchandise directly from your storefront.', icon: <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /> },
+  { t: 'Product Sales', d: 'Not just bookings. Sell wigs, care products, or merchandise directly from your page.', icon: <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /> },
   { t: 'Google Calendar Sync', d: 'Avoid double-bookings. We automatically block slots when you have personal plans.', icon: <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /> },
   { t: 'Automated Reminders', d: 'We send WhatsApp and Email reminders so your clients never miss an appointment.', icon: <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /> },
   { t: 'Referral Rewards', d: 'Refer 3 friends and get a free month. Unlimited earnings potential.', icon: <path d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /> },
-  { t: 'Bio-Link Ready', d: 'A beautiful, mobile-first page designed to look perfect inside Instagram and TikTok.', icon: <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /> },
+  { t: 'Bio-Link Ready', d: 'A beautiful, mobile first page designed to look perfect inside Instagram and TikTok.', icon: <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /> },
 ];
 
 const steps = [
-  { n: '1', t: 'Create Your Storefront', d: 'Add your business name, services, and products. Your professional link will be live within 30 minutes.' },
+  { n: '1', t: 'Create Your Business Page', d: 'Add your business name, services, and products. Your professional link will be live within 30 minutes.' },
   { n: '2', t: 'Set Your Availability', d: 'Define your working hours for bookings and manage your product inventory.' },
   { n: '3', t: 'Add to Your Bio', d: 'Paste your unique booknaija.com/yourname link into your Instagram or TikTok bio.' },
 ];
@@ -250,18 +250,17 @@ export default function Landing() {
               {/* LEFT */}
               <div className="relative z-10" data-animate>
                 <h1 className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-[0.95] tracking-[-0.04em] font-extrabold ${T.text}`}>
-                  RUN YOUR
+                  BUILD A
                   <br />
                   BUSINESS
                   <br />
-                  <span className={T.textAccent}>WITHOUT</span>
+                  <span className={T.textAccent}>THAT SELLS</span>
                   <br />
-                  INSTAGRAM DMs
+                  WITHOUT YOU
                 </h1>
 
                 <p className={`mt-6 sm:mt-8 text-base sm:text-lg ${T.textSub} leading-relaxed max-w-lg`}>
-                  Build a storefront that takes bookings, receives payments, sells
-                  products, and keeps your business alive even when social platforms fail you.
+                  Create a business page that takes bookings, receives payments, sells products, and runs itself even when you're offline.
                 </p>
 
                 <div className="mt-8 flex flex-col sm:flex-row gap-3">
@@ -269,7 +268,7 @@ export default function Landing() {
                     to="/signup"
                     className="bg-lime-400 text-black px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl text-sm sm:text-base font-bold hover:bg-lime-300 transition-all text-center flex items-center justify-center gap-2"
                   >
-                    Create Storefront
+                    Create Your Page
                     <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
@@ -529,7 +528,7 @@ export default function Landing() {
                 </h2>
               </div>
               <p className={`${T.textSub} text-base sm:text-lg max-w-md leading-relaxed`}>
-                Hairstylists, realtors, restaurants, shortlets, auto dealers, tutors  one storefront adapts to every business.
+                Hairstylists, realtors, restaurants, shortlets, auto dealers, tutors: one page adapts to every business.
               </p>
             </div>
 
@@ -558,10 +557,10 @@ export default function Landing() {
               {/* Info Card */}
               <div className={`${T.cardAlt} ${T.border} rounded-xl p-6 relative overflow-hidden`}>
                 <div className="absolute top-0 left-0 w-full h-0.5 bg-lime-400" />
-                <div className={`${T.textMuted} uppercase tracking-[0.2em] text-[10px] font-semibold`}>Live Storefront</div>
+                <div className={`${T.textMuted} uppercase tracking-[0.2em] text-[10px] font-semibold`}>Live Business Page</div>
                 <div className={`text-3xl sm:text-4xl font-extrabold tracking-tight mt-4 ${T.text}`}>{active.name}</div>
                 <div className={`mt-4 ${T.textSub} leading-relaxed text-sm sm:text-base`}>
-                  Accept bookings, collect payments, sell products, and run your business from one mobile-first storefront.
+                  Accept bookings, collect payments, sell products, and run your business from one mobile first page.
                 </div>
                 <div className="mt-6 space-y-3">
                   {active.items.map((item) => (
@@ -791,7 +790,7 @@ export default function Landing() {
                   <span className={T.textMuted}>YOUR RULES</span>
                 </h2>
                 <p className={`mt-6 ${T.textSub} text-base sm:text-lg leading-relaxed max-w-lg`}>
-                  Social platforms can suspend pages overnight. Your storefront,
+                  Social platforms can suspend pages overnight. Your page,
                   payments, client data, and bookings stay fully under your control.
                 </p>
               </div>
@@ -847,7 +846,7 @@ export default function Landing() {
                   Unlimited payments. No commissions.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-2">
-                  {['Unlimited Bookings', 'Card Payments', 'Bank Transfers', 'WhatsApp Reminders', 'Product Sales', 'Custom Storefront'].map((item) => (
+                  {['Unlimited Bookings', 'Card Payments', 'Bank Transfers', 'WhatsApp Reminders', 'Product Sales', 'Custom Page'].map((item) => (
                     <div key={item} className={`px-3 py-1.5 rounded-md border ${T.accentBorder} ${T.accentBg} ${T.textAccent} text-xs font-medium`}>
                       {item}
                     </div>
@@ -874,7 +873,7 @@ export default function Landing() {
                         'Card & Bank Transfer Payments',
                         'Google Calendar Sync',
                         'Listings for any business type',
-                        'Meta-proof storefront',
+                        'Meta-proof page',
                       ].map((item) => (
                         <li key={item} className={`flex items-center gap-2.5 ${T.textSub}`}>
                           <div className={`w-4 h-4 ${T.accentBg2} rounded-full flex items-center justify-center flex-shrink-0`}>
@@ -898,7 +897,7 @@ export default function Landing() {
                       to="/signup"
                       className="block w-full bg-lime-400 text-black py-3.5 font-bold rounded-xl hover:bg-lime-300 transition-all text-center text-sm"
                     >
-                      Start Your Storefront
+                      Start Your Page
                     </Link>
                     <p className={`mt-2.5 text-xs ${T.textMuted} text-center`}>Cancel anytime. No contracts.</p>
                   </div>
@@ -945,12 +944,12 @@ export default function Landing() {
             <h2 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-[-0.04em] leading-[0.95] ${T.text}`}>
               BUILD A BUSINESS
               <br />
-              <span className={T.textMuted}>THAT DOESN'T DEPEND ON</span>
+              <span className={T.textMuted}>THAT SELLS</span>
               <br />
-              SOCIAL MEDIA
+              WITHOUT YOU
             </h2>
             <p className={`mt-6 ${T.textSub} text-base sm:text-lg max-w-2xl mx-auto leading-relaxed`}>
-              Your storefront stays online. Your payments keep working. Your business keeps growing.
+              Your page stays online. Your payments keep working. Your business keeps growing even when you're away.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <Link
