@@ -35,13 +35,37 @@ function generateBusinessSchema(biz) {
   };
 }
 
-// --- Load base index.html from dist (for production) ---
+// --- Load base index.html from dist ---
 const indexHtmlPath = path.join(process.cwd(), 'dist', 'index.html');
 let baseHtml = '';
+
+// Fallback HTML (in case the file is missing)
+const FALLBACK_HTML = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BookNaija</title>
+    <link rel="icon" href="/fav.png" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>`;
+
 try {
-  baseHtml = fs.readFileSync(indexHtmlPath, 'utf-8');
+  const fileContent = fs.readFileSync(indexHtmlPath, 'utf-8');
+  if (fileContent && fileContent.trim().length > 0) {
+    baseHtml = fileContent;
+    console.log('✅ Loaded index.html from dist');
+  } else {
+    console.warn('⚠️ index.html is empty, using fallback');
+    baseHtml = FALLBACK_HTML;
+  }
 } catch (e) {
-  console.log('dist/index.html not found – will proxy to Vite dev server');
+  console.warn('⚠️ Failed to read index.html, using fallback:', e.message);
+  baseHtml = FALLBACK_HTML;
 }
 
 // --- Helper to extract slug from path ---
@@ -49,7 +73,6 @@ function getSlugFromPath(path) {
   if (!path || path === '/') return null;
   const segments = path.replace(/^\/+/, '').split('/');
   const first = segments[0];
-  // Skip reserved paths
   if (['blog', 'signup', 'dashboard', 'discover', 'affiliate-signup', 'privacy', 'terms', 'book'].includes(first)) {
     return null;
   }
@@ -64,7 +87,7 @@ export const handler = async (event) => {
 
   const domain = host.split(':')[0];
 
-  // ---- 1. Local development – proxy everything to Vite ----
+  // ---- 1. Local development – proxy to Vite ----
   const devDomains = ['localhost', '127.0.0.1'];
   if (devDomains.includes(domain)) {
     const viteBase = 'http://localhost:5173';
@@ -117,10 +140,12 @@ export const handler = async (event) => {
     }
   }
 
-  // ---- 2. Main domains (booknaija.com & netlify.app) – inject data if a valid slug is present ----
+  // ---- 2. Main domains – serve SPA with optional injection ----
   const mainDomains = ['booknaija.com', 'www.booknaija.com', 'booknaija.netlify.app'];
   if (mainDomains.includes(domain)) {
     const slug = getSlugFromPath(event.path);
+    
+    // If there's a slug, try to inject business data
     if (slug) {
       try {
         const { data: biz, error } = await supabase
@@ -137,7 +162,7 @@ export const handler = async (event) => {
           const structuredData = generateBusinessSchema(biz);
           const serializedData = JSON.stringify(biz);
 
-          let html = baseHtml;
+          let html = baseHtml || FALLBACK_HTML;
           html = html.replace(/<title>.*?<\/title>/, `<title>${title}</title>`);
           html = html.replace(
             /<meta name="description" content=".*?" \/>/,
@@ -190,6 +215,7 @@ export const handler = async (event) => {
           const dataScript = `<script>window.__BUSINESS_DATA__ = ${serializedData};</script>`;
           html = html.replace('</head>', `${dataScript}</head>`);
 
+          console.log(`✅ Injected data for slug: ${slug}`);
           return {
             statusCode: 200,
             headers: {
@@ -198,17 +224,20 @@ export const handler = async (event) => {
             },
             body: html,
           };
+        } else {
+          console.log(`⚠️ No active business found for slug: ${slug}`);
         }
       } catch (e) {
         console.warn('Main domain injection failed for slug:', slug, e.message);
       }
     }
 
-    // Fallback: serve plain index.html (no redirect)
+    // Fallback: serve plain HTML (no injection)
+    const htmlToServe = baseHtml || FALLBACK_HTML;
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'text/html' },
-      body: baseHtml,
+      body: htmlToServe,
     };
   }
 
@@ -229,7 +258,6 @@ export const handler = async (event) => {
 
   const slug = domainData.slug;
 
-  // ---- 4. Fetch business data ----
   const { data: biz, error: bizError } = await supabase
     .from('businesses')
     .select('*')
@@ -243,14 +271,13 @@ export const handler = async (event) => {
     };
   }
 
-  // ---- 5. Inject metadata and return ----
   const title = `${biz.name} | BookNaija`;
   const description = biz.tagline || `Welcome to ${biz.name}`;
   const image = biz.logo || biz.avatar || biz.hero || 'https://booknaija.com/og-image.png';
   const structuredData = generateBusinessSchema(biz);
   const serializedData = JSON.stringify(biz);
 
-  let html = baseHtml;
+  let html = baseHtml || FALLBACK_HTML;
   html = html.replace(/<title>.*?<\/title>/, `<title>${title}</title>`);
   html = html.replace(
     /<meta name="description" content=".*?" \/>/,
@@ -303,6 +330,7 @@ export const handler = async (event) => {
   const dataScript = `<script>window.__BUSINESS_DATA__ = ${serializedData};</script>`;
   html = html.replace('</head>', `${dataScript}</head>`);
 
+  console.log(`✅ Injected data for custom domain: ${domain}`);
   return {
     statusCode: 200,
     headers: {
