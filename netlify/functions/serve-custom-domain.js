@@ -38,34 +38,13 @@ function generateBusinessSchema(biz) {
 // --- Load base index.html from dist ---
 const indexHtmlPath = path.join(process.cwd(), 'dist', 'index.html');
 let baseHtml = '';
-
-// Fallback HTML (in case the file is missing)
-const FALLBACK_HTML = `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BookNaija</title>
-    <link rel="icon" href="/fav.png" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>`;
-
 try {
-  const fileContent = fs.readFileSync(indexHtmlPath, 'utf-8');
-  if (fileContent && fileContent.trim().length > 0) {
-    baseHtml = fileContent;
-    console.log('✅ Loaded index.html from dist');
-  } else {
-    console.warn('⚠️ index.html is empty, using fallback');
-    baseHtml = FALLBACK_HTML;
-  }
+  baseHtml = fs.readFileSync(indexHtmlPath, 'utf-8');
+  console.log('✅ Loaded index.html from dist');
 } catch (e) {
-  console.warn('⚠️ Failed to read index.html, using fallback:', e.message);
-  baseHtml = FALLBACK_HTML;
+  console.error('❌ Failed to read dist/index.html:', e.message);
+  // Return a minimal error page instead of a broken SPA
+  baseHtml = `<!DOCTYPE html><html><head><title>Error</title></head><body><h1>Build not found</h1><p>Please deploy the site with a valid build.</p></body></html>`;
 }
 
 // --- Helper to extract slug from path ---
@@ -162,7 +141,7 @@ export const handler = async (event) => {
           const structuredData = generateBusinessSchema(biz);
           const serializedData = JSON.stringify(biz);
 
-          let html = baseHtml || FALLBACK_HTML;
+          let html = baseHtml;
           html = html.replace(/<title>.*?<\/title>/, `<title>${title}</title>`);
           html = html.replace(
             /<meta name="description" content=".*?" \/>/,
@@ -233,11 +212,10 @@ export const handler = async (event) => {
     }
 
     // Fallback: serve plain HTML (no injection)
-    const htmlToServe = baseHtml || FALLBACK_HTML;
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'text/html' },
-      body: htmlToServe,
+      body: baseHtml,
     };
   }
 
@@ -277,7 +255,7 @@ export const handler = async (event) => {
   const structuredData = generateBusinessSchema(biz);
   const serializedData = JSON.stringify(biz);
 
-  let html = baseHtml || FALLBACK_HTML;
+  let html = baseHtml;
   html = html.replace(/<title>.*?<\/title>/, `<title>${title}</title>`);
   html = html.replace(
     /<meta name="description" content=".*?" \/>/,
