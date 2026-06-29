@@ -5,7 +5,6 @@
 [build.environment]
   NODE_VERSION = "20"
 
-# ─── FUNCTIONS PERFORMANCE ───
 [functions]
   node_bundler = "esbuild"
   included_files = [
@@ -13,7 +12,6 @@
     "!**/*.test.js",
     "!**/*.spec.js"
   ]
-
   [functions."*.js"]
     memory = 1024
     timeout = 30
@@ -59,11 +57,6 @@
   pattern = "/.netlify/functions/get-dashboard-questions"
   rate = "5 per minute"
 
-# Optional: add rate limit for domain verification
-[[rate_limit]]
-  pattern = "/.netlify/functions/verify-domain"
-  rate = "5 per minute"
-
 # ─── BLOG POSTS: Serve static HTML files directly ───
 [[redirects]]
   from = "/blog/*"
@@ -71,18 +64,11 @@
   status = 200
   force = true
 
-# ─── STATIC ASSETS: Serve directly (bypass the function for performance) ───
-[[redirects]]
-  from = "/*.{js,css,png,jpg,jpeg,svg,gif,ico,webp,woff,woff2,ttf,otf,eot,json,map}"
-  to = "/:splat.:ext"
-  status = 200
-
-# ─── CUSTOM DOMAIN & SPA FALLBACK: Route all other requests to the serverless function ───
+# ─── SPA FALLBACK: Only for non-blog routes ───
 [[redirects]]
   from = "/*"
-  to = "/.netlify/functions/serve-custom-domain"
+  to = "/index.html"
   status = 200
-  force = true
 
 # ─── SECURITY HEADERS ───
 [[headers]]

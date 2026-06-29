@@ -161,30 +161,13 @@ function isLight(hex) {
 }
 
 export default function BioPage() {
-  const urlSlug = useParams().slug;
+  const slug = useParams().slug;
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const ref = params.get('reference') || params.get('trxref');
   const codeParam = params.get('code') || '';
 
-  // ─── Handle pre‑injected data from server (custom domain) ───
-  const [initialData, setInitialData] = useState(null);
-  const [effectiveSlug, setEffectiveSlug] = useState(urlSlug);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.__BUSINESS_DATA__) {
-      const data = window.__BUSINESS_DATA__;
-      setInitialData(data);
-      // If we have data, use its slug (useful for custom domains where URL path is root)
-      if (data.slug) {
-        setEffectiveSlug(data.slug);
-      }
-      // Clear to free memory
-      delete window.__BUSINESS_DATA__;
-    }
-  }, []);
-
-  // ─── Use the hook with optional initialData ───
+  // ─── Use the hook with the URL slug ───
   const { 
     business: biz, 
     loading, 
@@ -192,7 +175,7 @@ export default function BioPage() {
     seoDescription, 
     seoImage, 
     structuredData 
-  } = useBusinessWithSEO(effectiveSlug, { initialData });
+  } = useBusinessWithSEO(slug);
 
   const [searchQuery, setSearchQuery] = useState(codeParam);
   const [isSearchActive, setIsSearchActive] = useState(!!codeParam);
@@ -215,16 +198,16 @@ export default function BioPage() {
   }, [loading, biz]);
 
   if (ref) {
-    return <Navigate to={`/book/${effectiveSlug}?reference=${ref}`} replace />;
+    return <Navigate to={`/book/${slug}?reference=${ref}`} replace />;
   }
 
   function getCart() {
-    try { return JSON.parse(sessionStorage.getItem(`cart_${effectiveSlug}`)) || {}; }
+    try { return JSON.parse(sessionStorage.getItem(`cart_${slug}`)) || {}; }
     catch { return {}; }
   }
 
   function saveCart(cart) {
-    sessionStorage.setItem(`cart_${effectiveSlug}`, JSON.stringify(cart));
+    sessionStorage.setItem(`cart_${slug}`, JSON.stringify(cart));
     setActiveService(cart.service || '');
     setActiveProducts(cart.products || []);
     setActiveFood(cart.food || []);
@@ -340,7 +323,7 @@ export default function BioPage() {
     }
     saveCart(cart);
     const hasItems = cart.service || cart.products?.length || cart.food?.length || cart.car;
-    if (hasItems) navigate(`/book/${effectiveSlug}`);
+    if (hasItems) navigate(`/book/${slug}`);
   }
 
   function handleProductSelect(id, size, color) {
@@ -360,7 +343,7 @@ export default function BioPage() {
     }
     saveCart(cart);
     const hasItems = cart.products.length > 0;
-    if (hasItems) navigate(`/book/${effectiveSlug}`);
+    if (hasItems) navigate(`/book/${slug}`);
   }
 
   function handleFoodSelect(id, variant) {
@@ -377,7 +360,7 @@ export default function BioPage() {
     }
     saveCart(cart);
     const hasItems = cart.food.length > 0;
-    if (hasItems) navigate(`/book/${effectiveSlug}`);
+    if (hasItems) navigate(`/book/${slug}`);
   }
 
   function handleCarSelect(car) {
@@ -389,7 +372,7 @@ export default function BioPage() {
     }
     saveCart(cart);
     const hasItems = cart.car;
-    if (hasItems) navigate(`/book/${effectiveSlug}`);
+    if (hasItems) navigate(`/book/${slug}`);
   }
 
   function handlePropertySelect(id) {
@@ -398,7 +381,7 @@ export default function BioPage() {
     cart.food = []; cart.foodVariants = {}; cart.car = null;
     cart.property = id;
     saveCart(cart);
-    navigate(`/book/${effectiveSlug}`);
+    navigate(`/book/${slug}`);
   }
   
   const faqs = [

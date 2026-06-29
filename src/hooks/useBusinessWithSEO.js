@@ -2,9 +2,8 @@ import { useMemo } from 'react';
 import { useBusiness } from './useBusiness';
 import { generateBusinessSchema, generateBreadcrumbSchema } from './useSEO';
 
-export function useBusinessWithSEO(slug, options = {}) {
-  // Pass options (including initialData) to useBusiness
-  const { data: biz, isLoading: loading, error } = useBusiness(slug, options);
+export function useBusinessWithSEO(slug) {
+  const { data: biz, isLoading: loading, error } = useBusiness(slug);
 
   // Generate SEO-optimized description
   const seoDescription = useMemo(() => {

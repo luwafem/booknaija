@@ -5,7 +5,7 @@ import { PLATFORM_PAYSTACK_KEY } from '../data/config';
 
 // ─── FETCH FUNCTION ───
 async function fetchBusiness(slug) {
-  // 1. Fetch business data
+  // Fetch business data (no domains)
   const { data, error } = await supabase
     .from('businesses')
     .select(
@@ -25,22 +25,10 @@ async function fetchBusiness(slug) {
 
   if (error) throw error;
 
-  // 2. Fetch verified domains for this slug
-  const { data: domains, error: domainsError } = await supabase
-    .from('domains')
-    .select('domain, verified')
-    .eq('slug', slug)
-    .eq('verified', true);
-
-  if (domainsError) {
-    // Log but don't fail; we can still return business without domains
-    console.warn('Failed to fetch domains:', domainsError);
-  }
-
-  return transformBusiness(data, domains || []);
+  return transformBusiness(data);
 }
 
-// ─── HOOK (accepts options.initialData) ───
+// ─── HOOK (accepts options.initialData for optional pre‑fetch) ───
 export function useBusiness(slug, options = {}) {
   const { initialData } = options;
 
@@ -55,7 +43,7 @@ export function useBusiness(slug, options = {}) {
 }
 
 // ─── TRANSFORM FUNCTIONS ───
-function transformBusiness(row, domains = []) {
+function transformBusiness(row) {
   return {
     name: row.name,
     slug: row.slug,
@@ -112,9 +100,6 @@ function transformBusiness(row, domains = []) {
     team: (row.team && typeof row.team === 'string') 
       ? JSON.parse(row.team) 
       : (Array.isArray(row.team) ? row.team : []),
-
-    // ─── CUSTOM DOMAINS ───
-    domains: domains.map(d => ({ domain: d.domain, verified: d.verified })),
 
     services: sortByOrder(row.business_services || []).map(function (s) {
       return {
