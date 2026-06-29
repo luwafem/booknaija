@@ -2009,7 +2009,12 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className={lbl}>Item Name</label>
-                    <input className={inp} placeholder="e.g. Jollof Rice" value={item.name || ''} onChange={function(e) { setNested('food', item.id, { name: e.target.value); }} />
+                    <input
+  className={inp}
+  placeholder="e.g. Jollof Rice"
+  value={item.name || ''}
+  onChange={function(e) { setNested('food', item.id, { name: e.target.value }); }}
+/>
                   </div>
                   <div>
                     <label className={lbl}>Price (₦)</label>
