@@ -6,7 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// ─── HELPER: Compute total from items ───
+// ─── HELPER: Compute total from items (only for existing businesses) ───
 async function computeTotal(slug, items) {
   // Get business ID from slug
   const { data: biz, error: bizErr } = await supabase
@@ -62,30 +62,21 @@ async function computeTotal(slug, items) {
 
       if (error) throw new Error(`Food item ${f.id} not found`);
 
-      // Base price
       let itemTotal = food.price * (f.quantity || 1);
-
-      // Add addons – we need to look up each addon price from the DB
       const dbAddons = food.addons || [];
       const clientAddons = f.addons || {};
 
-      // clientAddons is an object: { groupId: { name, price } or [{ name, price }] }
       for (const groupId in clientAddons) {
         const selected = clientAddons[groupId];
         const group = dbAddons.find(g => g.id === groupId);
-        if (!group) continue; // ignore unknown group
+        if (!group) continue;
 
-        // Determine if it's single or multiple
         const selectedOptions = Array.isArray(selected) ? selected : [selected];
         for (const opt of selectedOptions) {
-          // Find matching option in DB by name (or id if we had it)
           const dbOpt = group.options.find(o => o.name === opt.name);
           if (dbOpt) {
-            itemTotal += dbOpt.price * (f.quantity || 1); // multiply by quantity if addons are per item
-            // Note: depending on business logic, addon price might be per item or per order.
-            // We'll assume addon price is per unit of the food item.
+            itemTotal += dbOpt.price * (f.quantity || 1);
           }
-          // If not found, we might want to reject, but we'll trust client for now
         }
       }
 
@@ -105,7 +96,6 @@ async function computeTotal(slug, items) {
     if (error) throw new Error(`Car ${items.car.id} not found`);
 
     if (items.car.type === 'rent') {
-      // Calculate days
       const start = new Date(items.car.startDate);
       const end = new Date(items.car.endDate);
       const diffTime = Math.abs(end - start);
@@ -113,10 +103,6 @@ async function computeTotal(slug, items) {
       if (diffDays < 1) diffDays = 1;
       total += car.price * diffDays;
     } else {
-      // For sale/viewing – use a fixed viewing fee (5000) or car price? We'll use client's base price but we can validate.
-      // Since we don't have a separate viewing fee in DB, we'll trust the client for the amount.
-      // However, we can check that the price matches the car's price (if they are buying)
-      // For simplicity, we'll add the car.price (assuming it's the asking price)
       total += car.price;
     }
   }
@@ -137,7 +123,7 @@ exports.handler = async (event) => {
     const parsedBody = JSON.parse(event.body);
     const {
       slug,
-      items,          // New: structured cart items
+      items,          // structured cart items
       amount: clientAmount,
       name, email, phone,
       date, time, address,
@@ -145,6 +131,7 @@ exports.handler = async (event) => {
       type,
       subaccountCode,
       referredBy,
+      callback_url,   // optional custom callback
     } = parsedBody;
 
     const secretKey = process.env.PAYSTACK_SECRET_KEY;
@@ -157,28 +144,47 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Email is required.' }) };
     }
 
-    // ─── SERVER-SIDE PRICE COMPUTATION ───
-    let serverTotal = 0;
-    try {
-      serverTotal = await computeTotal(slug, items || {});
-    } catch (err) {
-      console.error('Price computation error:', err.message);
-      return { statusCode: 400, body: JSON.stringify({ error: 'Invalid items in cart' }) };
-    }
+    // ─── DETECT SIGNUP: no items or empty items ───
+    const isSignup = !items || Object.keys(items).length === 0;
 
-    const clientTotalKobo = Math.round(parseFloat(clientAmount || 0) * 100);
-    const serverTotalKobo = Math.round(serverTotal * 100);
+    let finalAmountKobo = 0;
 
-    // Allow 1 kobo rounding difference
-    if (Math.abs(clientTotalKobo - serverTotalKobo) > 1) {
-      console.warn(`Price mismatch: client ${clientTotalKobo}, server ${serverTotalKobo}`);
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          error: 'Price validation failed. Please refresh and try again.',
-          server_total: serverTotal,
-        }),
-      };
+    if (isSignup) {
+      // Signup flow – amount must be ₦2,500 (250,000 kobo)
+      const expectedAmount = 2500;
+      const clientAmountNumber = parseFloat(clientAmount || 0);
+      if (Math.abs(clientAmountNumber - expectedAmount) > 0.01) {
+        console.warn(`Signup amount mismatch: client ${clientAmountNumber}, expected ${expectedAmount}`);
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: 'Invalid amount for signup. Please refresh and try again.' }),
+        };
+      }
+      finalAmountKobo = expectedAmount * 100;
+    } else {
+      // ─── BOOKING / PRODUCT FLOW – server-side price computation ───
+      let serverTotal = 0;
+      try {
+        serverTotal = await computeTotal(slug, items);
+      } catch (err) {
+        console.error('Price computation error:', err.message);
+        return { statusCode: 400, body: JSON.stringify({ error: 'Invalid items in cart' }) };
+      }
+
+      const clientTotalKobo = Math.round(parseFloat(clientAmount || 0) * 100);
+      const serverTotalKobo = Math.round(serverTotal * 100);
+
+      if (Math.abs(clientTotalKobo - serverTotalKobo) > 1) {
+        console.warn(`Price mismatch: client ${clientTotalKobo}, server ${serverTotalKobo}`);
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            error: 'Price validation failed. Please refresh and try again.',
+            server_total: serverTotal,
+          }),
+        };
+      }
+      finalAmountKobo = serverTotalKobo;
     }
 
     // ─── AFFILIATE SPLIT LOGIC ───
@@ -201,30 +207,39 @@ exports.handler = async (event) => {
       }
     }
 
-    // ─── HARDCODE CALLBACK URL ───
+    // ─── BUILD CALLBACK URL ───
     const baseUrl = process.env.SITE_URL || process.env.URL || 'https://booknaija.netlify.app';
     const cleanBaseUrl = baseUrl.replace(/\/$/, '');
-    const callbackUrl = `${cleanBaseUrl}/book/${slug}`;
+    let callbackUrl;
+    if (callback_url) {
+      callbackUrl = callback_url;
+    } else if (isSignup) {
+      // Signup uses the onboarding page
+      callbackUrl = `${cleanBaseUrl}/onboarding?slug=${slug}`;
+    } else {
+      callbackUrl = `${cleanBaseUrl}/book/${slug}`;
+    }
 
-    // Build payload with server-computed total
+    // ─── PAYLOAD ───
     const payload = {
       email,
-      amount: serverTotalKobo, // Use server‑computed total
+      amount: finalAmountKobo,
       currency: 'NGN',
       callback_url: callbackUrl,
       metadata: {
         slug,
         serviceId: items?.service?.id || null,
-        serviceName: type || 'booking',
+        serviceName: type || (isSignup ? 'signup' : 'booking'),
         date,
         time,
         customerName: name,
         customerPhone: phone,
         calendarId,
-        type: type || 'service',
+        type: type || (isSignup ? 'signup' : 'service'),
         address: address || 'N/A',
         subaccountCode: finalSubaccountCode || null,
         referredBy: referredBy || null,
+        isSignup: isSignup, // flag for webhook (optional)
       },
     };
 

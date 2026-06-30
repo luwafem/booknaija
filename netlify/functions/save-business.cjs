@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const bcrypt = require('bcryptjs'); // <-- ADD THIS
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -100,8 +101,13 @@ exports.handler = async function (event) {
       : (d.estates_enabled !== undefined ? d.estates_enabled === true : derivedFeatures.estates_enabled);
 
     console.log('Feature flags resolved:', { businessType, servicesEnabled, productsEnabled, carsEnabled, foodEnabled, propertiesEnabled, estatesEnabled });
-    // ────────────────────────────
 
+    // ─── HASH SECURITY FIELDS ───
+    const securityCodeHash = d.securityCode ? bcrypt.hashSync(d.securityCode, 10) : null;
+    const securityAnswer1Hash = d.securityAnswer1 ? bcrypt.hashSync(d.securityAnswer1.toLowerCase().trim(), 10) : null;
+    const securityAnswer2Hash = d.securityAnswer2 ? bcrypt.hashSync(d.securityAnswer2.toLowerCase().trim(), 10) : null;
+
+    // ─── BUILD PAYLOAD ───
     var bizPayload = {
       slug: d.slug,
       name: d.name,
@@ -146,12 +152,18 @@ exports.handler = async function (event) {
 
       socials: d.socials || {},
       gallery: d.gallery || [],
+
+      // ─── SECURITY FIELDS (plaintext kept for backward compatibility) ───
       security_code: d.securityCode || '',
+      security_code_hash: securityCodeHash,
       security_question_1: d.securityQuestion1 || '',
       security_answer_1: (d.securityAnswer1 || '').toLowerCase().trim(),
+      security_answer_1_hash: securityAnswer1Hash,
       security_question_2: d.securityQuestion2 || '',
       security_answer_2: (d.securityAnswer2 || '').toLowerCase().trim(),
-      
+      security_answer_2_hash: securityAnswer2Hash,
+      // ─── END SECURITY ───
+
       referred_by_affiliate: (d.referredBy && d.referredBy.startsWith('aff_')) ? d.referredBy : null,
       affiliate_bounty_paid: !!(d.referredBy && d.referredBy.startsWith('aff_'))
     };

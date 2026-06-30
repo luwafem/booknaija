@@ -3,7 +3,8 @@ import { useBusiness } from './useBusiness';
 import { generateBusinessSchema, generateBreadcrumbSchema } from './useSEO';
 
 export function useBusinessWithSEO(slug) {
-  const { data: biz, isLoading: loading, error } = useBusiness(slug);
+  // ✅ Destructure `business`, not `data`
+  const { business: biz, loading, error } = useBusiness(slug);
 
   // Generate SEO-optimized description
   const seoDescription = useMemo(() => {

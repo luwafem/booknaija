@@ -20,7 +20,7 @@ export default function DashboardLogin() {
 
   // Reset modal states
   const [showResetModal, setShowResetModal] = useState(false);
-  const [resetStep, setResetStep] = useState(1); // 1 = email, 2 = OTP, 3 = new details
+  const [resetStep, setResetStep] = useState(1);
   const [resetEmail, setResetEmail] = useState('');
   const [resetOtp, setResetOtp] = useState('');
   const [resetNewCode, setResetNewCode] = useState('');
@@ -117,6 +117,9 @@ export default function DashboardLogin() {
         throw new Error(data.error || 'Login failed.');
       }
 
+      // ✅ Set sessionStorage flag so the dashboard knows we're authenticated
+      sessionStorage.setItem('biz_auth_' + data.slug, 'true');
+
       navigate(`/dashboard/${data.slug}`);
     } catch (err) {
       setError(err.message || 'Invalid credentials.');
@@ -193,7 +196,6 @@ export default function DashboardLogin() {
       setResetSuccess(true);
       setTimeout(() => {
         setShowResetModal(false);
-        // Optionally reset the login form to step 1
         setStep(1);
         setSlug('');
         setCode('');
