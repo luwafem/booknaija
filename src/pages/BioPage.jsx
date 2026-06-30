@@ -657,7 +657,7 @@ export default function BioPage() {
                 <footer className="mt-16 lg:mt-24 pt-10" style={{ borderTop: `1px solid ${accent + '15'}` }}>
                   <div className="flex flex-col items-center text-center">
                     
-                    <ReferralLink slug={biz.slug} accent={accent} />
+                    
 
                     <nav className="flex items-center gap-2 mb-8" aria-label="Legal links">
                       <a href="/privacy" className="px-4 py-1.5 text-[10px] font-semibold tracking-[0.15em] uppercase transition-all duration-300 rounded-full" style={{ color: accent, backgroundColor: accent + '08' }}>
