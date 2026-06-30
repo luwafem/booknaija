@@ -1,5 +1,5 @@
 import { useParams, useSearchParams } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useBusinessWithSEO } from '../hooks/useBusinessWithSEO';
 import SEO from '../hooks/useSEO';
 import BookingForm from '../components/BookingForm';
@@ -20,6 +20,9 @@ export default function BookingPage() {
   
   // Prevent syncing empty state back to sessionStorage before cart is loaded
   const [isCartLoaded, setIsCartLoaded] = useState(false);
+
+  // Ref to track the previous cart string to avoid unnecessary writes
+  const prevCartRef = useRef('');
 
   // ── Load Cart from Session Storage on Mount ──
   useEffect(() => {
@@ -89,7 +92,7 @@ export default function BookingPage() {
   // ── Sync React State back to Session Storage when user modifies cart ──
   useEffect(() => {
     if (!isCartLoaded || !biz || reference) return; // Don't overwrite if still loading or verifying payment
-    
+
     const cart = {
       service: selectedId,
       products: selectedProducts,
@@ -98,8 +101,15 @@ export default function BookingPage() {
       foodVariants: selectedFoodVariants,
       car: selectedCar?.id || null
     };
-    sessionStorage.setItem(`cart_${slug}`, JSON.stringify(cart));
-    
+
+    const cartString = JSON.stringify(cart);
+
+    // Only write to sessionStorage if the cart has actually changed
+    if (cartString !== prevCartRef.current) {
+      sessionStorage.setItem(`cart_${slug}`, cartString);
+      prevCartRef.current = cartString;
+    }
+
   }, [isCartLoaded, selectedId, selectedProducts, selectedProductVariants, selectedFood, selectedFoodVariants, selectedCar, slug, biz, reference]);
 
   const theme = biz?.theme || 'light';

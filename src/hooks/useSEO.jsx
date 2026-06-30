@@ -1,3 +1,4 @@
+// src/hooks/useSEO.jsx
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -19,7 +20,7 @@ export default function SEO({
   const fullUrl = `${SITE_URL}${routeLocation.pathname}`;
   const fullTitle = title ? `${title} | BookNaija` : 'BookNaija - Your Business, One Simple Link';
   
-  // DYNAMIC META DESCRIPTION WITH "NEAR ME"
+  // DYNAMIC META DESCRIPTION WITH "NEAR ME" – safe location handling
   const fullDescription = description || 
     (location 
       ? `Book ${title} near me in ${location}. Secure Paystack payments, instant booking. Stop the DM to book cycle with BookNaija.`
@@ -89,110 +90,111 @@ export function generateBusinessSchema(biz) {
   const firstImage = biz.logo || biz.avatar || biz.hero || 
     (biz.gallery?.[0]?.images?.[0]) || biz.gallery?.[0];
 
-  // Grab the permanent location for Stealth SEO
-  const location = biz.location;
+  const location = biz.location || '';
+  const hasLocation = !!location;
+
+  // Build description parts safely
+  const descriptionParts = [`Book ${biz.name} online.`];
+  if (biz.bio) descriptionParts.push(biz.bio);
+  else if (biz.tagline) descriptionParts.push(biz.tagline);
+  if (hasLocation) descriptionParts.push(`Located in ${location}.`);
+  descriptionParts.push('Browse services, buy products, and pay securely via Paystack.');
+  const description = descriptionParts.join(' ');
+
+  // Helper: append location to string only if location exists
+  const withLocation = (str) => hasLocation ? `${str} in ${location}` : str;
 
   return {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     name: biz.name,
-    
-    // DYNAMIC DESCRIPTION: Prioritize bio over tagline for richer keywords
-    description: `Book ${biz.name} online. ${biz.bio || biz.tagline || ''} Located in ${location}. Browse services, buy products, and pay securely via Paystack.`,
-    
+    description,
     url: `${SITE_URL}/${biz.slug}`,
     logo: biz.logo || undefined,
     image: firstImage || undefined,
     telephone: biz.phone || undefined,
-    
-    address: location ? {
+    address: hasLocation ? {
       '@type': 'PostalAddress',
       addressLocality: location,
       addressCountry: 'NG',
     } : undefined,
-    
     openingHours: biz.hours || undefined,
-    
     sameAs: [
       biz.socials?.instagram,
       biz.socials?.tiktok,
     ].filter(Boolean),
-    
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
       name: `${biz.name} Services & Products`,
       itemListElement: [
-        
-        // --- SERVICES (Stealth SEO injected here) ---
+        // --- SERVICES ---
         ...(biz.services || []).slice(0, 10).map((s, i) => ({
           '@type': 'Offer',
           itemOffered: {
             '@type': 'Service',
-            name: location ? `${s.name} in ${location}` : s.name,
+            name: withLocation(s.name),
             description: s.description 
-              ? `${s.description} Located in ${location}.` 
-              : `Book ${s.name} in ${location} securely on BookNaija.`,
+              ? (hasLocation ? `${s.description} Located in ${location}.` : s.description)
+              : `Book ${withLocation(s.name)} securely on BookNaija.`,
           },
           price: s.discount_enabled ? s.discount_price : s.price,
           priceCurrency: 'NGN',
           position: i + 1,
         })),
-        
-        // --- PRODUCTS (Stealth SEO injected here) ---
+        // --- PRODUCTS ---
         ...(biz.products || []).slice(0, 10).map((p, i) => ({
           '@type': 'Offer',
           itemOffered: {
             '@type': 'Product',
-            name: location ? `${p.name} in ${location}` : p.name,
+            name: withLocation(p.name),
             description: p.description 
-              ? `${p.description} Available in ${location}.` 
-              : `Buy ${p.name} in ${location} on BookNaija.`,
+              ? (hasLocation ? `${p.description} Available in ${location}.` : p.description)
+              : `Buy ${withLocation(p.name)} on BookNaija.`,
             image: p.image || p.images?.[0] || undefined,
           },
           price: p.discount_enabled ? p.discount_price : p.price,
           priceCurrency: 'NGN',
           position: (biz.services?.length || 0) + i + 1,
         })),
-        
-        // --- FOOD (Stealth SEO injected here) ---
+        // --- FOOD ---
         ...(biz.food || []).slice(0, 10).map((f, i) => ({
           '@type': 'Offer',
           itemOffered: {
             '@type': 'Product',
-            name: location ? `${f.name} in ${location}` : f.name,
-            description: `Order ${f.name} in ${location} for delivery or pickup.`,
+            name: withLocation(f.name),
+            description: hasLocation 
+              ? `Order ${f.name} in ${location} for delivery or pickup.`
+              : `Order ${f.name} for delivery or pickup.`,
             image: f.image || undefined,
           },
           price: f.price,
           priceCurrency: 'NGN',
           position: (biz.services?.length || 0) + (biz.products?.length || 0) + i + 1,
         })),
-
-        // --- CARS (Stealth SEO injected here) ---
+        // --- CARS ---
         ...(biz.cars || []).slice(0, 10).map((c, i) => ({
           '@type': 'Offer',
           itemOffered: {
             '@type': 'Product',
-            name: location ? `${c.name} in ${location}` : c.name,
+            name: withLocation(c.name),
             description: c.description 
-              ? `${c.description} Available in ${location}.` 
-              : `${c.type === 'rent' ? 'Rent' : 'Buy'} ${c.name} in ${location} on BookNaija.`,
+              ? (hasLocation ? `${c.description} Available in ${location}.` : c.description)
+              : `${c.type === 'rent' ? 'Rent' : 'Buy'} ${withLocation(c.name)} on BookNaija.`,
             image: c.image || c.images?.[0] || undefined,
           },
           price: c.price,
           priceCurrency: 'NGN',
           position: (biz.services?.length || 0) + (biz.products?.length || 0) + (biz.food?.length || 0) + i + 1,
         })),
-        
-        // --- PROPERTIES (Stealth SEO injected here) ---
+        // --- PROPERTIES ---
         ...(biz.properties || []).slice(0, 10).map((p, i) => ({
           '@type': 'Offer',
           itemOffered: {
-            '@type': p.type === 'shortlet' ? 'LodgingBusiness' : 'Product', // Better schema typing for shortlets vs real estate
-            name: location ? `${p.name} in ${location}` : p.name,
+            '@type': p.type === 'shortlet' ? 'LodgingBusiness' : 'Product',
+            name: withLocation(p.name),
             description: p.description 
-              ? `${p.description} Available in ${location}.` 
-              : `${p.type === 'sale' ? 'Buy' : (p.type === 'rent' ? 'Rent' : 'Book shortlet for')} ${p.name} in ${location} on BookNaija.`,
+              ? (hasLocation ? `${p.description} Available in ${location}.` : p.description)
+              : `${p.type === 'sale' ? 'Buy' : (p.type === 'rent' ? 'Rent' : 'Book shortlet for')} ${withLocation(p.name)} on BookNaija.`,
             image: p.images?.[0] || undefined,
           },
           price: p.price,
@@ -201,7 +203,6 @@ export function generateBusinessSchema(biz) {
         })),
       ],
     },
-    
     priceRange: getPriceRange(biz),
   };
 }

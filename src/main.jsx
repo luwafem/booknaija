@@ -4,35 +4,29 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ErrorBoundary } from '@sentry/react';
 import App from './App';
 import './index.css';
+import { initSentry } from './lib/sentry';
 
-// ─── Configure React Query with stale-while-revalidate ───
+// ─── Initialize Sentry for error tracking ───
+initSentry();
+
+// ─── Configure React Query ───
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Data is considered fresh for 1 minute – after that, it's "stale"
-      staleTime: 60 * 1000, // 1 minute
-      
-      // Keep unused data in cache for 10 minutes (then it's garbage collected)
-      cacheTime: 10 * 60 * 1000, // 10 minutes
-      
-      // Refetch in background when the user returns to the tab
+      staleTime: 60 * 1000,
+      gcTime: 10 * 60 * 1000,
       refetchOnWindowFocus: true,
-      
-      // Refetch on mount if the data is stale
       refetchOnMount: true,
-      
-      // Retry failed queries once
       retry: 1,
-      
-      // Keep previous data when fetching new data (useful for pagination, but global)
       keepPreviousData: true,
     },
   },
 });
 
-// ─── Register Service Worker (only in production) ───
+// ─── Register Service Worker ───
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
@@ -46,14 +40,34 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   });
 }
 
+// ─── Render with Sentry Error Boundary ───
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <HelmetProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </HelmetProvider>
-    </QueryClientProvider>
+    <ErrorBoundary
+      fallback={({ error }) => (
+        <div className="min-h-screen flex items-center justify-center bg-black text-white p-6">
+          <div className="text-center max-w-md">
+            <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
+            <p className="text-zinc-400 text-sm mb-6">
+              We've been notified and are looking into it. Please refresh the page or try again later.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-white text-black px-6 py-3 rounded-lg font-semibold hover:bg-zinc-200 transition-colors"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      )}
+    >
+      <QueryClientProvider client={queryClient}>
+        <HelmetProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </HelmetProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   </StrictMode>
 );

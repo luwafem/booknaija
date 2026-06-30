@@ -3,10 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { PLATFORM_PAYSTACK_KEY } from '../data/config';
 
-async function fetchBusiness(slug) {
-  console.log('📡 Fetching business for slug:', slug);
+async function fetchBusiness(slug, includeInactive = false) {
+  console.log('📡 Fetching business for slug:', slug, 'includeInactive:', includeInactive);
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('businesses')
     .select(
       `
@@ -19,9 +19,14 @@ async function fetchBusiness(slug) {
       business_estates (*)
       `
     )
-    .eq('slug', slug)
-    // ❌ REMOVED .eq('active', true) – was filtering out valid businesses
-    .single();
+    .eq('slug', slug);
+
+  // Only filter active businesses for public views
+  if (!includeInactive) {
+    query = query.eq('active', true);
+  }
+
+  const { data, error } = await query.single();
 
   if (error) {
     console.error('❌ Supabase error:', error.message);
@@ -37,18 +42,17 @@ async function fetchBusiness(slug) {
 }
 
 export function useBusiness(slug, options = {}) {
-  const { initialData } = options;
+  const { initialData, includeInactive = false } = options;
 
   const query = useQuery({
-    queryKey: ['business', slug],
-    queryFn: () => fetchBusiness(slug),
+    queryKey: ['business', slug, includeInactive],
+    queryFn: () => fetchBusiness(slug, includeInactive),
     enabled: !!slug && !initialData,
     initialData: initialData,
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
 
-  // ✅ Return the expected shape { business, loading, error }
   return {
     business: query.data,
     loading: query.isLoading,
@@ -56,7 +60,7 @@ export function useBusiness(slug, options = {}) {
   };
 }
 
-// ─── TRANSFORM (unchanged) ───
+// ─── TRANSFORM (unchanged, but note `SecurityCode` may be better as `securityCode`) ───
 function transformBusiness(row) {
   return {
     name: row.name,
@@ -93,7 +97,7 @@ function transformBusiness(row) {
     businessType: row.business_type || '',
     socials: row.socials || {},
     gallery: row.gallery || [],
-    SecurityCode: row.security_code || '',
+    securityCode: row.security_code || '',
     securityQuestion1: row.security_question_1 || '',
     securityAnswer1: row.security_answer_1 || '',
     securityQuestion2: row.security_question_2 || '',
