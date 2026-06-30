@@ -6,9 +6,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// ─────────────────────────────────────────────────────────────
-// ALL 10 BLOG POSTS (copied from your BlogArticle.js)
-// ─────────────────────────────────────────────────────────────
+// --------------------------------------------------------------
+// ALL 10 BLOG POSTS (must match BlogArticle.js)
+// --------------------------------------------------------------
 const blogData = [
   {
     slug: 'how-to-maintain-knotless-braids-in-lagos',
@@ -170,9 +170,9 @@ The Psychology of Upfront Payment: When a client pays upfront via a secure platf
   }
 ];
 
-// ─────────────────────────────────────────────────────────────
+// --------------------------------------------------------------
 // HELPER FUNCTIONS
-// ─────────────────────────────────────────────────────────────
+// --------------------------------------------------------------
 
 function escapeHtml(text) {
   const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
@@ -250,80 +250,82 @@ function generateArticleHTML(article, baseHtml) {
     </main>
   `;
 
-  // Replace meta tags and inject content
+  // Use regex for robust tag replacement
   let html = baseHtml
-    // Title & Meta Tags
-    .replace('<title>BookNaija - Your Business, One Simple Link</title>', `<title>${escapeHtml(article.title)} | BookNaija Blog</title>`)
-    .replace('<meta name="title" content="BookNaija - Book Services, Buy Products, Pay Upfront" />', `<meta name="title" content="${escapeHtml(article.title)} | BookNaija Blog" />`)
-    .replace('<meta name="description" content="Stop the DM to book cycle. Turn your bio into a professional storefront where clients book services, buy products, and pay upfront via Paystack." />', `<meta name="description" content="${escapeHtml(description)}" />`)
-    
-    // Open Graph
-    .replace('<meta property="og:title" content="BookNaija - Your Business, One Simple Link" />', `<meta property="og:title" content="${escapeHtml(article.title)} | BookNaija Blog" />`)
-    .replace('<meta property="og:description" content="Stop the DM to book cycle. Turn your bio into a professional storefront." />', `<meta property="og:description" content="${escapeHtml(description)}" />`)
-    .replace('<meta property="og:url" content="/" />', `<meta property="og:url" content="${articleUrl}" />`)
-    
-    // Twitter
-    .replace('<meta name="twitter:title" content="BookNaija - Your Business, One Simple Link" />', `<meta name="twitter:title" content="${escapeHtml(article.title)} | BookNaija Blog" />`)
-    .replace('<meta name="twitter:description" content="Stop the DM to book cycle. Turn your bio into a professional storefront." />', `<meta name="twitter:description" content="${escapeHtml(description)}" />`)
-    
-    // Canonical URL (CRITICAL for SEO)
-    .replace('<!-- Canonical is handled dynamically by React Helmet inside the app -->', 
-      `<link rel="canonical" href="${articleUrl}" />`)
-    
-    // Inject JSON-LD structured data (right before closing </head>)
-    .replace('</head>', 
-      `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>\n  </head>`)
-    
-    // Inject article content into #root (AdSense sees this immediately)
+    // Replace <title> content
+    .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(article.title)} | BookNaija</title>`)
+    // Replace meta name="title"
+    .replace(/<meta\s+name="title"\s+content="[^"]*"\s*\/>/, `<meta name="title" content="${escapeHtml(article.title)} | BookNaija" />`)
+    // Replace meta name="description"
+    .replace(/<meta\s+name="description"\s+content="[^"]*"\s*\/>/, `<meta name="description" content="${escapeHtml(description)}" />`)
+    // Replace og:title
+    .replace(/<meta\s+property="og:title"\s+content="[^"]*"\s*\/>/, `<meta property="og:title" content="${escapeHtml(article.title)} | BookNaija" />`)
+    // Replace og:description
+    .replace(/<meta\s+property="og:description"\s+content="[^"]*"\s*\/>/, `<meta property="og:description" content="${escapeHtml(description)}" />`)
+    // Replace og:url
+    .replace(/<meta\s+property="og:url"\s+content="[^"]*"\s*\/>/, `<meta property="og:url" content="${articleUrl}" />`)
+    // Replace twitter:title
+    .replace(/<meta\s+name="twitter:title"\s+content="[^"]*"\s*\/>/, `<meta name="twitter:title" content="${escapeHtml(article.title)} | BookNaija" />`)
+    // Replace twitter:description
+    .replace(/<meta\s+name="twitter:description"\s+content="[^"]*"\s*\/>/, `<meta name="twitter:description" content="${escapeHtml(description)}" />`)
+    // Inject canonical (if placeholder exists, replace; otherwise add before </head>)
+    .replace(/<!-- Canonical is handled dynamically by React Helmet inside the app -->/, `<link rel="canonical" href="${articleUrl}" />`)
+    // Inject JSON-LD (replace </head> with script + </head>)
+    .replace('</head>', `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>\n  </head>`)
+    // Inject article content into #root
     .replace('<div id="root"></div>', `<div id="root">${articleBody}</div>`);
 
   return html;
 }
 
-// ─────────────────────────────────────────────────────────────
+// --------------------------------------------------------------
 // MAIN EXECUTION
-// ─────────────────────────────────────────────────────────────
-
+// --------------------------------------------------------------
 async function prerenderBlog() {
-  console.log('🔨 Starting blog prerendering for AdSense...');
-  
-  // Read base index.html (generated by Vite build)
+  console.log('Starting blog prerendering...');
+
   const distPath = join(__dirname, '../dist');
   const indexPath = join(distPath, 'index.html');
-  
+
   if (!existsSync(indexPath)) {
-    console.error('❌ dist/index.html not found. Run "npm run build" first.');
+    console.error('dist/index.html not found. Run "npm run build" first.');
     process.exit(1);
   }
-  
+
   const baseHtml = readFileSync(indexPath, 'utf-8');
-  
-  // Generate static HTML for each blog post
+  const generated = [];
+  const errors = [];
+
   for (const article of blogData) {
     try {
       const html = generateArticleHTML(article, baseHtml);
       const outputPath = join(distPath, `blog/${article.slug}/index.html`);
-      
-      // Create directory structure
       const dir = dirname(outputPath);
+
       if (!existsSync(dir)) {
         mkdirSync(dir, { recursive: true });
       }
-      
+
       writeFileSync(outputPath, html, 'utf-8');
-      console.log(`✅ Generated: /blog/${article.slug}`);
+      console.log(`[OK] Generated: /blog/${article.slug}`);
+      generated.push(outputPath);
     } catch (err) {
-      console.error(`❌ Failed to generate /blog/${article.slug}:`, err.message);
+      console.error(`[FAIL] Failed to generate /blog/${article.slug}:`, err.message);
+      errors.push({ slug: article.slug, error: err.message });
     }
   }
-  
-  console.log('✨ Blog prerendering complete!');
-  console.log('🤖 Googlebot will now see full article content + JSON-LD structured data.');
-  console.log('🔗 Canonical URLs set for each article to prevent duplicate content issues.');
+
+  console.log(`\nBlog prerendering complete: ${generated.length} succeeded, ${errors.length} failed.`);
+  if (errors.length > 0) {
+    console.warn('Failed articles:', errors.map(e => e.slug).join(', '));
+  }
+
+  console.log('\nGooglebot will now see full article content + JSON-LD structured data.');
+  console.log('Canonical URLs set for each article to prevent duplicate content issues.');
 }
 
 // Run the script
 prerenderBlog().catch(err => {
-  console.error('💥 Prerender script failed:', err);
+  console.error('Prerender script failed:', err);
   process.exit(1);
 });

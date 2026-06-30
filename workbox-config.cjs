@@ -2,12 +2,16 @@
 module.exports = {
   globDirectory: 'dist',
   globPatterns: [
-    '**/*.{html,js,css,json,svg,png,jpg,jpeg,webp,ico}',
+    '**/*.{js,css,json,svg,png,jpg,jpeg,webp,ico}',
+    '**/*.html',
+    // Exclude blog HTML files from precache – they are generated at build time
+    // but may not exist for all articles, causing 404 errors.
+    // Instead, they will be cached at runtime with NetworkFirst.
+    '!blog/**/*.html',
     '**/manifest.webmanifest',
   ],
   cacheId: 'booknaija-v1',
   swDest: 'dist/sw.js',
-  // swSrc is not used with generateSW – removed
   maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
   runtimeCaching: [
     {
@@ -51,6 +55,18 @@ module.exports = {
         expiration: {
           maxEntries: 50,
           maxAgeSeconds: 60 * 60 * 24 * 30,
+        },
+      },
+    },
+    // Cache blog pages with NetworkFirst – they are not precached.
+    {
+      urlPattern: /^\/blog\//,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'blog-pages',
+        expiration: {
+          maxEntries: 20,
+          maxAgeSeconds: 60 * 60 * 24, // 1 day
         },
       },
     },
