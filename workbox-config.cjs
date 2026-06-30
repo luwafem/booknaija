@@ -4,11 +4,11 @@ module.exports = {
   globPatterns: [
     '**/*.{js,css,json,svg,png,jpg,jpeg,webp,ico}',
     '**/*.html',
-    // Exclude blog HTML files from precache – they are generated at build time
-    // but may not exist for all articles, causing 404 errors.
-    // Instead, they will be cached at runtime with NetworkFirst.
-    '!blog/**/*.html',
     '**/manifest.webmanifest',
+  ],
+  // Explicitly exclude blog HTML from precaching to avoid 404 errors
+  globIgnores: [
+    'blog/**/*.html',
   ],
   cacheId: 'booknaija-v1',
   swDest: 'dist/sw.js',
