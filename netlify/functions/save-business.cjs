@@ -1,10 +1,39 @@
 const { createClient } = require('@supabase/supabase-js');
-const bcrypt = require('bcryptjs'); // <-- ADD THIS
+const bcrypt = require('bcryptjs');
+const xss = require('xss'); // 👈 NEW
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// ─── SANITISATION HELPER (inline) ───
+function sanitizeDeep(input) {
+  if (typeof input === 'string') {
+    // Remove all HTML tags and attributes – keep only plain text
+    return xss(input, {
+      whiteList: [],             // no tags allowed
+      stripIgnoreTag: true,      // strip all tags
+      stripIgnoreTagBody: ['script', 'style'],
+    });
+  }
+
+  if (Array.isArray(input)) {
+    return input.map(sanitizeDeep);
+  }
+
+  if (input && typeof input === 'object') {
+    const result = {};
+    for (const [key, value] of Object.entries(input)) {
+      result[key] = sanitizeDeep(value);
+    }
+    return result;
+  }
+
+  // numbers, booleans, null, undefined – return as‑is
+  return input;
+}
+// ─── END SANITISATION ───
 
 // ─── DERIVE FEATURE FLAGS FROM BUSINESS TYPE ───
 function getFeaturesForType(type) {
@@ -37,6 +66,11 @@ exports.handler = async function (event) {
 
   try {
     var d = JSON.parse(event.body);
+
+    // ─── SANITISE ALL INPUT ───
+    d = sanitizeDeep(d);
+    console.log('Sanitised payload received.');
+
     console.log('Slug:', d.slug);
 
     if (!d.slug || !d.name) {
@@ -200,15 +234,27 @@ exports.handler = async function (event) {
         if (!refErr && referrer) {
           const newCount = (referrer.referral_count || 0) + 1;
           
+          // ─── FREE MONTH LOGIC ───
           const { error: updateRefErr } = await supabase
             .from('businesses')
-            .update({ referral_count: newCount })
+            .update({ 
+              referral_count: newCount,
+              // If newCount is a multiple of 3, extend subscription by 30 days
+              ...(newCount % 3 === 0 ? {
+                subscription_ends_at: new Date(
+                  new Date(referrer.subscription_ends_at || Date.now()).getTime() + 30 * 24 * 60 * 60 * 1000
+                ).toISOString()
+              } : {})
+            })
             .eq('id', referrer.id);
 
           if (updateRefErr) {
             console.error('Failed to update referral count:', updateRefErr.message);
           } else {
             console.log('Successfully updated referral count for', d.referredBy, 'to', newCount);
+            if (newCount % 3 === 0) {
+              console.log('🎉 Referrer earned a free month!');
+            }
           }
         } else {
           console.log('Referrer not found in database. Ignoring referral code.');

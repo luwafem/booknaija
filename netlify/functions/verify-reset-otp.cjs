@@ -1,23 +1,44 @@
-// netlify/functions/verify-reset-otp.cjs
 const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcryptjs');
+const xss = require('xss');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// ─── SANITISATION HELPER ───
+function sanitizeDeep(input) {
+  if (typeof input === 'string') {
+    return xss(input, {
+      whiteList: [],
+      stripIgnoreTag: true,
+      stripIgnoreTagBody: ['script', 'style'],
+    });
+  }
+  if (Array.isArray(input)) {
+    return input.map(sanitizeDeep);
+  }
+  if (input && typeof input === 'object') {
+    const result = {};
+    for (const [key, value] of Object.entries(input)) {
+      result[key] = sanitizeDeep(value);
+    }
+    return result;
+  }
+  return input;
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'Method not allowed' })
+      body: JSON.stringify({ error: 'Method not allowed' }),
     };
   }
 
   try {
-    // Parse request body
     let body;
     try {
       body = JSON.parse(event.body);
@@ -25,17 +46,19 @@ exports.handler = async (event) => {
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Invalid JSON body' })
+        body: JSON.stringify({ error: 'Invalid JSON body' }),
       };
     }
 
-    const { email, otp, newCode, newQ1, newA1, newQ2, newA2 } = body;
+    // Sanitise all input
+    const sanitized = sanitizeDeep(body);
+    const { email, otp, newCode, newQ1, newA1, newQ2, newA2 } = sanitized;
 
     if (!email || typeof email !== 'string' || !email.trim()) {
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Email is required' })
+        body: JSON.stringify({ error: 'Email is required' }),
       };
     }
 
@@ -43,11 +66,10 @@ exports.handler = async (event) => {
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'OTP is required' })
+        body: JSON.stringify({ error: 'OTP is required' }),
       };
     }
 
-    // Normalize email
     const normalizedEmail = email.trim().toLowerCase();
 
     // 1. Get business by email
@@ -61,11 +83,11 @@ exports.handler = async (event) => {
       return {
         statusCode: 404,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Business not found' })
+        body: JSON.stringify({ error: 'Business not found' }),
       };
     }
 
-    // 2. Find valid OTP for this business
+    // 2. Find valid OTP
     const { data: reset, error: resetError } = await supabase
       .from('security_resets')
       .select('id, expires_at')
@@ -78,36 +100,33 @@ exports.handler = async (event) => {
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Invalid or expired OTP' })
+        body: JSON.stringify({ error: 'Invalid or expired OTP' }),
       };
     }
 
-    // Check expiration
     if (new Date(reset.expires_at) < new Date()) {
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'OTP has expired' })
+        body: JSON.stringify({ error: 'OTP has expired' }),
       };
     }
 
-    // 3. If new details are provided, update them
+    // 3. If new details provided, update them
     if (newCode) {
-      // Validate newCode is 4 digits
       if (!/^\d{4}$/.test(newCode)) {
         return {
           statusCode: 400,
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ error: 'New security code must be exactly 4 digits' })
+          body: JSON.stringify({ error: 'New security code must be exactly 4 digits' }),
         };
       }
 
-      // Validate that both questions and answers are provided
       if (!newQ1 || !newA1 || !newQ2 || !newA2) {
         return {
           statusCode: 400,
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ error: 'Both security questions and answers are required' })
+          body: JSON.stringify({ error: 'Both security questions and answers are required' }),
         };
       }
 
@@ -128,33 +147,28 @@ exports.handler = async (event) => {
         return {
           statusCode: 500,
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ error: 'Failed to update security details' })
+          body: JSON.stringify({ error: 'Failed to update security details' }),
         };
       }
     }
 
     // 4. Mark OTP as used
-    const { error: markError } = await supabase
+    await supabase
       .from('security_resets')
       .update({ used_at: new Date() })
       .eq('id', reset.id);
 
-    if (markError) {
-      console.error('Mark used error:', markError);
-      // Non‑critical, but we log it.
-    }
-
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: true })
+      body: JSON.stringify({ success: true }),
     };
   } catch (err) {
     console.error('Unhandled error:', err);
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'Internal server error' })
+      body: JSON.stringify({ error: 'Internal server error' }),
     };
   }
 };

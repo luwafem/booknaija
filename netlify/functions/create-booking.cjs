@@ -1,4 +1,15 @@
 import { google } from 'googleapis';
+import xss from 'xss'; // 👈 NEW
+
+// ─── SANITISATION HELPER ───
+function sanitizeString(str) {
+  if (typeof str !== 'string') return str;
+  return xss(str, {
+    whiteList: [],
+    stripIgnoreTag: true,
+    stripIgnoreTagBody: ['script', 'style'],
+  });
+}
 
 export const handler = async (event) => {
   try {
@@ -7,7 +18,6 @@ export const handler = async (event) => {
     
     console.log('📥 Received:', { slug, reference, calendarId });
 
-    // ✅ Validate required fields
     if (!reference) {
       console.error('❌ Missing reference');
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing payment reference' }) };
@@ -79,13 +89,17 @@ export const handler = async (event) => {
           });
           
           const calendar = google.calendar({ version: 'v3', auth });
-          const serviceName = m.serviceName || m.serviceId || 'Booking';
+          
+          // ─── SANITISE METADATA FIELDS ───
+          const serviceName = sanitizeString(m.serviceName || m.serviceId || 'Booking');
+          const customerName = sanitizeString(m.customerName || 'Client');
+          const customerPhone = sanitizeString(m.customerPhone || '');
           
           await calendar.events.insert({
             calendarId: calendarId, 
             requestBody: {
-              summary: `${serviceName} — ${m.customerName || 'Client'}`,
-              description: `Phone: ${m.customerPhone}\nEmail: ${vd.data.customer.email}\nRef: ${reference}`,
+              summary: `${serviceName} — ${customerName}`,
+              description: `Phone: ${customerPhone}\nEmail: ${vd.data.customer.email}\nRef: ${reference}`,
               start: { dateTime: `${date}T${time}:00`, timeZone: 'Africa/Lagos' },
               end: { dateTime: `${date}T${endTime}:00`, timeZone: 'Africa/Lagos' },
               reminders: {
@@ -100,11 +114,13 @@ export const handler = async (event) => {
           console.log('📅 Calendar event created with 1hr reminder');
         } catch (calErr) {
           console.error('⚠️ Calendar error (non-fatal):', calErr.message);
-          // Don't fail the whole booking if calendar fails
         }
       }
     }
 
+    // ─── SANITISE RESPONSE DATA ───
+    const safeServiceName = sanitizeString(m.serviceName || m.serviceId);
+    
     return { 
       statusCode: 200, 
       body: JSON.stringify({ 
@@ -112,7 +128,7 @@ export const handler = async (event) => {
         booking: {
           date: m.date,
           time: m.time,
-          serviceName: m.serviceName || m.serviceId,
+          serviceName: safeServiceName,
           type: m.type || 'service',
           amount: vd.data.amount,
           email: vd.data.customer.email,

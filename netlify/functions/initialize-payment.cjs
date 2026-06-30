@@ -1,10 +1,33 @@
 // netlify/functions/initialize-payment.cjs
 const { createClient } = require('@supabase/supabase-js');
+const xss = require('xss');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// ─── SANITISATION HELPER ───
+function sanitizeDeep(input) {
+  if (typeof input === 'string') {
+    return xss(input, {
+      whiteList: [],
+      stripIgnoreTag: true,
+      stripIgnoreTagBody: ['script', 'style'],
+    });
+  }
+  if (Array.isArray(input)) {
+    return input.map(sanitizeDeep);
+  }
+  if (input && typeof input === 'object') {
+    const result = {};
+    for (const [key, value] of Object.entries(input)) {
+      result[key] = sanitizeDeep(value);
+    }
+    return result;
+  }
+  return input;
+}
 
 // ─── HELPER: Compute total from items (only for existing businesses) ───
 async function computeTotal(slug, items) {
@@ -120,10 +143,13 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing request body' }) };
     }
 
+    // Parse and sanitise all input
     const parsedBody = JSON.parse(event.body);
+    const sanitized = sanitizeDeep(parsedBody);
+
     const {
       slug,
-      items,          // structured cart items
+      items,
       amount: clientAmount,
       name, email, phone,
       date, time, address,
@@ -131,8 +157,8 @@ exports.handler = async (event) => {
       type,
       subaccountCode,
       referredBy,
-      callback_url,   // optional custom callback
-    } = parsedBody;
+      callback_url,
+    } = sanitized;
 
     const secretKey = process.env.PAYSTACK_SECRET_KEY;
     if (!secretKey) {
@@ -214,7 +240,6 @@ exports.handler = async (event) => {
     if (callback_url) {
       callbackUrl = callback_url;
     } else if (isSignup) {
-      // Signup uses the onboarding page
       callbackUrl = `${cleanBaseUrl}/onboarding?slug=${slug}`;
     } else {
       callbackUrl = `${cleanBaseUrl}/book/${slug}`;
@@ -239,7 +264,7 @@ exports.handler = async (event) => {
         address: address || 'N/A',
         subaccountCode: finalSubaccountCode || null,
         referredBy: referredBy || null,
-        isSignup: isSignup, // flag for webhook (optional)
+        isSignup: isSignup,
       },
     };
 
@@ -248,7 +273,8 @@ exports.handler = async (event) => {
       payload.bearer = 'subaccount';
     }
 
-    console.log('Sending to Paystack:', JSON.stringify(payload));
+    // Log sanitised payload (safe to log)
+    console.log('Sending to Paystack (sanitised):', JSON.stringify(payload));
 
     const res = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',

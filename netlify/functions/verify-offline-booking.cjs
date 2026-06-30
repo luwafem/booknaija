@@ -1,10 +1,33 @@
 const { createClient } = require('@supabase/supabase-js');
 const { google } = require('googleapis');
+const xss = require('xss');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// ─── SANITISATION HELPER ───
+function sanitizeDeep(input) {
+  if (typeof input === 'string') {
+    return xss(input, {
+      whiteList: [],
+      stripIgnoreTag: true,
+      stripIgnoreTagBody: ['script', 'style'],
+    });
+  }
+  if (Array.isArray(input)) {
+    return input.map(sanitizeDeep);
+  }
+  if (input && typeof input === 'object') {
+    const result = {};
+    for (const [key, value] of Object.entries(input)) {
+      result[key] = sanitizeDeep(value);
+    }
+    return result;
+  }
+  return input;
+}
 
 exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') {
@@ -12,7 +35,9 @@ exports.handler = async function (event) {
   }
 
   try {
-    const { id, slug } = JSON.parse(event.body);
+    let raw = JSON.parse(event.body);
+    raw = sanitizeDeep(raw);
+    const { id, slug } = raw;
 
     if (!id || !slug) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing booking ID or slug' }) };
@@ -23,7 +48,7 @@ exports.handler = async function (event) {
       .from('offline_bookings')
       .select('*')
       .eq('id', id)
-      .eq('business_slug', slug) // Security: ensure booking belongs to this business
+      .eq('business_slug', slug)
       .single();
 
     if (fetchError || !booking) {
@@ -33,9 +58,9 @@ exports.handler = async function (event) {
     // 2. Update status to verified
     const { error: updateError } = await supabase
       .from('offline_bookings')
-      .update({ 
-        status: 'verified', 
-        verified_at: new Date().toISOString() 
+      .update({
+        status: 'verified',
+        verified_at: new Date().toISOString(),
       })
       .eq('id', id);
 
@@ -43,8 +68,7 @@ exports.handler = async function (event) {
       return { statusCode: 500, body: JSON.stringify({ error: updateError.message }) };
     }
 
-    // 3. Add to Google Calendar (Only if it's a service booking with a date/time)
-    // We need to fetch the business's calendar_id first
+    // 3. Add to Google Calendar (if applicable)
     const { data: biz } = await supabase
       .from('businesses')
       .select('calendar_id, name')
@@ -73,20 +97,20 @@ exports.handler = async function (event) {
         });
 
         const calendar = google.calendar({ version: 'v3', auth });
-        
-        // Calculate end time (start + 1 hour default)
+
         const [h, min] = booking.booking_time.split(':').map(Number);
-        const endMin = h * 60 + min + 60; 
+        const endMin = h * 60 + min + 60;
         const endTime = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
 
+        // Sanitise strings used in calendar event (though booking fields are already sanitised on insert)
         await calendar.events.insert({
-          calendarId: biz.calendar_id, 
+          calendarId: biz.calendar_id,
           requestBody: {
             summary: `${booking.order_summary} — ${booking.customer_name}`,
-            description: `Phone: ${booking.customer_phone}\nEmail: ${booking.customer_email}\nType: Offline Bank Transfer\nAmount: ₦${booking.amount / (booking.amount > 10000 ? 1 : 100)}`, // Basic formatting
+            description: `Phone: ${booking.customer_phone}\nEmail: ${booking.customer_email}\nType: Offline Bank Transfer\nAmount: ₦${booking.amount / (booking.amount > 10000 ? 1 : 100)}`,
             start: { dateTime: `${booking.booking_date}T${booking.booking_time}:00`, timeZone: 'Africa/Lagos' },
             end: { dateTime: `${booking.booking_date}T${endTime}:00`, timeZone: 'Africa/Lagos' },
-            reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 60 }] }
+            reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 60 }] },
           },
         });
       } catch (calErr) {
@@ -94,11 +118,10 @@ exports.handler = async function (event) {
       }
     }
 
-    return { 
-      statusCode: 200, 
-      body: JSON.stringify({ success: true, message: 'Booking verified' }) 
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ success: true, message: 'Booking verified' }),
     };
-
   } catch (err) {
     console.error('Error:', err.message);
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };

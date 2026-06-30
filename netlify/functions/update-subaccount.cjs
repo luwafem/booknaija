@@ -1,15 +1,42 @@
 const { createClient } = require('@supabase/supabase-js');
+const xss = require('xss'); // 👈 NEW
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// ─── SANITISATION HELPER ───
+function sanitizeDeep(input) {
+  if (typeof input === 'string') {
+    return xss(input, {
+      whiteList: [],
+      stripIgnoreTag: true,
+      stripIgnoreTagBody: ['script', 'style'],
+    });
+  }
+  if (Array.isArray(input)) {
+    return input.map(sanitizeDeep);
+  }
+  if (input && typeof input === 'object') {
+    const result = {};
+    for (const [key, value] of Object.entries(input)) {
+      result[key] = sanitizeDeep(value);
+    }
+    return result;
+  }
+  return input;
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
 
   try {
-    const { slug, business_name, settlement_bank, account_number, account_name, email, phone } = JSON.parse(event.body);
+    const raw = JSON.parse(event.body);
+    // ─── SANITISE ALL INPUT ───
+    const d = sanitizeDeep(raw);
+
+    const { slug, business_name, settlement_bank, account_number, account_name, email, phone } = d;
 
     if (!slug || !settlement_bank || !account_number) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields: slug, settlement_bank, account_number' }) };
@@ -57,7 +84,6 @@ exports.handler = async (event) => {
       const updateData = await updateRes.json();
 
       if (!updateData.status) {
-        // If update fails, try creating a new one as fallback
         console.log('Update failed, trying create:', updateData.message);
         const createResult = await createNewSubaccount(secretKey, business_name, settlement_bank, account_number, account_name, email, phone);
         if (createResult.error) {
@@ -124,7 +150,6 @@ async function createNewSubaccount(secretKey, business_name, settlement_bank, ac
   const data = await res.json();
 
   if (!data.status || !data.data?.subaccount_code) {
-    // Check if error is "already exists" — try to extract useful message
     const msg = data.message || 'Failed to verify bank details';
     if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('duplicate')) {
       return { error: 'This bank account is already linked to another subaccount. Please contact support.' };

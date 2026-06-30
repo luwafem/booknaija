@@ -17,13 +17,18 @@
     timeout = 30
 
 # ─── RATE LIMITING ───
+# Global fallback – catches any function not explicitly limited below
+[[rate_limit]]
+  pattern = "/.netlify/functions/*"
+  rate = "100 per minute"
+
 [[rate_limit]]
   pattern = "/.netlify/functions/initialize-payment"
   rate = "10 per minute"
 
 [[rate_limit]]
   pattern = "/.netlify/functions/save-business"
-  rate = "10 per minute"
+  rate = "5 per minute"
 
 [[rate_limit]]
   pattern = "/.netlify/functions/affiliate-login"
@@ -56,6 +61,11 @@
 [[rate_limit]]
   pattern = "/.netlify/functions/get-dashboard-questions"
   rate = "5 per minute"
+
+# ─── NEW: Paginated listings endpoint ───
+[[rate_limit]]
+  pattern = "/.netlify/functions/get-business-items"
+  rate = "30 per minute"
 
 # ─── BLOG POSTS: Serve static HTML files directly ───
 [[redirects]]

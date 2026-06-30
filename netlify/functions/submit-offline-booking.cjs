@@ -1,9 +1,32 @@
 const { createClient } = require('@supabase/supabase-js');
+const xss = require('xss'); // 👈 NEW
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// ─── SANITISATION HELPER ───
+function sanitizeDeep(input) {
+  if (typeof input === 'string') {
+    return xss(input, {
+      whiteList: [],
+      stripIgnoreTag: true,
+      stripIgnoreTagBody: ['script', 'style'],
+    });
+  }
+  if (Array.isArray(input)) {
+    return input.map(sanitizeDeep);
+  }
+  if (input && typeof input === 'object') {
+    const result = {};
+    for (const [key, value] of Object.entries(input)) {
+      result[key] = sanitizeDeep(value);
+    }
+    return result;
+  }
+  return input;
+}
 
 exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') {
@@ -12,6 +35,9 @@ exports.handler = async function (event) {
 
   try {
     const d = JSON.parse(event.body);
+    // ─── SANITISE ALL INPUT ───
+    const sanitized = sanitizeDeep(d);
+
     const { 
       slug, 
       name, 
@@ -25,13 +51,12 @@ exports.handler = async function (event) {
       type, 
       items, 
       summary 
-    } = d;
+    } = sanitized;
 
     if (!slug || !proofImageUrl || !amount) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
     }
 
-    // Insert into offline_bookings table
     const { data, error } = await supabase
       .from('offline_bookings')
       .insert({
@@ -44,8 +69,8 @@ exports.handler = async function (event) {
         booking_time: time || null,
         order_type: type,
         order_summary: summary,
-        order_metadata: items || {}, // Stores full cart details
-        amount: parseInt(amount), // Ensure integer
+        order_metadata: items || {},
+        amount: parseInt(amount),
         proof_image_url: proofImageUrl,
         status: 'pending'
       })

@@ -1,5 +1,32 @@
 const { createClient } = require('@supabase/supabase-js');
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const xss = require('xss');
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// ─── SANITISATION HELPER ───
+function sanitizeDeep(input) {
+  if (typeof input === 'string') {
+    return xss(input, {
+      whiteList: [],
+      stripIgnoreTag: true,
+      stripIgnoreTagBody: ['script', 'style'],
+    });
+  }
+  if (Array.isArray(input)) {
+    return input.map(sanitizeDeep);
+  }
+  if (input && typeof input === 'object') {
+    const result = {};
+    for (const [key, value] of Object.entries(input)) {
+      result[key] = sanitizeDeep(value);
+    }
+    return result;
+  }
+  return input;
+}
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -7,7 +34,10 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { slug, email, callback_url, referredBy } = JSON.parse(event.body);
+    const raw = JSON.parse(event.body);
+    const sanitized = sanitizeDeep(raw);
+    const { slug, email, callback_url, referredBy } = sanitized;
+
     if (!slug || !email) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing slug or email' }) };
     }
@@ -40,7 +70,6 @@ exports.handler = async (event) => {
         .single();
 
       if (bizErr) {
-        // Business doesn't exist – that's fine for signup; we'll skip this branch.
         console.log(`ℹ️ Business not found (likely signup). Skipping business-based affiliate lookup.`);
       } else if (biz && biz.referred_by_affiliate && !biz.affiliate_bounty_paid) {
         const { data: affiliate, error: affErr2 } = await supabase
@@ -70,7 +99,7 @@ exports.handler = async (event) => {
       metadata: {
         slug,
         payment_type: 'monthly_subscription',
-        referredBy: referredBy || null, // store for webhook
+        referredBy: referredBy || null,
       },
     };
 
@@ -79,10 +108,16 @@ exports.handler = async (event) => {
       payload.bearer = 'subaccount';
     }
 
+    const secretKey = process.env.PAYSTACK_SECRET_KEY;
+    if (!secretKey) {
+      console.error('❌ PAYSTACK_SECRET_KEY is missing');
+      return { statusCode: 500, body: JSON.stringify({ error: 'Payment not configured on server.' }) };
+    }
+
     const res = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        Authorization: `Bearer ${secretKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),

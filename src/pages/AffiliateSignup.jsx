@@ -92,6 +92,8 @@ export default function AffiliateSignup() {
       return;
     }
 
+    // 🔧 FIX: Platform takes 40% (₦1,000), affiliate gets 60% (₦1,500)
+    // This matches the advertised ₦1,500 commission for affiliates
     const subRes = await fetch('/.netlify/functions/create-subaccount', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -99,7 +101,7 @@ export default function AffiliateSignup() {
         business_name: `Affiliate - ${sanitize(formData.get('full_name'))}`,
         settlement_bank: sanitize(formData.get('settlement_bank')),
         account_number: sanitize(formData.get('account_number')),
-        percentage_charge: 60,
+        percentage_charge: 40, // ✅ Platform fee = 40%, affiliate receives 60%
         primary_contact_name: sanitize(formData.get('full_name')),
         primary_contact_email: sanitize(formData.get('email')),
         primary_contact_phone: sanitize(formData.get('phone')),

@@ -1,6 +1,7 @@
 import { useParams, useSearchParams, useNavigate, Navigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useBusinessWithSEO } from '../hooks/useBusinessWithSEO';
+import { usePaginatedItems } from '../hooks/usePaginatedItems'; // NEW
 import SEO from '../hooks/useSEO';
 import HeroSection from '../components/bio/HeroSection';
 import Gallery from '../components/bio/Gallery';
@@ -185,6 +186,40 @@ export default function BioPage() {
   const [activeFood, setActiveFood] = useState([]);
   const [activeCar, setActiveCar] = useState(null);
 
+  // ─── Pagination hooks ───
+  const ITEMS_PER_PAGE = 12;
+  const {
+    items: paginatedServices,
+    loading: servicesLoading,
+    hasMore: servicesHasMore,
+    loadMore: loadMoreServices,
+    total: servicesTotal,
+  } = usePaginatedItems(slug, 'services', ITEMS_PER_PAGE);
+
+  const {
+    items: paginatedProducts,
+    loading: productsLoading,
+    hasMore: productsHasMore,
+    loadMore: loadMoreProducts,
+    total: productsTotal,
+  } = usePaginatedItems(slug, 'products', ITEMS_PER_PAGE);
+
+  const {
+    items: paginatedFood,
+    loading: foodLoading,
+    hasMore: foodHasMore,
+    loadMore: loadMoreFood,
+    total: foodTotal,
+  } = usePaginatedItems(slug, 'food', ITEMS_PER_PAGE);
+
+  const {
+    items: paginatedCars,
+    loading: carsLoading,
+    hasMore: carsHasMore,
+    loadMore: loadMoreCars,
+    total: carsTotal,
+  } = usePaginatedItems(slug, 'cars', ITEMS_PER_PAGE);
+
   useEffect(() => {
     if (!loading && biz?.active) {
       window.prerenderReady = true;
@@ -214,9 +249,32 @@ export default function BioPage() {
     setActiveCar(cart.car || null);
   }
 
-  const theme = biz?.theme || 'light';
+  // ─── Loading state ───
+  if (loading) {
+    const accent = '#c8a97e'; // fallback
+    const ui = { bg: 'bg-white' }; // fallback
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${ui.bg}`} role="status">
+        <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: accent + '15', borderTopColor: accent }} />
+      </div>
+    );
+  }
+
+  // ─── Guard: if biz is still undefined (shouldn't happen if loading is false, but safe) ───
+  if (!biz) {
+    const accent = '#c8a97e';
+    const ui = { bg: 'bg-white' };
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${ui.bg}`} role="status">
+        <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: accent + '15', borderTopColor: accent }} />
+      </div>
+    );
+  }
+
+  // ─── Now biz is defined ───
+  const theme = biz.theme || 'light';
   const isDark = theme === 'dark';
-  const accent = biz?.accent ?? '#c8a97e';
+  const accent = biz.accent ?? '#c8a97e';
 
   const ui = isDark
     ? {
@@ -238,66 +296,50 @@ export default function BioPage() {
         border: 'border-gray-100',
       };
 
+  // ─── Filtered lists (for search) ───
   const filteredProducts = searchQuery
-    ? (biz?.products || []).filter(p =>
+    ? (biz.products || []).filter(p =>
         (p.product_code && p.product_code.toLowerCase() === searchQuery.toLowerCase()) ||
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()))
       )
-    : (biz?.products || []);
+    : (biz.products || []);
 
   const filteredServices = searchQuery
-    ? (biz?.services || []).filter(s =>
+    ? (biz.services || []).filter(s =>
         s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (s.description && s.description.toLowerCase().includes(searchQuery.toLowerCase()))
       )
-    : (biz?.services || []);
+    : (biz.services || []);
 
   const filteredFood = searchQuery
-    ? (biz?.food || []).filter(f =>
+    ? (biz.food || []).filter(f =>
         f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (f.description && f.description.toLowerCase().includes(searchQuery.toLowerCase()))
       )
-    : (biz?.food || []);
+    : (biz.food || []);
 
   const filteredCars = searchQuery
-    ? (biz?.cars || []).filter(c =>
+    ? (biz.cars || []).filter(c =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (c.description && c.description.toLowerCase().includes(searchQuery.toLowerCase()))
       )
-    : (biz?.cars || []);
+    : (biz.cars || []);
 
-  if (loading) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center ${ui.bg}`} role="status">
-        <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: accent + '15', borderTopColor: accent }} />
-      </div>
-    );
-  }
+  // Determine which data to display based on search
+  const displayServices = isSearchActive ? filteredServices : paginatedServices;
+  const displayProducts = isSearchActive ? filteredProducts : paginatedProducts;
+  const displayFood = isSearchActive ? filteredFood : paginatedFood;
+  const displayCars = isSearchActive ? filteredCars : paginatedCars;
 
-  if (!biz || !biz.active) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center px-6 ${ui.bg}`} role="alert">
-        <div className="text-center">
-          <div className="w-16 h-16 rounded-full mx-auto mb-6 flex items-center justify-center text-xl border" style={{ backgroundColor: accent + '08', borderColor: accent + '15', color: accent }}>!</div>
-          <h1 className={`text-sm font-medium ${ui.sub}`}>Page Unavailable</h1>
-          <p className={`text-xs mt-1 ${ui.muted}`}>This link is currently inactive.</p>
-          <a href="/" className="inline-block mt-6 px-5 py-2.5 text-xs font-semibold tracking-wide rounded-full transition-all duration-300 hover:opacity-80" style={{ backgroundColor: accent + '08', color: accent }}>
-            Go to BookNaija
-          </a>
-        </div>
-      </div>
-    );
-  }
-
-  const showServices = biz.servicesEnabled && filteredServices.length > 0;
-  const showProducts = biz.productsEnabled && filteredProducts.length > 0;
-  const showFood = biz.foodEnabled && filteredFood.length > 0;
-  const showCars = biz.carsEnabled && filteredCars.length > 0;
+  const showServices = biz.servicesEnabled && (isSearchActive ? filteredServices.length > 0 : paginatedServices.length > 0);
+  const showProducts = biz.productsEnabled && (isSearchActive ? filteredProducts.length > 0 : paginatedProducts.length > 0);
+  const showFood = biz.foodEnabled && (isSearchActive ? filteredFood.length > 0 : paginatedFood.length > 0);
+  const showCars = biz.carsEnabled && (isSearchActive ? filteredCars.length > 0 : paginatedCars.length > 0);
   const isPropertyWebsite = biz.propertiesEnabled && (biz.properties || []).length > 0;
 
   const adsEnabled = biz.adsEnabled !== false && !isPropertyWebsite;
-  const totalItems = filteredServices.length + filteredProducts.length + filteredFood.length + filteredCars.length;
+  const totalItems = (isSearchActive ? filteredServices.length + filteredProducts.length + filteredFood.length + filteredCars.length : servicesTotal + productsTotal + foodTotal + carsTotal);
   const hasAnyContent = showServices || showProducts || showFood || showCars;
 
   const showPrimaryAd = adsEnabled && hasAnyContent && !isSearchActive;
@@ -566,9 +608,21 @@ export default function BioPage() {
                 {showServices && (
                   <section itemScope itemType="https://schema.org/ItemList" aria-label="Services" className="mt-16 lg:mt-24">
                     <meta itemProp="name" content={`${biz.name} Services`} />
-                    <meta itemProp="numberOfItems" content={filteredServices.length} />
+                    <meta itemProp="numberOfItems" content={isSearchActive ? filteredServices.length : servicesTotal} />
                     <SectionHeading accent={accent} id="services">Services</SectionHeading>
-                    <ServiceList services={filteredServices} selectedId={activeService} onSelect={handleServiceSelect} accent={accent} location={biz.location} theme={theme} />
+                    <ServiceList services={displayServices} selectedId={activeService} onSelect={handleServiceSelect} accent={accent} location={biz.location} theme={theme} />
+                    {!isSearchActive && servicesHasMore && (
+                      <div className="mt-6 flex justify-center">
+                        <button
+                          onClick={loadMoreServices}
+                          disabled={servicesLoading}
+                          className="px-6 py-3 text-sm font-semibold rounded-full transition-all duration-300 hover:opacity-80 disabled:opacity-50"
+                          style={{ backgroundColor: accent + '10', color: accent, border: `1px solid ${accent}20` }}
+                        >
+                          {servicesLoading ? 'Loading...' : 'Load More Services'}
+                        </button>
+                      </div>
+                    )}
                   </section>
                 )}
 
@@ -576,9 +630,21 @@ export default function BioPage() {
                 {showProducts && (
                   <section itemScope itemType="https://schema.org/ItemList" aria-label={showServices ? 'Products' : 'Shop'} className="mt-16 lg:mt-24">
                     <meta itemProp="name" content={`${biz.name} Products`} />
-                    <meta itemProp="numberOfItems" content={filteredProducts.length} />
+                    <meta itemProp="numberOfItems" content={isSearchActive ? filteredProducts.length : productsTotal} />
                     <SectionHeading accent={accent} id="products">{showServices ? 'Products' : 'Shop'}</SectionHeading>
-                    <ProductList products={filteredProducts} selectedProducts={activeProducts} onSelect={handleProductSelect} accent={accent} label={showServices ? 'Products' : 'Shop'} location={biz.location} theme={theme} />
+                    <ProductList products={displayProducts} selectedProducts={activeProducts} onSelect={handleProductSelect} accent={accent} label={showServices ? 'Products' : 'Shop'} location={biz.location} theme={theme} />
+                    {!isSearchActive && productsHasMore && (
+                      <div className="mt-6 flex justify-center">
+                        <button
+                          onClick={loadMoreProducts}
+                          disabled={productsLoading}
+                          className="px-6 py-3 text-sm font-semibold rounded-full transition-all duration-300 hover:opacity-80 disabled:opacity-50"
+                          style={{ backgroundColor: accent + '10', color: accent, border: `1px solid ${accent}20` }}
+                        >
+                          {productsLoading ? 'Loading...' : 'Load More Products'}
+                        </button>
+                      </div>
+                    )}
                   </section>
                 )}
 
@@ -586,9 +652,21 @@ export default function BioPage() {
                 {showFood && (
                   <section itemScope itemType="https://schema.org/ItemList" aria-label="Menu" className="mt-16 lg:mt-24">
                     <meta itemProp="name" content={`${biz.name} Menu`} />
-                    <meta itemProp="numberOfItems" content={filteredFood.length} />
+                    <meta itemProp="numberOfItems" content={isSearchActive ? filteredFood.length : foodTotal} />
                     <SectionHeading accent={accent} id="menu">Menu</SectionHeading>
-                    <FoodList food={filteredFood} selectedFood={activeFood} foodVariants={getCart().foodVariants || {}} onSelect={handleFoodSelect} accent={accent} location={biz.location} theme={theme} />
+                    <FoodList food={displayFood} selectedFood={activeFood} foodVariants={getCart().foodVariants || {}} onSelect={handleFoodSelect} accent={accent} location={biz.location} theme={theme} />
+                    {!isSearchActive && foodHasMore && (
+                      <div className="mt-6 flex justify-center">
+                        <button
+                          onClick={loadMoreFood}
+                          disabled={foodLoading}
+                          className="px-6 py-3 text-sm font-semibold rounded-full transition-all duration-300 hover:opacity-80 disabled:opacity-50"
+                          style={{ backgroundColor: accent + '10', color: accent, border: `1px solid ${accent}20` }}
+                        >
+                          {foodLoading ? 'Loading...' : 'Load More Menu Items'}
+                        </button>
+                      </div>
+                    )}
                   </section>
                 )}
 
@@ -596,9 +674,21 @@ export default function BioPage() {
                 {showCars && (
                   <section itemScope itemType="https://schema.org/ItemList" aria-label="Vehicles" className="mt-16 lg:mt-24">
                     <meta itemProp="name" content={`${biz.name} Vehicles`} />
-                    <meta itemProp="numberOfItems" content={filteredCars.length} />
+                    <meta itemProp="numberOfItems" content={isSearchActive ? filteredCars.length : carsTotal} />
                     <SectionHeading accent={accent} id="vehicles">Vehicles</SectionHeading>
-                    <CarList cars={filteredCars} selectedCar={activeCar ? biz.cars.find(c => c.id === activeCar) : null} onSelect={handleCarSelect} accent={accent} location={biz.location} theme={theme} />
+                    <CarList cars={displayCars} selectedCar={activeCar ? biz.cars.find(c => c.id === activeCar) : null} onSelect={handleCarSelect} accent={accent} location={biz.location} theme={theme} />
+                    {!isSearchActive && carsHasMore && (
+                      <div className="mt-6 flex justify-center">
+                        <button
+                          onClick={loadMoreCars}
+                          disabled={carsLoading}
+                          className="px-6 py-3 text-sm font-semibold rounded-full transition-all duration-300 hover:opacity-80 disabled:opacity-50"
+                          style={{ backgroundColor: accent + '10', color: accent, border: `1px solid ${accent}20` }}
+                        >
+                          {carsLoading ? 'Loading...' : 'Load More Vehicles'}
+                        </button>
+                      </div>
+                    )}
                   </section>
                 )}
 
