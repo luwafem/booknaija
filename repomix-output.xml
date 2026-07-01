@@ -280,84 +280,6 @@ The React Compiler is not enabled on this template because of its impact on dev 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
 </file>
 
-<file path="scripts/validate-env.js">
-// scripts/validate-env.js
-import { config } from 'dotenv';
-import { existsSync } from 'fs';
-import { join } from 'path';
-
-// Load environment variables from .env file
-const envPath = join(process.cwd(), '.env');
-if (existsSync(envPath)) {
-  config({ path: envPath });
-}
-
-// ─── CONFIGURATION ───
-const requiredVars = [
-  'VITE_SUPABASE_URL',
-  'VITE_SUPABASE_ANON_KEY',
-  'SUPABASE_SERVICE_ROLE_KEY',
-  'PAYSTACK_SECRET_KEY',
-  'JWT_SECRET',
-];
-
-const optionalVars = [
-  'VITE_SENTRY_DSN',
-  'VITE_SENTRY_ENABLED',
-  'VITE_ENVIRONMENT',
-  'SITE_URL',
-  'GOOGLE_CLIENT_EMAIL',
-  'GOOGLE_PRIVATE_KEY',
-];
-
-// ─── VALIDATION ───
-const missingRequired = requiredVars.filter(key => !process.env[key]);
-const missingOptional = optionalVars.filter(key => !process.env[key]);
-
-let hasError = false;
-
-// Check required variables
-if (missingRequired.length > 0) {
-  console.error('❌ Missing REQUIRED environment variables:');
-  missingRequired.forEach(key => console.error(`  - ${key}`));
-  console.error('');
-  console.error('These variables are essential for the application to function.');
-  console.error('Please add them to your .env file or Netlify environment variables.');
-  hasError = true;
-} else {
-  console.log('✅ All required environment variables are set.');
-}
-
-// Warn about optional variables
-if (missingOptional.length > 0) {
-  console.log('');
-  console.log('⚠️ Optional environment variables not set (will use defaults):');
-  missingOptional.forEach(key => console.log(`  - ${key}`));
-}
-
-// Check for .env file
-if (!existsSync(envPath)) {
-  console.log('');
-  console.log('ℹ️ No .env file found. Create one from .env.example if available.');
-}
-
-// Exit with error if required vars are missing
-if (hasError) {
-  process.exit(1);
-}
-
-// ─── SUMMARY ───
-console.log('');
-console.log('📋 Environment summary:');
-console.log(`  Environment: ${process.env.VITE_ENVIRONMENT || 'development'}`);
-console.log(`  Supabase URL: ${process.env.VITE_SUPABASE_URL ? '✅ Set' : '❌ Missing'}`);
-console.log(`  Sentry: ${process.env.VITE_SENTRY_DSN ? '✅ Enabled' : '⏸️ Disabled'}`);
-console.log(`  Paystack: ${process.env.PAYSTACK_SECRET_KEY ? '✅ Set' : '❌ Missing'}`);
-
-console.log('');
-console.log('✅ Validation complete.');
-</file>
-
 <file path="src/App.css">
 .counter {
   font-size: 16px;
@@ -1023,96 +945,6 @@ export const CalendarIcon = ({ className = 'w-4 h-4' }) => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
   </svg>
 );
-</file>
-
-<file path="src/lib/csrf.js">
-// src/lib/csrf.js
-export function generateCsrfToken() {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
-}
-
-export function getCsrfToken() {
-  let token = sessionStorage.getItem('csrf_token');
-  if (!token) {
-    token = generateCsrfToken();
-    sessionStorage.setItem('csrf_token', token);
-  }
-  // Always set the cookie to ensure it's present and matches the token
-  const isSecure = location.protocol === 'https:';
-  document.cookie = `csrf_token=${token}; path=/; samesite=lax; ${isSecure ? 'secure;' : ''}`;
-  return token;
-}
-
-export function setCsrfTokenHeader(headers = {}) {
-  const token = getCsrfToken();
-  return {
-    ...headers,
-    'X-CSRF-Token': token,
-  };
-}
-</file>
-
-<file path="src/lib/diff.js">
-// src/lib/diff.js
-export function getDiff(oldObj, newObj) {
-  if (!oldObj || !newObj) return {};
-
-  const diff = {};
-  for (const key of Object.keys(newObj)) {
-    // Skip if values are strictly equal
-    if (oldObj[key] !== newObj[key]) {
-      // Handle nested objects/arrays if needed
-      if (typeof oldObj[key] === 'object' && typeof newObj[key] === 'object') {
-        // For nested objects, we could recursively diff, but for dashboard
-        // use case, shallow comparison is sufficient.
-        diff[key] = newObj[key];
-      } else {
-        diff[key] = newObj[key];
-      }
-    }
-  }
-  return diff;
-}
-
-export function getNestedDiff(oldArr, newArr, idKey = 'id') {
-  if (!Array.isArray(oldArr) || !Array.isArray(newArr)) {
-    return [];
-  }
-
-  const changes = [];
-
-  // Build maps for O(n) lookups
-  const oldMap = new Map(oldArr.map(item => [item[idKey], item]));
-  const newMap = new Map(newArr.map(item => [item[idKey], item]));
-
-  // Check for removed items
-  for (const [id] of oldMap) {
-    if (!newMap.has(id)) {
-      changes.push({ action: 'delete', id });
-    }
-  }
-
-  // Check for added or updated items
-  for (const [id, newItem] of newMap) {
-    const oldItem = oldMap.get(id);
-    if (!oldItem) {
-      changes.push({ action: 'add', data: newItem });
-    } else {
-      const diff = getDiff(oldItem, newItem);
-      if (Object.keys(diff).length > 0) {
-        changes.push({ action: 'update', id, data: diff });
-      }
-    }
-  }
-
-  return changes;
-}
-
-export function hasChanges(diff) {
-  return Object.keys(diff).length > 0;
-}
 </file>
 
 <file path="src/pages/Booking.jsx">
@@ -2168,6 +2000,84 @@ async function migrate() {
 }
 
 migrate();
+</file>
+
+<file path="scripts/validate-env.js">
+// scripts/validate-env.js
+import { config } from 'dotenv';
+import { existsSync } from 'fs';
+import { join } from 'path';
+
+// Load environment variables from .env file
+const envPath = join(process.cwd(), '.env');
+if (existsSync(envPath)) {
+  config({ path: envPath });
+}
+
+// ─── CONFIGURATION ───
+const requiredVars = [
+  'VITE_SUPABASE_URL',
+  'VITE_SUPABASE_ANON_KEY',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'PAYSTACK_SECRET_KEY',
+  'JWT_SECRET',
+];
+
+const optionalVars = [
+  'VITE_SENTRY_DSN',
+  'VITE_SENTRY_ENABLED',
+  'VITE_ENVIRONMENT',
+  'SITE_URL',
+  'GOOGLE_CLIENT_EMAIL',
+  'GOOGLE_PRIVATE_KEY',
+];
+
+// ─── VALIDATION ───
+const missingRequired = requiredVars.filter(key => !process.env[key]);
+const missingOptional = optionalVars.filter(key => !process.env[key]);
+
+let hasError = false;
+
+// Check required variables
+if (missingRequired.length > 0) {
+  console.error('❌ Missing REQUIRED environment variables:');
+  missingRequired.forEach(key => console.error(`  - ${key}`));
+  console.error('');
+  console.error('These variables are essential for the application to function.');
+  console.error('Please add them to your .env file or Netlify environment variables.');
+  hasError = true;
+} else {
+  console.log('✅ All required environment variables are set.');
+}
+
+// Warn about optional variables
+if (missingOptional.length > 0) {
+  console.log('');
+  console.log('⚠️ Optional environment variables not set (will use defaults):');
+  missingOptional.forEach(key => console.log(`  - ${key}`));
+}
+
+// Check for .env file
+if (!existsSync(envPath)) {
+  console.log('');
+  console.log('ℹ️ No .env file found. Create one from .env.example if available.');
+}
+
+// Exit with error if required vars are missing
+if (hasError) {
+  process.exit(1);
+}
+
+// ─── SUMMARY ───
+console.log('');
+console.log('📋 Environment summary:');
+console.log(`  Environment: ${process.env.VITE_ENVIRONMENT || 'development'}`);
+console.log(`  Supabase URL: ${process.env.VITE_SUPABASE_URL ? '✅ Set' : '❌ Missing'}`);
+console.log(`  Sentry: ${process.env.VITE_SENTRY_DSN ? '✅ Enabled' : '⏸️ Disabled'}`);
+console.log(`  Paystack: ${process.env.PAYSTACK_SECRET_KEY ? '✅ Set' : '❌ Missing'}`);
+
+console.log('');
+console.log('✅ Validation complete.');
 </file>
 
 <file path="src/components/dashboard/CarsTab.jsx">
@@ -6232,463 +6142,6 @@ export default function StepWrapper({
 }
 </file>
 
-<file path="src/hooks/useDashboard.js">
-// src/hooks/useDashboard.js
-import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useBusiness } from './useBusiness';
-import { uid, optimizeCloudinaryUrl, CLOUD_NAME, UPLOAD_PRESET } from '../lib/dashboardHelpers';
-import { getCsrfToken } from '../lib/csrf';
-import { getDiff } from '../lib/diff'; // 👈 NEW for granular saves
-
-export function useDashboard() {
-  const { slug } = useParams();
-  const navigate = useNavigate();
-  const { business: initialBiz, loading } = useBusiness(slug);
-
-  const [biz, setBiz] = useState(null);
-  const [activeTab, setActiveTab] = useState('info');
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState('');
-  const [showToggles, setShowToggles] = useState(false);
-  const clickCount = useRef(0);
-  const clickTimer = useRef(null);
-
-  const [copied, setCopied] = useState(false);
-  const [urlCopied, setUrlCopied] = useState(false);
-
-  const [showMapPicker, setShowMapPicker] = useState(false);
-
-  const [subLoading, setSubLoading] = useState(false);
-  const [subMsg, setSubMsg] = useState('');
-
-  const [bankUpdating, setBankUpdating] = useState(false);
-  const [bankUpdateError, setBankUpdateError] = useState('');
-  const [bankUpdateSuccess, setBankUpdateSuccess] = useState(false);
-  const [bankName, setBankName] = useState('');
-  const [bankCode, setBankCode] = useState('');
-  const [bankAcc, setBankAcc] = useState('');
-  const [banks, setBanks] = useState([]);
-
-  const [offlineBookings, setOfflineBookings] = useState([]);
-  const [offlineLoading, setOfflineLoading] = useState(false);
-
-  // Load banks
-  useEffect(() => {
-    fetch('/.netlify/functions/list-banks')
-      .then(res => res.json())
-      .then(data => { if (Array.isArray(data)) setBanks(data); })
-      .catch(console.error);
-  }, []);
-
-  // Auth check
-  useEffect(() => {
-    if (!loading && biz) {
-      const authStatus = sessionStorage.getItem('biz_auth_' + slug);
-      if (!authStatus) navigate('/dashboard');
-    }
-  }, [loading, biz, slug, navigate]);
-
-  // Sync initial data
-  useEffect(() => {
-    if (initialBiz) {
-      setBiz(JSON.parse(JSON.stringify(initialBiz)));
-      setActiveTab('info');
-      setShowToggles(false);
-      clickCount.current = 0;
-    }
-  }, [initialBiz]);
-
-  // Load offline bookings when tab is active
-  useEffect(() => {
-    if (activeTab === 'offline-payments' && biz) {
-      setOfflineLoading(true);
-      fetch(`/.netlify/functions/get-offline-bookings?slug=${biz.slug}`)
-        .then(res => res.json())
-        .then(data => setOfflineBookings(data.bookings || []))
-        .catch(console.error)
-        .finally(() => setOfflineLoading(false));
-    }
-  }, [activeTab, biz]);
-
-  // Handle subscription payment return
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const subRef = params.get('sub_ref');
-    if (subRef && biz) {
-      setSubLoading(true);
-      fetch('/.netlify/functions/verify-subscription', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reference: subRef, slug })
-      })
-        .then(r => r.json())
-        .then(data => {
-          if (data.success) {
-            setSubMsg('Payment successful! Subscription extended by 30 days.');
-            setTimeout(() => window.location.reload(), 2000);
-          } else {
-            setSubMsg('Payment verification failed. Contact support.');
-          }
-        })
-        .catch(() => setSubMsg('Network error verifying payment.'))
-        .finally(() => setSubLoading(false));
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-  }, [biz, slug]);
-
-  // Load Cloudinary widget
-  useEffect(() => {
-    if (!window.cloudinary) {
-      const script = document.createElement('script');
-      script.src = 'https://widget.cloudinary.com/v2.0/global/all.js';
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  }, []);
-
-  // ── Handlers ──
-  const handleNameClick = () => {
-    clickCount.current++;
-    clearTimeout(clickTimer.current);
-    clickTimer.current = setTimeout(() => { clickCount.current = 0; }, 500);
-    if (clickCount.current >= 3) {
-      clickCount.current = 0;
-      setShowToggles(prev => !prev);
-    }
-  };
-
-  const handleCopyReferralLink = () => {
-    const url = window.location.origin + '/signup?ref=' + biz.slug;
-    navigator.clipboard.writeText(url)
-      .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); })
-      .catch(() => {
-        const ta = document.createElement('textarea');
-        ta.value = url;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2500);
-      });
-  };
-
-  const handleCopyPageUrl = () => {
-    const url = window.location.origin + '/' + biz.slug;
-    navigator.clipboard.writeText(url)
-      .then(() => { setUrlCopied(true); setTimeout(() => setUrlCopied(false), 2500); })
-      .catch(() => {
-        const ta = document.createElement('textarea');
-        ta.value = url;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        setUrlCopied(true);
-        setTimeout(() => setUrlCopied(false), 2500);
-      });
-  };
-
-  const handlePaySubscription = async () => {
-    setSubLoading(true);
-    setSubMsg('');
-    try {
-      const res = await fetch('/.netlify/functions/initialize-subscription', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, email: biz.email })
-      });
-      const data = await res.json();
-      if (data.authorization_url) {
-        window.location.href = data.authorization_url;
-      } else {
-        setSubMsg(data.error || 'Failed to initialize payment.');
-        setSubLoading(false);
-      }
-    } catch {
-      setSubMsg('Network error.');
-      setSubLoading(false);
-    }
-  };
-
-  const handleUpdateBank = async () => {
-    if (!bankName.trim()) { setBankUpdateError('Enter account name.'); return; }
-    if (!bankCode) { setBankUpdateError('Select a bank.'); return; }
-    if (!/^[0-9]{10}$/.test(bankAcc)) { setBankUpdateError('Account number must be 10 digits.'); return; }
-
-    setBankUpdating(true);
-    setBankUpdateError('');
-    setBankUpdateSuccess(false);
-    try {
-      const res = await fetch('/.netlify/functions/update-subaccount', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          slug: biz.slug,
-          business_name: biz.name,
-          settlement_bank: bankCode,
-          account_number: bankAcc,
-          account_name: bankName,
-          email: biz.email || '',
-          phone: biz.phone || ''
-        })
-      });
-      const data = await res.json();
-      if (res.ok && (data.ok || data.subaccount_code)) {
-        setBankUpdateSuccess(true);
-        setBiz(prev => ({ ...prev, subaccount_code: data.subaccount_code || prev.subaccount_code }));
-        setTimeout(() => window.location.reload(), 1500);
-      } else {
-        setBankUpdateError(data.error || 'Verification failed.');
-      }
-    } catch {
-      setBankUpdateError('Network error.');
-    } finally {
-      setBankUpdating(false);
-    }
-  };
-
-  const handleVerifyOfflinePayment = async (bookingId) => {
-    if (!confirm('Have you received this payment?')) return;
-    setOfflineLoading(true);
-    try {
-      const res = await fetch('/.netlify/functions/verify-offline-booking', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: bookingId, slug: biz.slug })
-      });
-      if (res.ok) {
-        setOfflineBookings(prev =>
-          prev.map(b => b.id === bookingId ? { ...b, status: 'verified' } : b)
-        );
-        alert('Payment verified!');
-      } else {
-        alert('Verification failed.');
-      }
-    } catch {
-      alert('Network error.');
-    } finally {
-      setOfflineLoading(false);
-    }
-  };
-
-  // ── CRUD helpers ──
-  const setField = (field, value) => setBiz(prev => ({ ...prev, [field]: value }));
-  const setNested = (arrName, id, updates) => {
-    setBiz(prev => ({
-      ...prev,
-      [arrName]: prev[arrName].map(item => item.id === id ? { ...item, ...updates } : item)
-    }));
-  };
-  const addItem = (arrName, template) => {
-    setBiz(prev => ({ ...prev, [arrName]: [...prev[arrName], template] }));
-  };
-  const removeItem = (arrName, id) => {
-    setBiz(prev => ({ ...prev, [arrName]: prev[arrName].filter(i => i.id !== id) }));
-  };
-
-  // ── Image upload wrapper ──
-  const uploadImage = (onSuccess, isMultiple = true, maxImages = 10) => {
-    if (!window.cloudinary) { alert('Widget loading...'); return; }
-    const urls = [];
-    const widget = window.cloudinary.createUploadWidget(
-      {
-        cloudName: CLOUD_NAME,
-        uploadPreset: UPLOAD_PRESET,
-        sources: ['local', 'url', 'camera'],
-        multiple: isMultiple,
-        maxFiles: maxImages,
-        maxImageFileSize: 10000000,
-        clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
-        transformation: [{ width: 1200, crop: 'limit' }]
-      },
-      (err, res) => {
-        if (err) return;
-        if (!isMultiple && res.event === 'success' && res.info?.secure_url) {
-          onSuccess(optimizeCloudinaryUrl(res.info.secure_url));
-        }
-        if (isMultiple && res.event === 'success') {
-          const u = res.info?.secure_url;
-          if (u && !urls.includes(u)) {
-            urls.push(u);
-            onSuccess(optimizeCloudinaryUrl(u));
-          }
-        }
-        if (isMultiple && res.event === 'upload-finish' && res.info?.files) {
-          res.info.files.forEach(f => {
-            const u2 = f.uploadInfo?.secure_url;
-            if (u2 && !urls.includes(u2)) {
-              urls.push(u2);
-              onSuccess(optimizeCloudinaryUrl(u2));
-            }
-          });
-        }
-      }
-    );
-    widget.open();
-  };
-
-  // ── Save changes with CSRF protection and granular diff ──
-  const handleSave = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    setError('');
-    setSaved(false);
-
-    try {
-      // Compute only changed fields
-      const changes = getDiff(initialBiz, biz);
-
-      // If nothing changed, show saved state and return early
-      if (Object.keys(changes).length === 0) {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
-        setSaving(false);
-        return;
-      }
-
-      // Send only the changes plus slug
-      const payload = {
-        slug: biz.slug,
-        changes,
-      };
-
-      const res = await fetch('/.netlify/functions/save-business', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': getCsrfToken(),
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.ok) {
-        // Update initialBiz to reflect new state for future diffs
-        // We can optionally refresh the business data from the server
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
-      } else {
-        throw new Error(data.error || 'Failed to save');
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to save changes.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // ── Derived values ──
-  const subEndsAt = biz?.subscription_ends_at ? new Date(biz.subscription_ends_at) : null;
-  const now = new Date();
-  const daysLeft = subEndsAt ? Math.ceil((subEndsAt - now) / (1000 * 60 * 60 * 24)) : null;
-  const isExpired = daysLeft !== null && daysLeft <= 0;
-  const isWarning = daysLeft !== null && daysLeft <= 5 && daysLeft > 0;
-
-  const getMapsReadiness = () => {
-    const issues = [];
-    if (!biz?.name) issues.push('Business Name');
-    if (!biz?.phone) issues.push('Phone Number');
-    if (!biz?.location) issues.push('Location');
-    if (!biz?.email) issues.push('Email');
-    return { ready: issues.length === 0, issues };
-  };
-
-  const getVisibleTabs = () => {
-    if (!biz) return [];
-    const base = [
-      { id: 'info', label: 'Info' },
-      { id: 'security', label: 'Security' },
-      { id: 'gallery', label: 'Gallery' },
-      { id: 'offline-payments', label: 'Bank Payments' }
-    ];
-    if (biz.servicesEnabled) base.push({ id: 'services', label: 'Services' });
-    if (biz.productsEnabled) base.push({ id: 'products', label: 'Products' });
-    if (biz.carsEnabled) base.push({ id: 'cars', label: 'Cars' });
-    if (biz.foodEnabled) base.push({ id: 'food', label: 'Food' });
-    if (biz.propertiesEnabled) base.push({ id: 'properties', label: 'Properties' });
-    if (biz.estatesEnabled) base.push({ id: 'estates', label: 'Estates' });
-    return base;
-  };
-
-  const resolveBankName = (code) => {
-    if (!code) return '';
-    if (/^\d{2,6}$/.test(code)) {
-      const found = banks.find(b => b.code === code);
-      return found ? found.name : code;
-    }
-    return code;
-  };
-
-  const resolveBankCode = (name) => {
-    if (!name) return '';
-    if (/^\d{2,6}$/.test(name)) return name;
-    const found = banks.find(b => b.name === name);
-    return found ? found.code : '';
-  };
-
-  return {
-    // State
-    biz,
-    setBiz,
-    activeTab,
-    setActiveTab,
-    saving,
-    saved,
-    error,
-    showToggles,
-    copied,
-    urlCopied,
-    showMapPicker,
-    setShowMapPicker,
-    subLoading,
-    subMsg,
-    bankUpdating,
-    bankUpdateError,
-    bankUpdateSuccess,
-    bankName,
-    setBankName,
-    bankCode,
-    setBankCode,
-    bankAcc,
-    setBankAcc,
-    banks,
-    offlineBookings,
-    offlineLoading,
-    loading,
-    slug,
-    accent: biz?.accent || '#c8a97e',
-    // Derived
-    isExpired,
-    isWarning,
-    daysLeft,
-    getMapsReadiness,
-    getVisibleTabs,
-    resolveBankName,
-    resolveBankCode,
-    // Handlers
-    handleNameClick,
-    handleCopyReferralLink,
-    handleCopyPageUrl,
-    handlePaySubscription,
-    handleUpdateBank,
-    handleVerifyOfflinePayment,
-    handleSave, // 👈 now uses diff + CSRF
-    uploadImage,
-    setField,
-    setNested,
-    addItem,
-    removeItem,
-    // Helpers
-    uid,
-    optimizeCloudinaryUrl,
-  };
-}
-</file>
-
 <file path="src/hooks/useNoIndex.js">
 import { useEffect } from 'react';
 
@@ -6718,1108 +6171,31 @@ export function useNoIndex() {
 }
 </file>
 
-<file path="src/hooks/useOnboarding.js">
-// hooks/useOnboarding.js
-import { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  optimizeCloudinaryUrl,
-  cleanPrice,
-  CLOUD_NAME,
-  UPLOAD_PRESET,
-  updateNestedState,
-  updateNestedAddon,
-  updateNestedOption,
-} from '../lib/onboardingHelpers';
-import { getCsrfToken } from '../lib/csrf';
-
-export function useOnboarding() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const slugFromUrl = searchParams.get('slug');
-
-  // ─── Load business data from storage ───
-  const loadBizData = () => {
-    let data = null;
-    if (slugFromUrl) {
-      const stored = localStorage.getItem('pending_signup_' + slugFromUrl);
-      if (stored) {
-        try { data = JSON.parse(stored); } catch {}
-      }
-    }
-    if (!data) {
-      const sessionData = sessionStorage.getItem('pending_signup_data');
-      if (sessionData) {
-        try { data = JSON.parse(sessionData); } catch {}
-        sessionStorage.removeItem('pending_signup_data');
-      }
-    }
-    if (!data) {
-      const localData = localStorage.getItem('pending_signup_data');
-      if (localData) {
-        try { data = JSON.parse(localData); } catch {}
-        localStorage.removeItem('pending_signup_data');
-      }
-    }
-    return data || {};
-  };
-
-  const bizData = loadBizData();
-
-  // ─── State ───
-  const [businessName, setBusinessName] = useState(bizData.businessName || 'New Business');
-  const [businessSlug, setBusinessSlug] = useState(bizData.businessSlug || slugFromUrl || 'new-business');
-  const [businessType, setBusinessType] = useState(bizData.businessType || '');
-  const [brandColor, setBrandColor] = useState(bizData.brandColor || '#c8a97e');
-  const [logoUrl, setLogoUrl] = useState(bizData.logoUrl || '');
-  const [bio, setBio] = useState(bizData.bio || '');
-  const [phone, setPhone] = useState(bizData.phone || '');
-  const [whatsapp, setWhatsapp] = useState(bizData.whatsapp || '');
-  const [email, setEmail] = useState(bizData.email || '');
-  const [locationAddr, setLocationAddr] = useState(bizData.location || '');
-  const [instagram, setInstagram] = useState(bizData.instagram || '');
-  const [tiktok, setTiktok] = useState(bizData.tiktok || '');
-  const [subaccountCode, setSubaccountCode] = useState(bizData.subaccountCode || 'ACCT_PENDING');
-  const [referredBy, setReferredBy] = useState(bizData.referredBy || null);
-
-  const isAutoBusiness = businessType === 'Auto' || businessType === 'Auto Dealer / Rental';
-  const isFoodBusiness = businessType === 'Restaurant' || businessType === 'Restaurant / Food';
-  const isPropertyBusiness = businessType === 'Real Estate' || businessType === 'Shortlet';
-
-  const [servicesEnabled, setServicesEnabled] = useState(
-    bizData.servicesEnabled !== undefined ? bizData.servicesEnabled : (!isAutoBusiness && !isFoodBusiness && !isPropertyBusiness)
-  );
-  const [productsEnabled, setProductsEnabled] = useState(
-    bizData.productsEnabled !== undefined ? bizData.productsEnabled : (!isAutoBusiness && !isFoodBusiness && !isPropertyBusiness)
-  );
-  const [carsEnabled, setCarsEnabled] = useState(
-    bizData.carsEnabled !== undefined ? bizData.carsEnabled : isAutoBusiness
-  );
-  const [foodEnabled, setFoodEnabled] = useState(
-    bizData.foodEnabled !== undefined ? bizData.foodEnabled : isFoodBusiness
-  );
-  const [propertiesEnabled, setPropertiesEnabled] = useState(
-    bizData.propertiesEnabled !== undefined ? bizData.propertiesEnabled : isPropertyBusiness
-  );
-
-  const hasProductsStep = productsEnabled && !carsEnabled && !foodEnabled && !propertiesEnabled;
-
-  const [currentStep, setCurrentStep] = useState(1);
-  const [securityCode, setSecurityCode] = useState('');
-  const [securityQuestion1, setSecurityQuestion1] = useState('');
-  const [securityAnswer1, setSecurityAnswer1] = useState('');
-  const [securityQuestion2, setSecurityQuestion2] = useState('');
-  const [securityAnswer2, setSecurityAnswer2] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const [accountName, setAccountName] = useState(bizData.accountName || '');
-  const [accountNumber, setAccountNumber] = useState(bizData.accountNumber || '');
-  const [settlementBankName, setSettlementBankName] = useState(bizData.settlementBank || '');
-
-  const [gallery, setGallery] = useState([{ id: 'default', group: 'Gallery', images: [] }]);
-  const [services, setServices] = useState([{ id: 1, name: '', duration: '', price: '', description: '', image: '', images: [] }]);
-  const [products, setProducts] = useState([{ id: 1, name: '', price: '', description: '', image: '', images: [], sizes: [], colors: [] }]);
-  const [cars, setCars] = useState([]);
-  const [foods, setFoods] = useState([]);
-  const [properties, setProperties] = useState([]);
-
-  // ─── Steps ───
-  const steps = useMemo(() => {
-    if (propertiesEnabled) {
-      return [
-        { id: 1, title: 'Security', desc: 'Dashboard access' },
-        { id: 2, title: 'Gallery', desc: 'Your photos' },
-        { id: 3, title: 'Properties', desc: 'Your listings' },
-        { id: 4, title: 'Review', desc: 'Final check' },
-      ];
-    } else if (carsEnabled || foodEnabled) {
-      return [
-        { id: 1, title: 'Security', desc: 'Dashboard access' },
-        { id: 2, title: 'Gallery', desc: 'Your photos' },
-        { id: 3, title: carsEnabled ? 'Cars' : 'Menu', desc: 'What you offer' },
-        { id: 4, title: 'Review', desc: 'Final check' },
-      ];
-    } else if (hasProductsStep) {
-      return [
-        { id: 1, title: 'Security', desc: 'Dashboard access' },
-        { id: 2, title: 'Gallery', desc: 'Your photos' },
-        { id: 3, title: 'Services', desc: 'What you offer' },
-        { id: 4, title: 'Products', desc: 'Items for sale' },
-        { id: 5, title: 'Review', desc: 'Final check' },
-      ];
-    } else {
-      return [
-        { id: 1, title: 'Security', desc: 'Dashboard access' },
-        { id: 2, title: 'Gallery', desc: 'Your photos' },
-        { id: 3, title: 'Services', desc: 'What you offer' },
-        { id: 4, title: 'Review', desc: 'Final check' },
-      ];
-    }
-  }, [propertiesEnabled, carsEnabled, foodEnabled, hasProductsStep]);
-
-  // ─── Cloudinary script ───
-  useEffect(() => {
-    if (!window.cloudinary) {
-      const script = document.createElement('script');
-      script.src = 'https://widget.cloudinary.com/v2.0/global/all.js';
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  }, []);
-
-  // ─── Image upload ───
-  const uploadImage = (onSuccess, isMultiple = true, maxImages = 10) => {
-    if (!window.cloudinary) {
-      alert('Widget is still loading.');
-      return;
-    }
-    const uploadedUrls = [];
-    const widget = window.cloudinary.createUploadWidget(
-      {
-        cloudName: CLOUD_NAME,
-        uploadPreset: UPLOAD_PRESET,
-        sources: ['local', 'url', 'camera'],
-        multiple: isMultiple,
-        maxFiles: maxImages,
-        maxImageFileSize: 10000000,
-        clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
-        transformation: [{ width: 1200, crop: 'limit' }],
-      },
-      (err, res) => {
-        if (err) return;
-        if (!isMultiple && res.event === 'success' && res.info?.secure_url) {
-          onSuccess(optimizeCloudinaryUrl(res.info.secure_url));
-        }
-        if (isMultiple && res.event === 'success') {
-          const u = res.info?.secure_url;
-          if (u && !uploadedUrls.includes(u)) {
-            uploadedUrls.push(u);
-            onSuccess(optimizeCloudinaryUrl(u));
-          }
-        }
-        if (isMultiple && res.event === 'upload-finish' && res.info?.files) {
-          res.info.files.forEach(f => {
-            const u2 = f.uploadInfo?.secure_url;
-            if (u2 && !uploadedUrls.includes(u2)) {
-              uploadedUrls.push(u2);
-              onSuccess(optimizeCloudinaryUrl(u2));
-            }
-          });
-        }
-      }
-    );
-    widget.open();
-  };
-
-  // ─── Handlers for gallery ───
-  const addGroup = () => setGallery(prev => [...prev, { id: 'g-' + Date.now(), group: '', images: [] }]);
-  const removeGroup = (id) => setGallery(prev => prev.filter(g => g.id !== id));
-  const updateGroupName = (id, name) =>
-    setGallery(prev => prev.map(g => (g.id === id ? { ...g, group: name } : g)));
-  const addGalleryImage = (groupId, url) =>
-    setGallery(prev =>
-      prev.map(g =>
-        g.id === groupId ? { ...g, images: [...g.images, url] } : g
-      )
-    );
-  const removeGalleryImage = (groupId, imgIdx) =>
-    setGallery(prev =>
-      prev.map(g =>
-        g.id === groupId
-          ? { ...g, images: g.images.filter((_, i) => i !== imgIdx) }
-          : g
-      )
-    );
-
-  // ─── Handlers for services ───
-  const addService = () =>
-    setServices(prev => [...prev, { id: Date.now(), name: '', duration: '', price: '', description: '', image: '', images: [] }]);
-  const removeService = (id) => setServices(prev => prev.filter(s => s.id !== id));
-  const updateService = (id, field, value) =>
-    setServices(prev => updateNestedState(prev, id, { [field]: value }));
-  const addServiceImage = (service) =>
-    uploadImage((url) => {
-      setServices(prev =>
-        prev.map(s => {
-          if (s.id !== service.id) return s;
-          const imgs = [...(s.images || []), url];
-          return { ...s, images: imgs, image: imgs[0] };
-        })
-      );
-    }, true, 3);
-  const removeServiceImage = (id, idx) =>
-    setServices(prev =>
-      prev.map(s =>
-        s.id === id
-          ? { ...s, images: s.images.filter((_, i) => i !== idx), image: s.images[0] || '' }
-          : s
-      )
-    );
-
-  // ─── Handlers for products ───
-  const addProduct = () =>
-    setProducts(prev => [...prev, { id: Date.now(), name: '', price: '', description: '', image: '', images: [], sizes: [], colors: [] }]);
-  const removeProduct = (id) => setProducts(prev => prev.filter(p => p.id !== id));
-  const updateProduct = (id, field, value) =>
-    setProducts(prev => updateNestedState(prev, id, { [field]: value }));
-  const updateProductSizes = (id, value) =>
-    setProducts(prev =>
-      updateNestedState(prev, id, {
-        sizes: value.split(',').map(s => s.trim()).filter(Boolean),
-      })
-    );
-  const updateProductColors = (id, value) =>
-    setProducts(prev =>
-      updateNestedState(prev, id, {
-        colors: value.split(',').map(s => s.trim()).filter(Boolean),
-      })
-    );
-  const addProductImage = (product) =>
-    uploadImage((url) => {
-      setProducts(prev =>
-        prev.map(p => {
-          if (p.id !== product.id) return p;
-          const imgs = [...(p.images || []), url];
-          return { ...p, images: imgs, image: imgs[0] };
-        })
-      );
-    }, true, 3);
-  const removeProductImage = (id, idx) =>
-    setProducts(prev =>
-      prev.map(p =>
-        p.id === id
-          ? { ...p, images: p.images.filter((_, i) => i !== idx), image: p.images[0] || '' }
-          : p
-      )
-    );
-
-  // ─── Handlers for cars ───
-  const addCar = () =>
-    setCars(prev => [...prev, { id: Date.now(), name: '', type: 'rent', year: '', price: '', mileage: '', transmission: '', fuel: '', description: '', images: [] }]);
-  const removeCar = (id) => setCars(prev => prev.filter(c => c.id !== id));
-  const updateCar = (id, field, value) =>
-    setCars(prev => updateNestedState(prev, id, { [field]: value }));
-  const setCarImages = (id, images) =>
-    setCars(prev => updateNestedState(prev, id, { images }));
-  const addCarImage = (car) =>
-    uploadImage((url) => {
-      setCars(prev =>
-        prev.map(c => {
-          if (c.id !== car.id) return c;
-          const imgs = [...(c.images || []), url];
-          return { ...c, images: imgs };
-        })
-      );
-    }, true, 3);
-
-  // ─── Handlers for food ───
-  const addFood = () =>
-    setFoods(prev => [...prev, { id: Date.now(), name: '', price: '', description: '', image: '', images: [], addons: [] }]);
-  const removeFood = (id) => setFoods(prev => prev.filter(f => f.id !== id));
-  const updateFood = (id, field, value) =>
-    setFoods(prev => updateNestedState(prev, id, { [field]: value }));
-  const addFoodImage = (food) =>
-    uploadImage((url) => {
-      setFoods(prev =>
-        prev.map(f => {
-          if (f.id !== food.id) return f;
-          const imgs = [...(f.images || []), url];
-          return { ...f, images: imgs, image: imgs[0] };
-        })
-      );
-    }, true, 3);
-  const removeFoodImage = (id, idx) =>
-    setFoods(prev =>
-      prev.map(f =>
-        f.id === id
-          ? { ...f, images: f.images.filter((_, i) => i !== idx), image: f.images[0] || '' }
-          : f
-      )
-    );
-
-  // ─── Food addon handlers ───
-  const addAddonGroup = (foodId) => {
-    setFoods(prev =>
-      prev.map(f =>
-        f.id === foodId
-          ? { ...f, addons: [...(f.addons || []), { id: 'a-' + Date.now(), label: '', type: 'single', options: [] }] }
-          : f
-      )
-    );
-  };
-  const removeAddonGroup = (foodId, addonId) => {
-    setFoods(prev =>
-      prev.map(f =>
-        f.id === foodId
-          ? { ...f, addons: (f.addons || []).filter(a => a.id !== addonId) }
-          : f
-      )
-    );
-  };
-  const updateAddonGroup = (foodId, addonId, field, value) => {
-    setFoods(prev => updateNestedAddon(prev, foodId, addonId, { [field]: value }));
-  };
-  const addAddonOption = (foodId, addonId) => {
-    setFoods(prev =>
-      prev.map(f => {
-        if (f.id !== foodId) return f;
-        return {
-          ...f,
-          addons: (f.addons || []).map(a =>
-            a.id === addonId
-              ? { ...a, options: [...(a.options || []), { id: 'opt-' + Date.now(), name: '', price: 0 }] }
-              : a
-          ),
-        };
-      })
-    );
-  };
-  const removeAddonOption = (foodId, addonId, optId) => {
-    setFoods(prev =>
-      prev.map(f => {
-        if (f.id !== foodId) return f;
-        return {
-          ...f,
-          addons: (f.addons || []).map(a =>
-            a.id === addonId
-              ? { ...a, options: (a.options || []).filter(o => o.id !== optId) }
-              : a
-          ),
-        };
-      })
-    );
-  };
-  const updateAddonOption = (foodId, addonId, optId, field, value) => {
-    setFoods(prev =>
-      prev.map(f => {
-        if (f.id !== foodId) return f;
-        return {
-          ...f,
-          addons: (f.addons || []).map(a =>
-            a.id === addonId
-              ? {
-                  ...a,
-                  options: (a.options || []).map(o =>
-                    o.id === optId ? { ...o, [field]: value } : o
-                  ),
-                }
-              : a
-          ),
-        };
-      })
-    );
-  };
-
-  // ─── Handlers for properties ───
-  const addProperty = () =>
-    setProperties(prev => [...prev, { id: Date.now(), name: '', type: businessType === 'Shortlet' ? 'shortlet' : 'sale', price: '', location: '', bedrooms: '', bathrooms: '', description: '', images: [] }]);
-  const removeProperty = (id) => setProperties(prev => prev.filter(p => p.id !== id));
-  const updateProperty = (id, field, value) =>
-    setProperties(prev => updateNestedState(prev, id, { [field]: value }));
-  const addPropertyImage = (property) =>
-    uploadImage((url) => {
-      setProperties(prev =>
-        prev.map(p => {
-          if (p.id !== property.id) return p;
-          const imgs = [...(p.images || []), url];
-          return { ...p, images: imgs };
-        })
-      );
-    }, true, 5);
-  const removePropertyImage = (id, idx) =>
-    setProperties(prev =>
-      prev.map(p =>
-        p.id === id
-          ? { ...p, images: p.images.filter((_, i) => i !== idx) }
-          : p
-      )
-    );
-
-  // ─── Navigation ───
-  const nextStep = () => {
-    if (currentStep < steps.length) {
-      setCurrentStep(c => c + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(c => c - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  // ─── Submit ───
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    // Validation
-    if (securityCode.length !== 4) {
-      setError('Please set a valid 4-digit security code.');
-      setLoading(false);
-      return;
-    }
-    if (!securityQuestion1 || !securityAnswer1.trim() || !securityQuestion2 || !securityAnswer2.trim()) {
-      setError('Please select and answer both security questions.');
-      setLoading(false);
-      return;
-    }
-
-    const honeypot = document.getElementById('formspree_gotcha');
-    if (honeypot && honeypot.value) {
-      setLoading(false);
-      return;
-    }
-
-    // Build data
-    const servicesData = services.filter(s => s.name).map(s => ({
-      id: businessSlug + '-' + s.id,
-      name: s.name,
-      duration: s.duration,
-      price: cleanPrice(s.price),
-      image: s.image || '',
-      images: s.images || [],
-      showDetails: true,
-      description: s.description || '',
-    }));
-
-    const productsData = products.filter(p => p.name).map(p => ({
-      id: businessSlug + '-' + p.id,
-      name: p.name,
-      price: cleanPrice(p.price),
-      image: p.image || '',
-      images: p.images || [],
-      sizes: p.sizes || [],
-      colors: p.colors || [],
-      showDetails: true,
-      description: p.description || '',
-    }));
-
-    const carsData = (carsEnabled ? cars : []).filter(c => c.name).map(c => ({
-      id: businessSlug + '-' + c.id,
-      type: c.type,
-      name: c.name,
-      year: parseInt(c.year) || new Date().getFullYear(),
-      price: cleanPrice(c.price),
-      mileage: c.mileage || '',
-      transmission: c.transmission || '',
-      fuel: c.fuel || '',
-      description: c.description || '',
-      image: (c.images || [])[0] || '',
-      images: c.images || [],
-    }));
-
-    const foodsData = (foodEnabled ? foods : []).filter(f => f.name).map(f => {
-      const cleanAddons = (f.addons || [])
-        .filter(a => a.label && a.label.trim())
-        .map(a => ({
-          id: a.id,
-          label: a.label.trim(),
-          type: a.type,
-          options: (a.options || [])
-            .filter(o => o.name && o.name.trim())
-            .map(o => ({ name: o.name.trim(), price: cleanPrice(o.price) })),
-        }))
-        .filter(a => a.options.length > 0);
-      return {
-        id: businessSlug + '-' + f.id,
-        name: f.name,
-        price: cleanPrice(f.price),
-        image: f.image || '',
-        description: f.description || '',
-        addons: cleanAddons,
-      };
-    });
-
-    const propertiesData = (propertiesEnabled ? properties : []).filter(p => p.name).map(p => ({
-      id: businessSlug + '-' + p.id,
-      name: p.name,
-      type: p.type,
-      price: cleanPrice(p.price),
-      location: p.location || '',
-      bedrooms: p.bedrooms || '',
-      bathrooms: p.bathrooms || '',
-      description: p.description || '',
-      images: p.images || [],
-    }));
-
-    const galleryData = gallery
-      .filter(g => g.group.trim() && g.images.length > 0)
-      .map(g => ({ group: g.group.trim(), images: g.images }));
-
-    const finalGallery = galleryData.length > 0 ? galleryData : [{ group: 'Gallery', images: [] }];
-
-    const payload = {
-      slug: businessSlug,
-      name: businessName,
-      logo: logoUrl,
-      tagline: 'A professional ' + businessType + ' in Lagos',
-      bio,
-      phone,
-      referredBy,
-      whatsapp,
-      email,
-      location: locationAddr,
-      hours: 'Mon–Sun, 9 AM – 6 PM',
-      accent: brandColor,
-      hero: 'https://picsum.photos/seed/' + businessSlug + '/800/600',
-      socials: { instagram, tiktok },
-      subaccountCode,
-      calendarId: email,
-      adsEnabled: !propertiesEnabled,
-      businessType,
-      servicesEnabled,
-      productsEnabled,
-      carsEnabled,
-      foodEnabled,
-      propertiesEnabled,
-      securityCode,
-      securityQuestion1,
-      securityAnswer1: securityAnswer1.trim().toLowerCase(),
-      securityQuestion2,
-      securityAnswer2: securityAnswer2.trim().toLowerCase(),
-      account_name: accountName,
-      account_number: accountNumber,
-      settlement_bank: settlementBankName,
-      gallery: finalGallery,
-      services: servicesData,
-      products: productsData,
-      cars: carsData,
-      food: foodsData,
-      properties: propertiesData,
-    };
-
-    const formData = new FormData();
-    formData.append('_subject', 'New Business Setup: ' + businessName);
-    formData.append('_replyto', email);
-    formData.append('_gotcha', '');
-    formData.append('business_name', businessName);
-    formData.append('business_slug', businessSlug);
-    formData.append('business_type', businessType);
-    formData.append('business_email', email);
-    formData.append('business_phone', phone);
-    formData.append('business_whatsapp', whatsapp);
-    formData.append('business_location', locationAddr);
-    formData.append('subaccount_code', subaccountCode);
-    formData.append('services_count', String(servicesData.length));
-    formData.append('products_count', String(productsData.length));
-    formData.append('cars_count', String(carsData.length));
-    formData.append('food_count', String(foodsData.length));
-    formData.append('properties_count', String(propertiesData.length));
-
-    try {
-      // 1. Send to Formspree (no CSRF needed)
-      await fetch('https://formspree.io/f/xyklbbqy', {
-        method: 'POST',
-        body: formData,
-        headers: { Accept: 'application/json' },
-      }).catch(() => ({ ok: true }));
-
-      // 2. Save to Supabase with CSRF protection
-      const saveRes = await fetch('/.netlify/functions/save-business', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': getCsrfToken(),
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const saveData = await saveRes.json();
-
-      if (!saveData.ok) {
-        throw new Error(saveData.error || 'Failed to save business.');
-      }
-
-      // Clean up storage
-      localStorage.removeItem('pending_signup_' + businessSlug);
-      localStorage.removeItem('pending_signup_data');
-      sessionStorage.removeItem('pending_signup_data');
-
-      sessionStorage.setItem('new_biz_slug', businessSlug);
-      sessionStorage.setItem('new_biz_name', businessName);
-
-      navigate('/onboarding-success', {
-        state: { businessName, businessSlug },
-      });
-    } catch (err) {
-      setError(err.message || 'Failed to save. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ─── Helpers for UI ───
-  const totalGalleryImages = gallery.reduce((acc, g) => acc + g.images.length, 0);
-  const isProductsStep = hasProductsStep && currentStep === 4;
-  const isReviewStep = currentStep === steps.length;
-
-  // ─── Return all state and handlers ───
-  return {
-    // State
-    businessName,
-    businessSlug,
-    businessType,
-    brandColor,
-    logoUrl,
-    bio,
-    phone,
-    whatsapp,
-    email,
-    locationAddr,
-    instagram,
-    tiktok,
-    subaccountCode,
-    referredBy,
-    servicesEnabled,
-    productsEnabled,
-    carsEnabled,
-    foodEnabled,
-    propertiesEnabled,
-    hasProductsStep,
-    currentStep,
-    setCurrentStep,
-    securityCode,
-    setSecurityCode,
-    securityQuestion1,
-    setSecurityQuestion1,
-    securityAnswer1,
-    setSecurityAnswer1,
-    securityQuestion2,
-    setSecurityQuestion2,
-    securityAnswer2,
-    setSecurityAnswer2,
-    loading,
-    error,
-    accountName,
-    setAccountName,
-    accountNumber,
-    setAccountNumber,
-    settlementBankName,
-    setSettlementBankName,
-    gallery,
-    services,
-    products,
-    cars,
-    foods,
-    properties,
-    steps,
-    totalGalleryImages,
-    isProductsStep,
-    isReviewStep,
-
-    // Handlers
-    uploadImage,
-    addGroup,
-    removeGroup,
-    updateGroupName,
-    addGalleryImage,
-    removeGalleryImage,
-    addService,
-    removeService,
-    updateService,
-    addServiceImage,
-    removeServiceImage,
-    addProduct,
-    removeProduct,
-    updateProduct,
-    updateProductSizes,
-    updateProductColors,
-    addProductImage,
-    removeProductImage,
-    addCar,
-    removeCar,
-    updateCar,
-    setCarImages,
-    addCarImage,
-    addFood,
-    removeFood,
-    updateFood,
-    addFoodImage,
-    removeFoodImage,
-    addAddonGroup,
-    removeAddonGroup,
-    updateAddonGroup,
-    addAddonOption,
-    removeAddonOption,
-    updateAddonOption,
-    addProperty,
-    removeProperty,
-    updateProperty,
-    addPropertyImage,
-    removePropertyImage,
-    nextStep,
-    prevStep,
-    handleSubmit,
-  };
+<file path="src/lib/csrf.js">
+// src/lib/csrf.js
+export function generateCsrfToken() {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
-</file>
 
-<file path="src/hooks/useSignup.js">
-// src/hooks/useSignup.js
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-// Not used in signup flow (no direct save-business call), but kept for consistency
-import { getCsrfToken } from '../lib/csrf';
+export function getCsrfToken() {
+  let token = sessionStorage.getItem('csrf_token');
+  if (!token) {
+    token = generateCsrfToken();
+    sessionStorage.setItem('csrf_token', token);
+  }
+  // Always set the cookie to ensure it's present and matches the token
+  const isSecure = location.protocol === 'https:';
+  document.cookie = `csrf_token=${token}; path=/; samesite=lax; ${isSecure ? 'secure;' : ''}`;
+  return token;
+}
 
-export function useSignup() {
-  const [params] = useSearchParams();
-  const referralParam = params.get('ref');
-
-  const [loading, setLoading] = useState(false);
-  const [banks, setBanks] = useState([]);
-  const [banksLoading, setBanksLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [consent, setConsent] = useState(false);
-  const [brandColor, setBrandColor] = useState('#c8a97e');
-  const [logoUrl, setLogoUrl] = useState('');
-  const [currentStep, setCurrentStep] = useState(1);
-
-  const steps = [
-    { id: 1, title: 'Business Info', desc: 'Basic details' },
-    { id: 2, title: 'Profile', desc: 'About your business' },
-    { id: 3, title: 'Branding', desc: 'Logo & colors' },
-    { id: 4, title: 'Services', desc: 'What you offer' },
-    { id: 5, title: 'Payout', desc: 'Get paid' },
-  ];
-
-  const [formValues, setFormValues] = useState({
-    business_name: '',
-    email: '',
-    phone: '',
-    business_type: '',
-    business_description: '',
-    business_address: '',
-    whatsapp_number: '',
-    num_services: '',
-    has_products: '',
-    instagram_link: '',
-    tiktok_link: '',
-    other_socials: '',
-    referral_code: referralParam || '',
-    account_name: '',
-    settlement_bank: '',
-    account_number: '',
-  });
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormValues((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // ─── Derive feature flags ───
-  const getFeaturesForType = (type) => {
-    switch (type) {
-      case 'Fashion':
-        return { servicesEnabled: true, productsEnabled: true, carsEnabled: false, foodEnabled: false, propertiesEnabled: false };
-      case 'Lash Artist':
-      case 'Hair Stylist':
-      case 'Makeup Artist':
-      case 'Nail Technician':
-      case 'Skin Care':
-        return { servicesEnabled: true, productsEnabled: true, carsEnabled: false, foodEnabled: false, propertiesEnabled: false };
-      case 'Cleaner':
-      case 'Tutor':
-        return { servicesEnabled: true, productsEnabled: false, carsEnabled: false, foodEnabled: false, propertiesEnabled: false };
-      case 'Restaurant':
-        return { servicesEnabled: false, productsEnabled: false, carsEnabled: false, foodEnabled: true, propertiesEnabled: false };
-      case 'Auto':
-        return { servicesEnabled: false, productsEnabled: false, carsEnabled: true, foodEnabled: false, propertiesEnabled: false };
-      case 'Real Estate':
-      case 'Shortlet':
-        return { servicesEnabled: false, productsEnabled: false, carsEnabled: false, foodEnabled: false, propertiesEnabled: true };
-      default:
-        return { servicesEnabled: true, productsEnabled: true, carsEnabled: false, foodEnabled: false, propertiesEnabled: false };
-    }
-  };
-
-  const currentTypeFeatures = formValues.business_type ? getFeaturesForType(formValues.business_type) : null;
-
-  // ─── Load banks ───
-  useEffect(() => {
-    const fetchBanks = async () => {
-      try {
-        const res = await fetch('/.netlify/functions/list-banks');
-        const data = await res.json();
-        if (Array.isArray(data)) setBanks(data);
-      } catch (err) {
-        console.error('Failed to load banks:', err);
-      } finally {
-        setBanksLoading(false);
-      }
-    };
-    fetchBanks();
-
-    const script = document.createElement('script');
-    script.src = 'https://widget.cloudinary.com/v2.0/global/all.js';
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      // Cleanup if needed
-    };
-  }, []);
-
-  // ─── Helpers ───
-  const generateSlug = (text) => {
-    if (!text) return '';
-    return text
-      .toString()
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, '-')
-      .replace(/[^\w-]+/g, '')
-      .replace(/--+/g, '-');
-  };
-
-  const openUploadWidget = () => {
-    if (!window.cloudinary) {
-      alert('Image upload widget is still loading, please wait a moment.');
-      return;
-    }
-    const widget = window.cloudinary.createUploadWidget(
-      {
-        cloudName: 'deexaiik4',
-        uploadPreset: 'BizUploads',
-        sources: ['local', 'url', 'camera'],
-        multiple: false,
-        maxFiles: 1,
-      },
-      (error, result) => {
-        if (!error && result.event === 'success') {
-          setLogoUrl(result.info.secure_url);
-        }
-      }
-    );
-    widget.open();
-  };
-
-  const validateStep = (step) => {
-    setError('');
-    if (step === 1) {
-      if (!formValues.business_name.trim()) { setError('Business name is required.'); return false; }
-      if (!formValues.email.trim()) { setError('Email is required.'); return false; }
-      if (!formValues.phone.trim()) { setError('Phone number is required.'); return false; }
-      if (!formValues.business_type) { setError('Please select a business type.'); return false; }
-    }
-    if (step === 2) {
-      if (!formValues.business_description.trim()) { setError('Business description is required.'); return false; }
-      if (!formValues.business_address.trim()) { setError('Business address is required.'); return false; }
-      if (!formValues.whatsapp_number.trim()) { setError('WhatsApp number is required.'); return false; }
-    }
-    if (step === 5) {
-      if (!formValues.account_name.trim()) { setError('Account name is required.'); return false; }
-      if (!formValues.settlement_bank) { setError('Please select a bank.'); return false; }
-      if (!/^[0-9]{10}$/.test(formValues.account_number)) { setError('Account number must be exactly 10 digits.'); return false; }
-      if (!consent) { setError('Please accept the payment policy.'); return false; }
-    }
-    return true;
-  };
-
-  const nextStep = () => {
-    if (!validateStep(currentStep)) return;
-    if (currentStep < steps.length) setCurrentStep((c) => c + 1);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const prevStep = () => {
-    setError('');
-    if (currentStep > 1) setCurrentStep((c) => c - 1);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // ─── Fetch with timeout ───
-  const fetchWithTimeout = async (url, options, timeout = 15000) => {
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeout);
-    try {
-      const res = await fetch(url, { ...options, signal: controller.signal });
-      clearTimeout(id);
-      return res;
-    } catch (err) {
-      clearTimeout(id);
-      throw err;
-    }
-  };
-
-  // ─── Submit ───
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateStep(5)) return;
-
-    setLoading(true);
-    setError('');
-
-    // Note: signup does NOT call save-business directly.
-    // Instead, it initializes payment and redirects to onboarding,
-    // where save-business is called with CSRF protection.
-    // The CSRF token is not needed here, but the import is present for completeness.
-
-    const {
-      business_name,
-      email,
-      phone,
-      business_type,
-      settlement_bank,
-      account_number,
-      account_name,
-      whatsapp_number,
-      business_description,
-      business_address,
-      instagram_link,
-      tiktok_link,
-      has_products,
-    } = formValues;
-
-    const colorToUse = brandColor || '#c8a97e';
-    const businessSlug = generateSlug(business_name);
-    const signupAmount = 2500;
-
-    if (!businessSlug) {
-      setError('Business name is missing. Please go back to Step 1.');
-      setLoading(false);
-      return;
-    }
-
-    const typeFeatures = getFeaturesForType(business_type);
-    if (has_products === 'No') {
-      typeFeatures.productsEnabled = false;
-    } else if (has_products === 'Yes') {
-      typeFeatures.productsEnabled = true;
-    }
-
-    let finalSubaccountCode = null;
-
-    try {
-      // 1. Create subaccount
-      const subaccountRes = await fetchWithTimeout(
-        '/.netlify/functions/create-subaccount',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            business_name,
-            settlement_bank,
-            account_number,
-            percentage_charge: 5,
-            primary_contact_name: account_name || business_name,
-            primary_contact_email: email,
-            primary_contact_phone: phone,
-          }),
-        },
-        15000
-      );
-
-      if (!subaccountRes.ok) {
-        const errData = await subaccountRes.json().catch(() => ({}));
-        console.error('Subaccount creation failed:', errData.error || subaccountRes.statusText);
-        finalSubaccountCode = 'ACCT_PENDING';
-      } else {
-        const subaccountData = await subaccountRes.json();
-        finalSubaccountCode = subaccountData.subaccount_code || 'ACCT_PENDING';
-      }
-    } catch (err) {
-      console.error('Error creating subaccount:', err.message);
-      finalSubaccountCode = 'ACCT_PENDING';
-    }
-
-    const selectedBank = banks.find((b) => b.code === settlement_bank);
-    const settlementBankName = selectedBank ? selectedBank.name : settlement_bank;
-
-    const tempBusinessData = {
-      businessName: business_name,
-      businessSlug,
-      email,
-      phone,
-      whatsapp: whatsapp_number,
-      businessType: business_type,
-      subaccountCode: finalSubaccountCode,
-      brandColor: colorToUse,
-      logoUrl,
-      bio: business_description,
-      location: business_address,
-      instagram: instagram_link,
-      tiktok: tiktok_link,
-      referredBy: referralParam,
-      initialPaymentAmount: signupAmount,
-      accountName: account_name,
-      accountNumber: account_number,
-      settlementBank: settlementBankName,
-      ...typeFeatures,
-    };
-
-    localStorage.setItem(`pending_signup_${businessSlug}`, JSON.stringify(tempBusinessData));
-
-    // 2. Initialize payment
-    try {
-      const payRes = await fetchWithTimeout(
-        '/.netlify/functions/initialize-payment',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email,
-            amount: signupAmount,
-            slug: businessSlug,
-            referredBy: referralParam && referralParam.startsWith('aff_') ? referralParam : null,
-            callback_url: `${window.location.origin}/onboarding?slug=${businessSlug}`,
-          }),
-        },
-        20000
-      );
-
-      if (!payRes.ok) {
-        const errData = await payRes.json().catch(() => ({}));
-        throw new Error(errData.error || `Payment init failed: ${payRes.status}`);
-      }
-
-      const payData = await payRes.json();
-      if (payData.authorization_url) {
-        window.location.href = payData.authorization_url;
-        return;
-      } else {
-        throw new Error(payData.error || 'No authorization URL returned from Paystack.');
-      }
-    } catch (err) {
-      console.error('Payment initialization error:', err.message);
-      setError(
-        err.message.includes('aborted')
-          ? 'Request timed out. Please check your connection and try again.'
-          : err.message || 'Failed to start payment. Please try again.'
-      );
-      setLoading(false);
-    }
-  };
-
+export function setCsrfTokenHeader(headers = {}) {
+  const token = getCsrfToken();
   return {
-    // State
-    formValues,
-    setFormValues,
-    handleChange,
-    currentStep,
-    steps,
-    loading,
-    error,
-    consent,
-    setConsent,
-    brandColor,
-    setBrandColor,
-    logoUrl,
-    setLogoUrl,
-    banks,
-    banksLoading,
-    currentTypeFeatures,
-    // Navigation
-    nextStep,
-    prevStep,
-    // Submit
-    handleSubmit,
-    // Helpers
-    openUploadWidget,
-    generateSlug,
+    ...headers,
+    'X-CSRF-Token': token,
   };
 }
 </file>
@@ -7838,6 +6214,67 @@ export function optimizeCloudinaryUrl(url) {
 
 export const CLOUD_NAME = 'deexaiik4';
 export const UPLOAD_PRESET = 'BizUploads';
+</file>
+
+<file path="src/lib/diff.js">
+// src/lib/diff.js
+export function getDiff(oldObj, newObj) {
+  if (!oldObj || !newObj) return {};
+
+  const diff = {};
+  for (const key of Object.keys(newObj)) {
+    // Skip if values are strictly equal
+    if (oldObj[key] !== newObj[key]) {
+      // Handle nested objects/arrays if needed
+      if (typeof oldObj[key] === 'object' && typeof newObj[key] === 'object') {
+        // For nested objects, we could recursively diff, but for dashboard
+        // use case, shallow comparison is sufficient.
+        diff[key] = newObj[key];
+      } else {
+        diff[key] = newObj[key];
+      }
+    }
+  }
+  return diff;
+}
+
+export function getNestedDiff(oldArr, newArr, idKey = 'id') {
+  if (!Array.isArray(oldArr) || !Array.isArray(newArr)) {
+    return [];
+  }
+
+  const changes = [];
+
+  // Build maps for O(n) lookups
+  const oldMap = new Map(oldArr.map(item => [item[idKey], item]));
+  const newMap = new Map(newArr.map(item => [item[idKey], item]));
+
+  // Check for removed items
+  for (const [id] of oldMap) {
+    if (!newMap.has(id)) {
+      changes.push({ action: 'delete', id });
+    }
+  }
+
+  // Check for added or updated items
+  for (const [id, newItem] of newMap) {
+    const oldItem = oldMap.get(id);
+    if (!oldItem) {
+      changes.push({ action: 'add', data: newItem });
+    } else {
+      const diff = getDiff(oldItem, newItem);
+      if (Object.keys(diff).length > 0) {
+        changes.push({ action: 'update', id, data: diff });
+      }
+    }
+  }
+
+  return changes;
+}
+
+export function hasChanges(diff) {
+  return Object.keys(diff).length > 0;
+}
 </file>
 
 <file path="src/lib/onboardingHelpers.js">
@@ -11143,6 +9580,1203 @@ export default function PropertyShowcase({ property, accent, isDark, index, what
 export const PLATFORM_PAYSTACK_KEY = 'pk_live_2ba1413aaaf5091188571ea6f87cca34945d943c';
 </file>
 
+<file path="src/hooks/useDashboard.js">
+// src/hooks/useDashboard.js
+import { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useBusiness } from './useBusiness';
+import { uid, optimizeCloudinaryUrl, CLOUD_NAME, UPLOAD_PRESET } from '../lib/dashboardHelpers';
+import { getCsrfToken } from '../lib/csrf';
+import { getDiff } from '../lib/diff';
+
+export function useDashboard() {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const { business: initialBiz, loading } = useBusiness(slug);
+
+  const [biz, setBiz] = useState(null);
+  const [activeTab, setActiveTab] = useState('info');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+  const [showToggles, setShowToggles] = useState(false);
+  const clickCount = useRef(0);
+  const clickTimer = useRef(null);
+
+  const [copied, setCopied] = useState(false);
+  const [urlCopied, setUrlCopied] = useState(false);
+
+  const [showMapPicker, setShowMapPicker] = useState(false);
+
+  const [subLoading, setSubLoading] = useState(false);
+  const [subMsg, setSubMsg] = useState('');
+
+  const [bankUpdating, setBankUpdating] = useState(false);
+  const [bankUpdateError, setBankUpdateError] = useState('');
+  const [bankUpdateSuccess, setBankUpdateSuccess] = useState(false);
+  const [bankName, setBankName] = useState('');
+  const [bankCode, setBankCode] = useState('');
+  const [bankAcc, setBankAcc] = useState('');
+  const [banks, setBanks] = useState([]);
+
+  const [offlineBookings, setOfflineBookings] = useState([]);
+  const [offlineLoading, setOfflineLoading] = useState(false);
+
+  // Load banks
+  useEffect(() => {
+    fetch('/.netlify/functions/list-banks')
+      .then(res => res.json())
+      .then(data => { if (Array.isArray(data)) setBanks(data); })
+      .catch(console.error);
+  }, []);
+
+  // Auth check
+  useEffect(() => {
+    if (!loading && biz) {
+      const authStatus = sessionStorage.getItem('biz_auth_' + slug);
+      if (!authStatus) navigate('/dashboard');
+    }
+  }, [loading, biz, slug, navigate]);
+
+  // Sync initial data
+  useEffect(() => {
+    if (initialBiz) {
+      setBiz(JSON.parse(JSON.stringify(initialBiz)));
+      setActiveTab('info');
+      setShowToggles(false);
+      clickCount.current = 0;
+    }
+  }, [initialBiz]);
+
+  // Load offline bookings when tab is active
+  useEffect(() => {
+    if (activeTab === 'offline-payments' && biz) {
+      setOfflineLoading(true);
+      fetch(`/.netlify/functions/get-offline-bookings?slug=${biz.slug}`)
+        .then(res => res.json())
+        .then(data => setOfflineBookings(data.bookings || []))
+        .catch(console.error)
+        .finally(() => setOfflineLoading(false));
+    }
+  }, [activeTab, biz]);
+
+  // Handle subscription payment return
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const subRef = params.get('sub_ref');
+    if (subRef && biz) {
+      setSubLoading(true);
+      fetch('/.netlify/functions/verify-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference: subRef, slug })
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            setSubMsg('Payment successful! Subscription extended by 30 days.');
+            setTimeout(() => window.location.reload(), 2000);
+          } else {
+            setSubMsg('Payment verification failed. Contact support.');
+          }
+        })
+        .catch(() => setSubMsg('Network error verifying payment.'))
+        .finally(() => setSubLoading(false));
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [biz, slug]);
+
+  // Load Cloudinary widget
+  useEffect(() => {
+    if (!window.cloudinary) {
+      const script = document.createElement('script');
+      script.src = 'https://widget.cloudinary.com/v2.0/global/all.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // ── Handlers ──
+  const handleNameClick = () => {
+    clickCount.current++;
+    clearTimeout(clickTimer.current);
+    clickTimer.current = setTimeout(() => { clickCount.current = 0; }, 500);
+    if (clickCount.current >= 3) {
+      clickCount.current = 0;
+      setShowToggles(prev => !prev);
+    }
+  };
+
+  const handleCopyReferralLink = () => {
+    const url = window.location.origin + '/signup?ref=' + biz.slug;
+    navigator.clipboard.writeText(url)
+      .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); })
+      .catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      });
+  };
+
+  const handleCopyPageUrl = () => {
+    const url = window.location.origin + '/' + biz.slug;
+    navigator.clipboard.writeText(url)
+      .then(() => { setUrlCopied(true); setTimeout(() => setUrlCopied(false), 2500); })
+      .catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        setUrlCopied(true);
+        setTimeout(() => setUrlCopied(false), 2500);
+      });
+  };
+
+  const handlePaySubscription = async () => {
+    setSubLoading(true);
+    setSubMsg('');
+    try {
+      const res = await fetch('/.netlify/functions/initialize-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, email: biz.email })
+      });
+      const data = await res.json();
+      if (data.authorization_url) {
+        window.location.href = data.authorization_url;
+      } else {
+        setSubMsg(data.error || 'Failed to initialize payment.');
+        setSubLoading(false);
+      }
+    } catch {
+      setSubMsg('Network error.');
+      setSubLoading(false);
+    }
+  };
+
+  const handleUpdateBank = async () => {
+    if (!bankName.trim()) { setBankUpdateError('Enter account name.'); return; }
+    if (!bankCode) { setBankUpdateError('Select a bank.'); return; }
+    if (!/^[0-9]{10}$/.test(bankAcc)) { setBankUpdateError('Account number must be 10 digits.'); return; }
+
+    setBankUpdating(true);
+    setBankUpdateError('');
+    setBankUpdateSuccess(false);
+    try {
+      const res = await fetch('/.netlify/functions/update-subaccount', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug: biz.slug,
+          business_name: biz.name,
+          settlement_bank: bankCode,
+          account_number: bankAcc,
+          account_name: bankName,
+          email: biz.email || '',
+          phone: biz.phone || ''
+        })
+      });
+      const data = await res.json();
+      if (res.ok && (data.ok || data.subaccount_code)) {
+        setBankUpdateSuccess(true);
+        setBiz(prev => ({ ...prev, subaccount_code: data.subaccount_code || prev.subaccount_code }));
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        setBankUpdateError(data.error || 'Verification failed.');
+      }
+    } catch {
+      setBankUpdateError('Network error.');
+    } finally {
+      setBankUpdating(false);
+    }
+  };
+
+  const handleVerifyOfflinePayment = async (bookingId) => {
+    if (!confirm('Have you received this payment?')) return;
+    setOfflineLoading(true);
+    try {
+      const res = await fetch('/.netlify/functions/verify-offline-booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: bookingId, slug: biz.slug })
+      });
+      if (res.ok) {
+        setOfflineBookings(prev =>
+          prev.map(b => b.id === bookingId ? { ...b, status: 'verified' } : b)
+        );
+        alert('Payment verified!');
+      } else {
+        alert('Verification failed.');
+      }
+    } catch {
+      alert('Network error.');
+    } finally {
+      setOfflineLoading(false);
+    }
+  };
+
+  // ── CRUD helpers ──
+  const setField = (field, value) => setBiz(prev => ({ ...prev, [field]: value }));
+  const setNested = (arrName, id, updates) => {
+    setBiz(prev => ({
+      ...prev,
+      [arrName]: prev[arrName].map(item => item.id === id ? { ...item, ...updates } : item)
+    }));
+  };
+  const addItem = (arrName, template) => {
+    setBiz(prev => ({ ...prev, [arrName]: [...prev[arrName], template] }));
+  };
+  const removeItem = (arrName, id) => {
+    setBiz(prev => ({ ...prev, [arrName]: prev[arrName].filter(i => i.id !== id) }));
+  };
+
+  // ── Image upload wrapper ──
+  const uploadImage = (onSuccess, isMultiple = true, maxImages = 10) => {
+    if (!window.cloudinary) { alert('Widget loading...'); return; }
+    const urls = [];
+    const widget = window.cloudinary.createUploadWidget(
+      {
+        cloudName: CLOUD_NAME,
+        uploadPreset: UPLOAD_PRESET,
+        sources: ['local', 'url', 'camera'],
+        multiple: isMultiple,
+        maxFiles: maxImages,
+        maxImageFileSize: 10000000,
+        clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
+        transformation: [{ width: 1200, crop: 'limit' }]
+      },
+      (err, res) => {
+        if (err) return;
+        if (!isMultiple && res.event === 'success' && res.info?.secure_url) {
+          onSuccess(optimizeCloudinaryUrl(res.info.secure_url));
+        }
+        if (isMultiple && res.event === 'success') {
+          const u = res.info?.secure_url;
+          if (u && !urls.includes(u)) {
+            urls.push(u);
+            onSuccess(optimizeCloudinaryUrl(u));
+          }
+        }
+        if (isMultiple && res.event === 'upload-finish' && res.info?.files) {
+          res.info.files.forEach(f => {
+            const u2 = f.uploadInfo?.secure_url;
+            if (u2 && !urls.includes(u2)) {
+              urls.push(u2);
+              onSuccess(optimizeCloudinaryUrl(u2));
+            }
+          });
+        }
+      }
+    );
+    widget.open();
+  };
+
+  // ── Save changes with CSRF protection (full payload) ──
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+    setSaved(false);
+
+    try {
+      // Compute only changed fields to check if anything changed
+      const changes = getDiff(initialBiz, biz);
+
+      // If nothing changed, show saved state and return early
+      if (Object.keys(changes).length === 0) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+        setSaving(false);
+        return;
+      }
+
+      // Build full payload with consistent field names
+      const payload = {
+        ...biz,
+        slug: biz.slug,
+        account_name: biz.accountName || biz.account_name || '',
+        account_number: biz.accountNumber || biz.account_number || '',
+        settlement_bank: biz.settlementBank || biz.settlement_bank || ''
+      };
+
+      const res = await fetch('/.netlify/functions/save-business', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': getCsrfToken(),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      } else {
+        throw new Error(data.error || 'Failed to save');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to save changes.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ── Derived values ──
+  const subEndsAt = biz?.subscription_ends_at ? new Date(biz.subscription_ends_at) : null;
+  const now = new Date();
+  const daysLeft = subEndsAt ? Math.ceil((subEndsAt - now) / (1000 * 60 * 60 * 24)) : null;
+  const isExpired = daysLeft !== null && daysLeft <= 0;
+  const isWarning = daysLeft !== null && daysLeft <= 5 && daysLeft > 0;
+
+  const getMapsReadiness = () => {
+    const issues = [];
+    if (!biz?.name) issues.push('Business Name');
+    if (!biz?.phone) issues.push('Phone Number');
+    if (!biz?.location) issues.push('Location');
+    if (!biz?.email) issues.push('Email');
+    return { ready: issues.length === 0, issues };
+  };
+
+  const getVisibleTabs = () => {
+    if (!biz) return [];
+    const base = [
+      { id: 'info', label: 'Info' },
+      { id: 'security', label: 'Security' },
+      { id: 'gallery', label: 'Gallery' },
+      { id: 'offline-payments', label: 'Bank Payments' }
+    ];
+    if (biz.servicesEnabled) base.push({ id: 'services', label: 'Services' });
+    if (biz.productsEnabled) base.push({ id: 'products', label: 'Products' });
+    if (biz.carsEnabled) base.push({ id: 'cars', label: 'Cars' });
+    if (biz.foodEnabled) base.push({ id: 'food', label: 'Food' });
+    if (biz.propertiesEnabled) base.push({ id: 'properties', label: 'Properties' });
+    if (biz.estatesEnabled) base.push({ id: 'estates', label: 'Estates' });
+    return base;
+  };
+
+  const resolveBankName = (code) => {
+    if (!code) return '';
+    if (/^\d{2,6}$/.test(code)) {
+      const found = banks.find(b => b.code === code);
+      return found ? found.name : code;
+    }
+    return code;
+  };
+
+  const resolveBankCode = (name) => {
+    if (!name) return '';
+    if (/^\d{2,6}$/.test(name)) return name;
+    const found = banks.find(b => b.name === name);
+    return found ? found.code : '';
+  };
+
+  return {
+    // State
+    biz,
+    setBiz,
+    activeTab,
+    setActiveTab,
+    saving,
+    saved,
+    error,
+    showToggles,
+    copied,
+    urlCopied,
+    showMapPicker,
+    setShowMapPicker,
+    subLoading,
+    subMsg,
+    bankUpdating,
+    bankUpdateError,
+    bankUpdateSuccess,
+    bankName,
+    setBankName,
+    bankCode,
+    setBankCode,
+    bankAcc,
+    setBankAcc,
+    banks,
+    offlineBookings,
+    offlineLoading,
+    loading,
+    slug,
+    accent: biz?.accent || '#c8a97e',
+    // Derived
+    isExpired,
+    isWarning,
+    daysLeft,
+    getMapsReadiness,
+    getVisibleTabs,
+    resolveBankName,
+    resolveBankCode,
+    // Handlers
+    handleNameClick,
+    handleCopyReferralLink,
+    handleCopyPageUrl,
+    handlePaySubscription,
+    handleUpdateBank,
+    handleVerifyOfflinePayment,
+    handleSave, // now sends full payload with CSRF
+    uploadImage,
+    setField,
+    setNested,
+    addItem,
+    removeItem,
+    // Helpers
+    uid,
+    optimizeCloudinaryUrl,
+  };
+}
+</file>
+
+<file path="src/hooks/useOnboarding.js">
+// hooks/useOnboarding.js
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  optimizeCloudinaryUrl,
+  cleanPrice,
+  CLOUD_NAME,
+  UPLOAD_PRESET,
+  updateNestedState,
+  updateNestedAddon,
+  updateNestedOption,
+} from '../lib/onboardingHelpers';
+import { getCsrfToken } from '../lib/csrf';
+
+export function useOnboarding() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const slugFromUrl = searchParams.get('slug');
+
+  // ─── Load business data from storage ───
+  const loadBizData = () => {
+    let data = null;
+    if (slugFromUrl) {
+      const stored = localStorage.getItem('pending_signup_' + slugFromUrl);
+      if (stored) {
+        try { data = JSON.parse(stored); } catch {}
+      }
+    }
+    if (!data) {
+      const sessionData = sessionStorage.getItem('pending_signup_data');
+      if (sessionData) {
+        try { data = JSON.parse(sessionData); } catch {}
+        sessionStorage.removeItem('pending_signup_data');
+      }
+    }
+    if (!data) {
+      const localData = localStorage.getItem('pending_signup_data');
+      if (localData) {
+        try { data = JSON.parse(localData); } catch {}
+        localStorage.removeItem('pending_signup_data');
+      }
+    }
+    return data || {};
+  };
+
+  const bizData = loadBizData();
+
+  // ─── State ───
+  const [businessName, setBusinessName] = useState(bizData.businessName || 'New Business');
+  const [businessSlug, setBusinessSlug] = useState(bizData.businessSlug || slugFromUrl || 'new-business');
+  const [businessType, setBusinessType] = useState(bizData.businessType || '');
+  const [brandColor, setBrandColor] = useState(bizData.brandColor || '#c8a97e');
+  const [logoUrl, setLogoUrl] = useState(bizData.logoUrl || '');
+  const [bio, setBio] = useState(bizData.bio || '');
+  const [phone, setPhone] = useState(bizData.phone || '');
+  const [whatsapp, setWhatsapp] = useState(bizData.whatsapp || '');
+  const [email, setEmail] = useState(bizData.email || '');
+  const [locationAddr, setLocationAddr] = useState(bizData.location || '');
+  const [instagram, setInstagram] = useState(bizData.instagram || '');
+  const [tiktok, setTiktok] = useState(bizData.tiktok || '');
+  const [subaccountCode, setSubaccountCode] = useState(bizData.subaccountCode || 'ACCT_PENDING');
+  const [referredBy, setReferredBy] = useState(bizData.referredBy || null);
+
+  const isAutoBusiness = businessType === 'Auto' || businessType === 'Auto Dealer / Rental';
+  const isFoodBusiness = businessType === 'Restaurant' || businessType === 'Restaurant / Food';
+  const isPropertyBusiness = businessType === 'Real Estate' || businessType === 'Shortlet';
+
+  const [servicesEnabled, setServicesEnabled] = useState(
+    bizData.servicesEnabled !== undefined ? bizData.servicesEnabled : (!isAutoBusiness && !isFoodBusiness && !isPropertyBusiness)
+  );
+  const [productsEnabled, setProductsEnabled] = useState(
+    bizData.productsEnabled !== undefined ? bizData.productsEnabled : (!isAutoBusiness && !isFoodBusiness && !isPropertyBusiness)
+  );
+  const [carsEnabled, setCarsEnabled] = useState(
+    bizData.carsEnabled !== undefined ? bizData.carsEnabled : isAutoBusiness
+  );
+  const [foodEnabled, setFoodEnabled] = useState(
+    bizData.foodEnabled !== undefined ? bizData.foodEnabled : isFoodBusiness
+  );
+  const [propertiesEnabled, setPropertiesEnabled] = useState(
+    bizData.propertiesEnabled !== undefined ? bizData.propertiesEnabled : isPropertyBusiness
+  );
+
+  const hasProductsStep = productsEnabled && !carsEnabled && !foodEnabled && !propertiesEnabled;
+
+  const [currentStep, setCurrentStep] = useState(1);
+  const [securityCode, setSecurityCode] = useState('');
+  const [securityQuestion1, setSecurityQuestion1] = useState('');
+  const [securityAnswer1, setSecurityAnswer1] = useState('');
+  const [securityQuestion2, setSecurityQuestion2] = useState('');
+  const [securityAnswer2, setSecurityAnswer2] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const [accountName, setAccountName] = useState(bizData.accountName || '');
+  const [accountNumber, setAccountNumber] = useState(bizData.accountNumber || '');
+  const [settlementBankName, setSettlementBankName] = useState(bizData.settlementBank || '');
+
+  const [gallery, setGallery] = useState([{ id: 'default', group: 'Gallery', images: [] }]);
+  const [services, setServices] = useState([{ id: 1, name: '', duration: '', price: '', description: '', image: '', images: [] }]);
+  const [products, setProducts] = useState([{ id: 1, name: '', price: '', description: '', image: '', images: [], sizes: [], colors: [] }]);
+  const [cars, setCars] = useState([]);
+  const [foods, setFoods] = useState([]);
+  const [properties, setProperties] = useState([]);
+
+  // ─── Steps ───
+  const steps = useMemo(() => {
+    if (propertiesEnabled) {
+      return [
+        { id: 1, title: 'Security', desc: 'Dashboard access' },
+        { id: 2, title: 'Gallery', desc: 'Your photos' },
+        { id: 3, title: 'Properties', desc: 'Your listings' },
+        { id: 4, title: 'Review', desc: 'Final check' },
+      ];
+    } else if (carsEnabled || foodEnabled) {
+      return [
+        { id: 1, title: 'Security', desc: 'Dashboard access' },
+        { id: 2, title: 'Gallery', desc: 'Your photos' },
+        { id: 3, title: carsEnabled ? 'Cars' : 'Menu', desc: 'What you offer' },
+        { id: 4, title: 'Review', desc: 'Final check' },
+      ];
+    } else if (hasProductsStep) {
+      return [
+        { id: 1, title: 'Security', desc: 'Dashboard access' },
+        { id: 2, title: 'Gallery', desc: 'Your photos' },
+        { id: 3, title: 'Services', desc: 'What you offer' },
+        { id: 4, title: 'Products', desc: 'Items for sale' },
+        { id: 5, title: 'Review', desc: 'Final check' },
+      ];
+    } else {
+      return [
+        { id: 1, title: 'Security', desc: 'Dashboard access' },
+        { id: 2, title: 'Gallery', desc: 'Your photos' },
+        { id: 3, title: 'Services', desc: 'What you offer' },
+        { id: 4, title: 'Review', desc: 'Final check' },
+      ];
+    }
+  }, [propertiesEnabled, carsEnabled, foodEnabled, hasProductsStep]);
+
+  // ─── Cloudinary script ───
+  useEffect(() => {
+    if (!window.cloudinary) {
+      const script = document.createElement('script');
+      script.src = 'https://widget.cloudinary.com/v2.0/global/all.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // ─── Image upload ───
+  const uploadImage = (onSuccess, isMultiple = true, maxImages = 10) => {
+    if (!window.cloudinary) {
+      alert('Widget is still loading.');
+      return;
+    }
+    const uploadedUrls = [];
+    const widget = window.cloudinary.createUploadWidget(
+      {
+        cloudName: CLOUD_NAME,
+        uploadPreset: UPLOAD_PRESET,
+        sources: ['local', 'url', 'camera'],
+        multiple: isMultiple,
+        maxFiles: maxImages,
+        maxImageFileSize: 10000000,
+        clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
+        transformation: [{ width: 1200, crop: 'limit' }],
+      },
+      (err, res) => {
+        if (err) return;
+        if (!isMultiple && res.event === 'success' && res.info?.secure_url) {
+          onSuccess(optimizeCloudinaryUrl(res.info.secure_url));
+        }
+        if (isMultiple && res.event === 'success') {
+          const u = res.info?.secure_url;
+          if (u && !uploadedUrls.includes(u)) {
+            uploadedUrls.push(u);
+            onSuccess(optimizeCloudinaryUrl(u));
+          }
+        }
+        if (isMultiple && res.event === 'upload-finish' && res.info?.files) {
+          res.info.files.forEach(f => {
+            const u2 = f.uploadInfo?.secure_url;
+            if (u2 && !uploadedUrls.includes(u2)) {
+              uploadedUrls.push(u2);
+              onSuccess(optimizeCloudinaryUrl(u2));
+            }
+          });
+        }
+      }
+    );
+    widget.open();
+  };
+
+  // ─── Handlers for gallery ───
+  const addGroup = () => setGallery(prev => [...prev, { id: 'g-' + Date.now(), group: '', images: [] }]);
+  const removeGroup = (id) => setGallery(prev => prev.filter(g => g.id !== id));
+  const updateGroupName = (id, name) =>
+    setGallery(prev => prev.map(g => (g.id === id ? { ...g, group: name } : g)));
+  const addGalleryImage = (groupId, url) =>
+    setGallery(prev =>
+      prev.map(g =>
+        g.id === groupId ? { ...g, images: [...g.images, url] } : g
+      )
+    );
+  const removeGalleryImage = (groupId, imgIdx) =>
+    setGallery(prev =>
+      prev.map(g =>
+        g.id === groupId
+          ? { ...g, images: g.images.filter((_, i) => i !== imgIdx) }
+          : g
+      )
+    );
+
+  // ─── Handlers for services ───
+  const addService = () =>
+    setServices(prev => [...prev, { id: Date.now(), name: '', duration: '', price: '', description: '', image: '', images: [] }]);
+  const removeService = (id) => setServices(prev => prev.filter(s => s.id !== id));
+  const updateService = (id, field, value) =>
+    setServices(prev => updateNestedState(prev, id, { [field]: value }));
+  const addServiceImage = (service) =>
+    uploadImage((url) => {
+      setServices(prev =>
+        prev.map(s => {
+          if (s.id !== service.id) return s;
+          const imgs = [...(s.images || []), url];
+          return { ...s, images: imgs, image: imgs[0] };
+        })
+      );
+    }, true, 3);
+  const removeServiceImage = (id, idx) =>
+    setServices(prev =>
+      prev.map(s =>
+        s.id === id
+          ? { ...s, images: s.images.filter((_, i) => i !== idx), image: s.images[0] || '' }
+          : s
+      )
+    );
+
+  // ─── Handlers for products ───
+  const addProduct = () =>
+    setProducts(prev => [...prev, { id: Date.now(), name: '', price: '', description: '', image: '', images: [], sizes: [], colors: [] }]);
+  const removeProduct = (id) => setProducts(prev => prev.filter(p => p.id !== id));
+  const updateProduct = (id, field, value) =>
+    setProducts(prev => updateNestedState(prev, id, { [field]: value }));
+  const updateProductSizes = (id, value) =>
+    setProducts(prev =>
+      updateNestedState(prev, id, {
+        sizes: value.split(',').map(s => s.trim()).filter(Boolean),
+      })
+    );
+  const updateProductColors = (id, value) =>
+    setProducts(prev =>
+      updateNestedState(prev, id, {
+        colors: value.split(',').map(s => s.trim()).filter(Boolean),
+      })
+    );
+  const addProductImage = (product) =>
+    uploadImage((url) => {
+      setProducts(prev =>
+        prev.map(p => {
+          if (p.id !== product.id) return p;
+          const imgs = [...(p.images || []), url];
+          return { ...p, images: imgs, image: imgs[0] };
+        })
+      );
+    }, true, 3);
+  const removeProductImage = (id, idx) =>
+    setProducts(prev =>
+      prev.map(p =>
+        p.id === id
+          ? { ...p, images: p.images.filter((_, i) => i !== idx), image: p.images[0] || '' }
+          : p
+      )
+    );
+
+  // ─── Handlers for cars ───
+  const addCar = () =>
+    setCars(prev => [...prev, { id: Date.now(), name: '', type: 'rent', year: '', price: '', mileage: '', transmission: '', fuel: '', description: '', images: [] }]);
+  const removeCar = (id) => setCars(prev => prev.filter(c => c.id !== id));
+  const updateCar = (id, field, value) =>
+    setCars(prev => updateNestedState(prev, id, { [field]: value }));
+  const setCarImages = (id, images) =>
+    setCars(prev => updateNestedState(prev, id, { images }));
+  const addCarImage = (car) =>
+    uploadImage((url) => {
+      setCars(prev =>
+        prev.map(c => {
+          if (c.id !== car.id) return c;
+          const imgs = [...(c.images || []), url];
+          return { ...c, images: imgs };
+        })
+      );
+    }, true, 3);
+
+  // ─── Handlers for food ───
+  const addFood = () =>
+    setFoods(prev => [...prev, { id: Date.now(), name: '', price: '', description: '', image: '', images: [], addons: [] }]);
+  const removeFood = (id) => setFoods(prev => prev.filter(f => f.id !== id));
+  const updateFood = (id, field, value) =>
+    setFoods(prev => updateNestedState(prev, id, { [field]: value }));
+  const addFoodImage = (food) =>
+    uploadImage((url) => {
+      setFoods(prev =>
+        prev.map(f => {
+          if (f.id !== food.id) return f;
+          const imgs = [...(f.images || []), url];
+          return { ...f, images: imgs, image: imgs[0] };
+        })
+      );
+    }, true, 3);
+  const removeFoodImage = (id, idx) =>
+    setFoods(prev =>
+      prev.map(f =>
+        f.id === id
+          ? { ...f, images: f.images.filter((_, i) => i !== idx), image: f.images[0] || '' }
+          : f
+      )
+    );
+
+  // ─── Food addon handlers ───
+  const addAddonGroup = (foodId) => {
+    setFoods(prev =>
+      prev.map(f =>
+        f.id === foodId
+          ? { ...f, addons: [...(f.addons || []), { id: 'a-' + Date.now(), label: '', type: 'single', options: [] }] }
+          : f
+      )
+    );
+  };
+  const removeAddonGroup = (foodId, addonId) => {
+    setFoods(prev =>
+      prev.map(f =>
+        f.id === foodId
+          ? { ...f, addons: (f.addons || []).filter(a => a.id !== addonId) }
+          : f
+      )
+    );
+  };
+  const updateAddonGroup = (foodId, addonId, field, value) => {
+    setFoods(prev => updateNestedAddon(prev, foodId, addonId, { [field]: value }));
+  };
+  const addAddonOption = (foodId, addonId) => {
+    setFoods(prev =>
+      prev.map(f => {
+        if (f.id !== foodId) return f;
+        return {
+          ...f,
+          addons: (f.addons || []).map(a =>
+            a.id === addonId
+              ? { ...a, options: [...(a.options || []), { id: 'opt-' + Date.now(), name: '', price: 0 }] }
+              : a
+          ),
+        };
+      })
+    );
+  };
+  const removeAddonOption = (foodId, addonId, optId) => {
+    setFoods(prev =>
+      prev.map(f => {
+        if (f.id !== foodId) return f;
+        return {
+          ...f,
+          addons: (f.addons || []).map(a =>
+            a.id === addonId
+              ? { ...a, options: (a.options || []).filter(o => o.id !== optId) }
+              : a
+          ),
+        };
+      })
+    );
+  };
+  const updateAddonOption = (foodId, addonId, optId, field, value) => {
+    setFoods(prev =>
+      prev.map(f => {
+        if (f.id !== foodId) return f;
+        return {
+          ...f,
+          addons: (f.addons || []).map(a =>
+            a.id === addonId
+              ? {
+                  ...a,
+                  options: (a.options || []).map(o =>
+                    o.id === optId ? { ...o, [field]: value } : o
+                  ),
+                }
+              : a
+          ),
+        };
+      })
+    );
+  };
+
+  // ─── Handlers for properties ───
+  const addProperty = () =>
+    setProperties(prev => [...prev, { id: Date.now(), name: '', type: businessType === 'Shortlet' ? 'shortlet' : 'sale', price: '', location: '', bedrooms: '', bathrooms: '', description: '', images: [] }]);
+  const removeProperty = (id) => setProperties(prev => prev.filter(p => p.id !== id));
+  const updateProperty = (id, field, value) =>
+    setProperties(prev => updateNestedState(prev, id, { [field]: value }));
+  const addPropertyImage = (property) =>
+    uploadImage((url) => {
+      setProperties(prev =>
+        prev.map(p => {
+          if (p.id !== property.id) return p;
+          const imgs = [...(p.images || []), url];
+          return { ...p, images: imgs };
+        })
+      );
+    }, true, 5);
+  const removePropertyImage = (id, idx) =>
+    setProperties(prev =>
+      prev.map(p =>
+        p.id === id
+          ? { ...p, images: p.images.filter((_, i) => i !== idx) }
+          : p
+      )
+    );
+
+  // ─── Navigation ───
+  const nextStep = () => {
+    if (currentStep < steps.length) {
+      setCurrentStep(c => c + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(c => c - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // ─── Submit ───
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    // Validation
+    if (securityCode.length !== 4) {
+      setError('Please set a valid 4-digit security code.');
+      setLoading(false);
+      return;
+    }
+    if (!securityQuestion1 || !securityAnswer1.trim() || !securityQuestion2 || !securityAnswer2.trim()) {
+      setError('Please select and answer both security questions.');
+      setLoading(false);
+      return;
+    }
+
+    const honeypot = document.getElementById('formspree_gotcha');
+    if (honeypot && honeypot.value) {
+      setLoading(false);
+      return;
+    }
+
+    // Build data
+    const servicesData = services.filter(s => s.name).map(s => ({
+      id: businessSlug + '-' + s.id,
+      name: s.name,
+      duration: s.duration,
+      price: cleanPrice(s.price),
+      image: s.image || '',
+      images: s.images || [],
+      showDetails: true,
+      description: s.description || '',
+    }));
+
+    const productsData = products.filter(p => p.name).map(p => ({
+      id: businessSlug + '-' + p.id,
+      name: p.name,
+      price: cleanPrice(p.price),
+      image: p.image || '',
+      images: p.images || [],
+      sizes: p.sizes || [],
+      colors: p.colors || [],
+      showDetails: true,
+      description: p.description || '',
+    }));
+
+    const carsData = (carsEnabled ? cars : []).filter(c => c.name).map(c => ({
+      id: businessSlug + '-' + c.id,
+      type: c.type,
+      name: c.name,
+      year: parseInt(c.year) || new Date().getFullYear(),
+      price: cleanPrice(c.price),
+      mileage: c.mileage || '',
+      transmission: c.transmission || '',
+      fuel: c.fuel || '',
+      description: c.description || '',
+      image: (c.images || [])[0] || '',
+      images: c.images || [],
+    }));
+
+    const foodsData = (foodEnabled ? foods : []).filter(f => f.name).map(f => {
+      const cleanAddons = (f.addons || [])
+        .filter(a => a.label && a.label.trim())
+        .map(a => ({
+          id: a.id,
+          label: a.label.trim(),
+          type: a.type,
+          options: (a.options || [])
+            .filter(o => o.name && o.name.trim())
+            .map(o => ({ name: o.name.trim(), price: cleanPrice(o.price) })),
+        }))
+        .filter(a => a.options.length > 0);
+      return {
+        id: businessSlug + '-' + f.id,
+        name: f.name,
+        price: cleanPrice(f.price),
+        image: f.image || '',
+        description: f.description || '',
+        addons: cleanAddons,
+      };
+    });
+
+    const propertiesData = (propertiesEnabled ? properties : []).filter(p => p.name).map(p => ({
+      id: businessSlug + '-' + p.id,
+      name: p.name,
+      type: p.type,
+      price: cleanPrice(p.price),
+      location: p.location || '',
+      bedrooms: p.bedrooms || '',
+      bathrooms: p.bathrooms || '',
+      description: p.description || '',
+      images: p.images || [],
+    }));
+
+    const galleryData = gallery
+      .filter(g => g.group.trim() && g.images.length > 0)
+      .map(g => ({ group: g.group.trim(), images: g.images }));
+
+    const finalGallery = galleryData.length > 0 ? galleryData : [{ group: 'Gallery', images: [] }];
+
+    const payload = {
+      slug: businessSlug,
+      name: businessName,
+      logo: logoUrl,
+      tagline: 'A professional ' + businessType + ' in Lagos',
+      bio,
+      phone,
+      referredBy,
+      whatsapp,
+      email,
+      location: locationAddr,
+      hours: 'Mon–Sun, 9 AM – 6 PM',
+      accent: brandColor,
+      hero: 'https://picsum.photos/seed/' + businessSlug + '/800/600',
+      socials: { instagram, tiktok },
+      subaccountCode,
+      calendarId: email,
+      adsEnabled: !propertiesEnabled,
+      businessType,
+      servicesEnabled,
+      productsEnabled,
+      carsEnabled,
+      foodEnabled,
+      propertiesEnabled,
+      securityCode,
+      securityQuestion1,
+      securityAnswer1: securityAnswer1.trim().toLowerCase(),
+      securityQuestion2,
+      securityAnswer2: securityAnswer2.trim().toLowerCase(),
+      account_name: accountName,
+      account_number: accountNumber,
+      settlement_bank: settlementBankName,
+      gallery: finalGallery,
+      services: servicesData,
+      products: productsData,
+      cars: carsData,
+      food: foodsData,
+      properties: propertiesData,
+    };
+
+    const formData = new FormData();
+    formData.append('_subject', 'New Business Setup: ' + businessName);
+    formData.append('_replyto', email);
+    formData.append('_gotcha', '');
+    formData.append('business_name', businessName);
+    formData.append('business_slug', businessSlug);
+    formData.append('business_type', businessType);
+    formData.append('business_email', email);
+    formData.append('business_phone', phone);
+    formData.append('business_whatsapp', whatsapp);
+    formData.append('business_location', locationAddr);
+    formData.append('subaccount_code', subaccountCode);
+    formData.append('services_count', String(servicesData.length));
+    formData.append('products_count', String(productsData.length));
+    formData.append('cars_count', String(carsData.length));
+    formData.append('food_count', String(foodsData.length));
+    formData.append('properties_count', String(propertiesData.length));
+
+    try {
+      // 1. Send to Formspree (no CSRF needed)
+      await fetch('https://formspree.io/f/xyklbbqy', {
+        method: 'POST',
+        body: formData,
+        headers: { Accept: 'application/json' },
+      }).catch(() => ({ ok: true }));
+
+      // 2. Save to Supabase with CSRF protection
+      const saveRes = await fetch('/.netlify/functions/save-business', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': getCsrfToken(),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const saveData = await saveRes.json();
+
+      if (!saveData.ok) {
+        throw new Error(saveData.error || 'Failed to save business.');
+      }
+
+      // Clean up storage
+      localStorage.removeItem('pending_signup_' + businessSlug);
+      localStorage.removeItem('pending_signup_data');
+      sessionStorage.removeItem('pending_signup_data');
+
+      sessionStorage.setItem('new_biz_slug', businessSlug);
+      sessionStorage.setItem('new_biz_name', businessName);
+
+      navigate('/onboarding-success', {
+        state: { businessName, businessSlug },
+      });
+    } catch (err) {
+      setError(err.message || 'Failed to save. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ─── Helpers for UI ───
+  const totalGalleryImages = gallery.reduce((acc, g) => acc + g.images.length, 0);
+  const isProductsStep = hasProductsStep && currentStep === 4;
+  const isReviewStep = currentStep === steps.length;
+
+  // ─── Return all state and handlers ───
+  return {
+    // State
+    businessName,
+    businessSlug,
+    businessType,
+    brandColor,
+    logoUrl,
+    bio,
+    phone,
+    whatsapp,
+    email,
+    locationAddr,
+    instagram,
+    tiktok,
+    subaccountCode,
+    referredBy,
+    servicesEnabled,
+    productsEnabled,
+    carsEnabled,
+    foodEnabled,
+    propertiesEnabled,
+    hasProductsStep,
+    currentStep,
+    setCurrentStep,
+    securityCode,
+    setSecurityCode,
+    securityQuestion1,
+    setSecurityQuestion1,
+    securityAnswer1,
+    setSecurityAnswer1,
+    securityQuestion2,
+    setSecurityQuestion2,
+    securityAnswer2,
+    setSecurityAnswer2,
+    loading,
+    error,
+    accountName,
+    setAccountName,
+    accountNumber,
+    setAccountNumber,
+    settlementBankName,
+    setSettlementBankName,
+    gallery,
+    services,
+    products,
+    cars,
+    foods,
+    properties,
+    steps,
+    totalGalleryImages,
+    isProductsStep,
+    isReviewStep,
+
+    // Handlers
+    uploadImage,
+    addGroup,
+    removeGroup,
+    updateGroupName,
+    addGalleryImage,
+    removeGalleryImage,
+    addService,
+    removeService,
+    updateService,
+    addServiceImage,
+    removeServiceImage,
+    addProduct,
+    removeProduct,
+    updateProduct,
+    updateProductSizes,
+    updateProductColors,
+    addProductImage,
+    removeProductImage,
+    addCar,
+    removeCar,
+    updateCar,
+    setCarImages,
+    addCarImage,
+    addFood,
+    removeFood,
+    updateFood,
+    addFoodImage,
+    removeFoodImage,
+    addAddonGroup,
+    removeAddonGroup,
+    updateAddonGroup,
+    addAddonOption,
+    removeAddonOption,
+    updateAddonOption,
+    addProperty,
+    removeProperty,
+    updateProperty,
+    addPropertyImage,
+    removePropertyImage,
+    nextStep,
+    prevStep,
+    handleSubmit,
+  };
+}
+</file>
+
 <file path="src/hooks/usePaginatedItems.js">
 // src/hooks/usePaginatedItems.js
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -11206,6 +10840,372 @@ export function usePaginatedItems(slug, table, initialLimit = 12) {
   }, [slug, table, fetchItems]);
 
   return { items, loading, hasMore, loadMore, total };
+}
+</file>
+
+<file path="src/hooks/useSignup.js">
+// src/hooks/useSignup.js
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+// Not used in signup flow (no direct save-business call), but kept for consistency
+import { getCsrfToken } from '../lib/csrf';
+
+export function useSignup() {
+  const [params] = useSearchParams();
+  const referralParam = params.get('ref');
+
+  const [loading, setLoading] = useState(false);
+  const [banks, setBanks] = useState([]);
+  const [banksLoading, setBanksLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [consent, setConsent] = useState(false);
+  const [brandColor, setBrandColor] = useState('#c8a97e');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [currentStep, setCurrentStep] = useState(1);
+
+  const steps = [
+    { id: 1, title: 'Business Info', desc: 'Basic details' },
+    { id: 2, title: 'Profile', desc: 'About your business' },
+    { id: 3, title: 'Branding', desc: 'Logo & colors' },
+    { id: 4, title: 'Services', desc: 'What you offer' },
+    { id: 5, title: 'Payout', desc: 'Get paid' },
+  ];
+
+  const [formValues, setFormValues] = useState({
+    business_name: '',
+    email: '',
+    phone: '',
+    business_type: '',
+    business_description: '',
+    business_address: '',
+    whatsapp_number: '',
+    num_services: '',
+    has_products: '',
+    instagram_link: '',
+    tiktok_link: '',
+    other_socials: '',
+    referral_code: referralParam || '',
+    account_name: '',
+    settlement_bank: '',
+    account_number: '',
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // ─── Derive feature flags ───
+  const getFeaturesForType = (type) => {
+    switch (type) {
+      case 'Fashion':
+        return { servicesEnabled: true, productsEnabled: true, carsEnabled: false, foodEnabled: false, propertiesEnabled: false };
+      case 'Lash Artist':
+      case 'Hair Stylist':
+      case 'Makeup Artist':
+      case 'Nail Technician':
+      case 'Skin Care':
+        return { servicesEnabled: true, productsEnabled: true, carsEnabled: false, foodEnabled: false, propertiesEnabled: false };
+      case 'Cleaner':
+      case 'Tutor':
+        return { servicesEnabled: true, productsEnabled: false, carsEnabled: false, foodEnabled: false, propertiesEnabled: false };
+      case 'Restaurant':
+        return { servicesEnabled: false, productsEnabled: false, carsEnabled: false, foodEnabled: true, propertiesEnabled: false };
+      case 'Auto':
+        return { servicesEnabled: false, productsEnabled: false, carsEnabled: true, foodEnabled: false, propertiesEnabled: false };
+      case 'Real Estate':
+      case 'Shortlet':
+        return { servicesEnabled: false, productsEnabled: false, carsEnabled: false, foodEnabled: false, propertiesEnabled: true };
+      default:
+        return { servicesEnabled: true, productsEnabled: true, carsEnabled: false, foodEnabled: false, propertiesEnabled: false };
+    }
+  };
+
+  const currentTypeFeatures = formValues.business_type ? getFeaturesForType(formValues.business_type) : null;
+
+  // ─── Load banks ───
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        const res = await fetch('/.netlify/functions/list-banks');
+        const data = await res.json();
+        if (Array.isArray(data)) setBanks(data);
+      } catch (err) {
+        console.error('Failed to load banks:', err);
+      } finally {
+        setBanksLoading(false);
+      }
+    };
+    fetchBanks();
+
+    const script = document.createElement('script');
+    script.src = 'https://widget.cloudinary.com/v2.0/global/all.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      // Cleanup if needed
+    };
+  }, []);
+
+  // ─── Helpers ───
+  const generateSlug = (text) => {
+    if (!text) return '';
+    return text
+      .toString()
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]+/g, '')
+      .replace(/--+/g, '-');
+  };
+
+  const openUploadWidget = () => {
+    if (!window.cloudinary) {
+      alert('Image upload widget is still loading, please wait a moment.');
+      return;
+    }
+    const widget = window.cloudinary.createUploadWidget(
+      {
+        cloudName: 'deexaiik4',
+        uploadPreset: 'BizUploads',
+        sources: ['local', 'url', 'camera'],
+        multiple: false,
+        maxFiles: 1,
+      },
+      (error, result) => {
+        if (!error && result.event === 'success') {
+          setLogoUrl(result.info.secure_url);
+        }
+      }
+    );
+    widget.open();
+  };
+
+  const validateStep = (step) => {
+    setError('');
+    if (step === 1) {
+      if (!formValues.business_name.trim()) { setError('Business name is required.'); return false; }
+      if (!formValues.email.trim()) { setError('Email is required.'); return false; }
+      if (!formValues.phone.trim()) { setError('Phone number is required.'); return false; }
+      if (!formValues.business_type) { setError('Please select a business type.'); return false; }
+    }
+    if (step === 2) {
+      if (!formValues.business_description.trim()) { setError('Business description is required.'); return false; }
+      if (!formValues.business_address.trim()) { setError('Business address is required.'); return false; }
+      if (!formValues.whatsapp_number.trim()) { setError('WhatsApp number is required.'); return false; }
+    }
+    if (step === 5) {
+      if (!formValues.account_name.trim()) { setError('Account name is required.'); return false; }
+      if (!formValues.settlement_bank) { setError('Please select a bank.'); return false; }
+      if (!/^[0-9]{10}$/.test(formValues.account_number)) { setError('Account number must be exactly 10 digits.'); return false; }
+      if (!consent) { setError('Please accept the payment policy.'); return false; }
+    }
+    return true;
+  };
+
+  const nextStep = () => {
+    if (!validateStep(currentStep)) return;
+    if (currentStep < steps.length) setCurrentStep((c) => c + 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const prevStep = () => {
+    setError('');
+    if (currentStep > 1) setCurrentStep((c) => c - 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // ─── Fetch with timeout ───
+  const fetchWithTimeout = async (url, options, timeout = 15000) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(id);
+      return res;
+    } catch (err) {
+      clearTimeout(id);
+      throw err;
+    }
+  };
+
+  // ─── Submit ───
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateStep(5)) return;
+
+    setLoading(true);
+    setError('');
+
+    // Note: signup does NOT call save-business directly.
+    // Instead, it initializes payment and redirects to onboarding,
+    // where save-business is called with CSRF protection.
+    // The CSRF token is not needed here, but the import is present for completeness.
+
+    const {
+      business_name,
+      email,
+      phone,
+      business_type,
+      settlement_bank,
+      account_number,
+      account_name,
+      whatsapp_number,
+      business_description,
+      business_address,
+      instagram_link,
+      tiktok_link,
+      has_products,
+    } = formValues;
+
+    const colorToUse = brandColor || '#c8a97e';
+    const businessSlug = generateSlug(business_name);
+    const signupAmount = 2500;
+
+    if (!businessSlug) {
+      setError('Business name is missing. Please go back to Step 1.');
+      setLoading(false);
+      return;
+    }
+
+    const typeFeatures = getFeaturesForType(business_type);
+    if (has_products === 'No') {
+      typeFeatures.productsEnabled = false;
+    } else if (has_products === 'Yes') {
+      typeFeatures.productsEnabled = true;
+    }
+
+    let finalSubaccountCode = null;
+
+    try {
+      // 1. Create subaccount
+      const subaccountRes = await fetchWithTimeout(
+        '/.netlify/functions/create-subaccount',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            business_name,
+            settlement_bank,
+            account_number,
+            percentage_charge: 5,
+            primary_contact_name: account_name || business_name,
+            primary_contact_email: email,
+            primary_contact_phone: phone,
+          }),
+        },
+        15000
+      );
+
+      if (!subaccountRes.ok) {
+        const errData = await subaccountRes.json().catch(() => ({}));
+        console.error('Subaccount creation failed:', errData.error || subaccountRes.statusText);
+        finalSubaccountCode = 'ACCT_PENDING';
+      } else {
+        const subaccountData = await subaccountRes.json();
+        finalSubaccountCode = subaccountData.subaccount_code || 'ACCT_PENDING';
+      }
+    } catch (err) {
+      console.error('Error creating subaccount:', err.message);
+      finalSubaccountCode = 'ACCT_PENDING';
+    }
+
+    const selectedBank = banks.find((b) => b.code === settlement_bank);
+    const settlementBankName = selectedBank ? selectedBank.name : settlement_bank;
+
+    const tempBusinessData = {
+      businessName: business_name,
+      businessSlug,
+      email,
+      phone,
+      whatsapp: whatsapp_number,
+      businessType: business_type,
+      subaccountCode: finalSubaccountCode,
+      brandColor: colorToUse,
+      logoUrl,
+      bio: business_description,
+      location: business_address,
+      instagram: instagram_link,
+      tiktok: tiktok_link,
+      referredBy: referralParam,
+      initialPaymentAmount: signupAmount,
+      accountName: account_name,
+      accountNumber: account_number,
+      settlementBank: settlementBankName,
+      ...typeFeatures,
+    };
+
+    localStorage.setItem(`pending_signup_${businessSlug}`, JSON.stringify(tempBusinessData));
+
+    // 2. Initialize payment
+    try {
+      const payRes = await fetchWithTimeout(
+        '/.netlify/functions/initialize-payment',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            amount: signupAmount,
+            slug: businessSlug,
+            referredBy: referralParam && referralParam.startsWith('aff_') ? referralParam : null,
+            callback_url: `${window.location.origin}/onboarding?slug=${businessSlug}`,
+          }),
+        },
+        20000
+      );
+
+      if (!payRes.ok) {
+        const errData = await payRes.json().catch(() => ({}));
+        throw new Error(errData.error || `Payment init failed: ${payRes.status}`);
+      }
+
+      const payData = await payRes.json();
+      if (payData.authorization_url) {
+        window.location.href = payData.authorization_url;
+        return;
+      } else {
+        throw new Error(payData.error || 'No authorization URL returned from Paystack.');
+      }
+    } catch (err) {
+      console.error('Payment initialization error:', err.message);
+      setError(
+        err.message.includes('aborted')
+          ? 'Request timed out. Please check your connection and try again.'
+          : err.message || 'Failed to start payment. Please try again.'
+      );
+      setLoading(false);
+    }
+  };
+
+  return {
+    // State
+    formValues,
+    setFormValues,
+    handleChange,
+    currentStep,
+    steps,
+    loading,
+    error,
+    consent,
+    setConsent,
+    brandColor,
+    setBrandColor,
+    logoUrl,
+    setLogoUrl,
+    banks,
+    banksLoading,
+    currentTypeFeatures,
+    // Navigation
+    nextStep,
+    prevStep,
+    // Submit
+    handleSubmit,
+    // Helpers
+    openUploadWidget,
+    generateSlug,
+  };
 }
 </file>
 
@@ -12840,65 +12840,6 @@ export default function PropertyHero({ biz, accent, isDark }) {
 }
 </file>
 
-<file path="src/components/bio/property/PropertyLayout.jsx">
-// PropertyLayout.jsx — adds DM Sans font globally
-import PropertyHeader from './PropertyHeader';
-import PropertyHero from './PropertyHero';
-import PropertyEstates from './PropertyEstates';
-import PropertyListings from './PropertyListings';
-import PropertyAbout from './PropertyAbout';
-import PropertyFooter from './PropertyFooter';
-
-export default function PropertyLayout({ biz, accent, isDark, onSelectProperty }) {
-  const estatesEnabled = biz.estatesEnabled === true;
-  const propertiesEnabled = biz.propertiesEnabled === true;
-
-  const rawEstates = biz.estates || [];
-  const estates = rawEstates.slice().sort(function (a, b) {
-    if (a.featured && !b.featured) return -1;
-    if (!a.featured && b.featured) return 1;
-    return 0;
-  });
-
-  const showEstates = estatesEnabled && estates.length > 0;
-  const showProperties = propertiesEnabled && (biz.properties || []).length > 0;
-
-  return (
-    <>
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
-      <style>{`body, body * { font-family: 'DM Sans', system-ui, -apple-system, sans-serif; }`}</style>
-      <div className="min-h-screen scroll-smooth">
-        <PropertyHeader biz={biz} accent={accent} isDark={isDark} />
-        <PropertyHero biz={biz} accent={accent} isDark={isDark} />
-
-        {showProperties && (
-          <PropertyListings
-            biz={biz}
-            accent={accent}
-            isDark={isDark}
-            onSelectProperty={onSelectProperty}
-          />
-        )}
-
-        {showEstates && (
-          <PropertyEstates
-            biz={{ ...biz, estates }}
-            accent={accent}
-            isDark={isDark}
-            onSelectProperty={onSelectProperty}
-          />
-        )}
-
-        <PropertyAbout biz={biz} accent={accent} isDark={isDark} />
-        <PropertyFooter biz={biz} accent={accent} isDark={isDark} />
-      </div>
-    </>
-  );
-}
-</file>
-
 <file path="src/components/bio/property/PropertyListings.jsx">
 // PropertyListings.jsx
 import { useState, useEffect } from 'react';
@@ -14219,6 +14160,68 @@ export default function PropertyHeader({ biz, accent, isDark }) {
             </a>
           </div>
         </div>
+      </div>
+    </>
+  );
+}
+</file>
+
+<file path="src/components/bio/property/PropertyLayout.jsx">
+// PropertyLayout.jsx — adds DM Sans font globally
+import PropertyHeader from './PropertyHeader';
+import PropertyHero from './PropertyHero';
+import PropertyEstates from './PropertyEstates';
+import PropertyListings from './PropertyListings';
+import PropertyAbout from './PropertyAbout';
+import PropertyFooter from './PropertyFooter';
+
+export default function PropertyLayout({ biz, accent, isDark, onSelectProperty }) {
+  const estatesEnabled = biz.estatesEnabled === true;
+  const propertiesEnabled = biz.propertiesEnabled === true;
+
+  const rawEstates = biz.estates || [];
+  const estates = rawEstates.slice().sort(function (a, b) {
+    if (a.featured && !b.featured) return -1;
+    if (!a.featured && b.featured) return 1;
+    return 0;
+  });
+
+  const showEstates = estatesEnabled && estates.length > 0;
+  const showProperties = propertiesEnabled && (biz.properties || []).length > 0;
+
+  return (
+    <>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
+      <style>{`body, body * { font-family: 'DM Sans', system-ui, -apple-system, sans-serif; }`}</style>
+      <div className="min-h-screen scroll-smooth">
+        <PropertyHeader biz={biz} accent={accent} isDark={isDark} />
+        <PropertyHero biz={biz} accent={accent} isDark={isDark} />
+
+        
+
+
+        {showProperties && (
+          <PropertyListings
+            biz={biz}
+            accent={accent}
+            isDark={isDark}
+            onSelectProperty={onSelectProperty}
+          />
+        )}
+
+        {showEstates && (
+          <PropertyEstates
+            biz={{ ...biz, estates }}
+            accent={accent}
+            isDark={isDark}
+            onSelectProperty={onSelectProperty}
+          />
+        )}
+
+        <PropertyAbout biz={biz} accent={accent} isDark={isDark} />
+        <PropertyFooter biz={biz} accent={accent} isDark={isDark} />
       </div>
     </>
   );
@@ -21737,58 +21740,6 @@ export default function App() {
 }
 </file>
 
-<file path="package.json">
-{
-  "name": "booknaija",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build && node scripts/prerender-blog.js && npm run generate-sw",
-    "generate-sw": "workbox generateSW workbox-config.cjs",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "sitemap": "node -r dotenv/config scripts/generate-sitemap.js",
-    "validate-env": "node scripts/validate-env.js",
-    "prebuild": "npm run validate-env && npm run sitemap",
-    "migrate-security": "node scripts/hash-security.js"
-  },
-  "dependencies": {
-    "@sentry/react": "^10.62.0",
-    "@sentry/tracing": "^7.120.4",
-    "@supabase/supabase-js": "^2.105.1",
-    "@tanstack/react-query": "^5.101.1",
-    "bcryptjs": "^3.0.3",
-    "cookie": "^1.1.1",
-    "googleapis": "^171.4.0",
-    "jsonwebtoken": "^9.0.3",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-helmet-async": "^3.0.0",
-    "react-router-dom": "^7.14.1",
-    "resend": "^6.14.0",
-    "xss": "^1.0.15"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "autoprefixer": "^10.5.0",
-    "dotenv": "^16.4.7",
-    "eslint": "^9.39.4",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.4.0",
-    "postcss": "^8.5.10",
-    "tailwindcss": "^3.4.19",
-    "vite": "^8.0.4",
-    "workbox-cli": "^7.4.1"
-  }
-}
-</file>
-
 <file path="src/hooks/useBusiness.js">
 // src/hooks/useBusiness.js
 import { useQuery } from '@tanstack/react-query';
@@ -23020,6 +22971,58 @@ export default function Landing() {
 }
 </file>
 
+<file path="package.json">
+{
+  "name": "booknaija",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/prerender-blog.js && npm run generate-sw",
+    "generate-sw": "workbox generateSW workbox-config.cjs",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "sitemap": "node -r dotenv/config scripts/generate-sitemap.js",
+    "validate-env": "node scripts/validate-env.js",
+    "prebuild": "npm run validate-env && npm run sitemap",
+    "migrate-security": "node scripts/hash-security.js"
+  },
+  "dependencies": {
+    "@sentry/react": "^10.62.0",
+    "@sentry/tracing": "^7.120.4",
+    "@supabase/supabase-js": "^2.105.1",
+    "@tanstack/react-query": "^5.101.1",
+    "bcryptjs": "^3.0.3",
+    "cookie": "^1.1.1",
+    "googleapis": "^171.4.0",
+    "jsonwebtoken": "^9.0.3",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-helmet-async": "^3.0.0",
+    "react-router-dom": "^7.14.1",
+    "resend": "^6.14.0",
+    "xss": "^1.0.15"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "autoprefixer": "^10.5.0",
+    "dotenv": "^16.4.7",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.4.0",
+    "postcss": "^8.5.10",
+    "tailwindcss": "^3.4.19",
+    "vite": "^8.0.4",
+    "workbox-cli": "^7.4.1"
+  }
+}
+</file>
+
 <file path="src/pages/Onboarding.jsx">
 // src/pages/Onboarding.jsx
 import { useOnboarding } from '../hooks/useOnboarding';
@@ -23778,9 +23781,14 @@ function getFeaturesForType(type) {
 }
 
 // ─── HELPERS FOR GRANULAR SYNC ───
-async function syncItems(table, idField, businessId, newItems) {
-  if (!newItems) return;
+function toSnakeCase(str) {
+  return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+}
 
+async function syncItems(table, idField, businessId, newItems) {
+  if (!newItems || !Array.isArray(newItems)) return;
+
+  // Fetch existing items to get allowed columns and existing data
   const { data: existing, error } = await supabase
     .from(table)
     .select('*')
@@ -23792,9 +23800,14 @@ async function syncItems(table, idField, businessId, newItems) {
   }
 
   const existingMap = new Map(existing.map(item => [item[idField], item]));
-  const newMap = new Map(newItems.map(item => [item[idField], item]));
+  const newMap = new Map(newItems.map(item => [item.id, item]));
 
-  // Delete removed
+  // Get allowed columns from existing (or fallback to common columns)
+  const allowedColumns = existing.length > 0
+    ? Object.keys(existing[0])
+    : null;
+
+  // Delete removed items
   for (const [id] of existingMap) {
     if (!newMap.has(id)) {
       const { error: delErr } = await supabase
@@ -23809,12 +23822,34 @@ async function syncItems(table, idField, businessId, newItems) {
 
   // Insert or update
   for (const [id, item] of newMap) {
+    // Prepare db item: map `id` to `idField`
+    const dbItem = { ...item };
+    dbItem[idField] = dbItem.id;
+    delete dbItem.id;
+    dbItem.business_id = businessId;
+
+    // Convert camelCase keys to snake_case and filter out auto timestamps
+    const newDbItem = {};
+    for (const [key, value] of Object.entries(dbItem)) {
+      // Skip auto-managed timestamps
+      if (['created_at', 'updated_at', 'createdAt', 'updatedAt'].includes(key)) {
+        continue;
+      }
+      const snakeKey = toSnakeCase(key);
+      // If allowedColumns is known, only include if in allowedColumns
+      if (allowedColumns && !allowedColumns.includes(snakeKey)) {
+        continue;
+      }
+      newDbItem[snakeKey] = value;
+    }
+
     const existingItem = existingMap.get(id);
     if (existingItem) {
+      // Compute diff using newDbItem
       const diff = {};
-      for (const key of Object.keys(item)) {
-        if (item[key] !== existingItem[key]) {
-          diff[key] = item[key];
+      for (const key of Object.keys(newDbItem)) {
+        if (newDbItem[key] !== existingItem[key]) {
+          diff[key] = newDbItem[key];
         }
       }
       if (Object.keys(diff).length > 0) {
@@ -23829,18 +23864,19 @@ async function syncItems(table, idField, businessId, newItems) {
     } else {
       const { error: insErr } = await supabase
         .from(table)
-        .insert({ ...item, business_id: businessId });
+        .insert(newDbItem);
       if (insErr) console.error(`Insert error ${table}:`, insErr);
       else console.log(`Inserted ${table} ${idField}: ${id}`);
     }
   }
 }
 
+// ─── HANDLER ───
 exports.handler = async function (event) {
   console.log('=== SAVE-BUSINESS ===');
 
   try {
-    // 1. CSRF PROTECTION
+    // ─── CSRF PROTECTION ───
     const cookies = cookie.parse(event.headers.cookie || '');
     const csrfCookie = cookies.csrf_token;
     const csrfHeader = event.headers['x-csrf-token'];
@@ -23853,17 +23889,16 @@ exports.handler = async function (event) {
       };
     }
 
-    // 2. Parse and sanitise input
+    // ─── Parse and sanitise full payload ───
     let d = JSON.parse(event.body);
     d = sanitizeDeep(d);
 
-    const { slug, changes } = d;
-
+    const { slug } = d;
     if (!slug) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing slug' }) };
     }
 
-    // 3. Fetch existing business
+    // ─── Fetch existing business ───
     const { data: existingBiz, error: fetchError } = await supabase
       .from('businesses')
       .select('*')
@@ -23877,112 +23912,95 @@ exports.handler = async function (event) {
 
     const isNew = !existingBiz;
 
-    // 4. Build payload for business fields
+    // ─── Build business payload from full payload ───
     let bizPayload = {};
+    const allowedFields = [
+      'name', 'logo', 'tagline', 'bio', 'phone', 'whatsapp', 'email',
+      'location', 'lat', 'lng', 'hours', 'accent', 'theme',
+      'google_maps_claimed', 'hero', 'hero_slides', 'team',
+      'subaccount_code', 'calendar_id', 'account_name', 'account_number',
+      'settlement_bank', 'active', 'ads_enabled', 'business_type',
+      'services_enabled', 'products_enabled', 'cars_enabled',
+      'food_enabled', 'properties_enabled', 'estates_enabled',
+      'socials', 'gallery', 'security_code', 'security_question_1',
+      'security_answer_1', 'security_question_2', 'security_answer_2'
+    ];
 
     if (isNew) {
-      // New business – use full payload
+      // New business – use derived defaults
       const businessType = d.businessType || d.business_type || '';
       const derived = getFeaturesForType(businessType);
 
-      bizPayload = {
-        slug: d.slug,
-        name: d.name,
-        logo: d.logo || '',
-        tagline: d.tagline || '',
-        bio: d.bio || '',
-        phone: d.phone || '',
-        whatsapp: d.whatsapp || '',
-        email: d.email || '',
-        location: d.location || '',
-        lat: d.lat || null,
-        lng: d.lng || null,
-        hours: d.hours || '',
-        accent: d.accent || '#c8a97e',
-        theme: d.theme || 'light',
-        google_maps_claimed: d.googleMapsClaimed === true,
-        avatar: '',
-        hero: d.hero || '',
-        hero_slides: d.hero_slides || [],
-        team: d.team || [],
-        paystack_public_key: d.paystackPublicKey || 'pk_live_2ba1413aaaf5091188571ea6f87cca34945d943c',
-        subaccount_code: d.subaccountCode || '',
-        calendar_id: d.calendarId || '',
-        account_name: d.account_name || d.accountName || '',
-        account_number: d.account_number || d.accountNumber || '',
-        settlement_bank: d.settlement_bank || d.settlementBank || '',
-        active: true,
-        ads_enabled: d.adsEnabled !== false,
-        business_type: businessType,
-        services_enabled: derived.services_enabled,
-        products_enabled: derived.products_enabled,
-        cars_enabled: derived.cars_enabled,
-        food_enabled: derived.food_enabled,
-        properties_enabled: derived.properties_enabled,
-        estates_enabled: derived.estates_enabled,
-        socials: d.socials || {},
-        gallery: d.gallery || [],
-        security_code: d.securityCode || '',
-        security_code_hash: d.securityCode ? bcrypt.hashSync(d.securityCode, 10) : null,
-        security_question_1: d.securityQuestion1 || '',
-        security_answer_1: (d.securityAnswer1 || '').toLowerCase().trim(),
-        security_answer_1_hash: d.securityAnswer1 ? bcrypt.hashSync(d.securityAnswer1.toLowerCase().trim(), 10) : null,
-        security_question_2: d.securityQuestion2 || '',
-        security_answer_2: (d.securityAnswer2 || '').toLowerCase().trim(),
-        security_answer_2_hash: d.securityAnswer2 ? bcrypt.hashSync(d.securityAnswer2.toLowerCase().trim(), 10) : null,
-        referred_by_affiliate: (d.referredBy && d.referredBy.startsWith('aff_')) ? d.referredBy : null,
-        affiliate_bounty_paid: !!(d.referredBy && d.referredBy.startsWith('aff_')),
-        subscription_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      };
+      for (const field of allowedFields) {
+        if (d[field] !== undefined) {
+          bizPayload[field] = d[field];
+        }
+      }
+      // Ensure required fields
+      bizPayload.slug = d.slug;
+      bizPayload.active = true;
+      bizPayload.subscription_ends_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      // Apply derived feature flags if not explicitly set
+      if (bizPayload.services_enabled === undefined) bizPayload.services_enabled = derived.services_enabled;
+      if (bizPayload.products_enabled === undefined) bizPayload.products_enabled = derived.products_enabled;
+      if (bizPayload.cars_enabled === undefined) bizPayload.cars_enabled = derived.cars_enabled;
+      if (bizPayload.food_enabled === undefined) bizPayload.food_enabled = derived.food_enabled;
+      if (bizPayload.properties_enabled === undefined) bizPayload.properties_enabled = derived.properties_enabled;
+      if (bizPayload.estates_enabled === undefined) bizPayload.estates_enabled = derived.estates_enabled;
+      // Security hashing
+      if (bizPayload.security_code) {
+        bizPayload.security_code_hash = bcrypt.hashSync(bizPayload.security_code, 10);
+      }
+      if (bizPayload.security_answer_1) {
+        const trimmed = bizPayload.security_answer_1.toLowerCase().trim();
+        bizPayload.security_answer_1 = trimmed;
+        bizPayload.security_answer_1_hash = bcrypt.hashSync(trimmed, 10);
+      }
+      if (bizPayload.security_answer_2) {
+        const trimmed = bizPayload.security_answer_2.toLowerCase().trim();
+        bizPayload.security_answer_2 = trimmed;
+        bizPayload.security_answer_2_hash = bcrypt.hashSync(trimmed, 10);
+      }
+      // Affiliate
+      if (d.referredBy && d.referredBy.startsWith('aff_')) {
+        bizPayload.referred_by_affiliate = d.referredBy;
+        bizPayload.affiliate_bounty_paid = true;
+      }
+      // Remove security plaintext if hash exists (optional)
+      if (bizPayload.security_code_hash) delete bizPayload.security_code;
+      if (bizPayload.security_answer_1_hash) delete bizPayload.security_answer_1;
+      if (bizPayload.security_answer_2_hash) delete bizPayload.security_answer_2;
     } else {
-      // Existing business – only apply changed fields
-      const allowedFields = [
-        'name', 'logo', 'tagline', 'bio', 'phone', 'whatsapp', 'email',
-        'location', 'lat', 'lng', 'hours', 'accent', 'theme',
-        'google_maps_claimed', 'hero', 'hero_slides', 'team',
-        'subaccount_code', 'calendar_id', 'account_name', 'account_number',
-        'settlement_bank', 'active', 'ads_enabled', 'business_type',
-        'services_enabled', 'products_enabled', 'cars_enabled',
-        'food_enabled', 'properties_enabled', 'estates_enabled',
-        'socials', 'gallery', 'security_code', 'security_question_1',
-        'security_answer_1', 'security_question_2', 'security_answer_2'
-      ];
-
-      for (const key of allowedFields) {
-        if (changes && changes[key] !== undefined) {
-          let value = changes[key];
+      // Existing business – only changed fields (full payload diff)
+      for (const field of allowedFields) {
+        if (d[field] !== undefined && d[field] !== existingBiz[field]) {
+          let value = d[field];
           // Handle security hashing
-          if (key === 'security_code' && value) {
-            bizPayload.security_code = value;
+          if (field === 'security_code' && value) {
+            bizPayload.security_code = value; // keep plaintext for backward compatibility
             bizPayload.security_code_hash = bcrypt.hashSync(value, 10);
-          } else if (key === 'security_answer_1' && value) {
+          } else if (field === 'security_answer_1' && value) {
             const trimmed = value.toLowerCase().trim();
             bizPayload.security_answer_1 = trimmed;
             bizPayload.security_answer_1_hash = bcrypt.hashSync(trimmed, 10);
-          } else if (key === 'security_answer_2' && value) {
+          } else if (field === 'security_answer_2' && value) {
             const trimmed = value.toLowerCase().trim();
             bizPayload.security_answer_2 = trimmed;
             bizPayload.security_answer_2_hash = bcrypt.hashSync(trimmed, 10);
           } else {
-            bizPayload[key] = value;
+            bizPayload[field] = value;
           }
         }
       }
-
-      // Remove any fields with undefined values (could cause null errors)
+      // Remove undefined values
       for (const key of Object.keys(bizPayload)) {
         if (bizPayload[key] === undefined) {
           delete bizPayload[key];
         }
       }
-
-      if (Object.keys(bizPayload).length === 0) {
-        console.log('No business field changes detected.');
-        // Still proceed to sync related items if any
-      }
     }
 
-    // 5. Insert or update business
+    // ─── Insert or update business ───
     let businessId;
     if (isNew) {
       const { data: newRow, error: insertErr } = await supabase
@@ -23997,7 +24015,6 @@ exports.handler = async function (event) {
       }
       businessId = newRow.id;
     } else {
-      // Update only if bizPayload has fields
       if (Object.keys(bizPayload).length > 0) {
         const { error: updateErr } = await supabase
           .from('businesses')
@@ -24009,7 +24026,7 @@ exports.handler = async function (event) {
           throw updateErr;
         }
       }
-      // Fetch the row to get the ID for related table sync
+      // Fetch the row to get the ID
       const { data: updatedRow, error: fetchAfterUpdate } = await supabase
         .from('businesses')
         .select('id')
@@ -24023,7 +24040,7 @@ exports.handler = async function (event) {
       businessId = updatedRow.id;
     }
 
-    // 6. If new, handle referral tracking
+    // ─── Referral tracking (only for new businesses) ───
     if (isNew && d.referredBy && d.referredBy !== slug && !d.referredBy.startsWith('aff_')) {
       try {
         const { data: referrer, error: refErr } = await supabase
@@ -24048,7 +24065,7 @@ exports.handler = async function (event) {
       }
     }
 
-    // 7. Granular sync of related tables
+    // ─── Sync related tables using full arrays from payload ───
     if (d.services) await syncItems('business_services', 'service_id', businessId, d.services);
     if (d.products) await syncItems('business_products', 'product_id', businessId, d.products);
     if (d.cars) await syncItems('business_cars', 'car_id', businessId, d.cars);
