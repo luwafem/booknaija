@@ -1,6 +1,8 @@
 const { createClient } = require('@supabase/supabase-js');
 const { google } = require('googleapis');
 const xss = require('xss');
+const cookie = require('cookie');          // 👈 ADDED
+const jwt = require('jsonwebtoken');       // 👈 ADDED
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -41,6 +43,45 @@ exports.handler = async function (event) {
 
     if (!id || !slug) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing booking ID or slug' }) };
+    }
+
+    // ─── JWT AUTHENTICATION (NEW) ───
+    const cookies = cookie.parse(event.headers.cookie || '');
+    const token = cookies.dashboard_token;
+    if (!token) {
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Unauthorized: No session token provided.' }),
+      };
+    }
+
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (!JWT_SECRET) {
+      console.error('JWT_SECRET not set in environment');
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Server misconfiguration.' }),
+      };
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      console.warn('JWT verification failed:', err.message);
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Invalid or expired session. Please log in again.' }),
+      };
+    }
+
+    // Ensure the JWT slug matches the requested slug
+    if (decoded.slug !== slug) {
+      console.warn(`JWT slug mismatch: ${decoded.slug} vs ${slug}`);
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: 'Forbidden: You do not have permission to verify bookings for this business.' }),
+      };
     }
 
     // 1. Fetch the booking details

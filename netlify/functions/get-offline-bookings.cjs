@@ -1,6 +1,8 @@
 // netlify/functions/get-offline-bookings.cjs
 const { createClient } = require('@supabase/supabase-js');
 const xss = require('xss');
+const cookie = require('cookie');          // 👈 ADDED
+const jwt = require('jsonwebtoken');       // 👈 ADDED
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -37,7 +39,46 @@ exports.handler = async function (event) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Invalid slug format' }) };
     }
 
-    // Fetch pending bookings for this business, ordered by newest first
+    // ─── JWT AUTHENTICATION (NEW) ───
+    const cookies = cookie.parse(event.headers.cookie || '');
+    const token = cookies.dashboard_token;
+    if (!token) {
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Unauthorized: No session token provided.' }),
+      };
+    }
+
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (!JWT_SECRET) {
+      console.error('JWT_SECRET not set in environment');
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Server misconfiguration.' }),
+      };
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      console.warn('JWT verification failed:', err.message);
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Invalid or expired session. Please log in again.' }),
+      };
+    }
+
+    // Ensure the JWT slug matches the requested slug
+    if (decoded.slug !== slug) {
+      console.warn(`JWT slug mismatch: ${decoded.slug} vs ${slug}`);
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: 'Forbidden: You do not have permission to view bookings for this business.' }),
+      };
+    }
+
+    // ─── Fetch bookings ───
     const { data, error } = await supabase
       .from('offline_bookings')
       .select('*')
