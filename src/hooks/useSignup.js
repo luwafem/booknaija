@@ -1,6 +1,8 @@
 // src/hooks/useSignup.js
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+// Not used in signup flow (no direct save-business call), but kept for consistency
+import { getCsrfToken } from '../lib/csrf';
 
 export function useSignup() {
   const [params] = useSearchParams();
@@ -189,6 +191,11 @@ export function useSignup() {
 
     setLoading(true);
     setError('');
+
+    // Note: signup does NOT call save-business directly.
+    // Instead, it initializes payment and redirects to onboarding,
+    // where save-business is called with CSRF protection.
+    // The CSRF token is not needed here, but the import is present for completeness.
 
     const {
       business_name,

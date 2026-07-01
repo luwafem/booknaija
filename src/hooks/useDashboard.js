@@ -1,8 +1,10 @@
-// hooks/useDashboard.js
+// src/hooks/useDashboard.js
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useBusiness } from './useBusiness';
 import { uid, optimizeCloudinaryUrl, CLOUD_NAME, UPLOAD_PRESET } from '../lib/dashboardHelpers';
+import { getCsrfToken } from '../lib/csrf';
+import { getDiff } from '../lib/diff';
 
 export function useDashboard() {
   const { slug } = useParams();
@@ -293,26 +295,45 @@ export function useDashboard() {
     widget.open();
   };
 
-  // ── Save changes ──
+  // ── Save changes with CSRF protection (full payload) ──
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
     setError('');
     setSaved(false);
+
     try {
+      // Compute only changed fields to check if anything changed
+      const changes = getDiff(initialBiz, biz);
+
+      // If nothing changed, show saved state and return early
+      if (Object.keys(changes).length === 0) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+        setSaving(false);
+        return;
+      }
+
+      // Build full payload with consistent field names
       const payload = {
         ...biz,
+        slug: biz.slug,
         account_name: biz.accountName || biz.account_name || '',
         account_number: biz.accountNumber || biz.account_number || '',
         settlement_bank: biz.settlementBank || biz.settlement_bank || ''
       };
+
       const res = await fetch('/.netlify/functions/save-business', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': getCsrfToken(),
+        },
+        body: JSON.stringify(payload),
       });
+
       const data = await res.json();
-      if (data.ok) {
+      if (res.ok && data.ok) {
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
       } else {
@@ -420,7 +441,7 @@ export function useDashboard() {
     handlePaySubscription,
     handleUpdateBank,
     handleVerifyOfflinePayment,
-    handleSave,
+    handleSave, // now sends full payload with CSRF
     uploadImage,
     setField,
     setNested,

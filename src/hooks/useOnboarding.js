@@ -10,6 +10,7 @@ import {
   updateNestedAddon,
   updateNestedOption,
 } from '../lib/onboardingHelpers';
+import { getCsrfToken } from '../lib/csrf';
 
 export function useOnboarding() {
   const navigate = useNavigate();
@@ -545,7 +546,6 @@ export function useOnboarding() {
       accent: brandColor,
       hero: 'https://picsum.photos/seed/' + businessSlug + '/800/600',
       socials: { instagram, tiktok },
-      // paystackPublicKey removed – backend uses live fallback
       subaccountCode,
       calendarId: email,
       adsEnabled: !propertiesEnabled,
@@ -590,24 +590,23 @@ export function useOnboarding() {
     formData.append('properties_count', String(propertiesData.length));
 
     try {
-      await Promise.all([
-        fetch('https://formspree.io/f/xyklbbqy', {
-          method: 'POST',
-          body: formData,
-          headers: { Accept: 'application/json' },
-        }).catch(() => ({ ok: true })),
-        fetch('/.netlify/functions/save-business', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        }),
-      ]);
+      // 1. Send to Formspree (no CSRF needed)
+      await fetch('https://formspree.io/f/xyklbbqy', {
+        method: 'POST',
+        body: formData,
+        headers: { Accept: 'application/json' },
+      }).catch(() => ({ ok: true }));
 
+      // 2. Save to Supabase with CSRF protection
       const saveRes = await fetch('/.netlify/functions/save-business', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': getCsrfToken(),
+        },
         body: JSON.stringify(payload),
       });
+
       const saveData = await saveRes.json();
 
       if (!saveData.ok) {

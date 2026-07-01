@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "sitemap": "node -r dotenv/config scripts/generate-sitemap.js",
-    "prebuild": "npm run sitemap",
+    "validate-env": "node scripts/validate-env.js",
+    "prebuild": "npm run validate-env && npm run sitemap",
     "migrate-security": "node scripts/hash-security.js"
   },
   "dependencies": {

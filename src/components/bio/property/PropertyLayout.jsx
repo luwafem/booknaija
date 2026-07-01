@@ -30,6 +30,9 @@ export default function PropertyLayout({ biz, accent, isDark, onSelectProperty }
         <PropertyHeader biz={biz} accent={accent} isDark={isDark} />
         <PropertyHero biz={biz} accent={accent} isDark={isDark} />
 
+        
+
+
         {showProperties && (
           <PropertyListings
             biz={biz}
