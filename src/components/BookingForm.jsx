@@ -922,8 +922,8 @@ export default function BookingForm({
       )}
 
       {err && (
-        <div className={`rounded-xl px-4 py-3 ${isDark ? 'bg-red-500/10 border border-red-500/20' : 'bg-red-50 border border-red-200'}`}>
-          <p className={`text-sm ${isDark ? 'text-red-400' : 'text-red-600'}`}>{err}</p>
+        <div className="rounded-xl px-4 py-3 bg-zinc-800/80 border border-zinc-700">
+          <p className="text-sm text-zinc-300">{err}</p>
         </div>
       )}
 

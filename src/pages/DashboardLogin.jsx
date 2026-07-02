@@ -305,7 +305,12 @@ export default function DashboardLogin() {
               </>
             )}
 
-            {error && <p className="text-xs text-red-400 font-medium" role="alert">{error}</p>}
+            {/* ─── ERROR MESSAGE (GREY) ─── */}
+            {error && (
+              <div className="rounded-xl px-4 py-3 bg-zinc-800/80 border border-zinc-700">
+                <p className="text-xs text-zinc-300 font-medium">{error}</p>
+              </div>
+            )}
 
             <button
               type="submit"
@@ -420,7 +425,12 @@ export default function DashboardLogin() {
                       />
                       <p className="text-[10px] text-zinc-500 mt-1">We'll send a 6‑digit OTP to this email.</p>
                     </div>
-                    {resetError && <p className="text-xs text-red-400">{resetError}</p>}
+                    {/* ─── RESET ERROR (GREY) ─── */}
+                    {resetError && (
+                      <div className="rounded-xl px-4 py-3 bg-zinc-800/80 border border-zinc-700">
+                        <p className="text-xs text-zinc-300">{resetError}</p>
+                      </div>
+                    )}
                     <button
                       type="submit"
                       disabled={resetLoading}
@@ -514,7 +524,12 @@ export default function DashboardLogin() {
                       </div>
                     </div>
 
-                    {resetError && <p className="text-xs text-red-400">{resetError}</p>}
+                    {/* ─── RESET ERROR (GREY) ─── */}
+                    {resetError && (
+                      <div className="rounded-xl px-4 py-3 bg-zinc-800/80 border border-zinc-700">
+                        <p className="text-xs text-zinc-300">{resetError}</p>
+                      </div>
+                    )}
                     <button
                       type="submit"
                       disabled={resetLoading}

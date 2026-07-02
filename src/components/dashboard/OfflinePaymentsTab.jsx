@@ -21,7 +21,7 @@ export default function OfflinePaymentsTab({
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-white tracking-tight">Bank Transfer Bookings</h3>
         {pendingCount > 0 && (
-          <span className="bg-red-500/20 text-red-400 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-[0.15em]">
+          <span className="bg-zinc-700/50 text-zinc-300 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-[0.15em] border border-zinc-600">
             {pendingCount} Pending
           </span>
         )}
@@ -47,12 +47,12 @@ export default function OfflinePaymentsTab({
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-sm font-semibold text-white">{b.customer_name}</span>
                     <span
-                      className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-[0.15em] ${
+                      className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-[0.15em] border ${
                         isPending
-                          ? 'bg-amber-500/15 text-amber-400'
+                          ? 'bg-zinc-700/50 text-zinc-300 border-zinc-600'
                           : isVerified
-                          ? 'bg-emerald-500/15 text-emerald-400'
-                          : 'bg-white/[0.06] text-zinc-500'
+                          ? 'bg-zinc-600/50 text-zinc-200 border-zinc-500'
+                          : 'bg-white/[0.06] text-zinc-500 border-transparent'
                       }`}
                     >
                       {b.status}
@@ -119,7 +119,7 @@ export default function OfflinePaymentsTab({
                     </button>
                   )}
                   {isVerified && (
-                    <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1.5">
+                    <span className="text-[10px] text-zinc-300 font-medium flex items-center gap-1.5">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
