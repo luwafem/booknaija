@@ -122,25 +122,12 @@ export default function Dashboard() {
         return (
           <InfoTab
             {...commonTabProps}
-            banks={banks}
-            resolveBankCode={resolveBankCode}
-            resolveBankName={resolveBankName}
             isExpired={isExpired}
             isWarning={isWarning}
             daysLeft={daysLeft}
             subLoading={subLoading}
             subMsg={subMsg}
             handlePaySubscription={handlePaySubscription}
-            bankUpdating={bankUpdating}
-            bankUpdateError={bankUpdateError}
-            bankUpdateSuccess={bankUpdateSuccess}
-            bankName={bankName}
-            setBankName={setBankName}
-            bankCode={bankCode}
-            setBankCode={setBankCode}
-            bankAcc={bankAcc}
-            setBankAcc={setBankAcc}
-            handleUpdateBank={handleUpdateBank}
             handleCopyReferralLink={handleCopyReferralLink}
             copied={copied}
             handleCopyPageUrl={handleCopyPageUrl}
@@ -205,6 +192,25 @@ export default function Dashboard() {
             handleVerifyOfflinePayment={handleVerifyOfflinePayment}
             accent={accent}
             card={card}
+            // Additional bank-related props
+            biz={biz}
+            setField={setField}
+            banks={banks}
+            resolveBankCode={resolveBankCode}
+            resolveBankName={resolveBankName}
+            bankUpdating={bankUpdating}
+            bankUpdateError={bankUpdateError}
+            bankUpdateSuccess={bankUpdateSuccess}
+            bankName={bankName}
+            setBankName={setBankName}
+            bankCode={bankCode}
+            setBankCode={setBankCode}
+            bankAcc={bankAcc}
+            setBankAcc={setBankAcc}
+            handleUpdateBank={handleUpdateBank}
+            inp={inp}
+            sel={sel}
+            lbl={lbl}
           />
         );
       case 'services':

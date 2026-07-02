@@ -5,25 +5,12 @@ export default function InfoTab({
   biz,
   setField,
   accent,
-  banks,
-  resolveBankCode,
-  resolveBankName,
   isExpired,
   isWarning,
   daysLeft,
   subLoading,
   subMsg,
   handlePaySubscription,
-  bankUpdating,
-  bankUpdateError,
-  bankUpdateSuccess,
-  bankName,
-  setBankName,
-  bankCode,
-  setBankCode,
-  bankAcc,
-  setBankAcc,
-  handleUpdateBank,
   handleCopyReferralLink,
   copied,
   handleCopyPageUrl,
@@ -43,12 +30,10 @@ export default function InfoTab({
   const referralUrl = window.location.origin + '/signup?ref=' + biz.slug;
   const pageUrl = window.location.origin + '/' + biz.slug;
   const hasPreciseLocation = biz.lat && biz.lng;
-  const currentSettlementBankCode = resolveBankCode(biz.settlementBank);
-  const currentSettlementBankName = resolveBankName(biz.settlementBank);
 
   return (
     <div className="space-y-6">
-      {/* ── SUBSCRIPTION STATUS (GREY) ── */}
+      {/* ── SUBSCRIPTION STATUS ── */}
       {(isExpired || isWarning) && (
         <div className={`rounded-2xl p-5 sm:p-6 text-white ${isExpired ? 'bg-zinc-700 border border-zinc-600' : 'bg-zinc-600 border border-zinc-500'}`}>
           <div className="flex items-start gap-3 mb-4">
@@ -78,160 +63,7 @@ export default function InfoTab({
         </div>
       )}
 
-      {/* ── BANK VERIFICATION (if pending) ── */}
-      {(biz.subaccount_code === 'ACCT_PENDING' || !biz.subaccount_code) && (
-        <div className={card}>
-          <div className="flex items-start gap-3 mb-5">
-            <div className="flex-shrink-0 w-10 h-10 bg-white/[0.06] rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286zm0 13.036h.008v.008H12v-.008z" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-white tracking-tight">Payout Details Required</h3>
-              <p className="text-[13px] text-zinc-400 mt-1 leading-relaxed">
-                Your bank verification failed during signup. You won't receive payouts until this is fixed.
-              </p>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <div>
-              <label className={lbl}>Account Name</label>
-              <input className={inp} placeholder="As on bank account" value={bankName} onChange={(e) => setBankName(e.target.value)} />
-            </div>
-            <div>
-              <label className={lbl}>Bank</label>
-              <select className={sel} value={bankCode} onChange={(e) => setBankCode(e.target.value)}>
-                <option value="" disabled className="bg-zinc-900">Select your bank</option>
-                {banks.map((b, idx) => (
-                  <option key={b.code + '-' + idx} value={b.code} className="bg-zinc-900">{b.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={lbl}>Account Number</label>
-              <input
-                className={inp + " font-mono tracking-wider"}
-                placeholder="10-digit number"
-                maxLength={10}
-                value={bankAcc}
-                onChange={(e) => setBankAcc(e.target.value.replace(/\D/g, ''))}
-              />
-            </div>
-          </div>
-          {bankUpdateError && (
-            <div className="mt-3 bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 flex items-center gap-2">
-              <svg className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-              </svg>
-              <p className="text-[11px] text-zinc-300">{bankUpdateError}</p>
-            </div>
-          )}
-          {bankUpdateSuccess && (
-            <div className="mt-3 bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 flex items-center gap-2">
-              <svg className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              <p className="text-[11px] text-zinc-300">Bank details verified! Refreshing...</p>
-            </div>
-          )}
-          <div className="mt-4 flex flex-col sm:flex-row gap-2">
-            <button
-              type="button"
-              onClick={handleUpdateBank}
-              disabled={bankUpdating || !bankName || !bankCode || !bankAcc}
-              className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white font-bold py-3 rounded-full transition-all duration-300 active:scale-[0.98] disabled:bg-white/[0.06] disabled:text-zinc-500 text-[11px] tracking-[0.15em] uppercase"
-            >
-              {bankUpdating ? 'Verifying...' : 'Verify Bank Details'}
-            </button>
-            <a
-              href="mailto:support@booknaija.com"
-              className="flex-1 bg-white/[0.03] text-zinc-300 font-bold py-3 rounded-full border border-white/[0.06] text-center hover:bg-white/[0.06] transition-all duration-300 active:scale-[0.98] text-[11px] tracking-[0.15em] uppercase"
-            >
-              Contact Support
-            </a>
-          </div>
-        </div>
-      )}
-
-      {/* ── BANK TRANSFER DETAILS ── */}
-      <div className={card}>
-        <div className="flex items-start gap-3 mb-5">
-          <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${accent}15` }}>
-            <svg className="w-5 h-5" style={{ color: accent }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-white tracking-tight">Bank Transfer Details</h3>
-            <p className="text-[13px] text-zinc-400 mt-0.5 leading-relaxed">
-              Shown to customers who choose "Bank Transfer" as payment method.
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div>
-            <label className={lbl}>Account Name</label>
-            <input
-              className={inp}
-              placeholder="e.g. Oluwafemi Emmanuel Ayedogbon"
-              value={biz.accountName || ''}
-              onChange={(e) => setField('accountName', e.target.value)}
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className={lbl}>Bank</label>
-              <select
-                className={sel}
-                value={currentSettlementBankCode}
-                onChange={(e) => {
-                  const selectedBank = banks.find((b) => b.code === e.target.value);
-                  setField('settlementBank', selectedBank ? selectedBank.name : e.target.value);
-                }}
-              >
-                <option value="" disabled className="bg-zinc-900">Select bank</option>
-                {banks.map((b, idx) => (
-                  <option key={b.code + '-' + idx} value={b.code} className="bg-zinc-900">{b.name}</option>
-                ))}
-              </select>
-              {!currentSettlementBankCode && biz.settlementBank && (
-                <p className="text-[10px] text-zinc-500 mt-1">Current: {biz.settlementBank}</p>
-              )}
-            </div>
-            <div>
-              <label className={lbl}>Account Number</label>
-              <input
-                className={inp + " font-mono tracking-wider"}
-                placeholder="10-digit number"
-                maxLength={10}
-                value={biz.accountNumber || ''}
-                onChange={(e) => setField('accountNumber', e.target.value.replace(/\D/g, ''))}
-              />
-            </div>
-          </div>
-        </div>
-
-        {biz.accountName && biz.accountNumber && biz.settlementBank && (
-          <div className="mt-3 bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 flex items-center gap-2">
-            <svg className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-            <p className="text-[10px] text-zinc-300 font-semibold tracking-wide">Bank transfer option is active on your booking page</p>
-          </div>
-        )}
-        {(!biz.accountName || !biz.accountNumber || !biz.settlementBank) && (
-          <div className="mt-3 bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-2.5 flex items-center gap-2">
-            <svg className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-            <p className="text-[10px] text-zinc-300 font-semibold tracking-wide">Fill in all 3 fields to enable bank transfers</p>
-          </div>
-        )}
-      </div>
-
-      {/* ── GOOGLE MAPS SECTION (unchanged – branded green) ── */}
+      {/* ── GOOGLE MAPS SECTION ── */}
       {!mapsClaimed && (
         <div className="rounded-2xl p-5 sm:p-6 text-white relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #059669, #0d9488)' }}>
           <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full" />
@@ -357,7 +189,6 @@ export default function InfoTab({
             >
               {biz.name || 'Untitled Business'}
             </p>
-            <p className="text-[11px] text-zinc-500 mt-0.5">Click name 3× to toggle feature switches</p>
           </div>
         </div>
 
