@@ -255,7 +255,7 @@ export function useDashboard() {
   };
 
   // ── Image upload wrapper ──
-  const uploadImage = (onSuccess, isMultiple = true, maxImages = 10) => {
+  const uploadImage = (onSuccess, isMultiple = true, maxImages = 10, maxWidth = 1200) => {
     if (!window.cloudinary) { alert('Widget loading...'); return; }
     const urls = [];
     const widget = window.cloudinary.createUploadWidget(
@@ -267,7 +267,7 @@ export function useDashboard() {
         maxFiles: maxImages,
         maxImageFileSize: 10000000,
         clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
-        transformation: [{ width: 1200, crop: 'limit' }]
+        transformation: [{ width: maxWidth, crop: 'limit' }]
       },
       (err, res) => {
         if (err) return;
@@ -441,7 +441,7 @@ export function useDashboard() {
     handlePaySubscription,
     handleUpdateBank,
     handleVerifyOfflinePayment,
-    handleSave, // now sends full payload with CSRF
+    handleSave,
     uploadImage,
     setField,
     setNested,

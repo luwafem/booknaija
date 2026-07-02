@@ -1,6 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { XIcon } from '../Icons';
 
+// ─── HELPER: Optimize Cloudinary image ───
+function getOptimizedUrl(url, width = 800) {
+  if (!url) return url;
+  if (url.includes('cloudinary.com')) {
+    // Replace /upload/ with /upload/w_{width},q_auto,f_auto/
+    return url.replace('/upload/', `/upload/w_${width},q_auto,f_auto/`);
+  }
+  // For non-Cloudinary, just return as-is
+  return url;
+}
+
 export default function Gallery({ gallery, accent, location, theme }) {
   const [lightbox, setLightbox] = useState({ isOpen: false, groupIdx: 0, imgIdx: 0 });
   const isDark = theme === 'dark';
@@ -70,12 +81,11 @@ export default function Gallery({ gallery, accent, location, theme }) {
                     }}
                   >
                     <img
-                      src={img}
+                      src={getOptimizedUrl(img, 600)}
                       alt={location ? `${g.group} in ${location}` : `${g.group} ${iIdx + 1}`}
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       loading="lazy"
                       decoding="async"
-                      style={{ imageRendering: 'auto' }}
                     />
                     
                     {/* Hover overlay */}
@@ -178,6 +188,9 @@ function Lightbox({ images, currentIdx, onClose, onPrev, onNext, accent, alt }) 
     showControls();
   };
 
+  // High‑resolution for lightbox
+  const currentHighRes = images[currentIdx] ? getOptimizedUrl(images[currentIdx], 1200) : '';
+
   return (
     <div
       className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex flex-col animate-fade-in"
@@ -224,13 +237,12 @@ function Lightbox({ images, currentIdx, onClose, onPrev, onNext, accent, alt }) 
 
         <div className="max-w-5xl w-full h-full flex items-center justify-center p-2 sm:p-4 select-none">
           <img
-            src={images[currentIdx]}
+            src={currentHighRes}
             alt={alt || "Gallery full view"}
             className="max-w-full max-h-full object-contain rounded-sm"
             loading="lazy"
             decoding="async"
             draggable="false"
-            style={{ imageRendering: 'auto' }}
           />
         </div>
 
@@ -272,13 +284,12 @@ function Lightbox({ images, currentIdx, onClose, onPrev, onNext, accent, alt }) 
                 }}
               >
                 <img 
-                  src={img} 
+                  src={getOptimizedUrl(img, 200)}
                   alt="" 
                   className="w-full h-full object-cover" 
                   loading="lazy" 
                   decoding="async"
                   draggable="false" 
-                  style={{ imageRendering: 'auto' }} 
                 />
               </button>
             ))}

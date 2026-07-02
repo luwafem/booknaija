@@ -1,5 +1,25 @@
-// PropertyHero.jsx — FIXED image quality
+// PropertyHero.jsx — HIGH‑QUALITY IMAGES (forced)
 import { useState, useEffect } from 'react';
+
+// ─── HELPER: Return a high‑resolution version of the URL ───
+function getHighResUrl(url) {
+  if (!url) return '';
+  
+  // Cloudinary: set width to 1920 with auto quality
+  if (url.includes('cloudinary.com')) {
+    return url.replace('/upload/', '/upload/w_1920,q_auto,f_auto/');
+  }
+  
+  // picsum.photos: add ?w=1920
+  if (url.includes('picsum.photos')) {
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}w=1920`;
+  }
+  
+  // Generic: try to add ?w=1920 (or &w=)
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}w=1920`;
+}
 
 export default function PropertyHero({ biz, accent, isDark }) {
   const whatsappLink = biz.whatsapp ? `https://wa.me/234${biz.whatsapp.replace(/^0/, '')}` : null;
@@ -29,28 +49,6 @@ export default function PropertyHero({ biz, accent, isDark }) {
 
   return (
     <section className="relative h-screen w-full flex items-center justify-center overflow-hidden bg-black">
-      <style>{`
-        .hero-img {
-          backface-visibility: hidden;
-          -webkit-backface-visibility: hidden;
-          transform: translateZ(0);
-          image-rendering: -webkit-optimize-contrast;
-          image-rendering: crisp-edges;
-          will-change: auto;
-        }
-        @media (-webkit-min-device-pixel-ratio: 1) {
-          .hero-img {
-            image-rendering: auto;
-          }
-        }
-        @media (min-resolution: 2dppx) {
-          .hero-img {
-            image-rendering: auto;
-            -webkit-font-smoothing: antialiased;
-          }
-        }
-      `}</style>
-
       {isSlider ? (
         <>
           <div className="hero-bg-wrapper absolute inset-0 z-0">
@@ -61,17 +59,21 @@ export default function PropertyHero({ biz, accent, isDark }) {
                   currentSlide === idx ? 'opacity-100 z-10' : 'opacity-0 z-0'
                 }`}
               >
+                {/* Desktop image – high‑res forced */}
                 <img 
-                  src={slide.image} 
+                  src={getHighResUrl(slide.image)} 
                   alt="" 
                   fetchPriority={idx === 0 ? "high" : "low"}
-                  className="hero-img hidden md:block absolute inset-0 w-full h-full object-cover"
+                  loading={idx === 0 ? "eager" : "lazy"}
+                  className="hidden md:block absolute inset-0 w-full h-full object-cover"
                 />
+                {/* Mobile image – high‑res forced */}
                 <img 
-                  src={slide.mobileImage || slide.image} 
+                  src={getHighResUrl(slide.mobileImage || slide.image)} 
                   alt="" 
                   fetchPriority={idx === 0 ? "high" : "low"}
-                  className="hero-img md:hidden absolute inset-0 w-full h-full object-cover"
+                  loading={idx === 0 ? "eager" : "lazy"}
+                  className="md:hidden absolute inset-0 w-full h-full object-cover"
                 />
               </div>
             ))}
@@ -125,10 +127,11 @@ export default function PropertyHero({ biz, accent, isDark }) {
         <>
           <div className="absolute inset-0">
             <img 
-              src={slides[0].image} 
+              src={getHighResUrl(slides[0].image)} 
               alt={biz.name} 
               fetchPriority="high"
-              className="hero-img w-full h-full object-cover"
+              loading="eager"
+              className="w-full h-full object-cover"
             />
           </div>
           
