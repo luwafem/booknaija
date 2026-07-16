@@ -1,7 +1,8 @@
+// src/pages/BioPage.jsx
 import { useParams, useSearchParams, useNavigate, Navigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useBusinessWithSEO } from '../hooks/useBusinessWithSEO';
-import { usePaginatedItems } from '../hooks/usePaginatedItems'; // NEW
+import { usePaginatedItems } from '../hooks/usePaginatedItems';
 import SEO from '../hooks/useSEO';
 import HeroSection from '../components/bio/HeroSection';
 import Gallery from '../components/bio/Gallery';
@@ -336,7 +337,12 @@ export default function BioPage() {
   const showProducts = biz.productsEnabled && (isSearchActive ? filteredProducts.length > 0 : paginatedProducts.length > 0);
   const showFood = biz.foodEnabled && (isSearchActive ? filteredFood.length > 0 : paginatedFood.length > 0);
   const showCars = biz.carsEnabled && (isSearchActive ? filteredCars.length > 0 : paginatedCars.length > 0);
-  const isPropertyWebsite = biz.propertiesEnabled && (biz.properties || []).length > 0;
+
+  // ─── FORCE PROPERTY LAYOUT FOR REAL ESTATE / SHORTLET ───
+  // Even if no properties exist yet, we want to show the property template.
+  const isPropertyBusiness = biz.businessType === 'Real Estate' || biz.businessType === 'Shortlet';
+  const hasProperties = (biz.properties || []).length > 0;
+  const isPropertyWebsite = isPropertyBusiness || (biz.propertiesEnabled && hasProperties);
 
   const adsEnabled = biz.adsEnabled !== false && !isPropertyWebsite;
   const totalItems = (isSearchActive ? filteredServices.length + filteredProducts.length + filteredFood.length + filteredCars.length : servicesTotal + productsTotal + foodTotal + carsTotal);

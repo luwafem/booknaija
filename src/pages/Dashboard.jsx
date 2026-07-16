@@ -4,6 +4,7 @@ import DashboardLayout from '../components/dashboard/DashboardLayout';
 import SaveBar from '../components/dashboard/SaveBar';
 import InfoTab from '../components/dashboard/InfoTab';
 import SecurityTab from '../components/dashboard/SecurityTab';
+import SubscriptionTab from '../components/dashboard/SubscriptionTab'; // 👈 NEW
 import GalleryTab from '../components/dashboard/GalleryTab';
 import OfflinePaymentsTab from '../components/dashboard/OfflinePaymentsTab';
 import ServicesTab from '../components/dashboard/ServicesTab';
@@ -65,6 +66,10 @@ export default function Dashboard() {
     uploadImage,
     referralCount,
     freeMonthsEarned,
+    // 👇 NEW props from useDashboard
+    subscriptionHistory,
+    historyLoading,
+    fetchSubscriptionHistory,
   } = useDashboard();
 
   if (loading) {
@@ -141,8 +146,27 @@ export default function Dashboard() {
             handleLogoUpload={() => uploadImage((url) => setField('logo', url), false, 1)}
           />
         );
+      case 'subscription': // 👈 NEW
+        return (
+          <SubscriptionTab
+            biz={biz}
+            accent={accent}
+            inp={inp}
+            lbl={lbl}
+            card={card}
+            isExpired={isExpired}
+            isWarning={isWarning}
+            daysLeft={daysLeft}
+            subLoading={subLoading}
+            subMsg={subMsg}
+            handlePaySubscription={handlePaySubscription}
+            subscriptionHistory={subscriptionHistory}
+            historyLoading={historyLoading} // 👈 ADDED
+            fetchSubscriptionHistory={fetchSubscriptionHistory} // 👈 ADDED
+          />
+        );
       case 'security':
-        return <SecurityTab accent={accent} inp={inp} lbl={lbl} card={card} />;
+        return <SecurityTab accent={accent} inp={inp} lbl={lbl} card={card} slug={biz.slug} />;
       case 'gallery':
         return (
           <GalleryTab
@@ -289,12 +313,13 @@ export default function Dashboard() {
               </div>
               <div className="h-[400px]">
                 <LocationPicker
-                  lat={biz.lat || 6.5244}
-                  lng={biz.lng || 3.3792}
-                  onLocationSelect={(lat, lng) => {
-                    setField('lat', lat);
-                    setField('lng', lng);
+                  initialQuery={biz.location || ''}
+                  onSave={(result) => {
+                    setField('lat', result.lat);
+                    setField('lng', result.lng);
+                    setField('location', result.address);
                   }}
+                  onClose={() => setShowMapPicker(false)}
                 />
               </div>
               <div className="px-5 py-4 border-t border-white/[0.06] flex items-center justify-between">

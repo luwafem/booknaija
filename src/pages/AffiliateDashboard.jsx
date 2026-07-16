@@ -62,6 +62,7 @@ export default function AffiliateDashboard() {
   const [copied, setCopied] = useState(false);
   const [swipeCopied, setSwipeCopied] = useState('');
   const [expandedSection, setExpandedSection] = useState(null);
+  const [showInactive, setShowInactive] = useState(true); // NEW: toggle to show/hide inactive referrals
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -125,11 +126,22 @@ export default function AffiliateDashboard() {
     </div>
   );
 
-  const totalReferred = data.referrals.length;
-  const paidReferrals = data.referrals.filter(r => r.affiliate_bounty_paid).length;
-  const pendingReferrals = totalReferred - paidReferrals;
-  const totalEarned = paidReferrals * 1500;
-  const pendingEarned = pendingReferrals * 1500;
+  // Destructure summary and referrals from the new data structure
+  const { referrals = [], summary = {} } = data;
+  const {
+    total = 0,
+    active = 0,
+    inactive = 0,
+    fullyPaid = 0,
+    month1Paid = 0,
+    unpaid = 0,
+    totalEarned = 0,
+    totalPending = 0,
+    potentialEarnings = 0,
+  } = summary;
+
+  // ─── FILTER REFERRALS (optional: hide inactive) ───
+  const filteredReferrals = showInactive ? referrals : referrals.filter(ref => ref.active);
 
   // Dark theme styles matching other pages
   const cardBase = "bg-zinc-900 border border-zinc-800 rounded-xl";
@@ -146,8 +158,31 @@ export default function AffiliateDashboard() {
   const contentText = "text-[11px] text-zinc-400 leading-relaxed";
   const btnPrimary = "bg-white text-zinc-900 px-4 py-2 rounded-lg text-xs font-bold hover:bg-zinc-200 transition-colors shrink-0";
   const btnSecondary = "bg-zinc-800 text-white px-3 py-1.5 rounded-md text-[11px] font-bold hover:bg-zinc-700 transition-colors";
-  const badgePaid = "text-xs font-bold text-green-400 bg-green-900/30 border border-green-700 px-3 py-1 rounded-full";
-  const badgePending = "text-xs font-medium text-zinc-400 bg-zinc-800 border border-zinc-700 px-3 py-1 rounded-full";
+
+  // Helper to get badge styles based on commission status
+  const getBadgeStyles = (statusColor) => {
+    switch (statusColor) {
+      case 'green':
+        return 'text-xs font-bold text-green-400 bg-green-900/30 border border-green-700 px-3 py-1 rounded-full';
+      case 'orange':
+        return 'text-xs font-bold text-orange-400 bg-orange-900/30 border border-orange-700 px-3 py-1 rounded-full';
+      case 'yellow':
+        return 'text-xs font-bold text-yellow-400 bg-yellow-900/30 border border-yellow-700 px-3 py-1 rounded-full';
+      case 'gray':
+        return 'text-xs font-medium text-zinc-400 bg-zinc-800 border border-zinc-700 px-3 py-1 rounded-full';
+      default:
+        return 'text-xs font-medium text-zinc-400 bg-zinc-800 border border-zinc-700 px-3 py-1 rounded-full';
+    }
+  };
+
+  // ─── Helper to get display status for inactive businesses ───
+  const getInactiveDisplay = (ref) => {
+    const month = ref.affiliate_commission_month || 0;
+    if (month === 0) return 'Inactive (No earnings)';
+    if (month === 1) return `Inactive (₦1,500 earned)`;
+    if (month >= 2) return `Inactive (₦2,500 earned)`;
+    return 'Inactive';
+  };
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans selection:bg-zinc-700 selection:text-white flex flex-col">
@@ -167,25 +202,46 @@ export default function AffiliateDashboard() {
 
         {/* ===== HOW YOU GET PAID ===== */}
         <div className={`${cardBase} p-5`}>
-          <p className="text-base font-bold text-white">You earn ₦1,500 per signup</p>
+          <p className="text-base font-bold text-white">You earn up to ₦2,500 per referral</p>
           <p className="text-sm text-zinc-400 mt-1">
-            When a vendor pays their ₦2,500 monthly plan using your link, <span className="font-bold text-white">₦1,500 is sent instantly to your bank</span> via Paystack. The remaining ₦1,000 goes to the platform. You earn again every month they stay active.
+            When a vendor pays their ₦2,500 monthly plan using your link, 
+            <span className="font-bold text-white"> ₦1,500 is sent instantly</span> to your bank via Paystack split. 
+            If they stay active for a second month, you get 
+            <span className="font-bold text-white"> another ₦1,000</span> automatically. 
+            That's <span className="font-bold text-white">₦2,500 total</span> — the full month's fee back to you!
+          </p>
+          <p className="text-xs text-zinc-500 mt-2">
+            💡 If a referred business becomes inactive, you won't earn future commissions on them.
           </p>
         </div>
 
-        {/* ===== STATS & LINK ===== */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* ===== STATS (Using new summary) ===== */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className={`${cardBase} p-5`}>
-            <p className={labelBase}>Total Referred</p>
-            <p className={statValue}>{totalReferred}</p>
-            <p className={statDesc}>{pendingReferrals} pending / {paidReferrals} paid</p>
+            <p className={labelBase}>Total Referrals</p>
+            <p className={statValue}>{total}</p>
+            <p className={statDesc}>
+              {active} active · {inactive} inactive
+            </p>
           </div>
           <div className={`${cardBase} p-5`}>
-            <p className={labelBase}>Total Earnings</p>
+            <p className={labelBase}>Earned So Far</p>
             <p className={statValue}>₦{totalEarned.toLocaleString()}</p>
-            {pendingEarned > 0 && (
-              <p className={statDesc}>₦{pendingEarned.toLocaleString()} pending payout</p>
+            {totalPending > 0 && (
+              <p className={statDesc}>₦{totalPending.toLocaleString()} pending</p>
             )}
+            {inactive > 0 && (
+              <p className="statDesc text-[10px] text-zinc-500 mt-1">
+                ⚠️ {inactive} inactive — no future earnings from these
+              </p>
+            )}
+          </div>
+          <div className={`${cardBase} p-5`}>
+            <p className={labelBase}>Potential Earnings</p>
+            <p className={statValue}>₦{potentialEarnings.toLocaleString()}</p>
+            <p className={statDesc}>
+              {fullyPaid} fully paid · {month1Paid} on month 2 · {unpaid} on month 1
+            </p>
           </div>
           <div className={`${cardBase} p-5`}>
             <p className={`${labelBase} mb-2`}>Your Unique Link</p>
@@ -203,12 +259,12 @@ export default function AffiliateDashboard() {
               </button>
             </div>
             <p className="text-[10px] text-zinc-400 font-semibold mt-2">
-              Always share this exact link so you get credited for the ₦1,500 commission.
+              Share this link to track your referrals and earn commissions.
             </p>
           </div>
         </div>
 
-        {/* ===== BUSINESSES WE SERVE ===== */}
+        {/* ===== BUSINESSES WE SERVE (unchanged) ===== */}
         <div className={`${cardBase} overflow-hidden`}>
           <div className={sectionHeader}>
             <h3 className={sectionTitle}>Businesses We Serve</h3>
@@ -231,7 +287,7 @@ export default function AffiliateDashboard() {
           </div>
         </div>
 
-        {/* ===== AFFILIATE TOOLKIT ===== */}
+        {/* ===== AFFILIATE TOOLKIT (unchanged) ===== */}
         <div className={`${cardBase} overflow-hidden`}>
           <div className={sectionHeader}>
             <h3 className={sectionTitle}>Affiliate Toolkit</h3>
@@ -415,62 +471,93 @@ export default function AffiliateDashboard() {
           </div>
         </div>
 
-        {/* ===== REFERRALS LIST ===== */}
+        {/* ===== REFERRALS LIST (Updated with commission status & inactive toggle) ===== */}
         <div className={`${cardBase} overflow-hidden`}>
-          <div className="px-6 py-4 border-b border-zinc-800">
-            <h3 className={sectionTitle}>Your Referred Businesses</h3>
+          <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between">
+            <div>
+              <h3 className={sectionTitle}>Your Referrals</h3>
+              <p className="text-[10px] text-zinc-500 mt-0.5">
+                {filteredReferrals.length} shown ({referrals.length - filteredReferrals.length} hidden)
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-zinc-400">
+                <input
+                  type="checkbox"
+                  checked={showInactive}
+                  onChange={() => setShowInactive(!showInactive)}
+                  className="w-3.5 h-3.5 rounded border-zinc-600 bg-zinc-700 text-white focus:ring-zinc-500 cursor-pointer"
+                />
+                Show inactive
+              </label>
+            </div>
           </div>
           
-          {totalReferred === 0 ? (
+          {filteredReferrals.length === 0 ? (
             <div className="px-6 py-16 text-center">
-              <p className="text-zinc-400 font-medium">No one has signed up using your link yet.</p>
-              <p className="text-zinc-400 text-sm mt-1">Share your link with businesses to earn your first ₦1,500 commission.</p>
+              <p className="text-zinc-400 font-medium">No referrals to show.</p>
+              {!showInactive && inactive > 0 && (
+                <p className="text-zinc-400 text-sm mt-1">
+                  You have {inactive} inactive business{inactive > 1 ? 'es' : ''}. Toggle "Show inactive" to view them.
+                </p>
+              )}
+              {referrals.length === 0 && (
+                <p className="text-zinc-400 text-sm mt-1">Share your link with businesses to start earning commissions.</p>
+              )}
             </div>
           ) : (
             <div className="divide-y divide-zinc-800">
-              {data.referrals.map((ref) => (
-                <div key={ref.slug} className="px-6 py-4 flex items-center justify-between hover:bg-zinc-800/50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    {ref.logo ? (
-                      <img src={ref.logo} alt="" className="w-10 h-10 rounded-lg object-contain bg-zinc-800 border border-zinc-700 p-1" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-400">
-                        {ref.name.substring(0,2).toUpperCase()}
+              {filteredReferrals.map((ref) => {
+                const { commission } = ref;
+                const badgeClass = getBadgeStyles(commission.statusColor);
+                const statusLabel = ref.active ? commission.status : getInactiveDisplay(ref);
+
+                return (
+                  <div key={ref.slug} className="px-6 py-4 flex items-center justify-between hover:bg-zinc-800/50 transition-colors">
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                      {ref.logo ? (
+                        <img src={ref.logo} alt="" className="w-10 h-10 rounded-lg object-contain bg-zinc-800 border border-zinc-700 p-1 shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-400 shrink-0">
+                          {ref.name.substring(0,2).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-white truncate">{ref.name}</p>
+                        <p className="text-xs text-zinc-400 font-mono truncate">booknaija.netlify.app/{ref.slug}</p>
+                        {!ref.active && (
+                          <span className="text-[9px] text-zinc-500 mt-0.5 block">
+                            ⚠️ Inactive — no future commissions
+                          </span>
+                        )}
                       </div>
-                    )}
-                    <div>
-                      <p className="text-sm font-bold text-white">{ref.name}</p>
-                      <p className="text-xs text-zinc-400 font-mono">booknaija.netlify.app/{ref.slug}</p>
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-1">
+                      <span className={badgeClass}>
+                        {statusLabel}
+                      </span>
+                      <span className="text-xs text-zinc-500 font-medium">
+                        ₦{commission.total.toLocaleString()} total
+                      </span>
                     </div>
                   </div>
-                  <div className="text-right">
-                    {ref.affiliate_bounty_paid ? (
-                      <span className={badgePaid}>
-                        Paid (Earned ₦1,500)
-                      </span>
-                    ) : (
-                      <span className={badgePending}>
-                        Pending
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* ===== PAYOUT INFO ===== */}
+        {/* ===== PAYOUT INFO (unchanged) ===== */}
         <div className={`${cardBase} p-6`}>
           <h3 className="text-base font-bold text-white mb-1">Payout Details</h3>
-          <p className="text-xs text-zinc-400 mb-4">Commissions are sent instantly to your linked bank account via Paystack.</p>
+          <p className="text-xs text-zinc-400 mb-4">Commissions are sent automatically to your linked bank account.</p>
           <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
             {data.affiliate.subaccount_code ? (
               <div className="flex items-center justify-between">
                 <div>
                   <p className={`${labelBase} mb-1`}>Bank Account</p>
                   <p className="text-sm font-bold text-white">Connected via Paystack</p>
-                  <p className="text-xs text-zinc-400 mt-0.5">Your bank details are securely stored with Paystack. Commissions are sent automatically after each paid signup.</p>
+                  <p className="text-xs text-zinc-400 mt-0.5">Your bank details are securely stored with Paystack. Commissions are sent automatically after each paid month.</p>
                 </div>
                 <div className="w-8 h-8 bg-zinc-700 rounded-full flex items-center justify-center shrink-0">
                   <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -497,7 +584,7 @@ export default function AffiliateDashboard() {
 
       </main>
 
-      {/* Footer - White background matching landing page */}
+      {/* Footer */}
       <footer className="bg-white border-t border-zinc-200 py-6 px-6">
         <div className="max-w-5xl mx-auto text-center">
           <p className="text-zinc-500 text-sm">© {new Date().getFullYear()} BookNaija Technologies.</p>

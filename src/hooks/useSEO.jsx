@@ -85,8 +85,13 @@ export default function SEO({
 
 /**
  * Generate LocalBusiness structured data for Google rich snippets
+ * @param {Object} biz - The business object
+ * @param {Object} options - Options object
+ * @param {boolean} options.skipOffers - If true, omit the OfferCatalog (use when children data is not loaded)
  */
-export function generateBusinessSchema(biz) {
+export function generateBusinessSchema(biz, options = {}) {
+  const { skipOffers = false } = options;
+
   const firstImage = biz.logo || biz.avatar || biz.hero || 
     (biz.gallery?.[0]?.images?.[0]) || biz.gallery?.[0];
 
@@ -104,7 +109,8 @@ export function generateBusinessSchema(biz) {
   // Helper: append location to string only if location exists
   const withLocation = (str) => hasLocation ? `${str} in ${location}` : str;
 
-  return {
+  // Base schema (always present)
+  const schema = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     name: biz.name,
@@ -123,7 +129,11 @@ export function generateBusinessSchema(biz) {
       biz.socials?.instagram,
       biz.socials?.tiktok,
     ].filter(Boolean),
-    hasOfferCatalog: {
+  };
+
+  // Only add OfferCatalog and priceRange if we have children data
+  if (!skipOffers) {
+    schema.hasOfferCatalog = {
       '@type': 'OfferCatalog',
       name: `${biz.name} Services & Products`,
       itemListElement: [
@@ -202,9 +212,13 @@ export function generateBusinessSchema(biz) {
           position: (biz.services?.length || 0) + (biz.products?.length || 0) + (biz.food?.length || 0) + (biz.cars?.length || 0) + i + 1,
         })),
       ],
-    },
-    priceRange: getPriceRange(biz),
-  };
+    };
+    // priceRange is only meaningful when we have offers
+    const priceRange = getPriceRange(biz);
+    if (priceRange) schema.priceRange = priceRange;
+  }
+
+  return schema;
 }
 
 function getPriceRange(biz) {

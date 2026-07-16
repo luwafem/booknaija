@@ -1,5 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
-const xss = require('xss'); // 👈 NEW
+const xss = require('xss');
+const { validateCsrf } = require('./_utils/csrf'); // 👈 NEW
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -55,6 +56,14 @@ exports.handler = async function (event) {
 
     if (!slug || !proofImageUrl || !amount) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
+    }
+
+    // ─── CSRF PROTECTION ───
+    if (!validateCsrf(event)) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: 'Invalid security token. Please refresh and try again.' }),
+      };
     }
 
     const { data, error } = await supabase

@@ -16,6 +16,13 @@
     memory = 1024
     timeout = 30
 
+# ─── SCHEDULED FUNCTIONS ───
+[functions."check-expired-subscriptions"]
+  schedule = "0 0 * * *"  # Runs daily at midnight UTC
+
+[functions."send-expiry-reminders"]
+  schedule = "0 8 * * *"  # Runs daily at 8 AM UTC
+
 # ─── RATE LIMITING ───
 # Global fallback – catches any function not explicitly limited below
 [[rate_limit]]
@@ -62,10 +69,18 @@
   pattern = "/.netlify/functions/get-dashboard-questions"
   rate = "5 per minute"
 
-# ─── NEW: Paginated listings endpoint ───
 [[rate_limit]]
   pattern = "/.netlify/functions/get-business-items"
   rate = "30 per minute"
+
+[[rate_limit]]
+  pattern = "/.netlify/functions/update-security"
+  rate = "5 per minute"
+
+# ─── NEW: Subscription history endpoint ───
+[[rate_limit]]
+  pattern = "/.netlify/functions/get-subscription-history"
+  rate = "10 per minute"
 
 # ─── BLOG POSTS: Serve static HTML files directly ───
 [[redirects]]

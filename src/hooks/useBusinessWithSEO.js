@@ -1,62 +1,63 @@
+// src/hooks/useBusinessWithSEO.js
 import { useMemo } from 'react';
 import { useBusiness } from './useBusiness';
 import { generateBusinessSchema, generateBreadcrumbSchema } from './useSEO';
 
 export function useBusinessWithSEO(slug) {
-  // ✅ Destructure `business`, not `data`
-  const { business: biz, loading, error } = useBusiness(slug);
+  // ✅ Include children (services, products, cars, food, properties, estates)
+  // This is required for property pages, and the additional payload is minimal.
+  const { business: biz, loading, error } = useBusiness(slug, { includeChildren: true });
 
-  // Generate SEO-optimized description
+  // Generate SEO-optimized description using feature flags (no counts needed)
   const seoDescription = useMemo(() => {
     if (!biz) return null;
-    
+
     const parts = [];
     if (biz.tagline) parts.push(biz.tagline);
     if (biz.location) parts.push(`Located in ${biz.location}`);
-    
-    const serviceCount = biz.services?.length || 0;
-    const productCount = biz.products?.length || 0;
-    const foodCount = biz.food?.length || 0;
-    const carCount = biz.cars?.length || 0;
-    const propertyCount = biz.properties?.length || 0;
-    
+
+    // Build offering summary from enabled feature flags
     const offerings = [];
-    if (serviceCount > 0) offerings.push(`${serviceCount} service${serviceCount > 1 ? 's' : ''}`);
-    if (productCount > 0) offerings.push(`${productCount} product${productCount > 1 ? 's' : ''}`);
-    if (foodCount > 0) offerings.push(`${foodCount} menu item${foodCount > 1 ? 's' : ''}`);
-    if (carCount > 0) offerings.push(`${carCount} vehicle${carCount > 1 ? 's' : ''}`);
-    if (propertyCount > 0) offerings.push(`${propertyCount} propert${propertyCount > 1 ? 'ies' : 'y'}`);
-    
+    if (biz.servicesEnabled) offerings.push('services');
+    if (biz.productsEnabled) offerings.push('products');
+    if (biz.foodEnabled) offerings.push('food menu');
+    if (biz.carsEnabled) offerings.push('vehicles');
+    if (biz.propertiesEnabled) offerings.push('properties');
+    if (biz.estatesEnabled) offerings.push('estates');
+
     if (offerings.length > 0) {
       parts.push(`Browse ${offerings.join(', ')}. Book and pay securely via Paystack.`);
+    } else {
+      parts.push('Book and pay securely via Paystack.');
     }
-    
-    return parts.join('. ') || `${biz.name} - Book services and buy products on BookNaija`;
+
+    return parts.join('. ') || `${biz.name} – Book services and buy products on BookNaija`;
   }, [biz]);
 
-  // Get the best image for social sharing
+  // Get the best image for social sharing (unchanged)
   const seoImage = useMemo(() => {
     if (!biz) return null;
-    return biz.logo || biz.avatar || biz.hero || 
+    return biz.logo || biz.avatar || biz.hero ||
       (biz.gallery?.[0]?.images?.[0]) || biz.gallery?.[0] || null;
   }, [biz]);
 
-  // Generate structured data
+  // Generate structured data – we now use a simplified version
+  // that does NOT require children. The schema will still be valid
+  // for Google and provides the essential business info.
   const structuredData = useMemo(() => {
     if (!biz || !biz.active) return null;
     return [
-      generateBusinessSchema(biz),
+      generateBusinessSchema(biz, { skipOffers: true }),
       generateBreadcrumbSchema(biz)
     ];
   }, [biz]);
 
-  // Return everything needed for the <SEO> component
-  return { 
-    business: biz, 
-    loading, 
-    error, 
-    seoDescription, 
-    seoImage, 
-    structuredData 
+  return {
+    business: biz,
+    loading,
+    error,
+    seoDescription,
+    seoImage,
+    structuredData
   };
 }

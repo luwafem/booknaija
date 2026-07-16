@@ -1,6 +1,7 @@
 // src/hooks/useDashboard.js
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query'; // 👈 ADDED
 import { useBusiness } from './useBusiness';
 import { uid, optimizeCloudinaryUrl, CLOUD_NAME, UPLOAD_PRESET } from '../lib/dashboardHelpers';
 import { getCsrfToken } from '../lib/csrf';
@@ -9,7 +10,9 @@ import { getDiff } from '../lib/diff';
 export function useDashboard() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { business: initialBiz, loading } = useBusiness(slug);
+  const queryClient = useQueryClient(); // 👈 ADDED
+  // ✅ Fetch business with children for dashboard
+  const { business: initialBiz, loading } = useBusiness(slug, { includeChildren: true });
 
   const [biz, setBiz] = useState(null);
   const [activeTab, setActiveTab] = useState('info');
@@ -38,6 +41,10 @@ export function useDashboard() {
 
   const [offlineBookings, setOfflineBookings] = useState([]);
   const [offlineLoading, setOfflineLoading] = useState(false);
+
+  // ─── NEW: Subscription history ───
+  const [subscriptionHistory, setSubscriptionHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   // Load banks
   useEffect(() => {
@@ -77,6 +84,36 @@ export function useDashboard() {
     }
   }, [activeTab, biz]);
 
+  // ─── NEW: Fetch subscription history ───
+  const fetchSubscriptionHistory = useCallback(async () => {
+    if (!biz || !biz.slug) return;
+    setHistoryLoading(true);
+    try {
+      const res = await fetch(`/.netlify/functions/get-subscription-history?slug=${biz.slug}`, {
+        headers: {
+          'X-CSRF-Token': getCsrfToken(),
+        },
+      });
+      const data = await res.json();
+      if (res.ok && data.history) {
+        setSubscriptionHistory(data.history);
+      } else {
+        console.error('Failed to fetch subscription history:', data.error);
+      }
+    } catch (err) {
+      console.error('Error fetching subscription history:', err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [biz]);
+
+  // ─── NEW: Fetch history when subscription tab is active ───
+  useEffect(() => {
+    if (activeTab === 'subscription' && biz) {
+      fetchSubscriptionHistory();
+    }
+  }, [activeTab, biz, fetchSubscriptionHistory]);
+
   // Handle subscription payment return
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -85,14 +122,23 @@ export function useDashboard() {
       setSubLoading(true);
       fetch('/.netlify/functions/verify-subscription', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': getCsrfToken(),
+        },
         body: JSON.stringify({ reference: subRef, slug })
       })
         .then(r => r.json())
         .then(data => {
           if (data.success) {
             setSubMsg('Payment successful! Subscription extended by 30 days.');
-            setTimeout(() => window.location.reload(), 2000);
+            // 👇 Invalidate React Query cache so next fetch gets fresh data
+            queryClient.invalidateQueries({ queryKey: ['business', slug] });
+            // Refresh history after renewal
+            setTimeout(() => {
+              fetchSubscriptionHistory();
+              window.location.reload();
+            }, 2000);
           } else {
             setSubMsg('Payment verification failed. Contact support.');
           }
@@ -101,7 +147,7 @@ export function useDashboard() {
         .finally(() => setSubLoading(false));
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, [biz, slug]);
+  }, [biz, slug, fetchSubscriptionHistory, queryClient]); // 👈 Added queryClient dependency
 
   // Load Cloudinary widget
   useEffect(() => {
@@ -189,7 +235,10 @@ export function useDashboard() {
     try {
       const res = await fetch('/.netlify/functions/update-subaccount', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': getCsrfToken(),
+        },
         body: JSON.stringify({
           slug: biz.slug,
           business_name: biz.name,
@@ -221,7 +270,10 @@ export function useDashboard() {
     try {
       const res = await fetch('/.netlify/functions/verify-offline-booking', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': getCsrfToken(),
+        },
         body: JSON.stringify({ id: bookingId, slug: biz.slug })
       });
       if (res.ok) {
@@ -349,9 +401,12 @@ export function useDashboard() {
   // ── Derived values ──
   const subEndsAt = biz?.subscription_ends_at ? new Date(biz.subscription_ends_at) : null;
   const now = new Date();
+
+  // Active means: active flag is true AND end date is not null AND end date is in the future
+  const isActive = biz?.active === true && subEndsAt && subEndsAt > now;
+  const isExpired = !isActive;
   const daysLeft = subEndsAt ? Math.ceil((subEndsAt - now) / (1000 * 60 * 60 * 24)) : null;
-  const isExpired = daysLeft !== null && daysLeft <= 0;
-  const isWarning = daysLeft !== null && daysLeft <= 5 && daysLeft > 0;
+  const isWarning = isActive && daysLeft !== null && daysLeft <= 5;
 
   const getMapsReadiness = () => {
     const issues = [];
@@ -366,6 +421,7 @@ export function useDashboard() {
     if (!biz) return [];
     const base = [
       { id: 'info', label: 'Info' },
+      { id: 'subscription', label: 'Subscription' }, // 👈 NEW
       { id: 'security', label: 'Security' },
       { id: 'gallery', label: 'Gallery' },
       { id: 'offline-payments', label: 'Bank Payments' }
@@ -426,6 +482,10 @@ export function useDashboard() {
     loading,
     slug,
     accent: biz?.accent || '#c8a97e',
+    // ─── NEW: Subscription history ───
+    subscriptionHistory,
+    historyLoading,
+    fetchSubscriptionHistory,
     // Derived
     isExpired,
     isWarning,

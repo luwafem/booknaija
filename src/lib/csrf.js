@@ -7,13 +7,25 @@ export function generateCsrfToken() {
 
 export function getCsrfToken() {
   let token = sessionStorage.getItem('csrf_token');
+
+  // If no token in sessionStorage, generate a new one
   if (!token) {
     token = generateCsrfToken();
     sessionStorage.setItem('csrf_token', token);
   }
-  // Always set the cookie to ensure it's present and matches the token
-  const isSecure = location.protocol === 'https:';
-  document.cookie = `csrf_token=${token}; path=/; samesite=lax; ${isSecure ? 'secure;' : ''}`;
+
+  // Check if the cookie already has this token
+  const cookieMatch = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('csrf_token='));
+  const existingToken = cookieMatch ? cookieMatch.split('=')[1] : null;
+
+  // Only set the cookie if it doesn't exist or doesn't match the current token
+  if (existingToken !== token) {
+    const isSecure = location.protocol === 'https:';
+    document.cookie = `csrf_token=${token}; path=/; samesite=lax; ${isSecure ? 'secure;' : ''}`;
+  }
+
   return token;
 }
 

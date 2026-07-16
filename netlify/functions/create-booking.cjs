@@ -1,5 +1,5 @@
-import { google } from 'googleapis';
-import xss from 'xss'; // 👈 NEW
+const { google } = require('googleapis');
+const xss = require('xss');
 
 // ─── SANITISATION HELPER ───
 function sanitizeString(str) {
@@ -11,7 +11,7 @@ function sanitizeString(str) {
   });
 }
 
-export const handler = async (event) => {
+exports.handler = async (event) => {
   try {
     const body = JSON.parse(event.body || '{}');
     const { slug, reference, calendarId } = body;

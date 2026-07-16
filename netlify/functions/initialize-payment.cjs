@@ -1,8 +1,8 @@
 // netlify/functions/initialize-payment.cjs
 const { createClient } = require('@supabase/supabase-js');
 const xss = require('xss');
-const cookie = require('cookie');          // 👈 ADDED
-const jwt = require('jsonwebtoken');       // 👈 ADDED
+const cookie = require('cookie');
+const jwt = require('jsonwebtoken');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -33,7 +33,6 @@ function sanitizeDeep(input) {
 
 // ─── HELPER: Compute total from items (only for existing businesses) ───
 async function computeTotal(slug, items) {
-  // Get business ID from slug
   const { data: biz, error: bizErr } = await supabase
     .from('businesses')
     .select('id')
@@ -145,7 +144,6 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing request body' }) };
     }
 
-    // Parse and sanitise all input
     const parsedBody = JSON.parse(event.body);
     const sanitized = sanitizeDeep(parsedBody);
 
@@ -175,8 +173,7 @@ exports.handler = async (event) => {
     // ─── DETECT SIGNUP: no items or empty items ───
     const isSignup = !items || Object.keys(items).length === 0;
 
-    // ─── CONDITIONAL JWT AUTH (NEW) ───
-    // If a dashboard token is present, verify it. This prevents abuse of dashboard‑initiated payments.
+    // ─── CONDITIONAL JWT AUTH ───
     const cookies = cookie.parse(event.headers.cookie || '');
     const token = cookies.dashboard_token;
 
@@ -201,7 +198,6 @@ exports.handler = async (event) => {
         };
       }
 
-      // Ensure the JWT slug matches the requested slug (only if a token is present)
       if (decoded.slug !== slug) {
         console.warn(`JWT slug mismatch: ${decoded.slug} vs ${slug}`);
         return {
@@ -210,9 +206,6 @@ exports.handler = async (event) => {
         };
       }
     }
-    // If no token, allow the request (public booking or signup) – server‑side price validation still applies.
-
-    // ─── Continue with existing logic ───
 
     let finalAmountKobo = 0;
 
@@ -228,6 +221,30 @@ exports.handler = async (event) => {
         };
       }
       finalAmountKobo = expectedAmount * 100;
+
+      // ─── AFFILIATE COMMISSION TRACKING FOR SIGNUPS ───
+      // If this signup came via an affiliate, we store the referredBy in metadata.
+      // The actual affiliate_commission_month will be set to 0 in save-business.cjs.
+      // We also validate that the affiliate exists and has a valid subaccount_code.
+      if (referredBy && referredBy.startsWith('aff_')) {
+        console.log(`🔍 Affiliate referral detected for signup: ${referredBy}`);
+        const { data: affiliate, error: affErr } = await supabase
+          .from('affiliates')
+          .select('subaccount_code')
+          .eq('id', referredBy)
+          .single();
+
+        if (affErr) {
+          console.warn(`⚠️ Affiliate ${referredBy} not found or invalid:`, affErr.message);
+          // We do NOT block signup – we just log the warning.
+        } else if (affiliate && affiliate.subaccount_code) {
+          console.log(`✅ Affiliate ${referredBy} has subaccount: ${affiliate.subaccount_code}`);
+          // We will use this subaccount for the Paystack split.
+          // The subaccount will be set in the payload below.
+        } else {
+          console.warn(`⚠️ Affiliate ${referredBy} has no subaccount_code.`);
+        }
+      }
     } else {
       // ─── BOOKING / PRODUCT FLOW – server-side price computation ───
       let serverTotal = 0;
@@ -254,7 +271,7 @@ exports.handler = async (event) => {
       finalAmountKobo = serverTotalKobo;
     }
 
-    // ─── AFFILIATE SPLIT LOGIC ───
+    // ─── AFFILIATE SPLIT LOGIC (for both signup and booking) ───
     let finalSubaccountCode = subaccountCode || null;
     if (referredBy && referredBy.startsWith('aff_')) {
       console.log(`Affiliate referral detected: ${referredBy}. Looking up subaccount...`);
@@ -306,6 +323,8 @@ exports.handler = async (event) => {
         subaccountCode: finalSubaccountCode || null,
         referredBy: referredBy || null,
         isSignup: isSignup,
+        // ─── NEW: Explicit flag for affiliate commission tracking ───
+        affiliateCommissionMonth: isSignup && referredBy ? 0 : null,
       },
     };
 
@@ -314,7 +333,6 @@ exports.handler = async (event) => {
       payload.bearer = 'subaccount';
     }
 
-    // Log sanitised payload (safe to log)
     console.log('Sending to Paystack (sanitised):', JSON.stringify(payload));
 
     const res = await fetch('https://api.paystack.co/transaction/initialize', {

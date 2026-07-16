@@ -3,7 +3,8 @@ const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcryptjs');
 const xss = require('xss');
 const cookie = require('cookie');
-const jwt = require('jsonwebtoken'); // <--- ADDED
+const jwt = require('jsonwebtoken');
+const { validateCsrf } = require('./_utils/csrf');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -65,7 +66,6 @@ function toSnakeCase(str) {
 async function syncItems(table, idField, businessId, newItems) {
   if (!newItems || !Array.isArray(newItems)) return;
 
-  // Fetch existing items to get allowed columns and existing data
   const { data: existing, error } = await supabase
     .from(table)
     .select('*')
@@ -79,10 +79,7 @@ async function syncItems(table, idField, businessId, newItems) {
   const existingMap = new Map(existing.map(item => [item[idField], item]));
   const newMap = new Map(newItems.map(item => [item.id, item]));
 
-  // Get allowed columns from existing (or fallback to common columns)
-  const allowedColumns = existing.length > 0
-    ? Object.keys(existing[0])
-    : null;
+  const allowedColumns = existing.length > 0 ? Object.keys(existing[0]) : null;
 
   // Delete removed items
   for (const [id] of existingMap) {
@@ -99,21 +96,17 @@ async function syncItems(table, idField, businessId, newItems) {
 
   // Insert or update
   for (const [id, item] of newMap) {
-    // Prepare db item: map `id` to `idField`
     const dbItem = { ...item };
     dbItem[idField] = dbItem.id;
     delete dbItem.id;
     dbItem.business_id = businessId;
 
-    // Convert camelCase keys to snake_case and filter out auto timestamps
     const newDbItem = {};
     for (const [key, value] of Object.entries(dbItem)) {
-      // Skip auto-managed timestamps
       if (['created_at', 'updated_at', 'createdAt', 'updatedAt'].includes(key)) {
         continue;
       }
       const snakeKey = toSnakeCase(key);
-      // If allowedColumns is known, only include if in allowedColumns
       if (allowedColumns && !allowedColumns.includes(snakeKey)) {
         continue;
       }
@@ -122,7 +115,6 @@ async function syncItems(table, idField, businessId, newItems) {
 
     const existingItem = existingMap.get(id);
     if (existingItem) {
-      // Compute diff using newDbItem
       const diff = {};
       for (const key of Object.keys(newDbItem)) {
         if (newDbItem[key] !== existingItem[key]) {
@@ -154,11 +146,7 @@ exports.handler = async function (event) {
 
   try {
     // ─── CSRF PROTECTION ───
-    const cookies = cookie.parse(event.headers.cookie || '');
-    const csrfCookie = cookies.csrf_token;
-    const csrfHeader = event.headers['x-csrf-token'];
-
-    if (!csrfCookie || !csrfHeader || csrfCookie !== csrfHeader) {
+    if (!validateCsrf(event)) {
       console.warn('CSRF validation failed');
       return {
         statusCode: 403,
@@ -175,7 +163,8 @@ exports.handler = async function (event) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing slug' }) };
     }
 
-    // ─── JWT AUTHENTICATION (NEW) ───
+    // ─── JWT AUTHENTICATION ───
+    const cookies = cookie.parse(event.headers.cookie || '');
     const token = cookies.dashboard_token;
     if (!token) {
       console.warn('Missing dashboard JWT');
@@ -205,7 +194,6 @@ exports.handler = async function (event) {
       };
     }
 
-    // Ensure the JWT slug matches the requested slug
     if (decoded.slug !== slug) {
       console.warn(`JWT slug mismatch: ${decoded.slug} vs ${slug}`);
       return {
@@ -243,7 +231,7 @@ exports.handler = async function (event) {
     ];
 
     if (isNew) {
-      // New business – use derived defaults
+      // ─── NEW BUSINESS ───
       const businessType = d.businessType || d.business_type || '';
       const derived = getFeaturesForType(businessType);
 
@@ -252,10 +240,12 @@ exports.handler = async function (event) {
           bizPayload[field] = d[field];
         }
       }
-      // Ensure required fields
+
+      // Ensure required fields for new business
       bizPayload.slug = d.slug;
       bizPayload.active = true;
       bizPayload.subscription_ends_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
       // Apply derived feature flags if not explicitly set
       if (bizPayload.services_enabled === undefined) bizPayload.services_enabled = derived.services_enabled;
       if (bizPayload.products_enabled === undefined) bizPayload.products_enabled = derived.products_enabled;
@@ -263,9 +253,11 @@ exports.handler = async function (event) {
       if (bizPayload.food_enabled === undefined) bizPayload.food_enabled = derived.food_enabled;
       if (bizPayload.properties_enabled === undefined) bizPayload.properties_enabled = derived.properties_enabled;
       if (bizPayload.estates_enabled === undefined) bizPayload.estates_enabled = derived.estates_enabled;
+
       // Security hashing
       if (bizPayload.security_code) {
         bizPayload.security_code_hash = bcrypt.hashSync(bizPayload.security_code, 10);
+        delete bizPayload.security_code; // remove plaintext
       }
       if (bizPayload.security_answer_1) {
         const trimmed = bizPayload.security_answer_1.toLowerCase().trim();
@@ -277,20 +269,26 @@ exports.handler = async function (event) {
         bizPayload.security_answer_2 = trimmed;
         bizPayload.security_answer_2_hash = bcrypt.hashSync(trimmed, 10);
       }
-      // Affiliate
+
+      // Affiliate referral
       if (d.referredBy && d.referredBy.startsWith('aff_')) {
         bizPayload.referred_by_affiliate = d.referredBy;
         bizPayload.affiliate_bounty_paid = true;
+        // Set commission month to 0 (awaiting first payment)
+        bizPayload.affiliate_commission_month = 0;
       }
-      // Remove security plaintext if hash exists (optional)
+
+      // Remove security plaintext if hash exists
       if (bizPayload.security_code_hash) delete bizPayload.security_code;
       if (bizPayload.security_answer_1_hash) delete bizPayload.security_answer_1;
       if (bizPayload.security_answer_2_hash) delete bizPayload.security_answer_2;
+
     } else {
-      // Existing business – only changed fields (full payload diff)
+      // ─── EXISTING BUSINESS – only changed fields ───
       for (const field of allowedFields) {
         if (d[field] !== undefined && d[field] !== existingBiz[field]) {
           let value = d[field];
+          
           // Handle security hashing
           if (field === 'security_code' && value) {
             bizPayload.security_code = value; // keep plaintext for backward compatibility
@@ -308,6 +306,7 @@ exports.handler = async function (event) {
           }
         }
       }
+
       // Remove undefined values
       for (const key of Object.keys(bizPayload)) {
         if (bizPayload[key] === undefined) {
@@ -330,6 +329,7 @@ exports.handler = async function (event) {
         throw insertErr;
       }
       businessId = newRow.id;
+      console.log(`✅ New business created: ${slug} (ID: ${businessId})`);
     } else {
       if (Object.keys(bizPayload).length > 0) {
         const { error: updateErr } = await supabase
@@ -341,8 +341,11 @@ exports.handler = async function (event) {
           console.error('Update error:', updateErr);
           throw updateErr;
         }
+        console.log(`✅ Business updated: ${slug} (fields: ${Object.keys(bizPayload).join(', ')})`);
+      } else {
+        console.log(`ℹ️ No changes to save for ${slug}`);
       }
-      // Fetch the row to get the ID
+
       const { data: updatedRow, error: fetchAfterUpdate } = await supabase
         .from('businesses')
         .select('id')
@@ -381,7 +384,7 @@ exports.handler = async function (event) {
       }
     }
 
-    // ─── Sync related tables using full arrays from payload ───
+    // ─── Sync related tables ───
     if (d.services) await syncItems('business_services', 'service_id', businessId, d.services);
     if (d.products) await syncItems('business_products', 'product_id', businessId, d.products);
     if (d.cars) await syncItems('business_cars', 'car_id', businessId, d.cars);

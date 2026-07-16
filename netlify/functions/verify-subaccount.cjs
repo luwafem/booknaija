@@ -1,5 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
 const xss = require('xss');
+const { validateCsrf } = require('./_utils/csrf'); // 👈 NEW
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -47,6 +48,14 @@ exports.handler = async (event) => {
 
     if (!reference || !slug) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing reference or slug' }) };
+    }
+
+    // ─── CSRF PROTECTION ───
+    if (!validateCsrf(event)) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: 'Invalid security token. Please refresh and try again.' }),
+      };
     }
 
     const secretKey = process.env.PAYSTACK_SECRET_KEY;

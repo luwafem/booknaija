@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { getCsrfToken } from '../lib/csrf'; // 👈 NEW
 
 const securityQuestions = [
   "What is the name of your first pet?",
@@ -92,19 +93,27 @@ export default function AffiliateSignup() {
       return;
     }
 
-    // 🔧 FIX: Platform takes 40% (₦1,000), affiliate gets 60% (₦1,500)
-    // This matches the advertised ₦1,500 commission for affiliates
+    // Collect bank details for both subaccount and transfer recipient
+    const settlementBankCode = sanitize(formData.get('settlement_bank'));
+    const accountNumber = sanitize(formData.get('account_number'));
+    const accountName = sanitize(formData.get('account_name'));
+    const fullName = sanitize(formData.get('full_name'));
+    const email = sanitize(formData.get('email'));
+    const phone = sanitize(formData.get('phone'));
+
+    // --- Step 1: Create Paystack Subaccount (split for 60% + 40%) ---
+    // The subaccount is used for the initial 60% split (₦1,500) on the first payment.
     const subRes = await fetch('/.netlify/functions/create-subaccount', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        business_name: `Affiliate - ${sanitize(formData.get('full_name'))}`,
-        settlement_bank: sanitize(formData.get('settlement_bank')),
-        account_number: sanitize(formData.get('account_number')),
-        percentage_charge: 40, // ✅ Platform fee = 40%, affiliate receives 60%
-        primary_contact_name: sanitize(formData.get('full_name')),
-        primary_contact_email: sanitize(formData.get('email')),
-        primary_contact_phone: sanitize(formData.get('phone')),
+        business_name: `Affiliate - ${fullName}`,
+        settlement_bank: settlementBankCode,
+        account_number: accountNumber,
+        percentage_charge: 40, // Platform takes 40%, affiliate gets 60% (₦1,500)
+        primary_contact_name: fullName,
+        primary_contact_email: email,
+        primary_contact_phone: phone,
       }),
     });
 
@@ -117,20 +126,29 @@ export default function AffiliateSignup() {
 
     const newAffId = `aff_${Date.now()}`;
     
+    // --- Step 2: Save affiliate with all required fields ---
+    // The backend will create a Transfer Recipient for the 40% (₦1,000) payment later.
     const saveRes = await fetch('/.netlify/functions/save-affiliate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': getCsrfToken(), // 👈 CSRF header added
+      },
       body: JSON.stringify({
         affiliate_id: newAffId,
-        name: sanitize(formData.get('full_name')),
-        email: sanitize(formData.get('email')),
-        phone: sanitize(formData.get('phone')),
+        name: fullName,
+        email: email,
+        phone: phone,
         subaccount_code: subData.subaccount_code,
         security_code: sanitize(formData.get('security_code')),
         security_question_1: q1,
         security_answer_1: sanitize(formData.get('security_answer_1')),
         security_question_2: q2,
-        security_answer_2: sanitize(formData.get('security_answer_2'))
+        security_answer_2: sanitize(formData.get('security_answer_2')),
+        // NEW FIELDS for Transfer Recipient
+        settlement_bank: settlementBankCode,
+        account_number: accountNumber,
+        account_name: accountName,
       })
     });
 
@@ -172,12 +190,12 @@ export default function AffiliateSignup() {
   const sectionTitle = "text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2 mt-1";
   const sectionDesc = "text-xs text-zinc-400 mb-3 -mt-1";
 
-  // --- SUCCESS STATE ---
+  // --- SUCCESS STATE (Updated copy) ---
   if (done) {
     return (
       <div className="min-h-screen bg-zinc-950 text-white font-sans selection:bg-zinc-700 selection:text-white flex items-center justify-center px-6 py-12">
         
-        {/* Header - White background matching landing page */}
+        {/* Header */}
         <nav className="bg-white sticky top-0 z-50 border-b border-zinc-200 w-full absolute left-0">
           <div className="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
             <Link to="/" className="flex items-center flex-shrink-0">
@@ -197,7 +215,10 @@ export default function AffiliateSignup() {
               </svg>
             </div>
             <h2 className="text-xl font-bold text-white mb-2">You're In!</h2>
-            <p className="text-zinc-400 text-sm mb-8">Share your unique link below. When your vendors pay their ₦2,500 at signup, you get ₦1,500 instantly.</p>
+            <p className="text-zinc-400 text-sm mb-4">
+              Share your unique link. When a vendor pays their ₦2,500, you get <span className="text-white font-bold">₦1,500 instantly</span>.
+              If they stay subscribed for a second month, you'll receive another <span className="text-white font-bold">₦1,000</span>.
+            </p>
             
             <div className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-4 mb-8">
               <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-2">Your Affiliate Link</p>
@@ -221,7 +242,7 @@ export default function AffiliateSignup() {
           </div>
         </div>
 
-        {/* Footer - White background matching landing page */}
+        {/* Footer */}
         <footer className="bg-white border-t border-zinc-200 pt-10 pb-6 px-6 mt-12 w-full">
           <div className="max-w-7xl mx-auto text-center">
             <p className="text-zinc-500 text-sm">© {new Date().getFullYear()} BookNaija Technologies.</p>
@@ -235,7 +256,7 @@ export default function AffiliateSignup() {
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans selection:bg-zinc-700 selection:text-white flex flex-col">
       
-      {/* Header - White background matching landing page */}
+      {/* Header */}
       <nav className="bg-white border-b border-zinc-200 shrink-0">
         <div className="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
           <Link to="/" className="flex items-center gap-2">
@@ -252,7 +273,7 @@ export default function AffiliateSignup() {
 
       <div className="flex-1 flex flex-col lg:flex-row">
         
-        {/* LEFT COLUMN - THE PITCH (Dark theme) */}
+        {/* LEFT COLUMN - THE PITCH (Updated for 60%+40%) */}
         <div className="w-full lg:w-1/2 bg-zinc-900 border-b lg:border-b-0 lg:border-r border-zinc-800 p-8 sm:p-12 lg:p-16 flex flex-col justify-center">
           <div className="max-w-lg mx-auto w-full">
             
@@ -261,22 +282,21 @@ export default function AffiliateSignup() {
             </h1>
             
             <p className="text-zinc-400 text-lg leading-relaxed mb-10 sm:mb-12">
-              Help Nigerian businesses upgrade from WhatsApp status to a professional online store. You earn instantly when they sign up.
+              Help Nigerian businesses upgrade from WhatsApp status to a professional online store. 
+              You earn <span className="text-white font-bold">₦1,500 instantly</span> on the first payment 
+              and <span className="text-white font-bold">₦1,000 more</span> if they stay for Month 2 — 
+              that’s <span className="text-white font-bold">₦2,500 total</span> per referral!
             </p>
 
-            {/* The Math */}
-            <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-10 sm:mb-12">
+            {/* The Math - updated to show two payments */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-10 sm:mb-12">
               <div className="bg-zinc-800 p-5 rounded-xl border border-zinc-700 text-center">
-                <p className="text-2xl sm:text-3xl font-black text-white">₦2,500</p>
-                <p className="text-xs font-medium text-zinc-400 mt-2">Vendor Pays</p>
+                <p className="text-2xl sm:text-3xl font-black text-white">₦1,500</p>
+                <p className="text-xs font-medium text-zinc-400 mt-2">Month 1 (Instant)</p>
               </div>
               <div className="bg-white p-5 rounded-xl text-center relative overflow-hidden">
-                <p className="text-2xl sm:text-3xl font-black text-zinc-900">₦1,500</p>
-                <p className="text-xs font-medium text-zinc-500 mt-2">You Earn</p>
-              </div>
-              <div className="bg-zinc-800 p-5 rounded-xl border border-zinc-700 text-center">
-                <p className="text-2xl sm:text-3xl font-black text-zinc-400">₦1,000</p>
-                <p className="text-xs font-medium text-zinc-400 mt-2">Platform</p>
+                <p className="text-2xl sm:text-3xl font-black text-zinc-900">₦1,000</p>
+                <p className="text-xs font-medium text-zinc-500 mt-2">Month 2 (Bonus)</p>
               </div>
             </div>
 
@@ -310,12 +330,17 @@ export default function AffiliateSignup() {
 
             <div className="space-y-3 text-sm text-zinc-400 border-t border-zinc-800 pt-6">
               <p className="font-bold text-white">How do I get paid?</p>
-              <p>Instantly. We use Paystack split payments. The moment a vendor pays, your ₦1,500 goes straight to your bank. No monthly delays.</p>
+              <p>
+                <span className="text-white font-semibold">₦1,500</span> is sent to your bank instantly via Paystack split 
+                when the vendor pays their first ₦2,500. If they stay active for a second month, 
+                <span className="text-white font-semibold"> another ₦1,000</span> is automatically sent to your bank. 
+                No monthly delays — we handle everything.
+              </p>
             </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN - THE FORM (Dark theme card with steps) */}
+        {/* RIGHT COLUMN - THE FORM (unchanged, but passes all bank details) */}
         <div className="w-full lg:w-1/2 bg-zinc-950 p-8 sm:p-10 flex items-start justify-center pt-8 sm:pt-16 lg:pt-0 lg:items-center">
           <div className="w-full max-w-md">
             
@@ -337,7 +362,7 @@ export default function AffiliateSignup() {
               </button>
             </div>
 
-            {/* Sign In Form (unchanged, short enough) */}
+            {/* Sign In Form (unchanged) */}
             {!isSignUp ? (
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div>
@@ -387,7 +412,7 @@ export default function AffiliateSignup() {
                 </button>
               </form>
             ) : (
-              /* Sign Up Form - STEPPED */
+              /* Sign Up Form - STEPPED (unchanged but now passes all bank fields) */
               <form onSubmit={handleSignUp} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
                 
                 {/* Progress Indicator */}
@@ -445,7 +470,7 @@ export default function AffiliateSignup() {
                 {currentStep === 2 && (
                   <div className="space-y-4">
                     <p className={sectionTitle}>Payout Bank Details</p>
-                    <p className={sectionDesc}>Where should we send your ₦1,500 commissions?</p>
+                    <p className={sectionDesc}>We'll use these to send your ₦1,500 instantly and your ₦1,000 bonus later.</p>
                     <div>
                       <label className={labelBase}>Account Name *</label>
                       <input required name="account_name" placeholder="As it appears on your bank account" className={inputBase} />
@@ -551,7 +576,7 @@ export default function AffiliateSignup() {
         </div>
       </div>
 
-      {/* Footer - White background matching landing page */}
+      {/* Footer */}
       <footer className="bg-white border-t border-zinc-200 py-6 px-6">
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-zinc-500 text-sm">© {new Date().getFullYear()} BookNaija Technologies.</p>

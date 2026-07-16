@@ -1,7 +1,8 @@
 const { createClient } = require('@supabase/supabase-js');
 const xss = require('xss');
-const cookie = require('cookie');          // 👈 ADDED
-const jwt = require('jsonwebtoken');       // 👈 ADDED
+const cookie = require('cookie');
+const jwt = require('jsonwebtoken');
+const { validateCsrf } = require('./_utils/csrf'); // 👈 NEW
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -78,7 +79,15 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields: slug, settlement_bank, account_number' }) };
     }
 
-    // ─── JWT AUTHENTICATION (NEW) ───
+    // ─── CSRF PROTECTION ───
+    if (!validateCsrf(event)) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: 'Invalid security token. Please refresh and try again.' }),
+      };
+    }
+
+    // ─── JWT AUTHENTICATION ───
     const cookies = cookie.parse(event.headers.cookie || '');
     const token = cookies.dashboard_token;
     if (!token) {

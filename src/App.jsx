@@ -45,6 +45,9 @@ const AffiliateDashboard = lazy(() => import('./pages/AffiliateDashboard'));
 const Blog = lazy(() => import('./pages/Blog'));
 const BlogArticle = lazy(() => import('./pages/BlogArticle'));
 const PropertyDetails = lazy(() => import('./pages/PropertyDetails'));
+// ─── ADMIN PAGES ───
+const AdminLogin = lazy(() => import('./pages/AdminLogin'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 export default function App() {
   return (
@@ -80,6 +83,10 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardLogin />} />
           <Route path="/dashboard/:slug" element={<Dashboard />} />
           <Route path="/book/:slug" element={<BookingPage />} />
+
+          {/* Admin Routes - MUST be before /:slug catch‑all */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminDashboard />} />
 
           {/* Property Details Page - MUST be before /:slug catch‑all */}
           <Route path="/:slug/property/:propertyId" element={<PropertyDetails />} />

@@ -1,8 +1,9 @@
 const { createClient } = require('@supabase/supabase-js');
 const { google } = require('googleapis');
 const xss = require('xss');
-const cookie = require('cookie');          // 👈 ADDED
-const jwt = require('jsonwebtoken');       // 👈 ADDED
+const cookie = require('cookie');
+const jwt = require('jsonwebtoken');
+const { validateCsrf } = require('./_utils/csrf'); // 👈 NEW
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -45,7 +46,15 @@ exports.handler = async function (event) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing booking ID or slug' }) };
     }
 
-    // ─── JWT AUTHENTICATION (NEW) ───
+    // ─── CSRF PROTECTION ───
+    if (!validateCsrf(event)) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: 'Invalid security token. Please refresh and try again.' }),
+      };
+    }
+
+    // ─── JWT AUTHENTICATION ───
     const cookies = cookie.parse(event.headers.cookie || '');
     const token = cookies.dashboard_token;
     if (!token) {
@@ -143,7 +152,6 @@ exports.handler = async function (event) {
         const endMin = h * 60 + min + 60;
         const endTime = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
 
-        // Sanitise strings used in calendar event (though booking fields are already sanitised on insert)
         await calendar.events.insert({
           calendarId: biz.calendar_id,
           requestBody: {

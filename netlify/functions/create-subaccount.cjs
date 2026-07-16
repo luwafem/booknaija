@@ -1,4 +1,4 @@
-// netlify/functions/create-subaccount.js
+// netlify/functions/create-subaccount.cjs
 const xss = require('xss');
 
 // ─── SANITISATION HELPER ───
@@ -41,12 +41,13 @@ exports.handler = async (event) => {
 
     const {
       business_name,
-      settlement_bank,    // Paystack bank code e.g. "058" for GTBank
-      account_number,     // 10-digit NUBAN account number
-      percentage_charge,  // Platform commission e.g. 5 for 5%
+      settlement_bank,         // Paystack bank code e.g. "058" for GTBank
+      account_number,          // 10-digit NUBAN account number
+      percentage_charge,       // Platform commission e.g. 5 for 5%
       primary_contact_name,
       primary_contact_email,
       primary_contact_phone,
+      type,                    // NEW: 'affiliate' or 'business' (optional)
     } = payload;
 
     // Validate required fields
@@ -66,6 +67,19 @@ exports.handler = async (event) => {
         statusCode: 400,
         body: JSON.stringify({ error: 'percentage_charge must be a number between 0 and 100' }),
       };
+    }
+
+    // ─── AFFILIATE-SPECIFIC VALIDATION ───
+    // If this is an affiliate subaccount, enforce that platform fee is exactly 40%
+    if (type === 'affiliate') {
+      if (charge !== 40) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            error: 'Affiliate subaccounts must have a platform charge of exactly 40%',
+          }),
+        };
+      }
     }
 
     // Validate account_number is exactly 10 digits (NUBAN)

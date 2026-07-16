@@ -3,13 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { PLATFORM_PAYSTACK_KEY } from '../data/config';
 
-async function fetchBusiness(slug, includeInactive = false) {
-  console.log('📡 Fetching business for slug:', slug, 'includeInactive:', includeInactive);
+async function fetchBusiness(slug, includeInactive = false, includeChildren = false) {
+  console.log('📡 Fetching business for slug:', slug, 'includeInactive:', includeInactive, 'includeChildren:', includeChildren);
 
-  let query = supabase
-    .from('businesses')
-    .select(
-      `
+  // Build the select query
+  let selectFields = '*';
+  if (includeChildren) {
+    selectFields = `
       *,
       business_services (*),
       business_products (*),
@@ -17,11 +17,14 @@ async function fetchBusiness(slug, includeInactive = false) {
       business_food (*),
       business_properties (*),
       business_estates (*)
-      `
-    )
+    `;
+  }
+
+  let query = supabase
+    .from('businesses')
+    .select(selectFields)
     .eq('slug', slug);
 
-  // Only filter active businesses for public views
   if (!includeInactive) {
     query = query.eq('active', true);
   }
@@ -38,15 +41,15 @@ async function fetchBusiness(slug, includeInactive = false) {
   }
 
   console.log('✅ Business found:', data.name, 'active:', data.active);
-  return transformBusiness(data);
+  return transformBusiness(data, includeChildren);
 }
 
 export function useBusiness(slug, options = {}) {
-  const { initialData, includeInactive = false } = options;
+  const { initialData, includeInactive = false, includeChildren = false } = options;
 
   const query = useQuery({
-    queryKey: ['business', slug, includeInactive],
-    queryFn: () => fetchBusiness(slug, includeInactive),
+    queryKey: ['business', slug, includeInactive, includeChildren],
+    queryFn: () => fetchBusiness(slug, includeInactive, includeChildren),
     enabled: !!slug && !initialData,
     initialData: initialData,
     staleTime: 5 * 60 * 1000,
@@ -60,9 +63,10 @@ export function useBusiness(slug, options = {}) {
   };
 }
 
-// ─── TRANSFORM (unchanged, but note `SecurityCode` may be better as `securityCode`) ───
-function transformBusiness(row) {
-  return {
+// ─── TRANSFORM (with conditional child handling) ───
+function transformBusiness(row, includeChildren) {
+  // All fields that are always present
+  const base = {
     name: row.name,
     slug: row.slug,
     logo: row.logo || '',
@@ -86,7 +90,13 @@ function transformBusiness(row) {
     accountName: row.account_name || '',
     accountNumber: row.account_number || '',
     settlementBank: row.settlement_bank || '',
+    // ─── Subscription & affiliate fields ───
     active: row.active,
+    subscription_ends_at: row.subscription_ends_at || null,
+    referred_by_affiliate: row.referred_by_affiliate || null,
+    affiliate_commission_month: row.affiliate_commission_month || 0,
+    affiliate_bounty_paid: row.affiliate_bounty_paid || false,
+    // ─── Feature flags ───
     adsEnabled: row.ads_enabled !== false,
     carsEnabled: row.cars_enabled,
     servicesEnabled: row.services_enabled,
@@ -109,7 +119,11 @@ function transformBusiness(row) {
     team: (row.team && typeof row.team === 'string')
       ? JSON.parse(row.team)
       : (Array.isArray(row.team) ? row.team : []),
-    services: sortByOrder(row.business_services || []).map(s => ({
+  };
+
+  // Only include child items if requested
+  if (includeChildren) {
+    base.services = sortByOrder(row.business_services || []).map(s => ({
       id: s.service_id,
       name: s.name,
       duration: s.duration,
@@ -120,8 +134,8 @@ function transformBusiness(row) {
       images: s.images || [],
       showDetails: s.show_details !== false,
       description: s.description || ''
-    })),
-    products: sortByOrder(row.business_products || []).map(p => ({
+    }));
+    base.products = sortByOrder(row.business_products || []).map(p => ({
       id: p.product_id,
       name: p.name,
       price: p.price,
@@ -135,8 +149,8 @@ function transformBusiness(row) {
       layout: p.layout || '',
       showDetails: p.show_details !== false,
       description: p.description || ''
-    })),
-    cars: sortByOrder(row.business_cars || []).map(c => ({
+    }));
+    base.cars = sortByOrder(row.business_cars || []).map(c => ({
       id: c.car_id,
       type: c.type,
       name: c.name,
@@ -148,8 +162,8 @@ function transformBusiness(row) {
       description: c.description || '',
       image: c.image || '',
       images: c.images || []
-    })),
-    food: sortByOrder(row.business_food || []).map(f => ({
+    }));
+    base.food = sortByOrder(row.business_food || []).map(f => ({
       id: f.food_id,
       name: f.name,
       price: f.price,
@@ -157,8 +171,8 @@ function transformBusiness(row) {
       images: f.images || [],
       description: f.description || '',
       addons: f.addons || []
-    })),
-    properties: sortByOrder(row.business_properties || []).map(p => ({
+    }));
+    base.properties = sortByOrder(row.business_properties || []).map(p => ({
       id: p.property_id,
       name: p.name,
       type: p.type,
@@ -168,8 +182,8 @@ function transformBusiness(row) {
       bathrooms: p.bathrooms || '',
       description: p.description || '',
       images: p.images || []
-    })),
-    estates: sortByOrder(row.business_estates || [])
+    }));
+    base.estates = sortByOrder(row.business_estates || [])
       .map(e => ({
         id: e.estate_id,
         name: e.name,
@@ -190,8 +204,18 @@ function transformBusiness(row) {
         if (a.featured && !b.featured) return -1;
         if (!a.featured && b.featured) return 1;
         return 0;
-      })
-  };
+      });
+  } else {
+    // Set empty arrays for consistency
+    base.services = [];
+    base.products = [];
+    base.cars = [];
+    base.food = [];
+    base.properties = [];
+    base.estates = [];
+  }
+
+  return base;
 }
 
 function sortByOrder(arr) {

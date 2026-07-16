@@ -30,10 +30,12 @@ export default function InfoTab({
   const referralUrl = window.location.origin + '/signup?ref=' + biz.slug;
   const pageUrl = window.location.origin + '/' + biz.slug;
   const hasPreciseLocation = biz.lat && biz.lng;
+  const subscriptionEndsAt = biz.subscription_ends_at ? new Date(biz.subscription_ends_at) : null;
+  const isActive = !isExpired && subscriptionEndsAt && subscriptionEndsAt > new Date();
 
   return (
     <div className="space-y-6">
-      {/* ── SUBSCRIPTION STATUS ── */}
+      {/* ── SUBSCRIPTION STATUS BANNER ── */}
       {(isExpired || isWarning) && (
         <div className={`rounded-2xl p-5 sm:p-6 text-white ${isExpired ? 'bg-zinc-700 border border-zinc-600' : 'bg-zinc-600 border border-zinc-500'}`}>
           <div className="flex items-start gap-3 mb-4">
@@ -156,6 +158,17 @@ export default function InfoTab({
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-sm font-bold text-white tracking-tight">Business Information</h3>
           <div className="flex items-center gap-3">
+            {/* Subscription status badge */}
+            {!isExpired && subscriptionEndsAt && (
+              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${isWarning ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                {isWarning ? `${daysLeft}d left` : 'Active'}
+              </span>
+            )}
+            {isExpired && (
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-red-500/20 text-red-400">
+                Expired
+              </span>
+            )}
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.15em]">Referrals</span>
               <span className="text-xs font-medium text-white">{referralCount}</span>
@@ -189,6 +202,14 @@ export default function InfoTab({
             >
               {biz.name || 'Untitled Business'}
             </p>
+            {!isExpired && subscriptionEndsAt && (
+              <p className="text-[10px] text-zinc-500 mt-0.5">
+                {isWarning ? `Expires in ${daysLeft} day${daysLeft > 1 ? 's' : ''}` : `Active until ${subscriptionEndsAt.toLocaleDateString()}`}
+              </p>
+            )}
+            {isExpired && (
+              <p className="text-[10px] text-red-400 mt-0.5">Subscription expired – page is hidden</p>
+            )}
           </div>
         </div>
 

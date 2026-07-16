@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { XIcon, CalendarIcon } from './Icons';
+import { getCsrfToken } from '../lib/csrf'; // 👈 NEW
 
 // Cloudinary Config (Must match your Signup.jsx)
 const CLOUD_NAME = 'deexaiik4';
@@ -277,7 +278,10 @@ export default function BookingForm({
       try {
         const res = await fetch('/.netlify/functions/submit-offline-booking', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': getCsrfToken(), // 👈 CSRF header added
+          },
           body: JSON.stringify({
             slug: biz.slug,
             name, email, phone, address,
