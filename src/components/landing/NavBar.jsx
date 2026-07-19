@@ -5,7 +5,7 @@ export default function NavBar({ d, toggleTheme }) {
     <nav className="bg-white/90 backdrop-blur-xl sticky top-0 z-50 border-b border-zinc-200 transition-colors duration-300">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
         <Link to="/" className="flex items-center gap-2 group shrink-0">
-          <img src="/fav-removebg.png" alt="BookNaija" className="h-8 w-auto transition-transform group-hover:scale-105" />
+          <img src="/fav-removebg.png" alt="Five9" className="h-8 w-auto transition-transform group-hover:scale-105" />
         </Link>
 
         <div className="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-600">

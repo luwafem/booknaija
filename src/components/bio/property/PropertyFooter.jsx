@@ -153,7 +153,7 @@ export default function PropertyFooter({ biz, accent, isDark }) {
               Secured by Paystack
             </span>
             <span className={`text-[10px] uppercase tracking-widest ${themeClasses.muted}`}>
-              Powered by BookNaija
+              Powered by Five9
             </span>
           </div>
         </div>

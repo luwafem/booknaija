@@ -224,7 +224,7 @@ export default function DashboardLogin() {
       <nav className="bg-white border-b border-zinc-200">
         <div className="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
           <Link to="/" className="flex items-center">
-            <img src="/fav-removebg.png" alt="BookNaija Logo" className="h-9 w-auto object-contain" />
+            <img src="/fav-removebg.png" alt="Five9 Logo" className="h-9 w-auto object-contain" />
           </Link>
           <Link to="/signup" className="text-sm font-semibold text-white bg-zinc-900 px-5 py-2.5 rounded-lg hover:bg-zinc-800 transition-all">
             Get Started
@@ -290,7 +290,7 @@ export default function DashboardLogin() {
                 <div>
                   <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">Business Slug</label>
                   <div className="flex items-center border border-zinc-700 rounded-xl overflow-hidden focus-within:border-zinc-500 focus-within:ring-2 focus-within:ring-zinc-500 transition-all bg-zinc-800">
-                    <span className="px-3 text-sm text-zinc-500 bg-zinc-800 border-r border-zinc-700 select-none">booknaija.com/</span>
+                    <span className="px-3 text-sm text-zinc-500 bg-zinc-800 border-r border-zinc-700 select-none">five9.com.ng/</span>
                     <input
                       type="text"
                       value={slug}
@@ -554,7 +554,7 @@ export default function DashboardLogin() {
 
       <footer className="bg-white border-t border-zinc-200 py-6 px-6">
         <div className="max-w-7xl mx-auto text-center">
-          <p className="text-zinc-500 text-sm">© {new Date().getFullYear()} BookNaija Technologies.</p>
+          <p className="text-zinc-500 text-sm">© {new Date().getFullYear()} Five9 Technologies.</p>
         </div>
       </footer>
     </div>

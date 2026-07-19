@@ -48,7 +48,7 @@ export default function NotFound() {
           <p className="mt-8 text-xs text-zinc-400">
             If you think this is a mistake, please{' '}
             <a 
-              href="mailto:support@booknaija.com" 
+              href="mailto:support@five9.com.ng" 
               className="text-purple-600 hover:text-purple-700 underline underline-offset-2"
             >
               contact support

@@ -37,20 +37,20 @@ exports.handler = async (event) => {
     for (const biz of businesses) {
       if (!biz.email) continue;
 
-      const subject = `Your BookNaija subscription expires in 5 days`;
+      const subject = `Your Five9 subscription expires in 5 days`;
       const html = `
         <h2>Renew your subscription</h2>
         <p>Hi ${biz.name},</p>
-        <p>Your BookNaija page (<strong>${biz.slug}</strong>) will expire on <strong>${new Date(biz.subscription_ends_at).toLocaleDateString()}</strong>.</p>
+        <p>Your Five9 page (<strong>${biz.slug}</strong>) will expire on <strong>${new Date(biz.subscription_ends_at).toLocaleDateString()}</strong>.</p>
         <p>To keep your page live and continue receiving bookings, please renew now:</p>
         <a href="${process.env.SITE_URL}/dashboard/${biz.slug}" style="background:#000;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;">Renew for ₦2,500</a>
         <p>If you've already renewed, please ignore this message.</p>
-        <p>– The BookNaija Team</p>
+        <p>– The Five9 Team</p>
       `;
 
       try {
         await resend.emails.send({
-          from: process.env.EMAIL_FROM || 'BookNaija <noreply@booknaija.com>',
+          from: process.env.EMAIL_FROM || 'Five9 <noreply@five9.com.ng>',
           to: biz.email,
           subject,
           html,

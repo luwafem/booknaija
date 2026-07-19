@@ -17,7 +17,7 @@ export default function MetaProofSection({ T }) {
               Instagram and Facebook pages get disabled every day  often without
               warning. When your page goes down, your DMs, your audience, and
               your income disappear.{' '}
-              <span className={`font-semibold ${T.text}`}>Not with BookNaija.</span>
+              <span className={`font-semibold ${T.text}`}>Not with Five9.</span>
             </p>
             <Link
               to="/signup"
@@ -29,7 +29,7 @@ export default function MetaProofSection({ T }) {
           </div>
 
           <div className="space-y-4" data-animate data-delay-2>
-            {/* Without BookNaija */}
+            {/* Without Five9 */}
             <div className={`${T.card} ${T.border} rounded-xl p-5`}>
               <div className="flex items-center gap-3 mb-3">
                 <div className={`w-8 h-8 ${T.badgeIcon} rounded-lg flex items-center justify-center`}>
@@ -38,7 +38,7 @@ export default function MetaProofSection({ T }) {
                   </svg>
                 </div>
                 <div>
-                  <p className={`font-bold text-sm ${T.text}`}>Without BookNaija</p>
+                  <p className={`font-bold text-sm ${T.text}`}>Without Five9</p>
                   <p className={`text-[10px] ${T.textMuted}`}>Meta page disabled</p>
                 </div>
               </div>
@@ -54,7 +54,7 @@ export default function MetaProofSection({ T }) {
               </div>
             </div>
 
-            {/* With BookNaija */}
+            {/* With Five9 */}
             <div className={`${T.cardAlt} ${T.border} rounded-xl p-5`}>
               <div className="flex items-center gap-3 mb-3">
                 <div className={`w-8 h-8 ${T.accentBg} rounded-lg flex items-center justify-center`}>
@@ -63,7 +63,7 @@ export default function MetaProofSection({ T }) {
                   </svg>
                 </div>
                 <div>
-                  <p className={`font-bold text-sm ${T.text}`}>With BookNaija</p>
+                  <p className={`font-bold text-sm ${T.text}`}>With Five9</p>
                   <p className={`text-[10px] ${T.textAccent}`}>Business as usual</p>
                 </div>
               </div>

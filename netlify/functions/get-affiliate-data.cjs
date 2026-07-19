@@ -140,7 +140,7 @@ exports.handler = async (event) => {
     const unpaid = enrichedReferrals.filter((r) => r.commission.month === 0).length;
 
     // ─── 5. Build the affiliate link ───
-    const baseUrl = process.env.SITE_URL || 'https://booknaija.netlify.app';
+    const baseUrl = process.env.SITE_URL || 'https://five9.com.ng';
     const affiliateLink = `${baseUrl}/signup?ref=${affiliate.id}`;
 
     // ─── 6. Check for any failed payouts for this affiliate ───

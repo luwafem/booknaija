@@ -31,7 +31,7 @@ export function useBusinessWithSEO(slug) {
       parts.push('Book and pay securely via Paystack.');
     }
 
-    return parts.join('. ') || `${biz.name} – Book services and buy products on BookNaija`;
+    return parts.join('. ') || `${biz.name} – Book services and buy products on Five9`;
   }, [biz]);
 
   // Get the best image for social sharing (unchanged)

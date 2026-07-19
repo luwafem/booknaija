@@ -76,7 +76,7 @@ export default function Blog() {
       <nav className="bg-white sticky top-0 z-50 px-4 sm:px-6 border-b border-zinc-100">
         <div className="max-w-4xl mx-auto py-4 flex justify-between items-center">
           <Link to="/" className="text-lg font-bold tracking-tight text-zinc-900">
-            BookNaija <span className="text-purple-600">Blog</span>
+            Five9 <span className="text-purple-600">Blog</span>
           </Link>
           <Link to="/" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">
             ← Home

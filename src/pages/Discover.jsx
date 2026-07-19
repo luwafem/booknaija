@@ -30,8 +30,8 @@ export default function Discover() {
     ? `Discover Businesses in ${activeLocation}` 
     : "Discover Local Businesses in Nigeria";
   const seoDesc = activeLocation
-    ? `Browse verified service providers, product stores, and restaurants in ${activeLocation}. Find barbers, lash techs, food vendors, and more. Book securely via Paystack on BookNaija.`
-    : "Browse the best service providers, product stores, and restaurants in Nigeria. Book services and buy products securely via Paystack on BookNaija.";
+    ? `Browse verified service providers, product stores, and restaurants in ${activeLocation}. Find barbers, lash techs, food vendors, and more. Book securely via Paystack on Five9.`
+    : "Browse the best service providers, product stores, and restaurants in Nigeria. Book services and buy products securely via Paystack on Five9.";
 
   const filtered = businesses.filter(b => {
     const matchesSearch = b.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -55,7 +55,7 @@ export default function Discover() {
             <Link to="/" className="flex items-center flex-shrink-0">
               <img 
                 src="/fav-removebg.png" 
-                alt="BookNaija Logo" 
+                alt="Five9 Logo" 
                 className="h-12 sm:h-16 w-auto object-contain transition-transform hover:scale-105" 
               />
             </Link>
@@ -182,7 +182,7 @@ export default function Discover() {
                 <Link to="/" className="flex items-center">
                   <img 
                     src="/fav-removebg.png" 
-                    alt="BookNaija Logo" 
+                    alt="Five9 Logo" 
                     className="h-20 w-auto object-contain" 
                   />
                 </Link>
@@ -208,7 +208,7 @@ export default function Discover() {
             
             <div className="pt-8 border-t border-zinc-50 flex flex-col md:flex-row justify-between gap-6 items-center">
               <p className="text-zinc-400 text-xs font-medium">
-                © {new Date().getFullYear()} BookNaija Technologies.
+                © {new Date().getFullYear()} Five9 Technologies.
               </p>
               <div className="flex gap-6 text-xs font-medium text-zinc-400">
                 <Link to="/terms" className="hover:text-zinc-900 transition-colors">Terms</Link>

@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row justify-between items-start gap-8 mb-10">
           <div>
             <Link to="/" className="flex items-center gap-2">
-              <img src="/fav-removebg.png" alt="BookNaija" className="h-8 w-auto" />
+              <img src="/fav-removebg.png" alt="Five9" className="h-8 w-auto" />
             </Link>
             <p className="text-xs mt-2 max-w-[200px] text-zinc-500">
               Your business. One simple link. Meta-proof.
@@ -40,7 +40,7 @@ export default function Footer() {
         </div>
         <div className="pt-6 border-t border-zinc-200 flex flex-col sm:flex-row justify-between gap-3 items-center">
           <p className="text-xs text-zinc-400">
-            © {new Date().getFullYear()} BookNaija Technologies.
+            © {new Date().getFullYear()} Five9 Technologies.
           </p>
           <div className="flex gap-4 text-xs text-zinc-400">
             <Link to="/terms" className="hover:text-lime-600 transition-colors">Terms</Link>

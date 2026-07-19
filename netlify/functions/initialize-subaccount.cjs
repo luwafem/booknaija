@@ -69,7 +69,7 @@ exports.handler = async (event) => {
     }
 
     // ─── HARDCODE CALLBACK URL ───
-    const baseUrl = process.env.SITE_URL || process.env.URL || 'https://booknaija.netlify.app';
+    const baseUrl = process.env.SITE_URL || process.env.URL || 'https://five9.com.ng';
     const cleanBaseUrl = baseUrl.replace(/\/$/, '');
     const callbackUrl = `${cleanBaseUrl}/dashboard/${slug}?sub_ref=SUCCESS`;
 

@@ -127,7 +127,7 @@ exports.handler = async (event) => {
     }
 
     // ─── 2. Build callback URL ───
-    const baseUrl = process.env.SITE_URL || process.env.URL || 'https://booknaija.netlify.app';
+    const baseUrl = process.env.SITE_URL || process.env.URL || 'https://five9.com.ng';
     const cleanBaseUrl = baseUrl.replace(/\/$/, '');
     const finalCallbackUrl = callback_url || `${cleanBaseUrl}/dashboard/${slug}?sub_ref=SUCCESS`;
 

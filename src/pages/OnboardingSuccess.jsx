@@ -208,7 +208,7 @@ export default function OnboardingSuccess() {
           
           <div className="pt-6 border-t border-zinc-100 flex flex-col md:flex-row justify-between gap-4 items-center">
             <p className="text-zinc-500 text-sm">
-              © {new Date().getFullYear()} BookNaija Technologies.
+              © {new Date().getFullYear()} Five9 Technologies.
             </p>
             <div className="flex gap-4 text-sm text-zinc-500">
               <Link to="/terms" className="hover:text-zinc-700 transition-colors">Terms</Link>

@@ -14,7 +14,7 @@ const blogData = [
     slug: 'how-to-maintain-knotless-braids-in-lagos',
     title: 'How to Maintain Knotless Braids in Lagos Humidity',
     category: 'Beauty',
-    author: 'BookNaija Editorial',
+    author: 'Five9 Editorial',
     publishedDate: '2024-01-15',
     modifiedDate: '2024-01-15',
     content: `Lagos humidity is notorious for frizzing up even the most perfectly installed protective styles. Knotless braids are a favorite because they put less tension on the scalp, but they require specific maintenance to last. Here is your complete guide to keeping them fresh.
@@ -29,7 +29,7 @@ Finally, combat the humidity with mousse. A good alcohol-free styling mousse app
     slug: '5-best-local-ingredients-every-nigerian-restaurant-needs',
     title: '5 Best Local Ingredients Every Nigerian Restaurant Needs',
     category: 'Food',
-    author: 'BookNaija Editorial',
+    author: 'Five9 Editorial',
     publishedDate: '2024-01-18',
     modifiedDate: '2024-01-18',
     content: `The secret to authentic, profitable Nigerian cuisine lies in the quality of your base ingredients. If you are running a restaurant or a cloud kitchen, sourcing these five local staples fresh will set your food apart from the competition.
@@ -48,7 +48,7 @@ Finally, combat the humidity with mousse. A good alcohol-free styling mousse app
     slug: 'what-to-check-before-renting-a-car-in-lagos',
     title: 'What to Check Before Renting a Car in Lagos',
     category: 'Cars',
-    author: 'BookNaija Editorial',
+    author: 'Five9 Editorial',
     publishedDate: '2024-01-22',
     modifiedDate: '2024-01-22',
     content: `Renting a car in Lagos gives you the freedom to navigate the city on your own schedule, but the process is fraught with potential pitfalls. Before you hand over your money, ensure you check these vital boxes.
@@ -65,12 +65,12 @@ Emergency Tools: Ensure the vehicle comes with a spare tire (in good condition),
     slug: 'why-every-nigerian-small-business-needs-a-bio-link',
     title: 'Why Every Nigerian Small Business Needs a Bio Link',
     category: 'Business',
-    author: 'BookNaija Editorial',
+    author: 'Five9 Editorial',
     publishedDate: '2024-01-25',
     modifiedDate: '2024-01-25',
     content: `If you are running a business in Nigeria using only Instagram DMs, you are leaving money on the table. The "DM to book" cycle is broken. Messages get lost, clients forget to follow up, and you spend hours coordinating instead of doing the actual work.
 
-A bio link—like a BookNaija storefront—solves this. Instead of telling a customer "DM me for price," you direct them to a single link in your bio where all your services, prices, and availability are clearly listed.
+A bio link—like a Five9 storefront—solves this. Instead of telling a customer "DM me for price," you direct them to a single link in your bio where all your services, prices, and availability are clearly listed.
 
 The biggest advantage is upfront payment. By integrating a secure payment gateway like Paystack directly into your bio link, clients pay at the point of booking. This eliminates the problem of "no-shows" and time-wasters. When a customer has paid even a token fee, their commitment level skyrockets.
 
@@ -80,7 +80,7 @@ Furthermore, a bio link looks professional. It builds immediate trust. When a cl
     slug: 'the-rise-of-cloud-kitchens-in-nigeria',
     title: 'The Rise of Cloud Kitchens in Nigeria: How to Start One',
     category: 'Food',
-    author: 'BookNaija Editorial',
+    author: 'Five9 Editorial',
     publishedDate: '2024-02-01',
     modifiedDate: '2024-02-01',
     content: `The food delivery boom in cities like Lagos and Abuja has given rise to a new, highly profitable business model: the Cloud Kitchen. Unlike traditional restaurants, cloud kitchens exist solely for delivery. There are no tables, no waiters, and no expensive interior decor—just a kitchen focused entirely on food production.
@@ -89,13 +89,13 @@ The primary advantage is the low startup cost. Renting a small, functional kitch
 
 To start, you need a niche. Cloud kitchens thrive on focused menus. Instead of offering 50 different meals, focus on doing one thing exceptionally well—whether that's gourmet shawarma, healthy meal prep, or authentic local soups. A focused menu reduces prep time and errors.
 
-Next, partner with delivery platforms like Chowdeck, Gokada, or Glovo. But don't rely solely on them. Set up your own BookNaija storefront so your loyal customers can order directly from you without paying high platform commissions. You get paid upfront, and the delivery riders handle the logistics.`
+Next, partner with delivery platforms like Chowdeck, Gokada, or Glovo. But don't rely solely on them. Set up your own Five9 storefront so your loyal customers can order directly from you without paying high platform commissions. You get paid upfront, and the delivery riders handle the logistics.`
   },
   {
     slug: 'complete-guide-to-buying-a-used-car-in-nigeria',
     title: 'A Complete Guide to Buying a Used Car in Nigeria',
     category: 'Cars',
-    author: 'BookNaija Editorial',
+    author: 'Five9 Editorial',
     publishedDate: '2024-02-05',
     modifiedDate: '2024-02-05',
     content: `Buying a used (Tokunbo) car in Nigeria can be a great investment, but it requires diligence to ensure you aren't buying a refurbished wreck. Follow this guide to make a smart purchase.
@@ -112,7 +112,7 @@ Verify Customs Papers: This is strictly a Nigerian concern. Ensure the vehicle's
     slug: 'setting-the-right-prices-for-your-beauty-services',
     title: 'Setting the Right Prices for Your Beauty Services in 2024',
     category: 'Beauty',
-    author: 'BookNaija Editorial',
+    author: 'Five9 Editorial',
     publishedDate: '2024-02-10',
     modifiedDate: '2024-02-10',
     content: `One of the biggest mistakes beauty professionals make is pricing based on what their competitors charge. If you do this, you are assuming your competitor's business is healthy—which is often not the case.
@@ -127,12 +127,12 @@ Do not be afraid to price premium. Clients who pay more are generally more respe
     slug: 'how-paystack-is-changing-online-payments-for-creatives',
     title: 'How Paystack is Changing Online Payments for Nigerian Creatives',
     category: 'Business',
-    author: 'BookNaija Editorial',
+    author: 'Five9 Editorial',
     publishedDate: '2024-02-15',
     modifiedDate: '2024-02-15',
     content: `For years, Nigerian creatives and freelancers struggled with receiving payments. Bank transfers required sending account numbers via DM, leading to mix-ups, delayed payments, and the constant fear of "fake alerts." Paystack has fundamentally changed this landscape.
 
-With Paystack integrated into platforms like BookNaija, payments happen in real-time. When a client books your service, they pay securely via card, bank transfer, or USSD. You get an instant notification, and the funds settle directly into your bank account. No more chasing clients for money.
+With Paystack integrated into platforms like Five9, payments happen in real-time. When a client books your service, they pay securely via card, bank transfer, or USSD. You get an instant notification, and the funds settle directly into your bank account. No more chasing clients for money.
 
 This instant payment builds trust on both sides. The client feels secure because they are paying through a verified gateway, and you are guaranteed your fee before the service is rendered.
 
@@ -142,7 +142,7 @@ For freelancers selling digital products or physical merchandise, Paystack provi
     slug: 'how-to-package-food-for-delivery-in-nigeria',
     title: 'How to Package Food for Delivery in Nigeria (Tips & Tricks)',
     category: 'Food',
-    author: 'BookNaija Editorial',
+    author: 'Five9 Editorial',
     publishedDate: '2024-02-20',
     modifiedDate: '2024-02-20',
     content: `The quality of your food means nothing if it arrives looking like a disaster. In the competitive Nigerian food delivery space, packaging is just as important as taste. Here is how to ensure your meals arrive looking and tasting perfect.
@@ -157,7 +157,7 @@ Seal for Trust: Always seal your bags with a branded sticker or tape. This serve
     slug: 'building-client-trust-why-online-booking-beats-dms',
     title: 'Building Client Trust: Why Online Booking Beats DMs',
     category: 'Business',
-    author: 'BookNaija Editorial',
+    author: 'Five9 Editorial',
     publishedDate: '2024-02-25',
     modifiedDate: '2024-02-25',
     content: `In the modern Nigerian business landscape, trust is currency. When a client reaches out via DM, they are taking a risk. They don't know if you will respond promptly, if your prices are standard, or if you will actually deliver the service. 
@@ -180,7 +180,7 @@ function escapeHtml(text) {
 }
 
 function generateJsonLd(article) {
-  const baseUrl = 'https://booknaija.netlify.app';
+  const baseUrl = 'https://five9.com.ng';
   const articleUrl = `${baseUrl}/blog/${article.slug}`;
   
   return {
@@ -191,12 +191,12 @@ function generateJsonLd(article) {
     image: `${baseUrl}/og-image.png`,
     author: {
       '@type': 'Organization',
-      name: 'BookNaija Editorial',
+      name: 'Five9 Editorial',
       url: baseUrl
     },
     publisher: {
       '@type': 'Organization',
-      name: 'BookNaija',
+      name: 'Five9',
       logo: {
         '@type': 'ImageObject',
         url: `${baseUrl}/fav.png`
@@ -215,7 +215,7 @@ function generateJsonLd(article) {
 }
 
 function generateArticleHTML(article, baseHtml) {
-  const baseUrl = 'https://booknaija.netlify.app';
+  const baseUrl = 'https://five9.com.ng';
   const articleUrl = `${baseUrl}/blog/${article.slug}`;
   const description = article.content.substring(0, 150).replace(/\n/g, ' ').trim() + '...';
   const jsonLd = generateJsonLd(article);
@@ -230,7 +230,7 @@ function generateArticleHTML(article, baseHtml) {
     <nav class="bg-white sticky top-0 z-50 px-4 sm:px-6 border-b border-zinc-100">
       <div class="max-w-2xl mx-auto py-4 flex justify-between items-center">
         <a href="/blog" class="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">← Blog</a>
-        <a href="/" class="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">BookNaija</a>
+        <a href="/" class="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">Five9</a>
       </div>
     </nav>
     <main class="max-w-2xl mx-auto px-6 pt-12 pb-24">
@@ -244,7 +244,7 @@ function generateArticleHTML(article, baseHtml) {
       </article>
       <div class="mt-16 p-8 rounded-2xl bg-zinc-50 border border-zinc-200 text-center">
         <h3 class="text-xl font-bold text-zinc-900 mb-2">Ready to grow your business?</h3>
-        <p class="text-zinc-500 text-sm mb-6">Stop the DM cycle. Get your professional storefront on BookNaija today.</p>
+        <p class="text-zinc-500 text-sm mb-6">Stop the DM cycle. Get your professional storefront on Five9 today.</p>
         <a href="/signup" class="inline-block bg-zinc-900 text-white px-8 py-3 rounded-xl text-sm font-bold hover:bg-zinc-700 transition-all active:scale-95">Get Started for ₦500</a>
       </div>
     </main>
@@ -253,23 +253,23 @@ function generateArticleHTML(article, baseHtml) {
   // Use regex for robust tag replacement
   let html = baseHtml
     // Replace <title> content
-    .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(article.title)} | BookNaija</title>`)
+    .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(article.title)} | Five9</title>`)
     // Replace meta name="title"
-    .replace(/<meta\s+name="title"\s+content="[^"]*"\s*\/>/, `<meta name="title" content="${escapeHtml(article.title)} | BookNaija" />`)
+    .replace(/<meta\s+name="title"\s+content="[^"]*"\s*\/>/, `<meta name="title" content="${escapeHtml(article.title)} | Five9" />`)
     // Replace meta name="description"
     .replace(/<meta\s+name="description"\s+content="[^"]*"\s*\/>/, `<meta name="description" content="${escapeHtml(description)}" />`)
     // Replace og:title
-    .replace(/<meta\s+property="og:title"\s+content="[^"]*"\s*\/>/, `<meta property="og:title" content="${escapeHtml(article.title)} | BookNaija" />`)
+    .replace(/<meta\s+property="og:title"\s+content="[^"]*"\s*\/>/, `<meta property="og:title" content="${escapeHtml(article.title)} | Five9" />`)
     // Replace og:description
     .replace(/<meta\s+property="og:description"\s+content="[^"]*"\s*\/>/, `<meta property="og:description" content="${escapeHtml(description)}" />`)
     // Replace og:url
     .replace(/<meta\s+property="og:url"\s+content="[^"]*"\s*\/>/, `<meta property="og:url" content="${articleUrl}" />`)
     // Replace twitter:title
-    .replace(/<meta\s+name="twitter:title"\s+content="[^"]*"\s*\/>/, `<meta name="twitter:title" content="${escapeHtml(article.title)} | BookNaija" />`)
+    .replace(/<meta\s+name="twitter:title"\s+content="[^"]*"\s*\/>/, `<meta name="twitter:title" content="${escapeHtml(article.title)} | Five9" />`)
     // Replace twitter:description
     .replace(/<meta\s+name="twitter:description"\s+content="[^"]*"\s*\/>/, `<meta name="twitter:description" content="${escapeHtml(description)}" />`)
     // Inject canonical (if placeholder exists, replace; otherwise add before </head>)
-    .replace(/<!-- Canonical is handled dynamically by React Helmet inside the app -->/, `<link rel="canonical" href="${articleUrl}" />`)
+    .replace(/<!-- Canonical is handled dynamically by React five9.com.ng -->/, `<link rel="canonical" href="${articleUrl}" />`)
     // Inject JSON-LD (replace </head> with script + </head>)
     .replace('</head>', `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>\n  </head>`)
     // Inject article content into #root

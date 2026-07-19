@@ -17,7 +17,7 @@ const BUSINESS_TYPES = [
 const OBJECTIONS = [
   {
     q: '"I already sell on Instagram / WhatsApp status"',
-    a: 'Those are just catalogs, not a store. People still have to DM you, negotiate, and do bank transfers. BookNaija gives you a checkout link so customers pay securely with card or bank transfer before you even talk to them.',
+    a: 'Those are just catalogs, not a store. People still have to DM you, negotiate, and do bank transfers. Five9 gives you a checkout link so customers pay securely with card or bank transfer before you even talk to them.',
   },
   {
     q: '"₦2,500 is too much"',
@@ -25,7 +25,7 @@ const OBJECTIONS = [
   },
   {
     q: '"How will people find my store?"',
-    a: 'Your BookNaija page is built for Google. It ranks in search results, shows up on Google Maps for "near me" searches, and we walk you through claiming your Google Business Profile in under 2 minutes. Plus you can still share your store link on WhatsApp and Instagram it just converts way better now.',
+    a: 'Your Five9 page is built for Google. It ranks in search results, shows up on Google Maps for "near me" searches, and we walk you through claiming your Google Business Profile in under 2 minutes. Plus you can still share your store link on WhatsApp and Instagram it just converts way better now.',
   },
   {
     q: '"I don\'t know how to use technology"',
@@ -33,7 +33,7 @@ const OBJECTIONS = [
   },
   {
     q: '"I already have a website / Instagram page"',
-    a: 'A website nobody finds is just a digital business card. BookNaija is different because it puts you on Google Maps and optimizes your page for "near me" searches. When someone in your area searches "lash artist near me" or "food near me," you show up. Your Instagram page can\'t do that.',
+    a: 'A website nobody finds is just a digital business card. Five9 is different because it puts you on Google Maps and optimizes your page for "near me" searches. When someone in your area searches "lash artist near me" or "food near me," you show up. Your Instagram page can\'t do that.',
   },
 ];
 
@@ -41,7 +41,7 @@ const SWIPE_FILES = [
   {
     id: 'casual',
     label: 'Casual / Friend',
-    text: `Hey! Are you still only selling on WhatsApp status? I found something that gives you a proper online store WITH Google Maps so people searching "near me" actually find you.\n\nBookNaija sets up your store + puts you on Google Maps + customers pay you directly with card or bank transfer. All for ₦2,500/month.\n\nHere's the link:`,
+    text: `Hey! Are you still only selling on WhatsApp status? I found something that gives you a proper online store WITH Google Maps so people searching "near me" actually find you.\n\nFive9 sets up your store + puts you on Google Maps + customers pay you directly with card or bank transfer. All for ₦2,500/month.\n\nHere's the link:`,
   },
   {
     id: 'local',
@@ -268,7 +268,7 @@ export default function AffiliateDashboard() {
         <div className={`${cardBase} overflow-hidden`}>
           <div className={sectionHeader}>
             <h3 className={sectionTitle}>Businesses We Serve</h3>
-            <p className={sectionDesc}>Any of these business types can be set up on BookNaija. Use this list to find leads.</p>
+            <p className={sectionDesc}>Any of these business types can be set up on Five9. Use this list to find leads.</p>
           </div>
           <div className="p-6">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -282,7 +282,7 @@ export default function AffiliateDashboard() {
               ))}
             </div>
             <p className="text-[11px] text-zinc-400 mt-4 font-medium">
-              Don't see a fit? Any business that sells products or takes bookings can use BookNaija.
+              Don't see a fit? Any business that sells products or takes bookings can use Five9.
             </p>
           </div>
         </div>
@@ -304,7 +304,7 @@ export default function AffiliateDashboard() {
                   <p className="text-xs text-zinc-400 mt-0.5">Show vendors what their store will look like. This closes deals faster than any pitch.</p>
                 </div>
                 <a 
-                  href="https://booknaija.netlify.app/demo" 
+                  href="https://five9.com.ng/demo" 
                   target="_blank" 
                   rel="noreferrer"
                   className={btnPrimary}
@@ -333,13 +333,13 @@ export default function AffiliateDashboard() {
                   <div className={contentBox}>
                     <p className={contentTitle}>The #1 hook: Google Maps + "Near Me" Visibility</p>
                     <p className={contentText}>
-                      Most Nigerian businesses are invisible on Google. When someone searches "lash artist near me" or "food near me" in their area, nothing comes up. BookNaija fixes this. Every store page is SEO-optimized to rank on Google, and we walk them through claiming their Google Business Profile so they appear on Maps. This alone is worth more than ₦2,500/month.
+                      Most Nigerian businesses are invisible on Google. When someone searches "lash artist near me" or "food near me" in their area, nothing comes up. Five9 fixes this. Every store page is SEO-optimized to rank on Google, and we walk them through claiming their Google Business Profile so they appear on Maps. This alone is worth more than ₦2,500/month.
                     </p>
                   </div>
                   <div className={contentBox}>
                     <p className={contentTitle}>The full package</p>
                     <p className={contentText}>
-                      BookNaija gives them three things: (1) A professional online store where customers can browse, book, or order and pay directly with card or bank transfer. (2) Google Maps visibility so people searching in their area find them. (3) SEO-optimized page that ranks in Google search results for their business name and services. The location they set on their store also pinpoints them on Maps with accurate directions.
+                      Five9 gives them three things: (1) A professional online store where customers can browse, book, or order and pay directly with card or bank transfer. (2) Google Maps visibility so people searching in their area find them. (3) SEO-optimized page that ranks in Google search results for their business name and services. The location they set on their store also pinpoints them on Maps with accurate directions.
                     </p>
                   </div>
                   <div className={contentBox}>
@@ -524,7 +524,7 @@ export default function AffiliateDashboard() {
                       )}
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-bold text-white truncate">{ref.name}</p>
-                        <p className="text-xs text-zinc-400 font-mono truncate">booknaija.netlify.app/{ref.slug}</p>
+                        <p className="text-xs text-zinc-400 font-mono truncate">five9.com.ng/{ref.slug}</p>
                         {!ref.active && (
                           <span className="text-[9px] text-zinc-500 mt-0.5 block">
                             ⚠️ Inactive — no future commissions
@@ -587,7 +587,7 @@ export default function AffiliateDashboard() {
       {/* Footer */}
       <footer className="bg-white border-t border-zinc-200 py-6 px-6">
         <div className="max-w-5xl mx-auto text-center">
-          <p className="text-zinc-500 text-sm">© {new Date().getFullYear()} BookNaija Technologies.</p>
+          <p className="text-zinc-500 text-sm">© {new Date().getFullYear()} Five9 Technologies.</p>
         </div>
       </footer>
     </div>

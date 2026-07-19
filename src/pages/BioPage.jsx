@@ -453,7 +453,7 @@ export default function BioPage() {
     },
     {
       q: `Is my payment secure?`,
-      a: `Absolutely. All payments on BookNaija are processed securely through Paystack, ensuring your financial information is fully protected. You will receive an instant digital receipt upon successful payment.`
+      a: `Absolutely. All payments on Five9 are processed securely through Paystack, ensuring your financial information is fully protected. You will receive an instant digital receipt upon successful payment.`
     },
     {
       q: `Can I buy products from ${biz.name} online?`,
@@ -769,7 +769,7 @@ export default function BioPage() {
                         Secured by Paystack
                       </span>
                       <span className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: accent }}>
-                        Powered by BookNaija
+                        Powered by Five9
                       </span>
                     </div>
                   </div>

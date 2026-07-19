@@ -292,7 +292,7 @@ exports.handler = async (event) => {
     }
 
     // ─── BUILD CALLBACK URL ───
-    const baseUrl = process.env.SITE_URL || process.env.URL || 'https://booknaija.netlify.app';
+    const baseUrl = process.env.SITE_URL || process.env.URL || 'https://five9.com.ng';
     const cleanBaseUrl = baseUrl.replace(/\/$/, '');
     let callbackUrl;
     if (callback_url) {

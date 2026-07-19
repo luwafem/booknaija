@@ -8,7 +8,7 @@ export default function SignupLayout({ children, steps, currentStep }) {
       <nav className="bg-white sticky top-0 z-50 border-b border-zinc-200">
         <div className="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
           <Link to="/" className="flex items-center flex-shrink-0">
-            <img src="/fav-removebg.png" alt="BookNaija Logo" className="h-9 w-auto object-contain" />
+            <img src="/fav-removebg.png" alt="Five9 Logo" className="h-9 w-auto object-contain" />
           </Link>
           <div className="flex items-center gap-4 flex-shrink-0">
             <Link to="/dashboard" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">
@@ -86,7 +86,7 @@ export default function SignupLayout({ children, steps, currentStep }) {
           <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-10">
             <div>
               <Link to="/" className="flex items-center">
-                <img src="/fav-removebg.png" alt="BookNaija Logo" className="h-10 w-auto object-contain" />
+                <img src="/fav-removebg.png" alt="Five9 Logo" className="h-10 w-auto object-contain" />
               </Link>
             </div>
             <div className="flex gap-10 text-sm">
@@ -115,7 +115,7 @@ export default function SignupLayout({ children, steps, currentStep }) {
             </div>
           </div>
           <div className="pt-6 border-t border-zinc-100 flex flex-col md:flex-row justify-between gap-4 items-center">
-            <p className="text-zinc-500 text-sm">© {new Date().getFullYear()} BookNaija Technologies.</p>
+            <p className="text-zinc-500 text-sm">© {new Date().getFullYear()} Five9 Technologies.</p>
             <div className="flex gap-4 text-sm text-zinc-500">
               <Link to="/terms" className="hover:text-zinc-700 transition-colors">Terms</Link>
               <Link to="/privacy" className="hover:text-zinc-700 transition-colors">Privacy</Link>

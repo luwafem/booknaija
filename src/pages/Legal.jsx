@@ -71,7 +71,7 @@ export default function Legal({ type }) {
                 title="Agreement"
               >
                 <p>
-                  By accessing or using BookNaija, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree with any part of these terms, you must discontinue use of the platform.
+                  By accessing or using Five9, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree with any part of these terms, you must discontinue use of the platform.
                 </p>
               </PolicySection>
 
@@ -85,7 +85,7 @@ export default function Legal({ type }) {
                 title="Services & Accuracy"
               >
                 <p>
-                  BookNaija provides a scheduling and payment infrastructure only. We do not employ, direct, or control the businesses listed on the platform.
+                  Five9 provides a scheduling and payment infrastructure only. We do not employ, direct, or control the businesses listed on the platform.
                 </p>
                 <ul className="mt-2 space-y-1 list-none text-sm text-zinc-500">
                   <li className="flex items-start gap-2">
@@ -98,7 +98,7 @@ export default function Legal({ type }) {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-purple-400 mt-0.5">•</span>
-                    <span>BookNaija is not liable for incorrect service information provided by third parties.</span>
+                    <span>Five9 is not liable for incorrect service information provided by third parties.</span>
                   </li>
                 </ul>
               </PolicySection>
@@ -113,7 +113,7 @@ export default function Legal({ type }) {
                 title="Payments & Funds"
               >
                 <p>
-                  BookNaija supports payments via Card (secured by Paystack) and Bank Transfer (offline). BookNaija does not collect, hold, or touch your funds at any point during the transaction process.
+                  Five9 supports payments via Card (secured by Paystack) and Bank Transfer (offline). Five9 does not collect, hold, or touch your funds at any point during the transaction process.
                 </p>
                 <ul className="mt-2 space-y-1 list-none text-sm text-zinc-500">
                   <li className="flex items-start gap-2">
@@ -122,7 +122,7 @@ export default function Legal({ type }) {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-purple-400 mt-0.5">•</span>
-                    <span><span className="font-medium text-zinc-700">Bank Transfer:</span> Processed directly between the customer and the business's bank account. BookNaija does not facilitate or guarantee offline transfers.</span>
+                    <span><span className="font-medium text-zinc-700">Bank Transfer:</span> Processed directly between the customer and the business's bank account. Five9 does not facilitate or guarantee offline transfers.</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-purple-400 mt-0.5">•</span>
@@ -130,7 +130,7 @@ export default function Legal({ type }) {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-purple-400 mt-0.5">•</span>
-                    <span>BookNaija charges a standard platform fee (displayed to the user before payment) and the business sets their own prices.</span>
+                    <span>Five9 charges a standard platform fee (displayed to the user before payment) and the business sets their own prices.</span>
                   </li>
                 </ul>
               </PolicySection>
@@ -166,7 +166,7 @@ export default function Legal({ type }) {
                 }
                 title="Platform Rules"
               >
-                <p>BookNaija reserves the right to suspend or permanently remove any business listing that:</p>
+                <p>Five9 reserves the right to suspend or permanently remove any business listing that:</p>
                 <ul className="mt-2 space-y-1 list-none text-sm text-zinc-500">
                   <li className="flex items-start gap-2">
                     <span className="text-purple-400 mt-0.5">•</span>
@@ -192,7 +192,7 @@ export default function Legal({ type }) {
                 }
                 title="Liability Limitation"
               >
-                <p>To the fullest extent permitted by applicable law, BookNaija (and its developers) shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of the use or inability to use the service. This includes failure or disputes regarding offline Bank Transfer payments.</p>
+                <p>To the fullest extent permitted by applicable law, Five9 (and its developers) shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of the use or inability to use the service. This includes failure or disputes regarding offline Bank Transfer payments.</p>
               </PolicySection>
             </div>
           ) : (
@@ -275,7 +275,7 @@ export default function Legal({ type }) {
                 }
                 title="No Selling Data"
               >
-                <p>BookNaija does not sell, rent, trade, or otherwise monetize your personal data or contact information with third parties under any circumstances.</p>
+                <p>Five9 does not sell, rent, trade, or otherwise monetize your personal data or contact information with third parties under any circumstances.</p>
               </PolicySection>
 
               {/* SECURITY */}

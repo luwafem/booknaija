@@ -51,7 +51,7 @@ Emergency Tools: Ensure the vehicle comes with a spare tire (in good condition),
     category: 'Business',
     content: `If you are running a business in Nigeria using only Instagram DMs, you are leaving money on the table. The "DM to book" cycle is broken. Messages get lost, clients forget to follow up, and you spend hours coordinating instead of doing the actual work.
 
-A bio link—like a BookNaija storefront—solves this. Instead of telling a customer "DM me for price," you direct them to a single link in your bio where all your services, prices, and availability are clearly listed.
+A bio link—like a Five9 storefront—solves this. Instead of telling a customer "DM me for price," you direct them to a single link in your bio where all your services, prices, and availability are clearly listed.
 
 The biggest advantage is upfront payment. By integrating a secure payment gateway like Paystack directly into your bio link, clients pay at the point of booking. This eliminates the problem of "no-shows" and time-wasters. When a customer has paid even a token fee, their commitment level skyrockets.
 
@@ -67,7 +67,7 @@ The primary advantage is the low startup cost. Renting a small, functional kitch
 
 To start, you need a niche. Cloud kitchens thrive on focused menus. Instead of offering 50 different meals, focus on doing one thing exceptionally well—whether that's gourmet shawarma, healthy meal prep, or authentic local soups. A focused menu reduces prep time and errors.
 
-Next, partner with delivery platforms like Chowdeck, Gokada, or Glovo. But don't rely solely on them. Set up your own BookNaija storefront so your loyal customers can order directly from you without paying high platform commissions. You get paid upfront, and the delivery riders handle the logistics.`
+Next, partner with delivery platforms like Chowdeck, Gokada, or Glovo. But don't rely solely on them. Set up your own Five9 storefront so your loyal customers can order directly from you without paying high platform commissions. You get paid upfront, and the delivery riders handle the logistics.`
   },
   {
     slug: 'complete-guide-to-buying-a-used-car-in-nigeria',
@@ -101,7 +101,7 @@ Do not be afraid to price premium. Clients who pay more are generally more respe
     category: 'Business',
     content: `For years, Nigerian creatives and freelancers struggled with receiving payments. Bank transfers required sending account numbers via DM, leading to mix-ups, delayed payments, and the constant fear of "fake alerts." Paystack has fundamentally changed this landscape.
 
-With Paystack integrated into platforms like BookNaija, payments happen in real-time. When a client books your service, they pay securely via card, bank transfer, or USSD. You get an instant notification, and the funds settle directly into your bank account. No more chasing clients for money.
+With Paystack integrated into platforms like Five9, payments happen in real-time. When a client books your service, they pay securely via card, bank transfer, or USSD. You get an instant notification, and the funds settle directly into your bank account. No more chasing clients for money.
 
 This instant payment builds trust on both sides. The client feels secure because they are paying through a verified gateway, and you are guaranteed your fee before the service is rendered.
 
@@ -167,7 +167,7 @@ export default function BlogArticle() {
             ← Blog
           </Link>
           <Link to="/" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">
-            BookNaija
+            Five9
           </Link>
         </div>
       </nav>
@@ -193,7 +193,7 @@ export default function BlogArticle() {
 
         <div className="mt-16 p-8 rounded-2xl bg-zinc-50 border border-zinc-200 text-center">
           <h3 className="text-xl font-bold text-zinc-900 mb-2">Ready to grow your business?</h3>
-          <p className="text-zinc-500 text-sm mb-6">Stop the DM cycle. Get your professional storefront on BookNaija today.</p>
+          <p className="text-zinc-500 text-sm mb-6">Stop the DM cycle. Get your professional storefront on Five9 today.</p>
           <Link to="/signup" className="inline-block bg-zinc-900 text-white px-8 py-3 rounded-xl text-sm font-bold hover:bg-zinc-700 transition-all active:scale-95">
             Get Started for ₦500
           </Link>

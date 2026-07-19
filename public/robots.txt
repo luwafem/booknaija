@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://booknaija.com/sitemap.xml
+Sitemap: https://Five9.com.ng/sitemap.xml
 
 # Disallow admin/dashboard pages
 Disallow: /dashboard

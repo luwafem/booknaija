@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 
-const SITE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://booknaija.netlify.app';
+const SITE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://five9.com.ng';
 const DEFAULT_IMAGE = `${SITE_URL}/og-image.png`;
 
 export default function SEO({
@@ -18,13 +18,13 @@ export default function SEO({
   const routeLocation = useLocation();
 
   const fullUrl = `${SITE_URL}${routeLocation.pathname}`;
-  const fullTitle = title ? `${title} | BookNaija` : 'BookNaija - Your Business, One Simple Link';
+  const fullTitle = title ? `${title} | Five9` : 'Five9 - Your Business, One Simple Link';
   
   // DYNAMIC META DESCRIPTION WITH "NEAR ME" – safe location handling
   const fullDescription = description || 
     (location 
-      ? `Book ${title} near me in ${location}. Secure Paystack payments, instant booking. Stop the DM to book cycle with BookNaija.`
-      : 'Book services, buy products, and pay upfront. Stop the DM to book cycle with BookNaija.');
+      ? `Book ${title} near me in ${location}. Secure Paystack payments, instant booking. Stop the DM to book cycle with Five9.`
+      : 'Book services, buy products, and pay upfront. Stop the DM to book cycle with Five9.');
       
   const fullImage = image || DEFAULT_IMAGE;
   const robotsContent = noIndex ? 'noindex, nofollow' : 'index, follow';
@@ -63,7 +63,7 @@ export default function SEO({
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={fullDescription} />
       <meta property="og:image" content={fullImage} />
-      <meta property="og:site_name" content="BookNaija" />
+      <meta property="og:site_name" content="Five9" />
       <meta property="og:locale" content="en_NG" />
       
       {/* Twitter */}
@@ -145,7 +145,7 @@ export function generateBusinessSchema(biz, options = {}) {
             name: withLocation(s.name),
             description: s.description 
               ? (hasLocation ? `${s.description} Located in ${location}.` : s.description)
-              : `Book ${withLocation(s.name)} securely on BookNaija.`,
+              : `Book ${withLocation(s.name)} securely on Five9.`,
           },
           price: s.discount_enabled ? s.discount_price : s.price,
           priceCurrency: 'NGN',
@@ -159,7 +159,7 @@ export function generateBusinessSchema(biz, options = {}) {
             name: withLocation(p.name),
             description: p.description 
               ? (hasLocation ? `${p.description} Available in ${location}.` : p.description)
-              : `Buy ${withLocation(p.name)} on BookNaija.`,
+              : `Buy ${withLocation(p.name)} on Five9.`,
             image: p.image || p.images?.[0] || undefined,
           },
           price: p.discount_enabled ? p.discount_price : p.price,
@@ -189,7 +189,7 @@ export function generateBusinessSchema(biz, options = {}) {
             name: withLocation(c.name),
             description: c.description 
               ? (hasLocation ? `${c.description} Available in ${location}.` : c.description)
-              : `${c.type === 'rent' ? 'Rent' : 'Buy'} ${withLocation(c.name)} on BookNaija.`,
+              : `${c.type === 'rent' ? 'Rent' : 'Buy'} ${withLocation(c.name)} on Five9.`,
             image: c.image || c.images?.[0] || undefined,
           },
           price: c.price,
@@ -204,7 +204,7 @@ export function generateBusinessSchema(biz, options = {}) {
             name: withLocation(p.name),
             description: p.description 
               ? (hasLocation ? `${p.description} Available in ${location}.` : p.description)
-              : `${p.type === 'sale' ? 'Buy' : (p.type === 'rent' ? 'Rent' : 'Book shortlet for')} ${withLocation(p.name)} on BookNaija.`,
+              : `${p.type === 'sale' ? 'Buy' : (p.type === 'rent' ? 'Rent' : 'Book shortlet for')} ${withLocation(p.name)} on Five9.`,
             image: p.images?.[0] || undefined,
           },
           price: p.price,

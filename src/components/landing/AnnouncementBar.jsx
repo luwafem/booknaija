@@ -10,7 +10,7 @@ export default function AnnouncementBar() {
         </span>
         <span className="hidden sm:inline">Meta took down your page?</span>
         <span className="sm:hidden">Meta took your page?</span>
-        &nbsp;Your BookNaija link never goes down.
+        &nbsp;Your Five9 link never goes down.
         <Link to="/signup" className="underline underline-offset-2 font-extrabold hover:text-lime-900 transition-colors ml-1">
           Get protected →
         </Link>

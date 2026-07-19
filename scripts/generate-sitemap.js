@@ -16,7 +16,7 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-const SITE_URL = process.env.SITE_URL || 'https://booknaija.netlify.app';
+const SITE_URL = process.env.SITE_URL || 'https://five9.com.ng';
 
 // ✅ FIX: Use full ISO 8601 datetime format (Google sitemap requirement)
 // Output: "2024-05-13T00:00:00.000Z" — always valid for sitemaps

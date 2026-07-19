@@ -199,7 +199,7 @@ export default function AffiliateSignup() {
         <nav className="bg-white sticky top-0 z-50 border-b border-zinc-200 w-full absolute left-0">
           <div className="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
             <Link to="/" className="flex items-center flex-shrink-0">
-              <img src="/fav-removebg.png" alt="BookNaija Logo" className="h-9 w-auto object-contain" />
+              <img src="/fav-removebg.png" alt="Five9 Logo" className="h-9 w-auto object-contain" />
             </Link>
             <Link to="/" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">
               Back to Home
@@ -223,9 +223,9 @@ export default function AffiliateSignup() {
             <div className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-4 mb-8">
               <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-2">Your Affiliate Link</p>
               <div className="flex items-center gap-2">
-                <code className="text-sm font-bold text-white truncate flex-1 font-mono">booknaija.netlify.app/signup?ref={affiliateId}</code>
+                <code className="text-sm font-bold text-white truncate flex-1 font-mono">five9.com.ng/signup?ref={affiliateId}</code>
                 <button 
-                  onClick={() => navigator.clipboard.writeText(`https://booknaija.netlify.app/signup?ref=${affiliateId}`)}
+                  onClick={() => navigator.clipboard.writeText(`https://five9.com.ng/signup?ref=${affiliateId}`)}
                   className="text-xs bg-white text-zinc-900 px-3 py-2 rounded-lg font-bold shrink-0 hover:bg-zinc-200 transition-colors active:scale-95"
                 >
                   Copy
@@ -245,7 +245,7 @@ export default function AffiliateSignup() {
         {/* Footer */}
         <footer className="bg-white border-t border-zinc-200 pt-10 pb-6 px-6 mt-12 w-full">
           <div className="max-w-7xl mx-auto text-center">
-            <p className="text-zinc-500 text-sm">© {new Date().getFullYear()} BookNaija Technologies.</p>
+            <p className="text-zinc-500 text-sm">© {new Date().getFullYear()} Five9 Technologies.</p>
           </div>
         </footer>
       </div>
@@ -266,7 +266,7 @@ export default function AffiliateSignup() {
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7 7m-7-7h18" />
             </svg>
-            Back to BookNaija
+            Back to Five9
           </Link>
         </div>
       </nav>
@@ -579,7 +579,7 @@ export default function AffiliateSignup() {
       {/* Footer */}
       <footer className="bg-white border-t border-zinc-200 py-6 px-6">
         <div className="max-w-7xl mx-auto text-center">
-          <p className="text-zinc-500 text-sm">© {new Date().getFullYear()} BookNaija Technologies.</p>
+          <p className="text-zinc-500 text-sm">© {new Date().getFullYear()} Five9 Technologies.</p>
         </div>
       </footer>
     </div>
