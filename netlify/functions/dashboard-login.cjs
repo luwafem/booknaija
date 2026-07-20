@@ -64,6 +64,9 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
     }
 
+    // Trim the security code (removes accidental spaces)
+    const trimmedCode = securityCode.trim();
+
     // Verify the temporary token
     let tempPayload;
     try {
@@ -99,54 +102,41 @@ exports.handler = async (event) => {
     // ─── VERIFY 4‑DIGIT SECURITY CODE ───
     let codeValid = false;
     const hashedCode = biz.security_code_hash;
-    const plainCode = biz.security_code;
+    const plainCode = biz.security_code ? biz.security_code.trim() : null; // Trim plaintext
 
     console.log(`🔑 Hashed code: ${hashedCode ? hashedCode.substring(0, 20) + '...' : 'null'}`);
     console.log(`🔑 Plain code: ${plainCode || 'null'}`);
-    console.log(`🔑 Provided code: ${securityCode}`);
+    console.log(`🔑 Provided code (trimmed): ${trimmedCode}`);
 
-    // Try hash comparison first
-    if (hashedCode && isBcryptHash(hashedCode)) {
-      codeValid = bcrypt.compareSync(securityCode, hashedCode);
+    // Try plaintext comparison first (in case hash is missing or invalid)
+    if (plainCode && trimmedCode === plainCode) {
+      codeValid = true;
+      console.log('✅ Code matched with plaintext.');
+      // Upgrade to hash
+      try {
+        const newHash = bcrypt.hashSync(trimmedCode, 10);
+        await supabase
+          .from('businesses')
+          .update({ security_code_hash: newHash, security_code: null })
+          .eq('id', biz.id);
+        console.log('🔒 Security code upgraded to hash.');
+      } catch (updateErr) {
+        console.warn('Failed to upgrade security code to hash:', updateErr.message);
+      }
+    }
+
+    // If plaintext didn't match, try hash comparison
+    if (!codeValid && hashedCode && isBcryptHash(hashedCode)) {
+      codeValid = bcrypt.compareSync(trimmedCode, hashedCode);
       if (codeValid) {
         console.log('✅ Code matched with hash.');
       } else {
-        console.log('⚠️ Code did not match hash, trying plaintext fallback...');
-        // Fallback to plaintext if hash fails (for legacy or mismatched hash)
-        if (plainCode && securityCode === plainCode) {
-          codeValid = true;
-          console.log('✅ Code matched with plaintext. Updating to hash for security.');
-          // Optional: Re-hash the plaintext and update the record
-          try {
-            const newHash = bcrypt.hashSync(securityCode, 10);
-            await supabase
-              .from('businesses')
-              .update({ security_code_hash: newHash, security_code: null })
-              .eq('id', biz.id);
-            console.log('🔒 Security code upgraded to hash.');
-          } catch (updateErr) {
-            console.warn('Failed to upgrade security code to hash:', updateErr.message);
-          }
-        }
-      }
-    } else if (plainCode) {
-      // No hash, compare plaintext
-      codeValid = securityCode === plainCode;
-      if (codeValid) {
-        console.log('✅ Code matched with plaintext.');
-        // Optionally upgrade to hash
-        try {
-          const newHash = bcrypt.hashSync(securityCode, 10);
-          await supabase
-            .from('businesses')
-            .update({ security_code_hash: newHash, security_code: null })
-            .eq('id', biz.id);
-          console.log('🔒 Security code upgraded to hash.');
-        } catch (updateErr) {
-          console.warn('Failed to upgrade security code to hash:', updateErr.message);
-        }
+        console.log('⚠️ Code did not match hash.');
       }
     }
+
+    // If still not valid and we have a plaintext that didn't match (maybe due to case/space)
+    // Try trimming the stored plaintext again (already done) – no further action.
 
     if (!codeValid) {
       console.error('❌ Invalid security code for slug:', cleanSlug);
@@ -158,7 +148,6 @@ exports.handler = async (event) => {
       const normalizedAnswer = securityAnswer.toLowerCase().trim();
       let answerMatch = false;
 
-      // Helper to check answer against stored (handles both hash and plaintext)
       const checkAnswer = (storedAnswer, provided) => {
         if (!storedAnswer) return false;
         if (isBcryptHash(storedAnswer)) {
