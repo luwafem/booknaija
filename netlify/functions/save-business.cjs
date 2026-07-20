@@ -145,7 +145,7 @@ exports.handler = async function (event) {
   console.log('=== SAVE-BUSINESS ===');
 
   try {
-    // ─── CSRF PROTECTION ───
+    // ─── CSRF PROTECTION (always required) ───
     if (!validateCsrf(event)) {
       console.warn('CSRF validation failed');
       return {
@@ -163,46 +163,7 @@ exports.handler = async function (event) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing slug' }) };
     }
 
-    // ─── JWT AUTHENTICATION ───
-    const cookies = cookie.parse(event.headers.cookie || '');
-    const token = cookies.dashboard_token;
-    if (!token) {
-      console.warn('Missing dashboard JWT');
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ error: 'Unauthorized: No session token provided.' }),
-      };
-    }
-
-    const JWT_SECRET = process.env.JWT_SECRET;
-    if (!JWT_SECRET) {
-      console.error('JWT_SECRET not set in environment');
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: 'Server misconfiguration.' }),
-      };
-    }
-
-    let decoded;
-    try {
-      decoded = jwt.verify(token, JWT_SECRET);
-    } catch (err) {
-      console.warn('JWT verification failed:', err.message);
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ error: 'Invalid or expired session. Please log in again.' }),
-      };
-    }
-
-    if (decoded.slug !== slug) {
-      console.warn(`JWT slug mismatch: ${decoded.slug} vs ${slug}`);
-      return {
-        statusCode: 403,
-        body: JSON.stringify({ error: 'Forbidden: You do not have permission to modify this business.' }),
-      };
-    }
-
-    // ─── Fetch existing business ───
+    // ─── Fetch existing business first ───
     const { data: existingBiz, error: fetchError } = await supabase
       .from('businesses')
       .select('*')
@@ -216,7 +177,48 @@ exports.handler = async function (event) {
 
     const isNew = !existingBiz;
 
-    // ─── Build business payload from full payload ───
+    // ─── JWT AUTHENTICATION (only for existing businesses) ───
+    if (!isNew) {
+      const cookies = cookie.parse(event.headers.cookie || '');
+      const token = cookies.dashboard_token;
+      if (!token) {
+        console.warn('Missing dashboard JWT for existing business');
+        return {
+          statusCode: 401,
+          body: JSON.stringify({ error: 'Unauthorized: No session token provided.' }),
+        };
+      }
+
+      const JWT_SECRET = process.env.JWT_SECRET;
+      if (!JWT_SECRET) {
+        console.error('JWT_SECRET not set in environment');
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ error: 'Server misconfiguration.' }),
+        };
+      }
+
+      let decoded;
+      try {
+        decoded = jwt.verify(token, JWT_SECRET);
+      } catch (err) {
+        console.warn('JWT verification failed:', err.message);
+        return {
+          statusCode: 401,
+          body: JSON.stringify({ error: 'Invalid or expired session. Please log in again.' }),
+        };
+      }
+
+      if (decoded.slug !== slug) {
+        console.warn(`JWT slug mismatch: ${decoded.slug} vs ${slug}`);
+        return {
+          statusCode: 403,
+          body: JSON.stringify({ error: 'Forbidden: You do not have permission to modify this business.' }),
+        };
+      }
+    }
+
+    // ─── Build business payload ───
     let bizPayload = {};
     const allowedFields = [
       'name', 'logo', 'tagline', 'bio', 'phone', 'whatsapp', 'email',
@@ -274,7 +276,6 @@ exports.handler = async function (event) {
       if (d.referredBy && d.referredBy.startsWith('aff_')) {
         bizPayload.referred_by_affiliate = d.referredBy;
         bizPayload.affiliate_bounty_paid = true;
-        // Set commission month to 0 (awaiting first payment)
         bizPayload.affiliate_commission_month = 0;
       }
 
