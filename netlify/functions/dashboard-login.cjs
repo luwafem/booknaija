@@ -1,3 +1,4 @@
+// netlify/functions/dashboard-login.cjs
 const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -97,13 +98,54 @@ exports.handler = async (event) => {
 
     // ─── VERIFY 4‑DIGIT SECURITY CODE ───
     let codeValid = false;
-    const storedCode = biz.security_code_hash || biz.security_code;
+    const hashedCode = biz.security_code_hash;
+    const plainCode = biz.security_code;
 
-    if (isBcryptHash(storedCode)) {
-      codeValid = bcrypt.compareSync(securityCode, storedCode);
-    } else if (biz.security_code) {
-      // Legacy plaintext
-      codeValid = securityCode === biz.security_code;
+    console.log(`🔑 Hashed code: ${hashedCode ? hashedCode.substring(0, 20) + '...' : 'null'}`);
+    console.log(`🔑 Plain code: ${plainCode || 'null'}`);
+    console.log(`🔑 Provided code: ${securityCode}`);
+
+    // Try hash comparison first
+    if (hashedCode && isBcryptHash(hashedCode)) {
+      codeValid = bcrypt.compareSync(securityCode, hashedCode);
+      if (codeValid) {
+        console.log('✅ Code matched with hash.');
+      } else {
+        console.log('⚠️ Code did not match hash, trying plaintext fallback...');
+        // Fallback to plaintext if hash fails (for legacy or mismatched hash)
+        if (plainCode && securityCode === plainCode) {
+          codeValid = true;
+          console.log('✅ Code matched with plaintext. Updating to hash for security.');
+          // Optional: Re-hash the plaintext and update the record
+          try {
+            const newHash = bcrypt.hashSync(securityCode, 10);
+            await supabase
+              .from('businesses')
+              .update({ security_code_hash: newHash, security_code: null })
+              .eq('id', biz.id);
+            console.log('🔒 Security code upgraded to hash.');
+          } catch (updateErr) {
+            console.warn('Failed to upgrade security code to hash:', updateErr.message);
+          }
+        }
+      }
+    } else if (plainCode) {
+      // No hash, compare plaintext
+      codeValid = securityCode === plainCode;
+      if (codeValid) {
+        console.log('✅ Code matched with plaintext.');
+        // Optionally upgrade to hash
+        try {
+          const newHash = bcrypt.hashSync(securityCode, 10);
+          await supabase
+            .from('businesses')
+            .update({ security_code_hash: newHash, security_code: null })
+            .eq('id', biz.id);
+          console.log('🔒 Security code upgraded to hash.');
+        } catch (updateErr) {
+          console.warn('Failed to upgrade security code to hash:', updateErr.message);
+        }
+      }
     }
 
     if (!codeValid) {
