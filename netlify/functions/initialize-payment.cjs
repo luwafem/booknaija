@@ -173,37 +173,39 @@ exports.handler = async (event) => {
     // ─── DETECT SIGNUP: no items or empty items ───
     const isSignup = !items || Object.keys(items).length === 0;
 
-    // ─── CONDITIONAL JWT AUTH ───
-    const cookies = cookie.parse(event.headers.cookie || '');
-    const token = cookies.dashboard_token;
+    // ─── CONDITIONAL JWT AUTH (SKIP FOR SIGNUP) ───
+    if (!isSignup) {
+      const cookies = cookie.parse(event.headers.cookie || '');
+      const token = cookies.dashboard_token;
 
-    if (token) {
-      const JWT_SECRET = process.env.JWT_SECRET;
-      if (!JWT_SECRET) {
-        console.error('JWT_SECRET not set in environment');
-        return {
-          statusCode: 500,
-          body: JSON.stringify({ error: 'Server misconfiguration.' }),
-        };
-      }
+      if (token) {
+        const JWT_SECRET = process.env.JWT_SECRET;
+        if (!JWT_SECRET) {
+          console.error('JWT_SECRET not set in environment');
+          return {
+            statusCode: 500,
+            body: JSON.stringify({ error: 'Server misconfiguration.' }),
+          };
+        }
 
-      let decoded;
-      try {
-        decoded = jwt.verify(token, JWT_SECRET);
-      } catch (err) {
-        console.warn('JWT verification failed:', err.message);
-        return {
-          statusCode: 401,
-          body: JSON.stringify({ error: 'Invalid or expired session. Please log in again.' }),
-        };
-      }
+        let decoded;
+        try {
+          decoded = jwt.verify(token, JWT_SECRET);
+        } catch (err) {
+          console.warn('JWT verification failed:', err.message);
+          return {
+            statusCode: 401,
+            body: JSON.stringify({ error: 'Invalid or expired session. Please log in again.' }),
+          };
+        }
 
-      if (decoded.slug !== slug) {
-        console.warn(`JWT slug mismatch: ${decoded.slug} vs ${slug}`);
-        return {
-          statusCode: 403,
-          body: JSON.stringify({ error: 'Forbidden: You do not have permission to initiate payment for this business.' }),
-        };
+        if (decoded.slug !== slug) {
+          console.warn(`JWT slug mismatch: ${decoded.slug} vs ${slug}`);
+          return {
+            statusCode: 403,
+            body: JSON.stringify({ error: 'Forbidden: You do not have permission to initiate payment for this business.' }),
+          };
+        }
       }
     }
 
@@ -223,9 +225,6 @@ exports.handler = async (event) => {
       finalAmountKobo = expectedAmount * 100;
 
       // ─── AFFILIATE COMMISSION TRACKING FOR SIGNUPS ───
-      // If this signup came via an affiliate, we store the referredBy in metadata.
-      // The actual affiliate_commission_month will be set to 0 in save-business.cjs.
-      // We also validate that the affiliate exists and has a valid subaccount_code.
       if (referredBy && referredBy.startsWith('aff_')) {
         console.log(`🔍 Affiliate referral detected for signup: ${referredBy}`);
         const { data: affiliate, error: affErr } = await supabase
@@ -236,11 +235,8 @@ exports.handler = async (event) => {
 
         if (affErr) {
           console.warn(`⚠️ Affiliate ${referredBy} not found or invalid:`, affErr.message);
-          // We do NOT block signup – we just log the warning.
         } else if (affiliate && affiliate.subaccount_code) {
           console.log(`✅ Affiliate ${referredBy} has subaccount: ${affiliate.subaccount_code}`);
-          // We will use this subaccount for the Paystack split.
-          // The subaccount will be set in the payload below.
         } else {
           console.warn(`⚠️ Affiliate ${referredBy} has no subaccount_code.`);
         }
@@ -323,7 +319,6 @@ exports.handler = async (event) => {
         subaccountCode: finalSubaccountCode || null,
         referredBy: referredBy || null,
         isSignup: isSignup,
-        // ─── NEW: Explicit flag for affiliate commission tracking ───
         affiliateCommissionMonth: isSignup && referredBy ? 0 : null,
       },
     };
