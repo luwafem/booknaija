@@ -1,11 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const navigate = useNavigate();
+
+  // ─── REDIRECT IF ALREADY LOGGED IN ───
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const res = await fetch('/.netlify/functions/admin-verify');
+        if (res.ok) {
+          // Already authenticated – go straight to dashboard
+          navigate('/admin');
+          return;
+        }
+      } catch (_) {
+        // ignore errors – just show login form
+      } finally {
+        setCheckingAuth(false);
+      }
+    };
+
+    checkSession();
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,6 +53,18 @@ export default function AdminLogin() {
       setLoading(false);
     }
   };
+
+  // ─── SHOW A LOADING SPINNER WHILE CHECKING SESSION ───
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm text-zinc-400">Checking session...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center px-6">
