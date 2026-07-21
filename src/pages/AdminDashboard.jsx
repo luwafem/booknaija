@@ -1,3 +1,4 @@
+// src/pages/AdminDashboard.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCsrfToken } from '../lib/csrf';
@@ -40,14 +41,11 @@ export default function AdminDashboard() {
       try {
         const res = await fetch('/.netlify/functions/admin-verify');
         if (!res.ok) {
-          // Token missing or invalid – redirect to login
           navigate('/admin/login');
           return;
         }
-        // Valid session – proceed
         setIsLoading(false);
       } catch (err) {
-        // Network error – still redirect to be safe
         navigate('/admin/login');
       }
     };
@@ -57,7 +55,20 @@ export default function AdminDashboard() {
 
   // ─── LOGOUT ─────────────────────────────────────────────
   const handleLogout = () => {
-    document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
+    // Match the exact same attributes used when setting the cookie
+    const isSecure = window.location.protocol === 'https:';
+    const cookieParts = [
+      'admin_token=',
+      'path=/',
+      'expires=Thu, 01 Jan 1970 00:00:00 UTC',
+      'max-age=0',
+    ];
+    if (isSecure) cookieParts.push('Secure');
+    cookieParts.push('SameSite=Strict');
+    
+    document.cookie = cookieParts.join('; ');
+    
+    // Force redirect to login
     navigate('/admin/login');
   };
 
