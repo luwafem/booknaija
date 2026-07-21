@@ -531,6 +531,7 @@ export function useOnboarding() {
 
     const finalGallery = galleryData.length > 0 ? galleryData : [{ group: 'Gallery', images: [] }];
 
+    // ─── UPDATED PAYLOAD WITH SNAKE_CASE KEYS ───
     const payload = {
       slug: businessSlug,
       name: businessName,
@@ -538,7 +539,7 @@ export function useOnboarding() {
       tagline: 'A professional ' + businessType + ' in Lagos',
       bio,
       phone,
-      referredBy,
+      referredBy, // Keep camelCase; backend uses `d.referredBy`
       whatsapp,
       email,
       location: locationAddr,
@@ -546,20 +547,20 @@ export function useOnboarding() {
       accent: brandColor,
       hero: 'https://picsum.photos/seed/' + businessSlug + '/800/600',
       socials: { instagram, tiktok },
-      subaccountCode,
-      calendarId: email,
-      adsEnabled: !propertiesEnabled,
-      businessType,
-      servicesEnabled,
-      productsEnabled,
-      carsEnabled,
-      foodEnabled,
-      propertiesEnabled,
-      securityCode,
-      securityQuestion1,
-      securityAnswer1: securityAnswer1.trim().toLowerCase(),
-      securityQuestion2,
-      securityAnswer2: securityAnswer2.trim().toLowerCase(),
+      subaccount_code: subaccountCode,          // ✅ snake_case
+      calendar_id: email,                       // ✅ snake_case
+      ads_enabled: !propertiesEnabled,          // ✅ snake_case
+      business_type: businessType,              // ✅ snake_case
+      services_enabled: servicesEnabled,        // ✅ snake_case
+      products_enabled: productsEnabled,        // ✅ snake_case
+      cars_enabled: carsEnabled,                // ✅ snake_case
+      food_enabled: foodEnabled,                // ✅ snake_case
+      properties_enabled: propertiesEnabled,    // ✅ snake_case
+      security_code: securityCode,              // ✅ snake_case
+      security_question_1: securityQuestion1,   // ✅ snake_case
+      security_answer_1: securityAnswer1.trim().toLowerCase(),
+      security_question_2: securityQuestion2,   // ✅ snake_case
+      security_answer_2: securityAnswer2.trim().toLowerCase(),
       account_name: accountName,
       account_number: accountNumber,
       settlement_bank: settlementBankName,

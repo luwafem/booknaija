@@ -9106,6 +9106,978 @@ export default function StepWrapper({
 }
 </file>
 
+<file path="src/data/businesses.js">
+// PUBLIC business configs — NO secrets here
+const PLATFORM_PAYSTACK_KEY = 'pk_test_129628160c0fdb0e1e837751e5ff0233872676b8';
+
+const businesses = {
+  'glamour-lash': {
+    name: 'Glamour Lash Studio',
+    slug: 'glamour-lash',
+    logo:'',
+    tagline: 'Premium lash extensions in Lagos',
+    bio: 'Certified lash artist with 5+ years experience. Specialising in classic, volume & mega volume techniques for a natural, fluttery look.',
+    phone: '+234 812 345 6789',
+    whatsapp: '2348123456789',
+    email: 'glamourlashlagos@gmail.com', // <--- NEW: Used as Calendar ID
+    location: 'Lekki Phase 1, Lagos',
+    hours: 'Mon–Sat, 9 AM – 6 PM',
+    accent: '#c8a97e',
+    avatar: '',
+    hero: 'https://picsum.photos/seed/glamour-hero/800/600',
+    gallery: [
+      { group: 'Classic Lashes', images: ['https://picsum.photos/seed/lash-cl-1/600/600','https://picsum.photos/seed/lash-cl-2/600/600','https://picsum.photos/seed/lash-cl-3/600/600'] },
+      { group: 'Volume & Mega', images: ['https://picsum.photos/seed/lash-vol-1/600/600','https://picsum.photos/seed/lash-vol-2/600/600','https://picsum.photos/seed/lash-vol-3/600/600'] },
+    ],
+    socials: { instagram: 'https://instagram.com/glamourlashlagos', tiktok: 'https://tiktok.com/@glamourlashlagos' },
+    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+    subaccountCode: 'ACCT_xytowrok4iymzgs',
+    calendarId: 'glamourlashlagos@gmail.com', // <--- SIMPLIFIED: Using Email as ID
+    active: true,
+    adsEnabled: true,
+    servicesEnabled: true,
+    productsEnabled: true,
+    services: [
+      {
+        id: 'classic', name: 'Classic Lash Set', duration: '2 hrs', price: 15000, image: 'https://picsum.photos/seed/classic-thumb/200/200',
+        images: ['https://picsum.photos/seed/classic-1/400/400','https://picsum.photos/seed/classic-2/400/400','https://picsum.photos/seed/classic-3/400/400'],
+        showDetails: true,
+        description: 'A natural, polished look using a single extension applied to each isolated natural lash. Perfect for a subtle enhancement or clients new to lashes.'
+      },
+      {
+        id: 'volume', name: 'Volume Lash Set', duration: '2.5 hrs', price: 25000, image: 'https://picsum.photos/seed/volume-thumb/200/200',
+        images: ['https://picsum.photos/seed/vol-1/400/400','https://picsum.photos/seed/vol-2/400/400','https://picsum.photos/seed/vol-3/400/400'],
+        showDetails: true,
+        description: 'Handmade fans of ultra-fine lashes attached to each natural lash for a fluffy, fuller appearance. Lightweight and dramatic.'
+      },
+      {
+        id: 'mega', name: 'Mega Volume Set', duration: '3 hrs', price: 35000, image: 'https://picsum.photos/seed/mega-thumb/200/200',
+        images: ['https://picsum.photos/seed/mega-1/400/400','https://picsum.photos/seed/mega-2/400/400'],
+        showDetails: true,
+        description: 'The ultimate statement look. Ultra-fine lashes are fanned out densely to create extreme volume and a bold, glamorous finish.'
+      },
+      {
+        id: 'removal', name: 'Lash Removal', duration: '30 min', price: 3000, image: '',
+        showDetails: true,
+        description: 'Safe and gentle removal of existing lash extensions without damaging your natural lashes.'
+      },
+    ],
+    products: [
+      {
+        id: 'serum', name: 'Lash Growth Serum', price: 5000, image: 'https://picsum.photos/seed/serum-prod/400/400',
+        showDetails: true,
+        description: 'Peptide-infused serum to nourish follicles and promote natural lash growth. Apply daily to clean lash lines.'
+      },
+      {
+        id: 'glue', name: 'Lash Adhesive (5g)', price: 3500, image: 'https://picsum.photos/seed/glue-prod/400/400',
+        showDetails: true,
+        description: 'Professional-grade, low-fume adhesive designed for long-lasting retention. Latex-free and waterproof.'
+      },
+    ],
+  },
+
+  'velvet-nails': {
+    name: 'Velvet Nail Bar',
+    slug: 'velvet-nails',
+    logo:'',
+    tagline: 'Luxury nail art & manicures in Lekki',
+    bio: 'Your go-to nail studio for flawless acrylics, gel extensions, and hand-painted nail art. Walk in fierce, walk out flawless.',
+    phone: '+234 809 876 5432',
+    whatsapp: '2348098765432',
+    email: 'velvetnailslekki@gmail.com', // <--- NEW
+    location: 'Admiralty Way, Lekki Phase 1, Lagos',
+    hours: 'Tue–Sun, 10 AM – 7 PM',
+    accent: '#c97b8b',
+    avatar: '',
+    hero: 'https://picsum.photos/seed/velvet-hero/800/600',
+    gallery: [
+      { group: 'Acrylics & Gels', images: ['https://picsum.photos/seed/nail-ac-1/600/600','https://picsum.photos/seed/nail-ac-2/600/600','https://picsum.photos/seed/nail-ac-3/600/600'] },
+      { group: 'Custom Art', images: ['https://picsum.photos/seed/nail-art-1/600/600','https://picsum.photos/seed/nail-art-2/600/600','https://picsum.photos/seed/nail-art-3/600/600'] },
+    ],
+    socials: { instagram: 'https://instagram.com/velvetnailslekki', tiktok: 'https://tiktok.com/@velvetnailslekki' },
+    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+    subaccountCode: 'ACCT_velvetnails_code',
+    calendarId: 'velvetnailslekki@gmail.com', // <--- SIMPLIFIED
+    active: true,
+    adsEnabled: true,
+    servicesEnabled: true,
+    productsEnabled: true,
+    services: [
+      {
+        id: 'gel-manicure', name: 'Gel Manicure', duration: '1 hr', price: 8000, image: 'https://picsum.photos/seed/gel-thumb/200/200',
+        images: ['https://picsum.photos/seed/gel-1/400/400'],
+        showDetails: true,
+        description: 'Classic gel polish application with cuticle care. Long-lasting, chip-resistant shine for up to 3 weeks.'
+      },
+      {
+        id: 'acrylic-full', name: 'Acrylic Full Set', duration: '2 hrs', price: 18000, image: 'https://picsum.photos/seed/acrylic-thumb/200/200',
+        images: ['https://picsum.photos/seed/acrylic-1/400/400','https://picsum.photos/seed/acrylic-2/400/400'],
+        showDetails: true,
+        description: 'Full coverage using liquid monomer and polymer powder. Sculpted to your desired shape and length.'
+      },
+      {
+        id: 'acrylic-fill', name: 'Acrylic Fill', duration: '1.5 hrs', price: 12000, image: 'https://picsum.photos/seed/fill-thumb/200/200',
+        images: [],
+        showDetails: true,
+        description: 'Infills to cover of growth gap of your existing acrylics. Includes reshaping, buffing, and polish.'
+      },
+      {
+        id: 'nail-art', name: 'Custom Nail Art (per hand)', duration: '45 min', price: 5000, image: 'https://picsum.photos/seed/art-thumb/200/200',
+        images: ['https://picsum.photos/seed/art-1/400/400','https://picsum.photos/seed/art-2/400/400','https://picsum.photos/seed/art-3/400/400'],
+        showDetails: true,
+        description: 'Hand-painted designs, chrome finishes, or encapsulated charms. Price is per hand; added to any base service.'
+      },
+      {
+        id: 'pedicure', name: 'Luxury Pedicure', duration: '1.5 hrs', price: 10000, image: '',
+        showDetails: true,
+        description: 'Relaxing foot soak, callus removal, cuticle care, exfoliation, massage, and polish application.'
+      },
+      {
+        id: 'removal', name: 'Acrylic/Gel Removal', duration: '30 min', price: 2500, image: '',
+        showDetails: true,
+        description: 'Safe and gentle removal of gel polish or acrylics to prepare your natural nails for a fresh set.'
+      },
+    ],
+    products: [
+      {
+        id: 'top-coat', name: 'No-Wipe Top Coat (15ml)', price: 4500, image: 'https://picsum.photos/seed/topcoat/400/400',
+        showDetails: true,
+        description: 'High-gloss, non-sticky finish top coat. Cures in 60 seconds under UV/LED lamp.'
+      },
+      {
+        id: 'nail-oil', name: 'Cuticle Oil Pen', price: 2000, image: 'https://picsum.photos/seed/cuticle/400/400',
+        showDetails: true,
+        description: 'Nourishing oil blend with jojoba and vitamin E to hydrate cuticles and promote healthy nail growth.'
+      },
+      {
+        id: 'nail-art-kit', name: 'Rhinestone & Charm Kit', price: 3500, image: 'https://picsum.photos/seed/rhinestone/400/400',
+        showDetails: true,
+        description: 'Assortment of high-quality rhinestones, pearls, and metal charms for customizing your nail art at home.'
+      },
+    ],
+  },
+
+  'glow-skin': {
+    name: 'Glow Skin Clinic',
+    slug: 'glow-skin',
+    logo:'',
+    tagline: 'Expert facials & skincare in Victoria Island',
+    bio: 'Medical-grade facials and advanced skincare treatments tailored to Nigerian skin. Consultation-based approach — no guesswork.',
+    phone: '+234 803 456 7890',
+    whatsapp: '2348034567890',
+    email: 'glowskinclinic@gmail.com', // <--- NEW
+    location: 'Akin Adesola St, Victoria Island, Lagos',
+    hours: 'Mon–Fri, 9 AM – 5 PM',
+    accent: '#8baf8b',
+    avatar: '',
+    hero: 'https://picsum.photos/seed/glow-hero/800/600',
+    gallery: [
+      { group: 'Facials', images: ['https://picsum.photos/seed/skin-fac-1/600/600','https://picsum.photos/seed/skin-fac-2/600/600','https://picsum.photos/seed/skin-fac-3/600/600'] },
+      { group: 'Treatments', images: ['https://picsum.photos/seed/skin-trt-1/600/600','https://picsum.photos/seed/skin-trt-2/600/600','https://picsum.photos/seed/skin-trt-3/600/600'] },
+    ],
+    socials: { instagram: 'https://instagram.com/glowskinclinic' },
+    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+    subaccountCode: 'ACCT_glowskin_code',
+    calendarId: 'glowskinclinic@gmail.com', // <--- SIMPLIFIED
+    active: true,
+    adsEnabled: false, // Ads are OFF (Premium)
+    servicesEnabled: true,
+    productsEnabled: false,
+    services: [
+      {
+        id: 'deep-cleanse', name: 'Deep Cleanse Facial', duration: '1 hr', price: 12000, image: 'https://picsum.photos/seed/cleanse-thumb/200/200',
+        images: ['https://picsum.photos/seed/cleanse-1/400/400'],
+        showDetails: true,
+        description: 'Thorough cleansing and exfoliation to remove impurities and unclog pores. Leaves skin feeling fresh and breathing.'
+      },
+      {
+        id: 'hydrating', name: 'Hydrating Facial', duration: '1.5 hrs', price: 18000, image: 'https://picsum.photos/seed/hydrate-thumb/200/200',
+        images: ['https://picsum.photos/seed/hydrate-1/400/400'],
+        showDetails: true,
+        description: 'Intense moisture infusion using hyaluronic acid masks. Ideal for dry, dehydrated, or sun-exposed skin.'
+      },
+      {
+        id: 'chemical-peel', name: 'Chemical Peel (Mild)', duration: '45 min', price: 20000, image: 'https://picsum.photos/seed/peel-thumb/200/200',
+        images: [],
+        showDetails: true,
+        description: 'A mild chemical peel to improve skin texture, tone, and clarity. Reduces the appearance of fine lines and mild acne scars.'
+      },
+      {
+        id: 'microderm', name: 'Microdermabrasion', duration: '1 hr', price: 25000, image: 'https://picsum.photos/seed/micro-thumb/200/200',
+        images: ['https://picsum.photos/seed/micro-1/400/400'],
+        showDetails: true,
+        description: 'Non-invasive exfoliation treatment that removes dead skin cells, promoting new cell growth and a smoother complexion.'
+      },
+      {
+        id: 'led-therapy', name: 'LED Light Therapy', duration: '30 min', price: 8000, image: '',
+        showDetails: true,
+        description: 'Uses specific wavelengths of light to treat acne, reduce inflammation, and stimulate collagen production.'
+      },
+      {
+        id: 'consultation', name: 'Skin Consultation', duration: '20 min', price: 3000, image: '',
+        showDetails: true,
+        description: 'Professional skin analysis to determine your skin type and concerns. Includes a recommended treatment plan.'
+      },
+    ],
+    products: [],
+  },
+
+  'lagos-luxe': {
+    name: 'Lagos Luxe Boutique',
+    slug: 'lagos-luxe',
+    logo:'',
+    tagline: 'Contemporary African Fashion & Luxe Wear',
+    bio: 'Where modern style meets African heritage. We offer curated pieces from top designers, perfect for weddings, galas, and red carpet events.',
+    phone: '+234 701 234 5678',
+    whatsapp: '2347012345678',
+    email: 'lagosluxe@gmail.com', // <--- NEW
+    location: 'The Palms Shopping Mall, Lekki, Lagos',
+    hours: 'Mon–Sun, 10 AM – 9 PM',
+    accent: '#b76e79', // Rose Gold
+    avatar: '',
+    hero: 'https://picsum.photos/seed/lagos-hero/800/600',
+    gallery: [
+      { group: 'Store Lookbook', images: ['https://picsum.photos/seed/store-1/600/600','https://picsum.photos/seed/store-2/600/600','https://picsum.photos/seed/store-3/600/600'] },
+      { group: 'Customer Fit', images: ['https://picsum.photos/seed/fit-1/600/600','https://picsum.photos/seed/fit-2/600/600','https://picsum.photos/seed/fit-3/600/600'] },
+    ],
+    socials: { instagram: 'https://instagram.com/lagosluxe', tiktok: 'https://tiktok.com/@lagosluxe' },
+    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+    subaccountCode: 'ACCT_lagosluxe_code',
+    calendarId: 'lagosluxe@gmail.com', // <--- SIMPLIFIED
+    active: true,
+    adsEnabled: true,
+    servicesEnabled: false, // Retail only (no bookings)
+    productsEnabled: true,
+    products: [
+      {
+        id: 'silk-dress',
+        name: 'Crimson Silk Gown',
+        layout: 'wide',
+        price: 45000,
+        sizes: ['US 4', 'US 6', 'US 8', 'US 10'],
+        colors: ['#C8102E', '#1a1a1a', '#00563B'],
+        images: [
+          'https://picsum.photos/seed/dress-front/800/450',
+          'https://picsum.photos/seed/dress-side/800/450',
+          'https://picsum.photos/seed/dress-back/800/450'
+        ],
+        showDetails: true,
+        description: 'A stunning floor-length gown made from 100% raw silk. Features intricate beadwork along the neckline and a high slit.'
+      },
+      {
+        id: 'gold-heels',
+        name: 'Gold Block Heels',
+        price: 18000,
+        sizes: ['36', '37', '38', '39', '40', '41'],
+        colors: ['#FFD700'],
+        image: 'https://picsum.photos/seed/heels-thumb/400/400',
+        showDetails: true,
+        description: 'Comfortable yet elegant 4-inch block heels. Gold plated finish with cushioned insole for all-day wear.'
+      },
+      {
+        id: 'turquoise-set',
+        name: 'Turquoise Agbada Set',
+        layout: 'wide',
+        price: 85000,
+        sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+        colors: ['#40E0D0'],
+        images: [
+          'https://picsum.photos/seed/agbada-1/800/450',
+          'https://picsum.photos/seed/agbada-2/800/450'
+        ],
+        showDetails: true,
+        description: 'Luxury Agbada set for men featuring traditional embroidery with a modern twist. Made from premium Swiss voile. Includes top, trousers, and matching cap.'
+      },
+      {
+        id: 'clutch',
+        name: 'Beaded Evening Clutch',
+        price: 12000,
+        image: 'https://picsum.photos/seed/clutch-thumb/400/400',
+        showDetails: true,
+        description: 'Hand-beaded clutch purse perfect for holding your phone, keys, and lipstick. Comes with a detachable gold chain.'
+      },
+      {
+        id: 'summer-maxi',
+        name: 'Floral Maxi Dress',
+        layout: 'wide',
+        price: 35000,
+        sizes: ['XS', 'S', 'M', 'L', 'XL'],
+        colors: ['#E9967A', '#F4C2C2', '#FFDAB9'],
+        images: [
+          'https://picsum.photos/seed/maxi-1/800/450',
+          'https://picsum.photos/seed/maxi-2/800/450'
+        ],
+        showDetails: true,
+        description: 'Lightweight cotton maxi dress with a flattering V-neckline. Perfect for weekend brunches or beach getaways.'
+      }
+    ],
+  },
+
+  // --- FOOD BUSINESS EXAMPLE ---
+  'tasty-bites': {
+    name: 'Tasty Bites Kitchen',
+    slug: 'tasty-bites',
+    logo:'',
+    tagline: 'Best burgers & grills in Ikeja',
+    bio: 'Fresh, juicy burgers made with 100% beef patties and secret sauces. Add as many toppings as you like!',
+    phone: '+234 810 555 1234',
+    whatsapp: '2348105551234',
+    email: 'tastybiteskitchen@gmail.com', // <--- NEW
+    location: 'Ikeja City Mall, Lagos',
+    hours: 'Mon–Sun, 11 AM – 10 PM',
+    accent: '#e67e22', // Carrot Orange
+    avatar: '',
+    hero: 'https://picsum.photos/seed/burger-hero/800/600',
+    gallery: [
+      { group: 'Our Kitchen', images: ['https://picsum.photos/seed/kitchen1/600/600','https://picsum.photos/seed/kitchen2/600/600'] },
+      { group: 'Happy Customers', images: ['https://picsum.photos/seed/customer1/600/600','https://picsum.photos/seed/customer2/600/600'] },
+    ],
+    socials: { instagram: 'https://instagram.com/tastybites', tiktok: 'https://tiktok.com/@tastybites' },
+    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+    subaccountCode: 'ACCT_xytowrok4iymzgs',
+    calendarId: 'tastybiteskitchen@gmail.com', // <--- SIMPLIFIED
+    active: true,
+    adsEnabled: true,
+    servicesEnabled: false,
+    productsEnabled: false,
+    foodEnabled: true, 
+    
+    food: [
+      {
+        id: 'classic-burger',
+        name: 'The Classic Burger',
+        price: 4500,
+        image: 'https://picsum.photos/seed/burger1/400/400',
+        description: 'Juicy beef patty, lettuce, tomato, and our house sauce on a brioche bun.',
+        
+        // Addons configuration
+        addons: [
+          {
+            id: 'patty',
+            label: 'Extra Protein',
+            type: 'multi', 
+            options: [
+              { name: 'Extra Beef Patty', price: 1500 },
+              { name: 'Grilled Chicken', price: 1200 }
+            ]
+          },
+          {
+            id: 'toppings',
+            label: 'Toppings',
+            type: 'multi', 
+            options: [
+              { name: 'Caramelized Onions', price: 200 },
+              { name: 'Pickles', price: 0 },
+              { name: 'Jalapeños', price: 200 },
+              { name: 'Extra Cheese', price: 500 },
+              { name: 'Bacon Strips', price: 800 }
+            ]
+          },
+          {
+            id: 'sides',
+            label: 'Choose One Side',
+            type: 'single', 
+            options: [
+              { name: 'No Side', price: 0 },
+              { name: 'Crispy Chips', price: 500 },
+              { name: 'Coleslaw', price: 700 },
+              { name: 'Onion Rings', price: 800 }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'chicken-wings',
+        name: 'Spicy Wings (6 pcs)',
+        price: 3500,
+        image: 'https://picsum.photos/seed/wings/400/400',
+        description: 'Crispy fried wings tossed in our signature hot sauce. Served with ranch dip.',
+        addons: [
+          {
+            id: 'spice',
+            label: 'Heat Level',
+            type: 'single', 
+            options: [
+              { name: 'Mild', price: 0 },
+              { name: 'Hot', price: 0 },
+              { name: 'Suicidal (Extra Hot)', price: 100 }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'margherita-pizza',
+        name: 'Margherita Pizza',
+        price: 6000,
+        image: 'https://picsum.photos/seed/pizza1/400/400',
+        description: 'Classic tomato base, fresh mozzarella, and basil leaves.',
+        addons: [
+          {
+            id: 'size',
+            label: 'Size',
+            type: 'single',
+            options: [
+              { name: 'Small (9")', price: 0 },
+              { name: 'Medium (12")', price: 2000 },
+              { name: 'Large (15")', price: 4000 }
+            ]
+          },
+          {
+            id: 'extra',
+            label: 'Extra Toppings',
+            type: 'multi',
+            options: [
+              { name: 'Mushrooms', price: 500 },
+              { name: 'Pepperoni', price: 800 },
+              { name: 'Sausage', price: 800 },
+              { name: 'Bell Peppers', price: 300 }
+            ]
+          }
+        ]
+      }
+    ],
+  },
+
+  // --- CAR BUSINESS EXAMPLE ---
+  'lagos-auto': {
+    name: 'Lagos Auto Deals',
+    slug: 'lagos-auto',
+    logo:'',
+    tagline: 'Premium Car Rentals & Sales in Lagos',
+    bio: 'Experience the best of Lagos with our fleet of luxury rental cars or browse our selection of certified pre-owned vehicles for sale.',
+    phone: '+234 911 000 0000',
+    whatsapp: '2349110000000',
+    email: 'lagosautodeals@gmail.com',
+    location: 'Victoria Island, Lagos',
+    hours: 'Mon–Sun, 8 AM – 8 PM',
+    accent: '#3b82f6', // Blue
+    avatar: '',
+    hero: 'https://picsum.photos/seed/car-hero/800/600',
+    gallery: [
+      { group: 'Our Fleet', images: ['https://picsum.photos/seed/fleet1/600/600','https://picsum.photos/seed/fleet2/600/600','https://picsum.photos/seed/fleet3/600/600'] },
+      { group: 'Happy Clients', images: ['https://picsum.photos/seed/client1/600/600','https://picsum.photos/seed/client2/600/600'] },
+    ],
+    socials: { instagram: 'https://instagram.com/lagosautodeals', tiktok: 'https://tiktok.com/@lagosautodeals' },
+    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+    subaccountCode: 'ACCT_xytowrok4iymzgs',
+    calendarId: 'lagosautodeals@gmail.com',
+    active: true,
+    adsEnabled: true,
+    carsEnabled: true, 
+    servicesEnabled: false,
+    productsEnabled: false,
+    foodEnabled: false,
+    cars: [
+      {
+        id: 'lexus-rx',
+        type: 'rent',
+        name: 'Lexus RX 350',
+        year: 2022,
+        price: 45000,
+        mileage: '25k km',
+        transmission: 'Automatic',
+        fuel: 'Petrol',
+        description: 'A pristine condition Lexus RX 350 featuring leather seats, panoramic sunroof, and premium sound system. Perfect for business trips or family outings around Lagos.',
+        image: 'https://picsum.photos/seed/lexus/800/450',
+        images: [
+            'https://picsum.photos/seed/lexus/800/450',
+            'https://picsum.photos/seed/lexus1/800/450',
+            'https://picsum.photos/seed/lexus2/800/450'
+        ]
+      },
+      {
+        id: 'g-wagon',
+        type: 'rent',
+        name: 'Mercedes Benz G-Wagon',
+        year: 2021,
+        price: 75000,
+        mileage: '15k km',
+        transmission: 'Automatic',
+        fuel: 'Petrol',
+        description: 'Stand out in Lagos with this luxury Mercedes G-Wagon. Comes with full air conditioning, alloy wheels, and a powerful V8 engine. Driver included upon request.',
+        image: 'https://picsum.photos/seed/gwagon/800/450',
+        images: [
+            'https://picsum.photos/seed/gwagon/800/450',
+            'https://picsum.photos/seed/gwagon1/800/450',
+            'https://picsum.photos/seed/gwagon2/800/450'
+        ]
+      },
+      {
+        id: 'camry',
+        type: 'sale',
+        name: 'Toyota Camry 2020 Muscle',
+        year: 2020,
+        price: 15000000,
+        mileage: '60k km',
+        transmission: 'Automatic',
+        fuel: 'Petrol',
+        description: 'Toyota "Muscle" in excellent mechanical condition. First body, clean interior, and AC freezing cold. This car has never been painted and has full service history available.',
+        image: 'https://picsum.photos/seed/camry/800/450',
+        images: [
+            'https://picsum.photos/seed/camry/800/450', 
+            'https://picsum.photos/seed/camry1/800/450',
+            'https://picsum.photos/seed/camry2/800/450',
+            'https://picsum.photos/seed/camry3/800/450'
+        ]
+      },
+      {
+        id: 'corolla',
+        type: 'rent',
+        name: 'Toyota Corolla',
+        year: 2023,
+        price: 25000,
+        mileage: '10k km',
+        transmission: 'Automatic',
+        fuel: 'Hybrid',
+        description: 'Fuel-efficient and very reliable Toyota Corolla Hybrid. Great fuel economy for city driving. Features Apple CarPlay and reverse camera.',
+        image: 'https://picsum.photos/seed/corolla/800/450',
+        images: [
+            'https://picsum.photos/seed/corolla/800/450',
+            'https://picsum.photos/seed/corolla1/800/450'
+        ]
+      }
+    ]
+  },
+
+  // --- ALL-SECTIONS BUSINESS EXAMPLE ---
+  'palm-royal': {
+    name: 'The Palm Royal Hub',
+    slug: 'palm-royal',
+    logo:'',
+    tagline: 'Luxury Living, Dining & Travel in One',
+    bio: 'Lagos’ premier all-in-one destination. Enjoy 5-star dining, rent luxury cars for your events, shop exclusive gifts, and relax in our VIP spa lounge.',
+    phone: '+234 800 333 4444',
+    whatsapp: '2348003334444',
+    email: 'palmroyalhub@gmail.com',
+    location: 'Lekki-Epe Expressway, Lagos',
+    hours: '24 Hours',
+    accent: '#daa520', // Goldenrod
+    avatar: '',
+    hero: 'https://picsum.photos/seed/palm-hero/800/600',
+    gallery: [
+      { group: 'The Lounge', images: ['https://picsum.photos/seed/lounge1/600/600','https://picsum.photos/seed/lounge2/600/600'] },
+      { group: 'Exterior', images: ['https://picsum.photos/seed/park1/600/600','https://picsum.photos/seed/park2/600/600'] },
+    ],
+    socials: { instagram: 'https://instagram.com/palmroyalhub', tiktok: 'https://tiktok.com/@palmroyalhub' },
+    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+    subaccountCode: 'ACCT_palmroyal_code',
+    calendarId: 'palmroyalhub@gmail.com',
+    active: true,
+    // ALL FLAGS ENABLED
+    adsEnabled: true,
+    carsEnabled: true, 
+    servicesEnabled: true,
+    productsEnabled: true,
+    foodEnabled: true,
+    
+    services: [
+      {
+        id: 'vip-day', name: 'VIP Day Pass', duration: '1 Day', price: 50000, image: 'https://picsum.photos/seed/vip/200/200',
+        images: [], showDetails: true,
+        description: 'Access to the VIP lounge, private pool area, and complimentary cocktails.'
+      },
+      {
+        id: 'concierge', name: 'Event Concierge', duration: '4 hrs', price: 25000, image: 'https://picsum.photos/seed/concierge/200/200',
+        images: [], showDetails: true,
+        description: 'Personal assistance for event planning, guest management, and logistics coordination.'
+      }
+    ],
+
+    products: [
+      {
+        id: 'hamper', name: 'Royal Gift Hamper', price: 45000, image: 'https://picsum.photos/seed/hamper/400/400',
+        showDetails: true,
+        description: 'Luxury basket containing imported wines, chocolates, and spa essentials.'
+      },
+      {
+        id: 'robe', name: 'Luxury Turkish Robe', price: 18000, image: 'https://picsum.photos/seed/robe/400/400',
+        showDetails: true,
+        description: '100% Cotton terry cloth robe. Embroidered with the Palm Royal logo.'
+      }
+    ],
+
+    food: [
+      {
+        id: 'steak', name: 'Grilled Sirloin Steak', price: 18000, image: 'https://picsum.photos/seed/steak/400/400',
+        description: 'Premium cut steak grilled to perfection with herbs.',
+        addons: [
+          { 
+            id: 'doneness', label: 'Cooking', type: 'single', 
+            options: [{ name: 'Medium Rare', price: 0 }, { name: 'Well Done', price: 0 }] 
+          },
+          { 
+            id: 'sauce', label: 'Sauce', type: 'single', 
+            options: [{ name: 'Black Pepper', price: 0 }, { name: 'Mushroom', price: 1000 }] 
+          },
+          { 
+            id: 'sides', label: 'Add Sides', type: 'multi', 
+            options: [{ name: 'Mixed Veg', price: 1500 }, { name: 'Baked Potato', price: 1500 }] 
+          }
+        ]
+      },
+      {
+        id: 'seafood', name: 'Grilled Lobster Tail', price: 35000, image: 'https://picsum.photos/seed/lobster/400/400',
+        description: 'Fresh lobster tail grilled with garlic butter.',
+        addons: [
+          {
+            id: 'spice', label: 'Spice Level', type: 'single', 
+            options: [{ name: 'Mild', price: 0 }, { name: 'Spicy', price: 0 }]
+          }
+        ]
+      }
+    ],
+
+    cars: [
+      {
+        id: 'phantom', type: 'rent', name: 'Rolls Royce Phantom', year: 2023, price: 250000,
+        mileage: '5k km', transmission: 'Automatic', fuel: 'Petrol',
+        description: 'The ultimate luxury experience. Chauffeur service included.',
+        image: 'https://picsum.photos/seed/rolls/800/450', images: ['https://picsum.photos/seed/rolls/800/450']
+      },
+      {
+        id: 'g63', type: 'rent', name: 'Mercedes G63 AMG', year: 2023, price: 150000,
+        mileage: '10k km', transmission: 'Automatic', fuel: 'Petrol',
+        description: 'High-performance SUV for a bold arrival.',
+        image: 'https://picsum.photos/seed/g63/800/450', images: ['https://picsum.photos/seed/g63/800/450']
+      }
+    ]
+  },// --- ALL-SECTIONS BUSINESS EXAMPLE ---
+  'aether-labs': {
+name: 'Aether labs',
+slug: 'aether-labs',
+logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777208301/gm1zwoorewxxq84cagcn.png', // ✅ UPDATED: Uses the uploaded logo URL or empty string
+tagline: 'A professional Lash Artist in Lagos',
+bio: 'wfube ewjnw 1',
+phone: '09034593171',
+whatsapp: '08023381785',
+email: 'oghenevokemi@gmail.com',
+location: '4 Adebomi Edun street alimosho iyana ipaja lagos',
+hours: 'Mon–Sun, 9 AM – 6 PM',
+accent: '#8459a1',
+avatar: '',
+hero: 'https://picsum.photos/seed/aether-labs/800/600',
+gallery: [
+{ group: 'Gallery', images: [] }
+],
+socials: {
+instagram: 'wrurw',
+tiktok: 'wedub'
+},
+paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+subaccountCode: 'ACCT_9efd9o1f2iz0kdl',
+calendarId: 'oghenevokemi@gmail.com',
+active: true,
+adsEnabled: true,
+carsEnabled: false,
+servicesEnabled: true,
+productsEnabled: false,
+foodEnabled: false,
+    
+    services: [
+      {
+        id: 'vip-day', name: 'VIP Day Pass', duration: '1 Day', price: 50000, image: 'https://picsum.photos/seed/vip/200/200',
+        images: [], showDetails: true,
+        description: 'Access to the VIP lounge, private pool area, and complimentary cocktails.'
+      },
+      {
+        id: 'concierge', name: 'Event Concierge', duration: '4 hrs', price: 25000, image: 'https://picsum.photos/seed/concierge/200/200',
+        images: [], showDetails: true,
+        description: 'Personal assistance for event planning, guest management, and logistics coordination.'
+      }
+    ],
+
+    products: [
+      {
+        id: 'hamper', name: 'Royal Gift Hamper', price: 45000, image: 'https://picsum.photos/seed/hamper/400/400',
+        showDetails: true,
+        description: 'Luxury basket containing imported wines, chocolates, and spa essentials.'
+      },
+      {
+        id: 'robe', name: 'Luxury Turkish Robe', price: 18000, image: 'https://picsum.photos/seed/robe/400/400',
+        showDetails: true,
+        description: '100% Cotton terry cloth robe. Embroidered with the Palm Royal logo.'
+      }
+    ],
+
+    food: [
+      {
+        id: 'steak', name: 'Grilled Sirloin Steak', price: 18000, image: 'https://picsum.photos/seed/steak/400/400',
+        description: 'Premium cut steak grilled to perfection with herbs.',
+        addons: [
+          { 
+            id: 'doneness', label: 'Cooking', type: 'single', 
+            options: [{ name: 'Medium Rare', price: 0 }, { name: 'Well Done', price: 0 }] 
+          },
+          { 
+            id: 'sauce', label: 'Sauce', type: 'single', 
+            options: [{ name: 'Black Pepper', price: 0 }, { name: 'Mushroom', price: 1000 }] 
+          },
+          { 
+            id: 'sides', label: 'Add Sides', type: 'multi', 
+            options: [{ name: 'Mixed Veg', price: 1500 }, { name: 'Baked Potato', price: 1500 }] 
+          }
+        ]
+      },
+      {
+        id: 'seafood', name: 'Grilled Lobster Tail', price: 35000, image: 'https://picsum.photos/seed/lobster/400/400',
+        description: 'Fresh lobster tail grilled with garlic butter.',
+        addons: [
+          {
+            id: 'spice', label: 'Spice Level', type: 'single', 
+            options: [{ name: 'Mild', price: 0 }, { name: 'Spicy', price: 0 }]
+          }
+        ]
+      }
+    ],
+
+    cars: [
+      {
+        id: 'phantom', type: 'rent', name: 'Rolls Royce Phantom', year: 2023, price: 250000,
+        mileage: '5k km', transmission: 'Automatic', fuel: 'Petrol',
+        description: 'The ultimate luxury experience. Chauffeur service included.',
+        image: 'https://picsum.photos/seed/rolls/800/450', images: ['https://picsum.photos/seed/rolls/800/450']
+      },
+      {
+        id: 'g63', type: 'rent', name: 'Mercedes G63 AMG', year: 2023, price: 150000,
+        mileage: '10k km', transmission: 'Automatic', fuel: 'Petrol',
+        description: 'High-performance SUV for a bold arrival.',
+        image: 'https://picsum.photos/seed/g63/800/450', images: ['https://picsum.photos/seed/g63/800/450']
+      }
+    ]
+  },'yoda': {
+name: 'yoda',
+slug: 'yoda',
+logo: '',
+tagline: 'A professional Auto in Lagos',
+bio: '...',
+phone: '',
+whatsapp: 'oluwafemiemmanuelayedogbon@gmail.com',
+email: 'oluwafemiemmanuelayedogbon@gmail.com',
+location: '...',
+hours: 'Mon–Sun, 9 AM – 6 PM',
+accent: '#3e9882',
+avatar: '',
+hero: 'https://picsum.photos/seed/yoda/800/600',
+gallery: [
+{
+"group": "Gallery",
+"images": []
+}
+],
+socials: { instagram: '...', tiktok: '...' },
+paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+subaccountCode: 'ACCT_68pqilzbk4locbw',
+calendarId: 'oluwafemiemmanuelayedogbon@gmail.com',
+active: true,
+adsEnabled: true,
+carsEnabled: true,
+servicesEnabled: false, // Disable services if Auto
+productsEnabled: false,
+foodEnabled: false,
+
+// Inventory Data
+services: [],
+products: [],
+cars: [
+{
+"id": "yoda-1777216208144",
+"name": "konigsegg",
+"type": "rent",
+"year": 2022,
+"price": 1000000,
+"mileage": "132312",
+"transmission": "amt",
+"fuel": "fuel",
+"description": "weinfienwfqienw",
+"image": "https://res.cloudinary.com/deexaiik4/image/upload/v1777216326/bddnvbipdvsynz8ktoa6.jpg",
+"images": [
+"https://res.cloudinary.com/deexaiik4/image/upload/v1777216326/bddnvbipdvsynz8ktoa6.jpg",
+"https://res.cloudinary.com/deexaiik4/image/upload/v1777216343/pqkseziuwwrwyituqezb.jpg",
+"https://res.cloudinary.com/deexaiik4/image/upload/v1777216358/zziwub0c4z41bbafm9it.jpg"
+]
+}
+],
+food: []
+},'shinobi': {
+name: 'shinobi',
+slug: 'shinobi',
+logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777217435/tqlncptwaa2iybyeggdj.jpg',
+tagline: 'A professional Restaurant in Lagos',
+bio: 'shinobi',
+phone: '07081793436',
+whatsapp: '08023381785',
+email: 'heelhieddev@gmail.com',
+location: '10 olufemi ojo street abestos busstop',
+hours: 'Mon–Sun, 9 AM – 6 PM',
+accent: '#2cd6ed',
+avatar: '',
+hero: 'https://picsum.photos/seed/shinobi/800/600',
+gallery: [
+{
+"group": "Gallery",
+"images": []
+}
+],
+socials: {
+instagram: 'wrurw',
+tiktok: 'wedub'
+},
+paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+subaccountCode: 'ACCT_95m7bncprwsodc8',
+calendarId: 'heelhieddev@gmail.com',
+active: true,
+adsEnabled: true,
+carsEnabled: false,
+servicesEnabled: true,
+productsEnabled: true,
+foodEnabled: true,
+
+// Inventory Data
+services: [],
+products: [],
+cars: [],
+food: [
+{
+"id": "shinobi-1777217589277",
+"name": "shawarma",
+"price": 2500,
+"description": "extra hot dog",
+"image": "https://res.cloudinary.com/deexaiik4/image/upload/v1777217606/liywtgujaxq122p7fa00.jpg"
+}
+]
+},'pro-pro': {
+name: 'pro pro',
+slug: 'pro-pro',
+logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292185/p0vcg4gqjgctl0pk6i21.jpg',
+tagline: 'A professional Auto in Lagos',
+bio: 'this is a car dealer',
+phone: '08023381785',
+whatsapp: '08023381785',
+email: 'oghenevokemi@gmail.com',
+location: 'araokanmi',
+hours: 'Mon–Sun, 9 AM – 6 PM',
+accent: '#024fa8',
+avatar: '',
+hero: 'https://picsum.photos/seed/pro-pro/800/600',
+gallery: [
+{ group: 'our fleet', images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777292272/qefdrdfqe4gpg33ofqai.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292273/c3sv9g4xoncm5raarlgn.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292273/so3ltmbxh0bsam5ujtii.jpg'] },
+],
+socials: { instagram: 'wrurw', tiktok: 'wedub' },
+paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+subaccountCode: 'ACCT_m0vrbgnhs9bi0hr',
+calendarId: 'oghenevokemi@gmail.com',
+active: true,
+adsEnabled: true,
+carsEnabled: true,
+servicesEnabled: false,
+productsEnabled: false,
+foodEnabled: false,
+services: [],
+products: [],
+cars: [
+{
+id: 'pro-pro-1777292291144',
+type: 'rent',
+name: 'toyota prado',
+year: 2015,
+price: 150000,
+mileage: '',
+transmission: 'automatic',
+fuel: 'petrol',
+description: 'red toyota prado',
+image: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292346/e6tskpmzobzef0c9axir.jpg',
+images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777292346/e6tskpmzobzef0c9axir.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292362/swnkzy8ju5o77wtquzdx.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292385/j1tcmoyoiellmmg8at1s.jpg']
+}
+],
+food: []
+},'lash-by-tife': {
+name: 'lash by tife',
+slug: 'lash-by-tife',
+logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294087/kku24lkxafdmmgla0ij8.jpg',
+tagline: 'A professional Lash Artist in Lagos',
+bio: 'lash by tife beauty',
+phone: '09160625497',
+whatsapp: '08023381785',
+email: 'oghenevokemi@gmail.com',
+location: 'araokanmi',
+hours: 'Mon–Sun, 9 AM – 6 PM',
+accent: '#cb7271',
+avatar: '',
+hero: 'https://picsum.photos/seed/lash-by-tife/800/600',
+gallery: [
+{ group: 'my work', images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777294159/lbr193w1iygjuktqmdkh.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294160/soadb2uk9yhtqtddqkgh.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294160/y3cafqbmehhesspofwc8.jpg'] },
+],
+socials: { instagram: 'wrurw', tiktok: 'wedub' },
+paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+subaccountCode: 'ACCT_gmjsurrbbzj3ugl',
+calendarId: 'oghenevokemi@gmail.com',
+active: true,
+adsEnabled: true,
+carsEnabled: false,
+servicesEnabled: true,
+productsEnabled: true,
+foodEnabled: false,
+services: [
+{
+id: 'lash-by-tife-1', name: 'lash install', duration: '1 hour', price: 4500, image: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294237/pnobggmhvqvytulkffp0.jpg',
+images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777294237/pnobggmhvqvytulkffp0.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294255/epdhgzl4lpievm4tkwam.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294271/tzjongy49fctjjbgibcz.jpg'],
+showDetails: true,
+description: 'cat eyes lash install'
+}
+],
+products: [],
+cars: [],
+food: []
+},
+
+  // Added by onboarding 2026-04-28T12:09:27.366Z
+  'crv': {
+    name: 'crv',
+    slug: 'crv',
+    logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777377578/qrergixiq4s9axztdpv6.jpg',
+    tagline: 'A professional Hair Stylist in Lagos',
+    bio: 'this is a hair stylist',
+    phone: '09034593171',
+    whatsapp: '08023381785',
+    email: 'oghenevokemi@gmail.com',
+    location: 'araokanmi',
+    hours: 'Mon–Sun, 9 AM – 6 PM',
+    accent: '#d27578',
+    avatar: '',
+    hero: 'https://picsum.photos/seed/crv/800/600',
+    gallery: [
+      { group: 'pro', images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777378051/goamjnhp6otmdm6wdtel.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777378051/xw04izwn4kadd1kbwhm1.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777378052/auwghs10ukbj38bykhzn.jpg'] },
+    ],
+    socials: { instagram: 'wrurw', tiktok: 'wedub' },
+    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
+    subaccountCode: 'ACCT_od7jhceqzvwhtve',
+    calendarId: 'oghenevokemi@gmail.com',
+    active: true,
+    adsEnabled: true,
+    carsEnabled: false,
+    servicesEnabled: true,
+    productsEnabled: true,
+    foodEnabled: false,
+    services: [
+      {
+        id: 'crv-1', name: 'tech', duration: '1 hour', price: 24000, image: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777378102/n8erwddzdaxlrvgkspdg.jpg',
+        images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777378102/n8erwddzdaxlrvgkspdg.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777378126/alqrlfedjii8kqgftakg.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777378162/guwgrjgejl9emnmmzhce.jpg'],
+        showDetails: true,
+        description: 'this is the tech'
+      }
+    ],
+    products: [],
+    cars: [],
+    food: []
+  },
+
+
+
+};
+
+export default businesses;
+</file>
+
 <file path="src/data/landingData.jsx">
 // Static data for the landing page
 export const businessCategories = [
@@ -10554,120 +11526,6 @@ exports.handler = async (event) => {
   } catch (err) {
     console.error('Scheduled function error:', err);
     return { statusCode: 500, body: err.message };
-  }
-};
-</file>
-
-<file path="netlify/functions/send-reset-otp.cjs">
-const { createClient } = require('@supabase/supabase-js');
-const xss = require('xss');
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-// ─── SANITISATION HELPER ───
-function sanitizeString(str) {
-  if (typeof str !== 'string') return str;
-  return xss(str, {
-    whiteList: [],
-    stripIgnoreTag: true,
-    stripIgnoreTagBody: ['script', 'style'],
-  });
-}
-
-exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'Method not allowed' }),
-    };
-  }
-
-  try {
-    let email;
-    try {
-      const parsed = JSON.parse(event.body);
-      email = parsed.email;
-    } catch (parseErr) {
-      return {
-        statusCode: 400,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Invalid JSON body' }),
-      };
-    }
-
-    // Sanitise email
-    if (typeof email === 'string') {
-      email = sanitizeString(email);
-    }
-
-    if (!email || typeof email !== 'string' || !email.trim()) {
-      return {
-        statusCode: 400,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Email is required' }),
-      };
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-
-    // Find business by email
-    const { data: biz, error: findError } = await supabase
-      .from('businesses')
-      .select('id')
-      .eq('email', normalizedEmail)
-      .single();
-
-    if (findError || !biz) {
-      return {
-        statusCode: 404,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'No business found with that email' }),
-      };
-    }
-
-    // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-
-    // Store OTP
-    const { error: insertError } = await supabase
-      .from('security_resets')
-      .insert({
-        business_id: biz.id,
-        token: otp,
-        expires_at: expiresAt,
-      });
-
-    if (insertError) {
-      console.error('Insert error:', insertError);
-      return {
-        statusCode: 500,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Failed to generate reset code' }),
-      };
-    }
-
-    // Log OTP (for development)
-    console.log(`🔑 OTP for ${normalizedEmail}: ${otp}`);
-
-    // TODO: Send email with OTP
-
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: true }),
-    };
-  } catch (err) {
-    console.error('Unhandled error:', err);
-    return {
-      statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'Internal server error' }),
-    };
   }
 };
 </file>
@@ -12723,11 +13581,6 @@ export default function SignupLayout({ children, steps, currentStep }) {
 }
 </file>
 
-<file path="src/data/config.js">
-// Public platform config — NO secrets here
-export const PLATFORM_PAYSTACK_KEY = 'pk_live_2ba1413aaaf5091188571ea6f87cca34945d943c';
-</file>
-
 <file path="src/hooks/useOnboarding.js">
 // hooks/useOnboarding.js
 import { useState, useEffect, useMemo } from 'react';
@@ -14594,177 +15447,6 @@ exports.handler = async (event) => {
     };
   } catch (err) {
     console.error('create-subaccount error:', err.message);
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
-  }
-};
-</file>
-
-<file path="netlify/functions/dashboard-login.cjs">
-const { createClient } = require('@supabase/supabase-js');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const cookie = require('cookie');
-const xss = require('xss');
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is not set.');
-}
-const TOKEN_EXPIRY = '24h';
-
-// ─── SANITISATION HELPER ───
-function sanitizeDeep(input) {
-  if (typeof input === 'string') {
-    return xss(input, {
-      whiteList: [],
-      stripIgnoreTag: true,
-      stripIgnoreTagBody: ['script', 'style'],
-    });
-  }
-  if (Array.isArray(input)) {
-    return input.map(sanitizeDeep);
-  }
-  if (input && typeof input === 'object') {
-    const result = {};
-    for (const [key, value] of Object.entries(input)) {
-      result[key] = sanitizeDeep(value);
-    }
-    return result;
-  }
-  return input;
-}
-
-// ─── HELPER: Check if string looks like a bcrypt hash ───
-function isBcryptHash(str) {
-  return typeof str === 'string' && (str.startsWith('$2a$') || str.startsWith('$2b$') || str.startsWith('$2y$'));
-}
-
-exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
-  }
-
-  try {
-    // Parse and sanitise all input
-    let payload = JSON.parse(event.body);
-    payload = sanitizeDeep(payload);
-
-    const { slug, securityCode, securityQuestion, securityAnswer, token } = payload;
-
-    // Normalise slug
-    const cleanSlug = slug.trim().toLowerCase();
-
-    console.log('🔑 Login attempt for slug:', cleanSlug);
-
-    if (!cleanSlug || !securityCode || !token) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
-    }
-
-    // Verify the temporary token
-    let tempPayload;
-    try {
-      tempPayload = jwt.verify(token, JWT_SECRET);
-      console.log('✅ Token verified for slug:', tempPayload.slug);
-    } catch (err) {
-      console.error('❌ Token verification failed:', err.message);
-      return { statusCode: 401, body: JSON.stringify({ error: 'Session expired. Please start over.' }) };
-    }
-    if (tempPayload.slug !== cleanSlug) {
-      console.error('❌ Token slug mismatch:', tempPayload.slug, 'vs', cleanSlug);
-      return { statusCode: 401, body: JSON.stringify({ error: 'Invalid session' }) };
-    }
-
-    // Fetch business with both hashed and plaintext fields
-    const { data: biz, error } = await supabase
-      .from('businesses')
-      .select('id, slug, security_code, security_code_hash, security_question_1, security_answer_1, security_answer_1_hash, security_question_2, security_answer_2, security_answer_2_hash')
-      .eq('slug', cleanSlug)
-      .single();
-
-    if (error) {
-      console.error('❌ Supabase query error:', error.message);
-      return { statusCode: 500, body: JSON.stringify({ error: 'Database error' }) };
-    }
-    if (!biz) {
-      console.error('❌ Business not found for slug:', cleanSlug);
-      return { statusCode: 404, body: JSON.stringify({ error: 'Business not found' }) };
-    }
-
-    console.log('✅ Business found:', biz.slug);
-
-    // ─── VERIFY 4‑DIGIT SECURITY CODE ───
-    let codeValid = false;
-    const storedCode = biz.security_code_hash || biz.security_code;
-
-    if (isBcryptHash(storedCode)) {
-      codeValid = bcrypt.compareSync(securityCode, storedCode);
-    } else if (biz.security_code) {
-      // Legacy plaintext
-      codeValid = securityCode === biz.security_code;
-    }
-
-    if (!codeValid) {
-      console.error('❌ Invalid security code for slug:', cleanSlug);
-      return { statusCode: 401, body: JSON.stringify({ error: 'Invalid security code' }) };
-    }
-
-    // ─── VERIFY SECURITY QUESTION & ANSWER ───
-    if (securityQuestion) {
-      const normalizedAnswer = securityAnswer.toLowerCase().trim();
-      let answerMatch = false;
-
-      // Helper to check answer against stored (handles both hash and plaintext)
-      const checkAnswer = (storedAnswer, provided) => {
-        if (!storedAnswer) return false;
-        if (isBcryptHash(storedAnswer)) {
-          return bcrypt.compareSync(provided, storedAnswer);
-        }
-        return storedAnswer === provided;
-      };
-
-      if (biz.security_question_1 === securityQuestion) {
-        answerMatch = checkAnswer(biz.security_answer_1_hash || biz.security_answer_1, normalizedAnswer);
-      }
-      if (!answerMatch && biz.security_question_2 === securityQuestion) {
-        answerMatch = checkAnswer(biz.security_answer_2_hash || biz.security_answer_2, normalizedAnswer);
-      }
-
-      if (!answerMatch) {
-        console.error('❌ Invalid security question/answer for slug:', cleanSlug);
-        return { statusCode: 401, body: JSON.stringify({ error: 'Invalid security question or answer' }) };
-      }
-    }
-
-    // Generate final JWT session
-    const sessionToken = jwt.sign(
-      { slug: biz.slug, id: biz.id },
-      JWT_SECRET,
-      { expiresIn: TOKEN_EXPIRY }
-    );
-
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict',
-      maxAge: 24 * 60 * 60,
-      path: '/',
-    };
-
-    return {
-      statusCode: 200,
-      headers: {
-        'Set-Cookie': cookie.serialize('dashboard_token', sessionToken, cookieOptions),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ success: true, slug: biz.slug }),
-    };
-  } catch (err) {
-    console.error('🔥 dashboard-login error:', err);
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };
@@ -17556,976 +18238,9 @@ export default function LocationPicker({ initialQuery, onSave, onClose }) {
 }
 </file>
 
-<file path="src/data/businesses.js">
-// PUBLIC business configs — NO secrets here
-const PLATFORM_PAYSTACK_KEY = 'pk_test_129628160c0fdb0e1e837751e5ff0233872676b8';
-
-const businesses = {
-  'glamour-lash': {
-    name: 'Glamour Lash Studio',
-    slug: 'glamour-lash',
-    logo:'',
-    tagline: 'Premium lash extensions in Lagos',
-    bio: 'Certified lash artist with 5+ years experience. Specialising in classic, volume & mega volume techniques for a natural, fluttery look.',
-    phone: '+234 812 345 6789',
-    whatsapp: '2348123456789',
-    email: 'glamourlashlagos@gmail.com', // <--- NEW: Used as Calendar ID
-    location: 'Lekki Phase 1, Lagos',
-    hours: 'Mon–Sat, 9 AM – 6 PM',
-    accent: '#c8a97e',
-    avatar: '',
-    hero: 'https://picsum.photos/seed/glamour-hero/800/600',
-    gallery: [
-      { group: 'Classic Lashes', images: ['https://picsum.photos/seed/lash-cl-1/600/600','https://picsum.photos/seed/lash-cl-2/600/600','https://picsum.photos/seed/lash-cl-3/600/600'] },
-      { group: 'Volume & Mega', images: ['https://picsum.photos/seed/lash-vol-1/600/600','https://picsum.photos/seed/lash-vol-2/600/600','https://picsum.photos/seed/lash-vol-3/600/600'] },
-    ],
-    socials: { instagram: 'https://instagram.com/glamourlashlagos', tiktok: 'https://tiktok.com/@glamourlashlagos' },
-    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
-    subaccountCode: 'ACCT_xytowrok4iymzgs',
-    calendarId: 'glamourlashlagos@gmail.com', // <--- SIMPLIFIED: Using Email as ID
-    active: true,
-    adsEnabled: true,
-    servicesEnabled: true,
-    productsEnabled: true,
-    services: [
-      {
-        id: 'classic', name: 'Classic Lash Set', duration: '2 hrs', price: 15000, image: 'https://picsum.photos/seed/classic-thumb/200/200',
-        images: ['https://picsum.photos/seed/classic-1/400/400','https://picsum.photos/seed/classic-2/400/400','https://picsum.photos/seed/classic-3/400/400'],
-        showDetails: true,
-        description: 'A natural, polished look using a single extension applied to each isolated natural lash. Perfect for a subtle enhancement or clients new to lashes.'
-      },
-      {
-        id: 'volume', name: 'Volume Lash Set', duration: '2.5 hrs', price: 25000, image: 'https://picsum.photos/seed/volume-thumb/200/200',
-        images: ['https://picsum.photos/seed/vol-1/400/400','https://picsum.photos/seed/vol-2/400/400','https://picsum.photos/seed/vol-3/400/400'],
-        showDetails: true,
-        description: 'Handmade fans of ultra-fine lashes attached to each natural lash for a fluffy, fuller appearance. Lightweight and dramatic.'
-      },
-      {
-        id: 'mega', name: 'Mega Volume Set', duration: '3 hrs', price: 35000, image: 'https://picsum.photos/seed/mega-thumb/200/200',
-        images: ['https://picsum.photos/seed/mega-1/400/400','https://picsum.photos/seed/mega-2/400/400'],
-        showDetails: true,
-        description: 'The ultimate statement look. Ultra-fine lashes are fanned out densely to create extreme volume and a bold, glamorous finish.'
-      },
-      {
-        id: 'removal', name: 'Lash Removal', duration: '30 min', price: 3000, image: '',
-        showDetails: true,
-        description: 'Safe and gentle removal of existing lash extensions without damaging your natural lashes.'
-      },
-    ],
-    products: [
-      {
-        id: 'serum', name: 'Lash Growth Serum', price: 5000, image: 'https://picsum.photos/seed/serum-prod/400/400',
-        showDetails: true,
-        description: 'Peptide-infused serum to nourish follicles and promote natural lash growth. Apply daily to clean lash lines.'
-      },
-      {
-        id: 'glue', name: 'Lash Adhesive (5g)', price: 3500, image: 'https://picsum.photos/seed/glue-prod/400/400',
-        showDetails: true,
-        description: 'Professional-grade, low-fume adhesive designed for long-lasting retention. Latex-free and waterproof.'
-      },
-    ],
-  },
-
-  'velvet-nails': {
-    name: 'Velvet Nail Bar',
-    slug: 'velvet-nails',
-    logo:'',
-    tagline: 'Luxury nail art & manicures in Lekki',
-    bio: 'Your go-to nail studio for flawless acrylics, gel extensions, and hand-painted nail art. Walk in fierce, walk out flawless.',
-    phone: '+234 809 876 5432',
-    whatsapp: '2348098765432',
-    email: 'velvetnailslekki@gmail.com', // <--- NEW
-    location: 'Admiralty Way, Lekki Phase 1, Lagos',
-    hours: 'Tue–Sun, 10 AM – 7 PM',
-    accent: '#c97b8b',
-    avatar: '',
-    hero: 'https://picsum.photos/seed/velvet-hero/800/600',
-    gallery: [
-      { group: 'Acrylics & Gels', images: ['https://picsum.photos/seed/nail-ac-1/600/600','https://picsum.photos/seed/nail-ac-2/600/600','https://picsum.photos/seed/nail-ac-3/600/600'] },
-      { group: 'Custom Art', images: ['https://picsum.photos/seed/nail-art-1/600/600','https://picsum.photos/seed/nail-art-2/600/600','https://picsum.photos/seed/nail-art-3/600/600'] },
-    ],
-    socials: { instagram: 'https://instagram.com/velvetnailslekki', tiktok: 'https://tiktok.com/@velvetnailslekki' },
-    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
-    subaccountCode: 'ACCT_velvetnails_code',
-    calendarId: 'velvetnailslekki@gmail.com', // <--- SIMPLIFIED
-    active: true,
-    adsEnabled: true,
-    servicesEnabled: true,
-    productsEnabled: true,
-    services: [
-      {
-        id: 'gel-manicure', name: 'Gel Manicure', duration: '1 hr', price: 8000, image: 'https://picsum.photos/seed/gel-thumb/200/200',
-        images: ['https://picsum.photos/seed/gel-1/400/400'],
-        showDetails: true,
-        description: 'Classic gel polish application with cuticle care. Long-lasting, chip-resistant shine for up to 3 weeks.'
-      },
-      {
-        id: 'acrylic-full', name: 'Acrylic Full Set', duration: '2 hrs', price: 18000, image: 'https://picsum.photos/seed/acrylic-thumb/200/200',
-        images: ['https://picsum.photos/seed/acrylic-1/400/400','https://picsum.photos/seed/acrylic-2/400/400'],
-        showDetails: true,
-        description: 'Full coverage using liquid monomer and polymer powder. Sculpted to your desired shape and length.'
-      },
-      {
-        id: 'acrylic-fill', name: 'Acrylic Fill', duration: '1.5 hrs', price: 12000, image: 'https://picsum.photos/seed/fill-thumb/200/200',
-        images: [],
-        showDetails: true,
-        description: 'Infills to cover of growth gap of your existing acrylics. Includes reshaping, buffing, and polish.'
-      },
-      {
-        id: 'nail-art', name: 'Custom Nail Art (per hand)', duration: '45 min', price: 5000, image: 'https://picsum.photos/seed/art-thumb/200/200',
-        images: ['https://picsum.photos/seed/art-1/400/400','https://picsum.photos/seed/art-2/400/400','https://picsum.photos/seed/art-3/400/400'],
-        showDetails: true,
-        description: 'Hand-painted designs, chrome finishes, or encapsulated charms. Price is per hand; added to any base service.'
-      },
-      {
-        id: 'pedicure', name: 'Luxury Pedicure', duration: '1.5 hrs', price: 10000, image: '',
-        showDetails: true,
-        description: 'Relaxing foot soak, callus removal, cuticle care, exfoliation, massage, and polish application.'
-      },
-      {
-        id: 'removal', name: 'Acrylic/Gel Removal', duration: '30 min', price: 2500, image: '',
-        showDetails: true,
-        description: 'Safe and gentle removal of gel polish or acrylics to prepare your natural nails for a fresh set.'
-      },
-    ],
-    products: [
-      {
-        id: 'top-coat', name: 'No-Wipe Top Coat (15ml)', price: 4500, image: 'https://picsum.photos/seed/topcoat/400/400',
-        showDetails: true,
-        description: 'High-gloss, non-sticky finish top coat. Cures in 60 seconds under UV/LED lamp.'
-      },
-      {
-        id: 'nail-oil', name: 'Cuticle Oil Pen', price: 2000, image: 'https://picsum.photos/seed/cuticle/400/400',
-        showDetails: true,
-        description: 'Nourishing oil blend with jojoba and vitamin E to hydrate cuticles and promote healthy nail growth.'
-      },
-      {
-        id: 'nail-art-kit', name: 'Rhinestone & Charm Kit', price: 3500, image: 'https://picsum.photos/seed/rhinestone/400/400',
-        showDetails: true,
-        description: 'Assortment of high-quality rhinestones, pearls, and metal charms for customizing your nail art at home.'
-      },
-    ],
-  },
-
-  'glow-skin': {
-    name: 'Glow Skin Clinic',
-    slug: 'glow-skin',
-    logo:'',
-    tagline: 'Expert facials & skincare in Victoria Island',
-    bio: 'Medical-grade facials and advanced skincare treatments tailored to Nigerian skin. Consultation-based approach — no guesswork.',
-    phone: '+234 803 456 7890',
-    whatsapp: '2348034567890',
-    email: 'glowskinclinic@gmail.com', // <--- NEW
-    location: 'Akin Adesola St, Victoria Island, Lagos',
-    hours: 'Mon–Fri, 9 AM – 5 PM',
-    accent: '#8baf8b',
-    avatar: '',
-    hero: 'https://picsum.photos/seed/glow-hero/800/600',
-    gallery: [
-      { group: 'Facials', images: ['https://picsum.photos/seed/skin-fac-1/600/600','https://picsum.photos/seed/skin-fac-2/600/600','https://picsum.photos/seed/skin-fac-3/600/600'] },
-      { group: 'Treatments', images: ['https://picsum.photos/seed/skin-trt-1/600/600','https://picsum.photos/seed/skin-trt-2/600/600','https://picsum.photos/seed/skin-trt-3/600/600'] },
-    ],
-    socials: { instagram: 'https://instagram.com/glowskinclinic' },
-    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
-    subaccountCode: 'ACCT_glowskin_code',
-    calendarId: 'glowskinclinic@gmail.com', // <--- SIMPLIFIED
-    active: true,
-    adsEnabled: false, // Ads are OFF (Premium)
-    servicesEnabled: true,
-    productsEnabled: false,
-    services: [
-      {
-        id: 'deep-cleanse', name: 'Deep Cleanse Facial', duration: '1 hr', price: 12000, image: 'https://picsum.photos/seed/cleanse-thumb/200/200',
-        images: ['https://picsum.photos/seed/cleanse-1/400/400'],
-        showDetails: true,
-        description: 'Thorough cleansing and exfoliation to remove impurities and unclog pores. Leaves skin feeling fresh and breathing.'
-      },
-      {
-        id: 'hydrating', name: 'Hydrating Facial', duration: '1.5 hrs', price: 18000, image: 'https://picsum.photos/seed/hydrate-thumb/200/200',
-        images: ['https://picsum.photos/seed/hydrate-1/400/400'],
-        showDetails: true,
-        description: 'Intense moisture infusion using hyaluronic acid masks. Ideal for dry, dehydrated, or sun-exposed skin.'
-      },
-      {
-        id: 'chemical-peel', name: 'Chemical Peel (Mild)', duration: '45 min', price: 20000, image: 'https://picsum.photos/seed/peel-thumb/200/200',
-        images: [],
-        showDetails: true,
-        description: 'A mild chemical peel to improve skin texture, tone, and clarity. Reduces the appearance of fine lines and mild acne scars.'
-      },
-      {
-        id: 'microderm', name: 'Microdermabrasion', duration: '1 hr', price: 25000, image: 'https://picsum.photos/seed/micro-thumb/200/200',
-        images: ['https://picsum.photos/seed/micro-1/400/400'],
-        showDetails: true,
-        description: 'Non-invasive exfoliation treatment that removes dead skin cells, promoting new cell growth and a smoother complexion.'
-      },
-      {
-        id: 'led-therapy', name: 'LED Light Therapy', duration: '30 min', price: 8000, image: '',
-        showDetails: true,
-        description: 'Uses specific wavelengths of light to treat acne, reduce inflammation, and stimulate collagen production.'
-      },
-      {
-        id: 'consultation', name: 'Skin Consultation', duration: '20 min', price: 3000, image: '',
-        showDetails: true,
-        description: 'Professional skin analysis to determine your skin type and concerns. Includes a recommended treatment plan.'
-      },
-    ],
-    products: [],
-  },
-
-  'lagos-luxe': {
-    name: 'Lagos Luxe Boutique',
-    slug: 'lagos-luxe',
-    logo:'',
-    tagline: 'Contemporary African Fashion & Luxe Wear',
-    bio: 'Where modern style meets African heritage. We offer curated pieces from top designers, perfect for weddings, galas, and red carpet events.',
-    phone: '+234 701 234 5678',
-    whatsapp: '2347012345678',
-    email: 'lagosluxe@gmail.com', // <--- NEW
-    location: 'The Palms Shopping Mall, Lekki, Lagos',
-    hours: 'Mon–Sun, 10 AM – 9 PM',
-    accent: '#b76e79', // Rose Gold
-    avatar: '',
-    hero: 'https://picsum.photos/seed/lagos-hero/800/600',
-    gallery: [
-      { group: 'Store Lookbook', images: ['https://picsum.photos/seed/store-1/600/600','https://picsum.photos/seed/store-2/600/600','https://picsum.photos/seed/store-3/600/600'] },
-      { group: 'Customer Fit', images: ['https://picsum.photos/seed/fit-1/600/600','https://picsum.photos/seed/fit-2/600/600','https://picsum.photos/seed/fit-3/600/600'] },
-    ],
-    socials: { instagram: 'https://instagram.com/lagosluxe', tiktok: 'https://tiktok.com/@lagosluxe' },
-    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
-    subaccountCode: 'ACCT_lagosluxe_code',
-    calendarId: 'lagosluxe@gmail.com', // <--- SIMPLIFIED
-    active: true,
-    adsEnabled: true,
-    servicesEnabled: false, // Retail only (no bookings)
-    productsEnabled: true,
-    products: [
-      {
-        id: 'silk-dress',
-        name: 'Crimson Silk Gown',
-        layout: 'wide',
-        price: 45000,
-        sizes: ['US 4', 'US 6', 'US 8', 'US 10'],
-        colors: ['#C8102E', '#1a1a1a', '#00563B'],
-        images: [
-          'https://picsum.photos/seed/dress-front/800/450',
-          'https://picsum.photos/seed/dress-side/800/450',
-          'https://picsum.photos/seed/dress-back/800/450'
-        ],
-        showDetails: true,
-        description: 'A stunning floor-length gown made from 100% raw silk. Features intricate beadwork along the neckline and a high slit.'
-      },
-      {
-        id: 'gold-heels',
-        name: 'Gold Block Heels',
-        price: 18000,
-        sizes: ['36', '37', '38', '39', '40', '41'],
-        colors: ['#FFD700'],
-        image: 'https://picsum.photos/seed/heels-thumb/400/400',
-        showDetails: true,
-        description: 'Comfortable yet elegant 4-inch block heels. Gold plated finish with cushioned insole for all-day wear.'
-      },
-      {
-        id: 'turquoise-set',
-        name: 'Turquoise Agbada Set',
-        layout: 'wide',
-        price: 85000,
-        sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-        colors: ['#40E0D0'],
-        images: [
-          'https://picsum.photos/seed/agbada-1/800/450',
-          'https://picsum.photos/seed/agbada-2/800/450'
-        ],
-        showDetails: true,
-        description: 'Luxury Agbada set for men featuring traditional embroidery with a modern twist. Made from premium Swiss voile. Includes top, trousers, and matching cap.'
-      },
-      {
-        id: 'clutch',
-        name: 'Beaded Evening Clutch',
-        price: 12000,
-        image: 'https://picsum.photos/seed/clutch-thumb/400/400',
-        showDetails: true,
-        description: 'Hand-beaded clutch purse perfect for holding your phone, keys, and lipstick. Comes with a detachable gold chain.'
-      },
-      {
-        id: 'summer-maxi',
-        name: 'Floral Maxi Dress',
-        layout: 'wide',
-        price: 35000,
-        sizes: ['XS', 'S', 'M', 'L', 'XL'],
-        colors: ['#E9967A', '#F4C2C2', '#FFDAB9'],
-        images: [
-          'https://picsum.photos/seed/maxi-1/800/450',
-          'https://picsum.photos/seed/maxi-2/800/450'
-        ],
-        showDetails: true,
-        description: 'Lightweight cotton maxi dress with a flattering V-neckline. Perfect for weekend brunches or beach getaways.'
-      }
-    ],
-  },
-
-  // --- FOOD BUSINESS EXAMPLE ---
-  'tasty-bites': {
-    name: 'Tasty Bites Kitchen',
-    slug: 'tasty-bites',
-    logo:'',
-    tagline: 'Best burgers & grills in Ikeja',
-    bio: 'Fresh, juicy burgers made with 100% beef patties and secret sauces. Add as many toppings as you like!',
-    phone: '+234 810 555 1234',
-    whatsapp: '2348105551234',
-    email: 'tastybiteskitchen@gmail.com', // <--- NEW
-    location: 'Ikeja City Mall, Lagos',
-    hours: 'Mon–Sun, 11 AM – 10 PM',
-    accent: '#e67e22', // Carrot Orange
-    avatar: '',
-    hero: 'https://picsum.photos/seed/burger-hero/800/600',
-    gallery: [
-      { group: 'Our Kitchen', images: ['https://picsum.photos/seed/kitchen1/600/600','https://picsum.photos/seed/kitchen2/600/600'] },
-      { group: 'Happy Customers', images: ['https://picsum.photos/seed/customer1/600/600','https://picsum.photos/seed/customer2/600/600'] },
-    ],
-    socials: { instagram: 'https://instagram.com/tastybites', tiktok: 'https://tiktok.com/@tastybites' },
-    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
-    subaccountCode: 'ACCT_xytowrok4iymzgs',
-    calendarId: 'tastybiteskitchen@gmail.com', // <--- SIMPLIFIED
-    active: true,
-    adsEnabled: true,
-    servicesEnabled: false,
-    productsEnabled: false,
-    foodEnabled: true, 
-    
-    food: [
-      {
-        id: 'classic-burger',
-        name: 'The Classic Burger',
-        price: 4500,
-        image: 'https://picsum.photos/seed/burger1/400/400',
-        description: 'Juicy beef patty, lettuce, tomato, and our house sauce on a brioche bun.',
-        
-        // Addons configuration
-        addons: [
-          {
-            id: 'patty',
-            label: 'Extra Protein',
-            type: 'multi', 
-            options: [
-              { name: 'Extra Beef Patty', price: 1500 },
-              { name: 'Grilled Chicken', price: 1200 }
-            ]
-          },
-          {
-            id: 'toppings',
-            label: 'Toppings',
-            type: 'multi', 
-            options: [
-              { name: 'Caramelized Onions', price: 200 },
-              { name: 'Pickles', price: 0 },
-              { name: 'Jalapeños', price: 200 },
-              { name: 'Extra Cheese', price: 500 },
-              { name: 'Bacon Strips', price: 800 }
-            ]
-          },
-          {
-            id: 'sides',
-            label: 'Choose One Side',
-            type: 'single', 
-            options: [
-              { name: 'No Side', price: 0 },
-              { name: 'Crispy Chips', price: 500 },
-              { name: 'Coleslaw', price: 700 },
-              { name: 'Onion Rings', price: 800 }
-            ]
-          }
-        ]
-      },
-      {
-        id: 'chicken-wings',
-        name: 'Spicy Wings (6 pcs)',
-        price: 3500,
-        image: 'https://picsum.photos/seed/wings/400/400',
-        description: 'Crispy fried wings tossed in our signature hot sauce. Served with ranch dip.',
-        addons: [
-          {
-            id: 'spice',
-            label: 'Heat Level',
-            type: 'single', 
-            options: [
-              { name: 'Mild', price: 0 },
-              { name: 'Hot', price: 0 },
-              { name: 'Suicidal (Extra Hot)', price: 100 }
-            ]
-          }
-        ]
-      },
-      {
-        id: 'margherita-pizza',
-        name: 'Margherita Pizza',
-        price: 6000,
-        image: 'https://picsum.photos/seed/pizza1/400/400',
-        description: 'Classic tomato base, fresh mozzarella, and basil leaves.',
-        addons: [
-          {
-            id: 'size',
-            label: 'Size',
-            type: 'single',
-            options: [
-              { name: 'Small (9")', price: 0 },
-              { name: 'Medium (12")', price: 2000 },
-              { name: 'Large (15")', price: 4000 }
-            ]
-          },
-          {
-            id: 'extra',
-            label: 'Extra Toppings',
-            type: 'multi',
-            options: [
-              { name: 'Mushrooms', price: 500 },
-              { name: 'Pepperoni', price: 800 },
-              { name: 'Sausage', price: 800 },
-              { name: 'Bell Peppers', price: 300 }
-            ]
-          }
-        ]
-      }
-    ],
-  },
-
-  // --- CAR BUSINESS EXAMPLE ---
-  'lagos-auto': {
-    name: 'Lagos Auto Deals',
-    slug: 'lagos-auto',
-    logo:'',
-    tagline: 'Premium Car Rentals & Sales in Lagos',
-    bio: 'Experience the best of Lagos with our fleet of luxury rental cars or browse our selection of certified pre-owned vehicles for sale.',
-    phone: '+234 911 000 0000',
-    whatsapp: '2349110000000',
-    email: 'lagosautodeals@gmail.com',
-    location: 'Victoria Island, Lagos',
-    hours: 'Mon–Sun, 8 AM – 8 PM',
-    accent: '#3b82f6', // Blue
-    avatar: '',
-    hero: 'https://picsum.photos/seed/car-hero/800/600',
-    gallery: [
-      { group: 'Our Fleet', images: ['https://picsum.photos/seed/fleet1/600/600','https://picsum.photos/seed/fleet2/600/600','https://picsum.photos/seed/fleet3/600/600'] },
-      { group: 'Happy Clients', images: ['https://picsum.photos/seed/client1/600/600','https://picsum.photos/seed/client2/600/600'] },
-    ],
-    socials: { instagram: 'https://instagram.com/lagosautodeals', tiktok: 'https://tiktok.com/@lagosautodeals' },
-    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
-    subaccountCode: 'ACCT_xytowrok4iymzgs',
-    calendarId: 'lagosautodeals@gmail.com',
-    active: true,
-    adsEnabled: true,
-    carsEnabled: true, 
-    servicesEnabled: false,
-    productsEnabled: false,
-    foodEnabled: false,
-    cars: [
-      {
-        id: 'lexus-rx',
-        type: 'rent',
-        name: 'Lexus RX 350',
-        year: 2022,
-        price: 45000,
-        mileage: '25k km',
-        transmission: 'Automatic',
-        fuel: 'Petrol',
-        description: 'A pristine condition Lexus RX 350 featuring leather seats, panoramic sunroof, and premium sound system. Perfect for business trips or family outings around Lagos.',
-        image: 'https://picsum.photos/seed/lexus/800/450',
-        images: [
-            'https://picsum.photos/seed/lexus/800/450',
-            'https://picsum.photos/seed/lexus1/800/450',
-            'https://picsum.photos/seed/lexus2/800/450'
-        ]
-      },
-      {
-        id: 'g-wagon',
-        type: 'rent',
-        name: 'Mercedes Benz G-Wagon',
-        year: 2021,
-        price: 75000,
-        mileage: '15k km',
-        transmission: 'Automatic',
-        fuel: 'Petrol',
-        description: 'Stand out in Lagos with this luxury Mercedes G-Wagon. Comes with full air conditioning, alloy wheels, and a powerful V8 engine. Driver included upon request.',
-        image: 'https://picsum.photos/seed/gwagon/800/450',
-        images: [
-            'https://picsum.photos/seed/gwagon/800/450',
-            'https://picsum.photos/seed/gwagon1/800/450',
-            'https://picsum.photos/seed/gwagon2/800/450'
-        ]
-      },
-      {
-        id: 'camry',
-        type: 'sale',
-        name: 'Toyota Camry 2020 Muscle',
-        year: 2020,
-        price: 15000000,
-        mileage: '60k km',
-        transmission: 'Automatic',
-        fuel: 'Petrol',
-        description: 'Toyota "Muscle" in excellent mechanical condition. First body, clean interior, and AC freezing cold. This car has never been painted and has full service history available.',
-        image: 'https://picsum.photos/seed/camry/800/450',
-        images: [
-            'https://picsum.photos/seed/camry/800/450', 
-            'https://picsum.photos/seed/camry1/800/450',
-            'https://picsum.photos/seed/camry2/800/450',
-            'https://picsum.photos/seed/camry3/800/450'
-        ]
-      },
-      {
-        id: 'corolla',
-        type: 'rent',
-        name: 'Toyota Corolla',
-        year: 2023,
-        price: 25000,
-        mileage: '10k km',
-        transmission: 'Automatic',
-        fuel: 'Hybrid',
-        description: 'Fuel-efficient and very reliable Toyota Corolla Hybrid. Great fuel economy for city driving. Features Apple CarPlay and reverse camera.',
-        image: 'https://picsum.photos/seed/corolla/800/450',
-        images: [
-            'https://picsum.photos/seed/corolla/800/450',
-            'https://picsum.photos/seed/corolla1/800/450'
-        ]
-      }
-    ]
-  },
-
-  // --- ALL-SECTIONS BUSINESS EXAMPLE ---
-  'palm-royal': {
-    name: 'The Palm Royal Hub',
-    slug: 'palm-royal',
-    logo:'',
-    tagline: 'Luxury Living, Dining & Travel in One',
-    bio: 'Lagos’ premier all-in-one destination. Enjoy 5-star dining, rent luxury cars for your events, shop exclusive gifts, and relax in our VIP spa lounge.',
-    phone: '+234 800 333 4444',
-    whatsapp: '2348003334444',
-    email: 'palmroyalhub@gmail.com',
-    location: 'Lekki-Epe Expressway, Lagos',
-    hours: '24 Hours',
-    accent: '#daa520', // Goldenrod
-    avatar: '',
-    hero: 'https://picsum.photos/seed/palm-hero/800/600',
-    gallery: [
-      { group: 'The Lounge', images: ['https://picsum.photos/seed/lounge1/600/600','https://picsum.photos/seed/lounge2/600/600'] },
-      { group: 'Exterior', images: ['https://picsum.photos/seed/park1/600/600','https://picsum.photos/seed/park2/600/600'] },
-    ],
-    socials: { instagram: 'https://instagram.com/palmroyalhub', tiktok: 'https://tiktok.com/@palmroyalhub' },
-    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
-    subaccountCode: 'ACCT_palmroyal_code',
-    calendarId: 'palmroyalhub@gmail.com',
-    active: true,
-    // ALL FLAGS ENABLED
-    adsEnabled: true,
-    carsEnabled: true, 
-    servicesEnabled: true,
-    productsEnabled: true,
-    foodEnabled: true,
-    
-    services: [
-      {
-        id: 'vip-day', name: 'VIP Day Pass', duration: '1 Day', price: 50000, image: 'https://picsum.photos/seed/vip/200/200',
-        images: [], showDetails: true,
-        description: 'Access to the VIP lounge, private pool area, and complimentary cocktails.'
-      },
-      {
-        id: 'concierge', name: 'Event Concierge', duration: '4 hrs', price: 25000, image: 'https://picsum.photos/seed/concierge/200/200',
-        images: [], showDetails: true,
-        description: 'Personal assistance for event planning, guest management, and logistics coordination.'
-      }
-    ],
-
-    products: [
-      {
-        id: 'hamper', name: 'Royal Gift Hamper', price: 45000, image: 'https://picsum.photos/seed/hamper/400/400',
-        showDetails: true,
-        description: 'Luxury basket containing imported wines, chocolates, and spa essentials.'
-      },
-      {
-        id: 'robe', name: 'Luxury Turkish Robe', price: 18000, image: 'https://picsum.photos/seed/robe/400/400',
-        showDetails: true,
-        description: '100% Cotton terry cloth robe. Embroidered with the Palm Royal logo.'
-      }
-    ],
-
-    food: [
-      {
-        id: 'steak', name: 'Grilled Sirloin Steak', price: 18000, image: 'https://picsum.photos/seed/steak/400/400',
-        description: 'Premium cut steak grilled to perfection with herbs.',
-        addons: [
-          { 
-            id: 'doneness', label: 'Cooking', type: 'single', 
-            options: [{ name: 'Medium Rare', price: 0 }, { name: 'Well Done', price: 0 }] 
-          },
-          { 
-            id: 'sauce', label: 'Sauce', type: 'single', 
-            options: [{ name: 'Black Pepper', price: 0 }, { name: 'Mushroom', price: 1000 }] 
-          },
-          { 
-            id: 'sides', label: 'Add Sides', type: 'multi', 
-            options: [{ name: 'Mixed Veg', price: 1500 }, { name: 'Baked Potato', price: 1500 }] 
-          }
-        ]
-      },
-      {
-        id: 'seafood', name: 'Grilled Lobster Tail', price: 35000, image: 'https://picsum.photos/seed/lobster/400/400',
-        description: 'Fresh lobster tail grilled with garlic butter.',
-        addons: [
-          {
-            id: 'spice', label: 'Spice Level', type: 'single', 
-            options: [{ name: 'Mild', price: 0 }, { name: 'Spicy', price: 0 }]
-          }
-        ]
-      }
-    ],
-
-    cars: [
-      {
-        id: 'phantom', type: 'rent', name: 'Rolls Royce Phantom', year: 2023, price: 250000,
-        mileage: '5k km', transmission: 'Automatic', fuel: 'Petrol',
-        description: 'The ultimate luxury experience. Chauffeur service included.',
-        image: 'https://picsum.photos/seed/rolls/800/450', images: ['https://picsum.photos/seed/rolls/800/450']
-      },
-      {
-        id: 'g63', type: 'rent', name: 'Mercedes G63 AMG', year: 2023, price: 150000,
-        mileage: '10k km', transmission: 'Automatic', fuel: 'Petrol',
-        description: 'High-performance SUV for a bold arrival.',
-        image: 'https://picsum.photos/seed/g63/800/450', images: ['https://picsum.photos/seed/g63/800/450']
-      }
-    ]
-  },// --- ALL-SECTIONS BUSINESS EXAMPLE ---
-  'aether-labs': {
-name: 'Aether labs',
-slug: 'aether-labs',
-logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777208301/gm1zwoorewxxq84cagcn.png', // ✅ UPDATED: Uses the uploaded logo URL or empty string
-tagline: 'A professional Lash Artist in Lagos',
-bio: 'wfube ewjnw 1',
-phone: '09034593171',
-whatsapp: '08023381785',
-email: 'oghenevokemi@gmail.com',
-location: '4 Adebomi Edun street alimosho iyana ipaja lagos',
-hours: 'Mon–Sun, 9 AM – 6 PM',
-accent: '#8459a1',
-avatar: '',
-hero: 'https://picsum.photos/seed/aether-labs/800/600',
-gallery: [
-{ group: 'Gallery', images: [] }
-],
-socials: {
-instagram: 'wrurw',
-tiktok: 'wedub'
-},
-paystackPublicKey: PLATFORM_PAYSTACK_KEY,
-subaccountCode: 'ACCT_9efd9o1f2iz0kdl',
-calendarId: 'oghenevokemi@gmail.com',
-active: true,
-adsEnabled: true,
-carsEnabled: false,
-servicesEnabled: true,
-productsEnabled: false,
-foodEnabled: false,
-    
-    services: [
-      {
-        id: 'vip-day', name: 'VIP Day Pass', duration: '1 Day', price: 50000, image: 'https://picsum.photos/seed/vip/200/200',
-        images: [], showDetails: true,
-        description: 'Access to the VIP lounge, private pool area, and complimentary cocktails.'
-      },
-      {
-        id: 'concierge', name: 'Event Concierge', duration: '4 hrs', price: 25000, image: 'https://picsum.photos/seed/concierge/200/200',
-        images: [], showDetails: true,
-        description: 'Personal assistance for event planning, guest management, and logistics coordination.'
-      }
-    ],
-
-    products: [
-      {
-        id: 'hamper', name: 'Royal Gift Hamper', price: 45000, image: 'https://picsum.photos/seed/hamper/400/400',
-        showDetails: true,
-        description: 'Luxury basket containing imported wines, chocolates, and spa essentials.'
-      },
-      {
-        id: 'robe', name: 'Luxury Turkish Robe', price: 18000, image: 'https://picsum.photos/seed/robe/400/400',
-        showDetails: true,
-        description: '100% Cotton terry cloth robe. Embroidered with the Palm Royal logo.'
-      }
-    ],
-
-    food: [
-      {
-        id: 'steak', name: 'Grilled Sirloin Steak', price: 18000, image: 'https://picsum.photos/seed/steak/400/400',
-        description: 'Premium cut steak grilled to perfection with herbs.',
-        addons: [
-          { 
-            id: 'doneness', label: 'Cooking', type: 'single', 
-            options: [{ name: 'Medium Rare', price: 0 }, { name: 'Well Done', price: 0 }] 
-          },
-          { 
-            id: 'sauce', label: 'Sauce', type: 'single', 
-            options: [{ name: 'Black Pepper', price: 0 }, { name: 'Mushroom', price: 1000 }] 
-          },
-          { 
-            id: 'sides', label: 'Add Sides', type: 'multi', 
-            options: [{ name: 'Mixed Veg', price: 1500 }, { name: 'Baked Potato', price: 1500 }] 
-          }
-        ]
-      },
-      {
-        id: 'seafood', name: 'Grilled Lobster Tail', price: 35000, image: 'https://picsum.photos/seed/lobster/400/400',
-        description: 'Fresh lobster tail grilled with garlic butter.',
-        addons: [
-          {
-            id: 'spice', label: 'Spice Level', type: 'single', 
-            options: [{ name: 'Mild', price: 0 }, { name: 'Spicy', price: 0 }]
-          }
-        ]
-      }
-    ],
-
-    cars: [
-      {
-        id: 'phantom', type: 'rent', name: 'Rolls Royce Phantom', year: 2023, price: 250000,
-        mileage: '5k km', transmission: 'Automatic', fuel: 'Petrol',
-        description: 'The ultimate luxury experience. Chauffeur service included.',
-        image: 'https://picsum.photos/seed/rolls/800/450', images: ['https://picsum.photos/seed/rolls/800/450']
-      },
-      {
-        id: 'g63', type: 'rent', name: 'Mercedes G63 AMG', year: 2023, price: 150000,
-        mileage: '10k km', transmission: 'Automatic', fuel: 'Petrol',
-        description: 'High-performance SUV for a bold arrival.',
-        image: 'https://picsum.photos/seed/g63/800/450', images: ['https://picsum.photos/seed/g63/800/450']
-      }
-    ]
-  },'yoda': {
-name: 'yoda',
-slug: 'yoda',
-logo: '',
-tagline: 'A professional Auto in Lagos',
-bio: '...',
-phone: '',
-whatsapp: 'oluwafemiemmanuelayedogbon@gmail.com',
-email: 'oluwafemiemmanuelayedogbon@gmail.com',
-location: '...',
-hours: 'Mon–Sun, 9 AM – 6 PM',
-accent: '#3e9882',
-avatar: '',
-hero: 'https://picsum.photos/seed/yoda/800/600',
-gallery: [
-{
-"group": "Gallery",
-"images": []
-}
-],
-socials: { instagram: '...', tiktok: '...' },
-paystackPublicKey: PLATFORM_PAYSTACK_KEY,
-subaccountCode: 'ACCT_68pqilzbk4locbw',
-calendarId: 'oluwafemiemmanuelayedogbon@gmail.com',
-active: true,
-adsEnabled: true,
-carsEnabled: true,
-servicesEnabled: false, // Disable services if Auto
-productsEnabled: false,
-foodEnabled: false,
-
-// Inventory Data
-services: [],
-products: [],
-cars: [
-{
-"id": "yoda-1777216208144",
-"name": "konigsegg",
-"type": "rent",
-"year": 2022,
-"price": 1000000,
-"mileage": "132312",
-"transmission": "amt",
-"fuel": "fuel",
-"description": "weinfienwfqienw",
-"image": "https://res.cloudinary.com/deexaiik4/image/upload/v1777216326/bddnvbipdvsynz8ktoa6.jpg",
-"images": [
-"https://res.cloudinary.com/deexaiik4/image/upload/v1777216326/bddnvbipdvsynz8ktoa6.jpg",
-"https://res.cloudinary.com/deexaiik4/image/upload/v1777216343/pqkseziuwwrwyituqezb.jpg",
-"https://res.cloudinary.com/deexaiik4/image/upload/v1777216358/zziwub0c4z41bbafm9it.jpg"
-]
-}
-],
-food: []
-},'shinobi': {
-name: 'shinobi',
-slug: 'shinobi',
-logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777217435/tqlncptwaa2iybyeggdj.jpg',
-tagline: 'A professional Restaurant in Lagos',
-bio: 'shinobi',
-phone: '07081793436',
-whatsapp: '08023381785',
-email: 'heelhieddev@gmail.com',
-location: '10 olufemi ojo street abestos busstop',
-hours: 'Mon–Sun, 9 AM – 6 PM',
-accent: '#2cd6ed',
-avatar: '',
-hero: 'https://picsum.photos/seed/shinobi/800/600',
-gallery: [
-{
-"group": "Gallery",
-"images": []
-}
-],
-socials: {
-instagram: 'wrurw',
-tiktok: 'wedub'
-},
-paystackPublicKey: PLATFORM_PAYSTACK_KEY,
-subaccountCode: 'ACCT_95m7bncprwsodc8',
-calendarId: 'heelhieddev@gmail.com',
-active: true,
-adsEnabled: true,
-carsEnabled: false,
-servicesEnabled: true,
-productsEnabled: true,
-foodEnabled: true,
-
-// Inventory Data
-services: [],
-products: [],
-cars: [],
-food: [
-{
-"id": "shinobi-1777217589277",
-"name": "shawarma",
-"price": 2500,
-"description": "extra hot dog",
-"image": "https://res.cloudinary.com/deexaiik4/image/upload/v1777217606/liywtgujaxq122p7fa00.jpg"
-}
-]
-},'pro-pro': {
-name: 'pro pro',
-slug: 'pro-pro',
-logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292185/p0vcg4gqjgctl0pk6i21.jpg',
-tagline: 'A professional Auto in Lagos',
-bio: 'this is a car dealer',
-phone: '08023381785',
-whatsapp: '08023381785',
-email: 'oghenevokemi@gmail.com',
-location: 'araokanmi',
-hours: 'Mon–Sun, 9 AM – 6 PM',
-accent: '#024fa8',
-avatar: '',
-hero: 'https://picsum.photos/seed/pro-pro/800/600',
-gallery: [
-{ group: 'our fleet', images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777292272/qefdrdfqe4gpg33ofqai.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292273/c3sv9g4xoncm5raarlgn.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292273/so3ltmbxh0bsam5ujtii.jpg'] },
-],
-socials: { instagram: 'wrurw', tiktok: 'wedub' },
-paystackPublicKey: PLATFORM_PAYSTACK_KEY,
-subaccountCode: 'ACCT_m0vrbgnhs9bi0hr',
-calendarId: 'oghenevokemi@gmail.com',
-active: true,
-adsEnabled: true,
-carsEnabled: true,
-servicesEnabled: false,
-productsEnabled: false,
-foodEnabled: false,
-services: [],
-products: [],
-cars: [
-{
-id: 'pro-pro-1777292291144',
-type: 'rent',
-name: 'toyota prado',
-year: 2015,
-price: 150000,
-mileage: '',
-transmission: 'automatic',
-fuel: 'petrol',
-description: 'red toyota prado',
-image: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292346/e6tskpmzobzef0c9axir.jpg',
-images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777292346/e6tskpmzobzef0c9axir.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292362/swnkzy8ju5o77wtquzdx.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777292385/j1tcmoyoiellmmg8at1s.jpg']
-}
-],
-food: []
-},'lash-by-tife': {
-name: 'lash by tife',
-slug: 'lash-by-tife',
-logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294087/kku24lkxafdmmgla0ij8.jpg',
-tagline: 'A professional Lash Artist in Lagos',
-bio: 'lash by tife beauty',
-phone: '09160625497',
-whatsapp: '08023381785',
-email: 'oghenevokemi@gmail.com',
-location: 'araokanmi',
-hours: 'Mon–Sun, 9 AM – 6 PM',
-accent: '#cb7271',
-avatar: '',
-hero: 'https://picsum.photos/seed/lash-by-tife/800/600',
-gallery: [
-{ group: 'my work', images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777294159/lbr193w1iygjuktqmdkh.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294160/soadb2uk9yhtqtddqkgh.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294160/y3cafqbmehhesspofwc8.jpg'] },
-],
-socials: { instagram: 'wrurw', tiktok: 'wedub' },
-paystackPublicKey: PLATFORM_PAYSTACK_KEY,
-subaccountCode: 'ACCT_gmjsurrbbzj3ugl',
-calendarId: 'oghenevokemi@gmail.com',
-active: true,
-adsEnabled: true,
-carsEnabled: false,
-servicesEnabled: true,
-productsEnabled: true,
-foodEnabled: false,
-services: [
-{
-id: 'lash-by-tife-1', name: 'lash install', duration: '1 hour', price: 4500, image: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294237/pnobggmhvqvytulkffp0.jpg',
-images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777294237/pnobggmhvqvytulkffp0.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294255/epdhgzl4lpievm4tkwam.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777294271/tzjongy49fctjjbgibcz.jpg'],
-showDetails: true,
-description: 'cat eyes lash install'
-}
-],
-products: [],
-cars: [],
-food: []
-},
-
-  // Added by onboarding 2026-04-28T12:09:27.366Z
-  'crv': {
-    name: 'crv',
-    slug: 'crv',
-    logo: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777377578/qrergixiq4s9axztdpv6.jpg',
-    tagline: 'A professional Hair Stylist in Lagos',
-    bio: 'this is a hair stylist',
-    phone: '09034593171',
-    whatsapp: '08023381785',
-    email: 'oghenevokemi@gmail.com',
-    location: 'araokanmi',
-    hours: 'Mon–Sun, 9 AM – 6 PM',
-    accent: '#d27578',
-    avatar: '',
-    hero: 'https://picsum.photos/seed/crv/800/600',
-    gallery: [
-      { group: 'pro', images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777378051/goamjnhp6otmdm6wdtel.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777378051/xw04izwn4kadd1kbwhm1.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777378052/auwghs10ukbj38bykhzn.jpg'] },
-    ],
-    socials: { instagram: 'wrurw', tiktok: 'wedub' },
-    paystackPublicKey: PLATFORM_PAYSTACK_KEY,
-    subaccountCode: 'ACCT_od7jhceqzvwhtve',
-    calendarId: 'oghenevokemi@gmail.com',
-    active: true,
-    adsEnabled: true,
-    carsEnabled: false,
-    servicesEnabled: true,
-    productsEnabled: true,
-    foodEnabled: false,
-    services: [
-      {
-        id: 'crv-1', name: 'tech', duration: '1 hour', price: 24000, image: 'https://res.cloudinary.com/deexaiik4/image/upload/v1777378102/n8erwddzdaxlrvgkspdg.jpg',
-        images: ['https://res.cloudinary.com/deexaiik4/image/upload/v1777378102/n8erwddzdaxlrvgkspdg.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777378126/alqrlfedjii8kqgftakg.jpg', 'https://res.cloudinary.com/deexaiik4/image/upload/v1777378162/guwgrjgejl9emnmmzhce.jpg'],
-        showDetails: true,
-        description: 'this is the tech'
-      }
-    ],
-    products: [],
-    cars: [],
-    food: []
-  },
-
-
-
-};
-
-export default businesses;
+<file path="src/data/config.js">
+// Public platform config — NO secrets here
+export const PLATFORM_PAYSTACK_KEY = 'pk_test_129628160c0fdb0e1e837751e5ff0233872676b8';
 </file>
 
 <file path="src/pages/BookingPage.jsx">
@@ -22321,6 +22036,208 @@ module.exports = {
 };
 </file>
 
+<file path="netlify/functions/dashboard-login.cjs">
+// netlify/functions/dashboard-login.cjs
+const { createClient } = require('@supabase/supabase-js');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const cookie = require('cookie');
+const xss = require('xss');
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not set.');
+}
+const TOKEN_EXPIRY = '24h';
+
+// ─── SANITISATION HELPER ───
+function sanitizeDeep(input) {
+  if (typeof input === 'string') {
+    return xss(input, {
+      whiteList: [],
+      stripIgnoreTag: true,
+      stripIgnoreTagBody: ['script', 'style'],
+    });
+  }
+  if (Array.isArray(input)) {
+    return input.map(sanitizeDeep);
+  }
+  if (input && typeof input === 'object') {
+    const result = {};
+    for (const [key, value] of Object.entries(input)) {
+      result[key] = sanitizeDeep(value);
+    }
+    return result;
+  }
+  return input;
+}
+
+// ─── HELPER: Check if string looks like a bcrypt hash ───
+function isBcryptHash(str) {
+  return typeof str === 'string' && (str.startsWith('$2a$') || str.startsWith('$2b$') || str.startsWith('$2y$'));
+}
+
+exports.handler = async (event) => {
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
+  }
+
+  try {
+    // Parse and sanitise all input
+    let payload = JSON.parse(event.body);
+    payload = sanitizeDeep(payload);
+
+    const { slug, securityCode, securityQuestion, securityAnswer, token } = payload;
+
+    // Normalise slug
+    const cleanSlug = slug.trim().toLowerCase();
+
+    console.log('🔑 Login attempt for slug:', cleanSlug);
+
+    if (!cleanSlug || !securityCode || !token) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
+    }
+
+    // Trim the security code (removes accidental spaces)
+    const trimmedCode = securityCode.trim();
+
+    // Verify the temporary token
+    let tempPayload;
+    try {
+      tempPayload = jwt.verify(token, JWT_SECRET);
+      console.log('✅ Token verified for slug:', tempPayload.slug);
+    } catch (err) {
+      console.error('❌ Token verification failed:', err.message);
+      return { statusCode: 401, body: JSON.stringify({ error: 'Session expired. Please start over.' }) };
+    }
+    if (tempPayload.slug !== cleanSlug) {
+      console.error('❌ Token slug mismatch:', tempPayload.slug, 'vs', cleanSlug);
+      return { statusCode: 401, body: JSON.stringify({ error: 'Invalid session' }) };
+    }
+
+    // Fetch business with both hashed and plaintext fields
+    const { data: biz, error } = await supabase
+      .from('businesses')
+      .select('id, slug, security_code, security_code_hash, security_question_1, security_answer_1, security_answer_1_hash, security_question_2, security_answer_2, security_answer_2_hash')
+      .eq('slug', cleanSlug)
+      .single();
+
+    if (error) {
+      console.error('❌ Supabase query error:', error.message);
+      return { statusCode: 500, body: JSON.stringify({ error: 'Database error' }) };
+    }
+    if (!biz) {
+      console.error('❌ Business not found for slug:', cleanSlug);
+      return { statusCode: 404, body: JSON.stringify({ error: 'Business not found' }) };
+    }
+
+    console.log('✅ Business found:', biz.slug);
+
+    // ─── VERIFY 4‑DIGIT SECURITY CODE ───
+    let codeValid = false;
+    const hashedCode = biz.security_code_hash;
+    const plainCode = biz.security_code ? biz.security_code.trim() : null; // Trim plaintext
+
+    console.log(`🔑 Hashed code: ${hashedCode ? hashedCode.substring(0, 20) + '...' : 'null'}`);
+    console.log(`🔑 Plain code: ${plainCode || 'null'}`);
+    console.log(`🔑 Provided code (trimmed): ${trimmedCode}`);
+
+    // Try plaintext comparison first (in case hash is missing or invalid)
+    if (plainCode && trimmedCode === plainCode) {
+      codeValid = true;
+      console.log('✅ Code matched with plaintext.');
+      // Upgrade to hash
+      try {
+        const newHash = bcrypt.hashSync(trimmedCode, 10);
+        await supabase
+          .from('businesses')
+          .update({ security_code_hash: newHash, security_code: null })
+          .eq('id', biz.id);
+        console.log('🔒 Security code upgraded to hash.');
+      } catch (updateErr) {
+        console.warn('Failed to upgrade security code to hash:', updateErr.message);
+      }
+    }
+
+    // If plaintext didn't match, try hash comparison
+    if (!codeValid && hashedCode && isBcryptHash(hashedCode)) {
+      codeValid = bcrypt.compareSync(trimmedCode, hashedCode);
+      if (codeValid) {
+        console.log('✅ Code matched with hash.');
+      } else {
+        console.log('⚠️ Code did not match hash.');
+      }
+    }
+
+    // If still not valid and we have a plaintext that didn't match (maybe due to case/space)
+    // Try trimming the stored plaintext again (already done) – no further action.
+
+    if (!codeValid) {
+      console.error('❌ Invalid security code for slug:', cleanSlug);
+      return { statusCode: 401, body: JSON.stringify({ error: 'Invalid security code' }) };
+    }
+
+    // ─── VERIFY SECURITY QUESTION & ANSWER ───
+    if (securityQuestion) {
+      const normalizedAnswer = securityAnswer.toLowerCase().trim();
+      let answerMatch = false;
+
+      const checkAnswer = (storedAnswer, provided) => {
+        if (!storedAnswer) return false;
+        if (isBcryptHash(storedAnswer)) {
+          return bcrypt.compareSync(provided, storedAnswer);
+        }
+        return storedAnswer === provided;
+      };
+
+      if (biz.security_question_1 === securityQuestion) {
+        answerMatch = checkAnswer(biz.security_answer_1_hash || biz.security_answer_1, normalizedAnswer);
+      }
+      if (!answerMatch && biz.security_question_2 === securityQuestion) {
+        answerMatch = checkAnswer(biz.security_answer_2_hash || biz.security_answer_2, normalizedAnswer);
+      }
+
+      if (!answerMatch) {
+        console.error('❌ Invalid security question/answer for slug:', cleanSlug);
+        return { statusCode: 401, body: JSON.stringify({ error: 'Invalid security question or answer' }) };
+      }
+    }
+
+    // Generate final JWT session
+    const sessionToken = jwt.sign(
+      { slug: biz.slug, id: biz.id },
+      JWT_SECRET,
+      { expiresIn: TOKEN_EXPIRY }
+    );
+
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
+      maxAge: 24 * 60 * 60,
+      path: '/',
+    };
+
+    return {
+      statusCode: 200,
+      headers: {
+        'Set-Cookie': cookie.serialize('dashboard_token', sessionToken, cookieOptions),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ success: true, slug: biz.slug }),
+    };
+  } catch (err) {
+    console.error('🔥 dashboard-login error:', err);
+    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+  }
+};
+</file>
+
 <file path="netlify/functions/initialize-subscription.cjs">
 const { createClient } = require('@supabase/supabase-js');
 const xss = require('xss');
@@ -22502,6 +22419,214 @@ exports.handler = async (event) => {
   } catch (err) {
     console.error('🔥 initialize-subscription error:', err.message);
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+  }
+};
+</file>
+
+<file path="netlify/functions/send-reset-otp.cjs">
+// netlify/functions/send-reset-otp.cjs
+const { createClient } = require('@supabase/supabase-js');
+const { Resend } = require('resend');
+const xss = require('xss');
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// ─── SANITISATION HELPER ───
+function sanitizeString(str) {
+  if (typeof str !== 'string') return str;
+  return xss(str, {
+    whiteList: [],
+    stripIgnoreTag: true,
+    stripIgnoreTagBody: ['script', 'style'],
+  });
+}
+
+exports.handler = async (event) => {
+  console.log('🚀 send-reset-otp invoked');
+  console.log('📨 Method:', event.httpMethod);
+  console.log('📦 Headers:', JSON.stringify(event.headers, null, 2));
+
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Method not allowed' }),
+    };
+  }
+
+  try {
+    let email;
+    try {
+      const parsed = JSON.parse(event.body);
+      email = parsed.email;
+      console.log('📩 Received email from body:', email);
+    } catch (parseErr) {
+      console.error('❌ JSON parse error:', parseErr);
+      return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Invalid JSON body' }),
+      };
+    }
+
+    // Sanitise email
+    if (typeof email === 'string') {
+      email = sanitizeString(email);
+      console.log('🧹 Sanitised email:', email);
+    }
+
+    if (!email || typeof email !== 'string' || !email.trim()) {
+      console.warn('⚠️ Email missing or invalid');
+      return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Email is required' }),
+      };
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    console.log('🔍 Normalised email:', normalizedEmail);
+
+    // ─── Find business by email ───
+    console.log('🔎 Querying Supabase for business...');
+    const { data: biz, error: findError } = await supabase
+      .from('businesses')
+      .select('id')
+      .eq('email', normalizedEmail)
+      .single();
+
+    if (findError) {
+      console.error('❌ Supabase find error:', findError);
+    }
+    if (!biz) {
+      console.warn('⚠️ No business found for email:', normalizedEmail);
+      return {
+        statusCode: 404,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'No business found with that email' }),
+      };
+    }
+    console.log('✅ Business found:', biz.id);
+
+    // ─── Generate OTP ───
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    console.log('🔑 Generated OTP:', otp);
+    console.log('⏳ Expires at:', expiresAt);
+
+    // ─── Store OTP ───
+    console.log('💾 Storing OTP in security_resets...');
+    const { error: insertError } = await supabase
+      .from('security_resets')
+      .insert({
+        business_id: biz.id,
+        token: otp,
+        expires_at: expiresAt,
+      });
+
+    if (insertError) {
+      console.error('❌ Insert error:', insertError);
+      return {
+        statusCode: 500,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Failed to generate reset code' }),
+      };
+    }
+    console.log('✅ OTP stored successfully');
+
+    // ─── Send email with Resend ───
+    console.log('📧 Preparing to send email via Resend...');
+    const resendApiKey = process.env.RESEND_API_KEY;
+    console.log('🔑 RESEND_API_KEY present?', resendApiKey ? '✅ Yes' : '❌ No');
+
+    const emailFrom = 'onboarding@resend.dev';
+    let emailSent = false;
+    let emailError = null;
+
+    if (resendApiKey) {
+      try {
+        const resend = new Resend(resendApiKey);
+        console.log('📤 Sending email to:', normalizedEmail);
+        const { data, error: sendError } = await resend.emails.send({
+          from: emailFrom,
+          to: normalizedEmail,
+          subject: 'Your Five9 Password Reset OTP',
+          html: `
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta charset="utf-8">
+                <title>Reset your Five9 security details</title>
+                <style>
+                  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f6f6f6; margin: 0; padding: 0; }
+                  .container { max-width: 480px; margin: 40px auto; background: #ffffff; border-radius: 16px; padding: 32px 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+                  .logo { text-align: center; margin-bottom: 24px; }
+                  .logo img { max-height: 48px; width: auto; }
+                  h2 { font-size: 22px; font-weight: 700; margin: 0 0 8px; color: #111827; }
+                  p { font-size: 16px; line-height: 1.6; color: #4b5563; margin: 0 0 16px; }
+                  .code { background: #f3f4f6; border-radius: 12px; padding: 16px; text-align: center; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #111827; margin: 20px 0; font-family: 'Courier New', monospace; }
+                  .footer { margin-top: 32px; font-size: 14px; color: #9ca3af; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 24px; }
+                  .footer a { color: #6366f1; text-decoration: none; }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  <div class="logo">
+                    <img src="https://five9.com.ng/fav-removebg.png" alt="Five9" />
+                  </div>
+                  <h2>Reset your security details</h2>
+                  <p>We received a request to reset your security code and questions for your Five9 business account.</p>
+                  <p>Use the OTP below to complete the reset. This code is valid for <strong>15 minutes</strong>.</p>
+                  <div class="code">${otp}</div>
+                  <p>If you did not request this, please ignore this email.</p>
+                  <div class="footer">
+                    &copy; ${new Date().getFullYear()} Five9 Technologies &bull; <a href="https://five9.com.ng">five9.com.ng</a>
+                  </div>
+                </div>
+              </body>
+            </html>
+          `,
+        });
+
+        if (sendError) {
+          emailError = sendError;
+          console.error('❌ Resend send error:', sendError);
+        } else {
+          emailSent = true;
+          console.log('✅ Email sent successfully, Resend response:', data);
+        }
+      } catch (err) {
+        emailError = err;
+        console.error('❌ Resend exception:', err);
+      }
+    } else {
+      console.warn('⚠️ RESEND_API_KEY not set – OTP email not sent.');
+    }
+
+    // ─── Return response ───
+    const response = {
+      success: true,
+      emailSent,
+      emailError: emailError ? emailError.message : null,
+      // Include OTP for debugging (remove later)
+      otp: otp,
+    };
+    console.log('📤 Response:', response);
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(response),
+    };
+  } catch (err) {
+    console.error('💥 Unhandled error:', err);
+    return {
+      statusCode: 500,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Internal server error' }),
+    };
   }
 };
 </file>
@@ -29957,7 +30082,7 @@ exports.handler = async function (event) {
   console.log('=== SAVE-BUSINESS ===');
 
   try {
-    // ─── CSRF PROTECTION ───
+    // ─── CSRF PROTECTION (always required) ───
     if (!validateCsrf(event)) {
       console.warn('CSRF validation failed');
       return {
@@ -29975,46 +30100,7 @@ exports.handler = async function (event) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing slug' }) };
     }
 
-    // ─── JWT AUTHENTICATION ───
-    const cookies = cookie.parse(event.headers.cookie || '');
-    const token = cookies.dashboard_token;
-    if (!token) {
-      console.warn('Missing dashboard JWT');
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ error: 'Unauthorized: No session token provided.' }),
-      };
-    }
-
-    const JWT_SECRET = process.env.JWT_SECRET;
-    if (!JWT_SECRET) {
-      console.error('JWT_SECRET not set in environment');
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: 'Server misconfiguration.' }),
-      };
-    }
-
-    let decoded;
-    try {
-      decoded = jwt.verify(token, JWT_SECRET);
-    } catch (err) {
-      console.warn('JWT verification failed:', err.message);
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ error: 'Invalid or expired session. Please log in again.' }),
-      };
-    }
-
-    if (decoded.slug !== slug) {
-      console.warn(`JWT slug mismatch: ${decoded.slug} vs ${slug}`);
-      return {
-        statusCode: 403,
-        body: JSON.stringify({ error: 'Forbidden: You do not have permission to modify this business.' }),
-      };
-    }
-
-    // ─── Fetch existing business ───
+    // ─── Fetch existing business first ───
     const { data: existingBiz, error: fetchError } = await supabase
       .from('businesses')
       .select('*')
@@ -30028,7 +30114,48 @@ exports.handler = async function (event) {
 
     const isNew = !existingBiz;
 
-    // ─── Build business payload from full payload ───
+    // ─── JWT AUTHENTICATION (only for existing businesses) ───
+    if (!isNew) {
+      const cookies = cookie.parse(event.headers.cookie || '');
+      const token = cookies.dashboard_token;
+      if (!token) {
+        console.warn('Missing dashboard JWT for existing business');
+        return {
+          statusCode: 401,
+          body: JSON.stringify({ error: 'Unauthorized: No session token provided.' }),
+        };
+      }
+
+      const JWT_SECRET = process.env.JWT_SECRET;
+      if (!JWT_SECRET) {
+        console.error('JWT_SECRET not set in environment');
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ error: 'Server misconfiguration.' }),
+        };
+      }
+
+      let decoded;
+      try {
+        decoded = jwt.verify(token, JWT_SECRET);
+      } catch (err) {
+        console.warn('JWT verification failed:', err.message);
+        return {
+          statusCode: 401,
+          body: JSON.stringify({ error: 'Invalid or expired session. Please log in again.' }),
+        };
+      }
+
+      if (decoded.slug !== slug) {
+        console.warn(`JWT slug mismatch: ${decoded.slug} vs ${slug}`);
+        return {
+          statusCode: 403,
+          body: JSON.stringify({ error: 'Forbidden: You do not have permission to modify this business.' }),
+        };
+      }
+    }
+
+    // ─── Build business payload ───
     let bizPayload = {};
     const allowedFields = [
       'name', 'logo', 'tagline', 'bio', 'phone', 'whatsapp', 'email',
@@ -30086,7 +30213,6 @@ exports.handler = async function (event) {
       if (d.referredBy && d.referredBy.startsWith('aff_')) {
         bizPayload.referred_by_affiliate = d.referredBy;
         bizPayload.affiliate_bounty_paid = true;
-        // Set commission month to 0 (awaiting first payment)
         bizPayload.affiliate_commission_month = 0;
       }
 
