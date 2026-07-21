@@ -342,7 +342,8 @@ export default function BioPage() {
   // Even if no properties exist yet, we want to show the property template.
   const isPropertyBusiness = biz.businessType === 'Real Estate' || biz.businessType === 'Shortlet';
   const hasProperties = (biz.properties || []).length > 0;
-  const isPropertyWebsite = isPropertyBusiness || (biz.propertiesEnabled && hasProperties);
+  // ✅ CHANGE: Always use property layout if business type is Real Estate/Shortlet OR propertiesEnabled is true
+  const isPropertyWebsite = isPropertyBusiness || biz.propertiesEnabled;
 
   const adsEnabled = biz.adsEnabled !== false && !isPropertyWebsite;
   const totalItems = (isSearchActive ? filteredServices.length + filteredProducts.length + filteredFood.length + filteredCars.length : servicesTotal + productsTotal + foodTotal + carsTotal);
