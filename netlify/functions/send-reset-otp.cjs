@@ -93,8 +93,10 @@ exports.handler = async (event) => {
     }
 
     // ─── Send email with Resend ───
+    // Use the pre-verified Resend sender (always works)
+    const emailFrom = 'onboarding@resend.dev';
     const resendApiKey = process.env.RESEND_API_KEY;
-    const emailFrom = process.env.EMAIL_FROM || 'Five9 <noreply@five9.com.ng>';
+
     let emailSent = false;
     let emailError = null;
 
@@ -160,10 +162,7 @@ exports.handler = async (event) => {
     // Log OTP for development (always)
     console.log(`🔑 OTP for ${normalizedEmail}: ${otp}`);
 
-    // Return success even if email fails? For production, we may want to return an error.
-    // For now, we'll still return success but include a warning if email failed.
-    // The frontend will show "OTP sent" anyway, but if email fails, the user won't receive it.
-    // We'll return a success flag and a warning if email failed.
+    // Return success with email status (for debugging)
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
@@ -171,8 +170,6 @@ exports.handler = async (event) => {
         success: true,
         emailSent,
         emailError: emailError ? emailError.message : null,
-        // For development, we could also return the OTP but we should not for production.
-        // We'll keep it as a dev-only comment.
       }),
     };
   } catch (err) {
