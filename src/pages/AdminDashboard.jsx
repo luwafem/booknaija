@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCsrfToken } from '../lib/csrf';
 import { useAdminState } from '../hooks/useAdminState';
@@ -19,6 +19,7 @@ import EditBusinessModal from '../components/admin/EditBusinessModal';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
   const state = useAdminState();
   const {
     activeTab, setActiveTab,
@@ -26,18 +27,41 @@ export default function AdminDashboard() {
     showEditModal, setShowEditModal,
     selectedBusiness, editForm, setEditForm,
     handleSaveEdit, actionLoading,
-    // we need to pass all state to tabs, so we'll spread state
   } = state;
 
+  // ─── CSRF Token ──────────────────────────────────────────
   useEffect(() => {
     getCsrfToken();
   }, []);
 
+  // ─── VERIFY ADMIN SESSION ──────────────────────────────
+  useEffect(() => {
+    const verifySession = async () => {
+      try {
+        const res = await fetch('/.netlify/functions/admin-verify');
+        if (!res.ok) {
+          // Token missing or invalid – redirect to login
+          navigate('/admin/login');
+          return;
+        }
+        // Valid session – proceed
+        setIsLoading(false);
+      } catch (err) {
+        // Network error – still redirect to be safe
+        navigate('/admin/login');
+      }
+    };
+
+    verifySession();
+  }, [navigate]);
+
+  // ─── LOGOUT ─────────────────────────────────────────────
   const handleLogout = () => {
     document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
     navigate('/admin/login');
   };
 
+  // ─── RENDER TAB ──────────────────────────────────────────
   const renderTab = () => {
     const props = { ...state, exportCSV: state.exportCSV || (() => {}) };
     switch (activeTab) {
@@ -57,12 +81,27 @@ export default function AdminDashboard() {
     }
   };
 
+  // ─── LOADING STATE ──────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm text-zinc-400">Verifying session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── MAIN RENDER ────────────────────────────────────────
   return (
     <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab} stats={stats} onLogout={handleLogout}>
       {error && (
         <div className="bg-red-900/20 border border-red-700 rounded-xl p-4 mb-6 text-center">
           <p className="text-red-400 font-medium">{error}</p>
-          <button onClick={() => setError('')} className="mt-2 text-sm text-red-300 hover:text-red-200">Dismiss</button>
+          <button onClick={() => setError('')} className="mt-2 text-sm text-red-300 hover:text-red-200">
+            Dismiss
+          </button>
         </div>
       )}
       {renderTab()}
