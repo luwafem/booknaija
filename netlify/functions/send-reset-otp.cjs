@@ -19,6 +19,10 @@ function sanitizeString(str) {
 }
 
 exports.handler = async (event) => {
+  console.log('🚀 send-reset-otp invoked');
+  console.log('📨 Method:', event.httpMethod);
+  console.log('📦 Headers:', JSON.stringify(event.headers, null, 2));
+
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -32,7 +36,9 @@ exports.handler = async (event) => {
     try {
       const parsed = JSON.parse(event.body);
       email = parsed.email;
+      console.log('📩 Received email from body:', email);
     } catch (parseErr) {
+      console.error('❌ JSON parse error:', parseErr);
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -43,9 +49,11 @@ exports.handler = async (event) => {
     // Sanitise email
     if (typeof email === 'string') {
       email = sanitizeString(email);
+      console.log('🧹 Sanitised email:', email);
     }
 
     if (!email || typeof email !== 'string' || !email.trim()) {
+      console.warn('⚠️ Email missing or invalid');
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -54,27 +62,37 @@ exports.handler = async (event) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
+    console.log('🔍 Normalised email:', normalizedEmail);
 
-    // Find business by email
+    // ─── Find business by email ───
+    console.log('🔎 Querying Supabase for business...');
     const { data: biz, error: findError } = await supabase
       .from('businesses')
       .select('id')
       .eq('email', normalizedEmail)
       .single();
 
-    if (findError || !biz) {
+    if (findError) {
+      console.error('❌ Supabase find error:', findError);
+    }
+    if (!biz) {
+      console.warn('⚠️ No business found for email:', normalizedEmail);
       return {
         statusCode: 404,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'No business found with that email' }),
       };
     }
+    console.log('✅ Business found:', biz.id);
 
-    // Generate 6-digit OTP
+    // ─── Generate OTP ───
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    console.log('🔑 Generated OTP:', otp);
+    console.log('⏳ Expires at:', expiresAt);
 
-    // Store OTP
+    // ─── Store OTP ───
+    console.log('💾 Storing OTP in security_resets...');
     const { error: insertError } = await supabase
       .from('security_resets')
       .insert({
@@ -84,26 +102,29 @@ exports.handler = async (event) => {
       });
 
     if (insertError) {
-      console.error('Insert error:', insertError);
+      console.error('❌ Insert error:', insertError);
       return {
         statusCode: 500,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'Failed to generate reset code' }),
       };
     }
+    console.log('✅ OTP stored successfully');
 
     // ─── Send email with Resend ───
-    // Use the pre-verified Resend sender (always works)
-    const emailFrom = 'onboarding@resend.dev';
+    console.log('📧 Preparing to send email via Resend...');
     const resendApiKey = process.env.RESEND_API_KEY;
+    console.log('🔑 RESEND_API_KEY present?', resendApiKey ? '✅ Yes' : '❌ No');
 
+    const emailFrom = 'onboarding@resend.dev';
     let emailSent = false;
     let emailError = null;
 
     if (resendApiKey) {
       try {
         const resend = new Resend(resendApiKey);
-        const { error: sendError } = await resend.emails.send({
+        console.log('📤 Sending email to:', normalizedEmail);
+        const { data, error: sendError } = await resend.emails.send({
           from: emailFrom,
           to: normalizedEmail,
           subject: 'Your Five9 Password Reset OTP',
@@ -146,34 +167,35 @@ exports.handler = async (event) => {
 
         if (sendError) {
           emailError = sendError;
-          console.error('❌ Resend error:', sendError);
+          console.error('❌ Resend send error:', sendError);
         } else {
           emailSent = true;
-          console.log(`✅ OTP email sent to ${normalizedEmail}`);
+          console.log('✅ Email sent successfully, Resend response:', data);
         }
       } catch (err) {
         emailError = err;
-        console.error('❌ Resend exception:', err.message);
+        console.error('❌ Resend exception:', err);
       }
     } else {
       console.warn('⚠️ RESEND_API_KEY not set – OTP email not sent.');
     }
 
-    // Log OTP for development (always)
-    console.log(`🔑 OTP for ${normalizedEmail}: ${otp}`);
-
-    // Return success with email status (for debugging)
+    // ─── Return response ───
+    const response = {
+      success: true,
+      emailSent,
+      emailError: emailError ? emailError.message : null,
+      // Include OTP for debugging (remove later)
+      otp: otp,
+    };
+    console.log('📤 Response:', response);
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        success: true,
-        emailSent,
-        emailError: emailError ? emailError.message : null,
-      }),
+      body: JSON.stringify(response),
     };
   } catch (err) {
-    console.error('Unhandled error:', err);
+    console.error('💥 Unhandled error:', err);
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
