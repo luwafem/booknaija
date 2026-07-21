@@ -21,6 +21,7 @@ import EditBusinessModal from '../components/admin/EditBusinessModal';
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const state = useAdminState();
   const {
     activeTab, setActiveTab,
@@ -54,22 +55,22 @@ export default function AdminDashboard() {
   }, [navigate]);
 
   // ─── LOGOUT ─────────────────────────────────────────────
-  const handleLogout = () => {
-    // Match the exact same attributes used when setting the cookie
-    const isSecure = window.location.protocol === 'https:';
-    const cookieParts = [
-      'admin_token=',
-      'path=/',
-      'expires=Thu, 01 Jan 1970 00:00:00 UTC',
-      'max-age=0',
-    ];
-    if (isSecure) cookieParts.push('Secure');
-    cookieParts.push('SameSite=Strict');
-    
-    document.cookie = cookieParts.join('; ');
-    
-    // Force redirect to login
-    navigate('/admin/login');
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      // Call server-side logout to clear the httpOnly cookie
+      await fetch('/.netlify/functions/admin-logout', {
+        method: 'POST',
+        credentials: 'same-origin',
+      });
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      setIsLoggingOut(false);
+      // Always redirect to login, even if the API call fails
+      navigate('/admin/login');
+    }
   };
 
   // ─── RENDER TAB ──────────────────────────────────────────
