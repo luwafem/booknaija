@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getCsrfToken } from '../lib/csrf'; // 👈 NEW
+import { getCsrfToken } from '../lib/csrf';
 
 const securityQuestions = [
   "What is the name of your first pet?",
@@ -36,6 +36,26 @@ export default function AffiliateSignup() {
     { id: 2, title: 'Bank Details', desc: 'Where you get paid' },
     { id: 3, title: 'Security', desc: 'Protect your account' },
   ];
+
+  // ─── Form State ───
+  const [formData, setFormData] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    account_name: '',
+    settlement_bank: '',
+    account_number: '',
+    security_code: '',
+    security_question_1: '',
+    security_answer_1: '',
+    security_question_2: '',
+    security_answer_2: '',
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   useEffect(() => {
     fetch('/.netlify/functions/list-banks')
@@ -81,39 +101,76 @@ export default function AffiliateSignup() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const form = e.target;
-    const formData = new FormData(form);
 
-    const q1 = sanitize(formData.get('security_question_1'));
-    const q2 = sanitize(formData.get('security_question_2'));
+    // Destructure from state
+    const {
+      full_name: fullName,
+      email,
+      phone,
+      account_name: accountName,
+      settlement_bank: settlementBankCode,
+      account_number: accountNumber,
+      security_code: securityCode,
+      security_question_1: q1,
+      security_answer_1: securityAnswer1,
+      security_question_2: q2,
+      security_answer_2: securityAnswer2,
+    } = formData;
 
+    // Basic validation
+    if (!fullName || !email || !phone) {
+      setError('Please fill in all personal details.');
+      setLoading(false);
+      return;
+    }
+    if (!accountName || !settlementBankCode || !accountNumber) {
+      setError('Please fill in all bank details.');
+      setLoading(false);
+      return;
+    }
     if (q1 === q2) {
       setError('Please choose two different security questions.');
       setLoading(false);
       return;
     }
+    if (!securityCode || securityCode.length !== 4) {
+      setError('Security code must be exactly 4 digits.');
+      setLoading(false);
+      return;
+    }
+    if (!securityAnswer1 || !securityAnswer2) {
+      setError('Please answer both security questions.');
+      setLoading(false);
+      return;
+    }
 
-    // Collect bank details for both subaccount and transfer recipient
-    const settlementBankCode = sanitize(formData.get('settlement_bank'));
-    const accountNumber = sanitize(formData.get('account_number'));
-    const accountName = sanitize(formData.get('account_name'));
-    const fullName = sanitize(formData.get('full_name'));
-    const email = sanitize(formData.get('email'));
-    const phone = sanitize(formData.get('phone'));
+    // Sanitize all fields
+    const sanitized = {
+      fullName: sanitize(fullName),
+      email: sanitize(email),
+      phone: sanitize(phone),
+      accountName: sanitize(accountName),
+      settlementBankCode: sanitize(settlementBankCode),
+      accountNumber: sanitize(accountNumber),
+      securityCode: sanitize(securityCode),
+      q1: sanitize(q1),
+      securityAnswer1: sanitize(securityAnswer1),
+      q2: sanitize(q2),
+      securityAnswer2: sanitize(securityAnswer2),
+    };
 
-    // --- Step 1: Create Paystack Subaccount (split for 60% + 40%) ---
-    // The subaccount is used for the initial 60% split (₦1,500) on the first payment.
+    // --- Step 1: Create Paystack Subaccount ---
     const subRes = await fetch('/.netlify/functions/create-subaccount', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        business_name: `Affiliate - ${fullName}`,
-        settlement_bank: settlementBankCode,
-        account_number: accountNumber,
-        percentage_charge: 40, // Platform takes 40%, affiliate gets 60% (₦1,500)
-        primary_contact_name: fullName,
-        primary_contact_email: email,
-        primary_contact_phone: phone,
+        business_name: `Affiliate - ${sanitized.fullName}`,
+        settlement_bank: sanitized.settlementBankCode,
+        account_number: sanitized.accountNumber,
+        percentage_charge: 40,
+        primary_contact_name: sanitized.fullName,
+        primary_contact_email: sanitized.email,
+        primary_contact_phone: sanitized.phone,
       }),
     });
 
@@ -126,29 +183,27 @@ export default function AffiliateSignup() {
 
     const newAffId = `aff_${Date.now()}`;
     
-    // --- Step 2: Save affiliate with all required fields ---
-    // The backend will create a Transfer Recipient for the 40% (₦1,000) payment later.
+    // --- Step 2: Save affiliate ---
     const saveRes = await fetch('/.netlify/functions/save-affiliate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-Token': getCsrfToken(), // 👈 CSRF header added
+        'X-CSRF-Token': getCsrfToken(),
       },
       body: JSON.stringify({
         affiliate_id: newAffId,
-        name: fullName,
-        email: email,
-        phone: phone,
+        name: sanitized.fullName,
+        email: sanitized.email,
+        phone: sanitized.phone,
         subaccount_code: subData.subaccount_code,
-        security_code: sanitize(formData.get('security_code')),
-        security_question_1: q1,
-        security_answer_1: sanitize(formData.get('security_answer_1')),
-        security_question_2: q2,
-        security_answer_2: sanitize(formData.get('security_answer_2')),
-        // NEW FIELDS for Transfer Recipient
-        settlement_bank: settlementBankCode,
-        account_number: accountNumber,
-        account_name: accountName,
+        security_code: sanitized.securityCode,
+        security_question_1: sanitized.q1,
+        security_answer_1: sanitized.securityAnswer1,
+        security_question_2: sanitized.q2,
+        security_answer_2: sanitized.securityAnswer2,
+        settlement_bank: sanitized.settlementBankCode,
+        account_number: sanitized.accountNumber,
+        account_name: sanitized.accountName,
       })
     });
 
@@ -183,18 +238,17 @@ export default function AffiliateSignup() {
     }
   };
 
-  // Dark theme input/select styles matching other pages
+  // Dark theme input/select styles
   const inputBase = "w-full bg-zinc-800 border border-zinc-700 text-white text-sm rounded-xl px-4 py-3.5 placeholder-zinc-400 focus:outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500 transition-all duration-200";
   const selectBase = "w-full appearance-none bg-zinc-800 border border-zinc-700 text-white text-sm rounded-xl px-4 py-3.5 pr-10 focus:outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500 transition-all duration-200 cursor-pointer";
   const labelBase = "block text-sm font-medium text-zinc-200 mb-1.5";
   const sectionTitle = "text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2 mt-1";
   const sectionDesc = "text-xs text-zinc-400 mb-3 -mt-1";
 
-  // --- SUCCESS STATE (Updated copy) ---
+  // --- SUCCESS STATE ---
   if (done) {
     return (
       <div className="min-h-screen bg-zinc-950 text-white font-sans selection:bg-zinc-700 selection:text-white flex items-center justify-center px-6 py-12">
-        
         {/* Header */}
         <nav className="bg-white sticky top-0 z-50 border-b border-zinc-200 w-full absolute left-0">
           <div className="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
@@ -242,7 +296,6 @@ export default function AffiliateSignup() {
           </div>
         </div>
 
-        {/* Footer */}
         <footer className="bg-white border-t border-zinc-200 pt-10 pb-6 px-6 mt-12 w-full">
           <div className="max-w-7xl mx-auto text-center">
             <p className="text-zinc-500 text-sm">© {new Date().getFullYear()} Five9 Technologies.</p>
@@ -273,22 +326,19 @@ export default function AffiliateSignup() {
 
       <div className="flex-1 flex flex-col lg:flex-row">
         
-        {/* LEFT COLUMN - THE PITCH (Updated for 60%+40%) */}
+        {/* LEFT COLUMN - THE PITCH */}
         <div className="w-full lg:w-1/2 bg-zinc-900 border-b lg:border-b-0 lg:border-r border-zinc-800 p-8 sm:p-12 lg:p-16 flex flex-col justify-center">
           <div className="max-w-lg mx-auto w-full">
-            
             <h1 className="text-4xl sm:text-5xl font-extrabold leading-[1.1] tracking-tight text-white mb-5">
               Turn your network into income.
             </h1>
-            
             <p className="text-zinc-400 text-lg leading-relaxed mb-10 sm:mb-12">
               Help Nigerian businesses upgrade from WhatsApp status to a professional online store. 
               You earn <span className="text-white font-bold">₦1,500 instantly</span> on the first payment 
-              and <span className="text-white font-bold">₦1,000 more</span> if they stay for Month 2 — 
+              and <span className="text-white font-bold">₦1,000 more</span> if they stay for Month 2
               that’s <span className="text-white font-bold">₦2,500 total</span> per referral!
             </p>
 
-            {/* The Math - updated to show two payments */}
             <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-10 sm:mb-12">
               <div className="bg-zinc-800 p-5 rounded-xl border border-zinc-700 text-center">
                 <p className="text-2xl sm:text-3xl font-black text-white">₦1,500</p>
@@ -300,31 +350,21 @@ export default function AffiliateSignup() {
               </div>
             </div>
 
-            {/* Updated Who To Refer List */}
             <div className="mb-10 sm:mb-12">
               <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-5">Who to refer</h3>
               <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                 {[
-                  'Lash Artists', 
-                  'Cleaners', 
-                  'Tutors', 
-                  'Hair Stylists', 
-                  'Makeup Artists', 
-                  'Nail Technicians', 
-                  'Skincare & Facialists', 
-                  'Fashion & Boutiques', 
-                  'Restaurants & Food', 
-                  'Auto Dealers & Rentals'
-                ].map(function (item) {
-                  return (
-                    <div key={item} className="flex items-center gap-3 text-sm font-medium text-zinc-300">
-                      <div className="w-5 h-5 bg-zinc-700 rounded-full flex items-center justify-center text-zinc-400 shrink-0">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                      </div>
-                      {item}
+                  'Lash Artists', 'Cleaners', 'Tutors', 'Hair Stylists',
+                  'Makeup Artists', 'Nail Technicians', 'Skincare & Facialists',
+                  'Fashion & Boutiques', 'Restaurants & Food', 'Auto Dealers & Rentals'
+                ].map((item) => (
+                  <div key={item} className="flex items-center gap-3 text-sm font-medium text-zinc-300">
+                    <div className="w-5 h-5 bg-zinc-700 rounded-full flex items-center justify-center text-zinc-400 shrink-0">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
                     </div>
-                  );
-                })}
+                    {item}
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -334,13 +374,13 @@ export default function AffiliateSignup() {
                 <span className="text-white font-semibold">₦1,500</span> is sent to your bank instantly via Paystack split 
                 when the vendor pays their first ₦2,500. If they stay active for a second month, 
                 <span className="text-white font-semibold"> another ₦1,000</span> is automatically sent to your bank. 
-                No monthly delays — we handle everything.
+                No monthly delays we handle everything.
               </p>
             </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN - THE FORM (unchanged, but passes all bank details) */}
+        {/* RIGHT COLUMN - THE FORM */}
         <div className="w-full lg:w-1/2 bg-zinc-950 p-8 sm:p-10 flex items-start justify-center pt-8 sm:pt-16 lg:pt-0 lg:items-center">
           <div className="w-full max-w-md">
             
@@ -362,7 +402,7 @@ export default function AffiliateSignup() {
               </button>
             </div>
 
-            {/* Sign In Form (unchanged) */}
+            {/* Sign In Form */}
             {!isSignUp ? (
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div>
@@ -412,7 +452,7 @@ export default function AffiliateSignup() {
                 </button>
               </form>
             ) : (
-              /* Sign Up Form - STEPPED (unchanged but now passes all bank fields) */
+              /* Sign Up Form */
               <form onSubmit={handleSignUp} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
                 
                 {/* Progress Indicator */}
@@ -448,49 +488,94 @@ export default function AffiliateSignup() {
                   <p className="text-sm text-zinc-400 mt-0.5">{signupSteps.find(s => s.id === currentStep)?.desc}</p>
                 </div>
 
+                {/* ─── ALL STEPS RENDERED, HIDDEN WITH CSS ─── */}
                 {/* STEP 1: Personal Info */}
-                {currentStep === 1 && (
+                <div style={{ display: currentStep === 1 ? 'block' : 'none' }}>
                   <div className="space-y-4">
                     <div>
                       <label className={labelBase}>Full Name *</label>
-                      <input required name="full_name" placeholder="e.g. Chioma Ade" className={inputBase} />
+                      <input 
+                        required 
+                        name="full_name" 
+                        placeholder="e.g. Chioma Ade" 
+                        className={inputBase}
+                        value={formData.full_name}
+                        onChange={handleChange}
+                      />
                     </div>
                     <div>
                       <label className={labelBase}>Email address *</label>
-                      <input required type="email" name="email" placeholder="you@example.com" className={inputBase} />
+                      <input 
+                        required 
+                        type="email" 
+                        name="email" 
+                        placeholder="you@example.com" 
+                        className={inputBase}
+                        value={formData.email}
+                        onChange={handleChange}
+                      />
                     </div>
                     <div>
                       <label className={labelBase}>Phone number *</label>
-                      <input required name="phone" placeholder="0801 234 5678" className={inputBase} />
+                      <input 
+                        required 
+                        name="phone" 
+                        placeholder="0801 234 5678" 
+                        className={inputBase}
+                        value={formData.phone}
+                        onChange={handleChange}
+                      />
                     </div>
                   </div>
-                )}
+                </div>
 
                 {/* STEP 2: Bank Details */}
-                {currentStep === 2 && (
+                <div style={{ display: currentStep === 2 ? 'block' : 'none' }}>
                   <div className="space-y-4">
                     <p className={sectionTitle}>Payout Bank Details</p>
                     <p className={sectionDesc}>We'll use these to send your ₦1,500 instantly and your ₦1,000 bonus later.</p>
                     <div>
                       <label className={labelBase}>Account Name *</label>
-                      <input required name="account_name" placeholder="As it appears on your bank account" className={inputBase} />
+                      <input 
+                        required 
+                        name="account_name" 
+                        placeholder="As it appears on your bank account" 
+                        className={inputBase}
+                        value={formData.account_name}
+                        onChange={handleChange}
+                      />
                     </div>
                     <div>
                       <label className={labelBase}>Bank *</label>
-                      <select required name="settlement_bank" defaultValue="" className={selectBase}>
+                      <select 
+                        required 
+                        name="settlement_bank" 
+                        defaultValue="" 
+                        className={selectBase}
+                        value={formData.settlement_bank}
+                        onChange={handleChange}
+                      >
                         <option value="" disabled className="bg-zinc-800">Select your bank</option>
                         {banks.map((b, i) => <option key={i} value={b.code} className="bg-zinc-800">{b.name}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className={labelBase}>Account Number *</label>
-                      <input required name="account_number" placeholder="10-digit account number" maxLength={10} className={`${inputBase} font-mono`} />
+                      <input 
+                        required 
+                        name="account_number" 
+                        placeholder="10-digit account number" 
+                        maxLength={10} 
+                        className={`${inputBase} font-mono`}
+                        value={formData.account_number}
+                        onChange={handleChange}
+                      />
                     </div>
                   </div>
-                )}
+                </div>
 
                 {/* STEP 3: Security */}
-                {currentStep === 3 && (
+                <div style={{ display: currentStep === 3 ? 'block' : 'none' }}>
                   <div className="space-y-4">
                     <p className={sectionTitle}>Account Security</p>
                     <p className={sectionDesc}>You'll use these to access your affiliate dashboard.</p>
@@ -504,29 +589,59 @@ export default function AffiliateSignup() {
                         maxLength={4}
                         pattern="[0-9]{4}"
                         type="password"
-                        className={`${inputBase} font-mono tracking-widest text-center text-lg`} 
+                        className={`${inputBase} font-mono tracking-widest text-center text-lg`}
+                        value={formData.security_code}
+                        onChange={handleChange}
                       />
                     </div>
 
                     <div className="border-t border-zinc-800 pt-4">
                       <label className={labelBase}>Security Question 1 *</label>
-                      <select required name="security_question_1" defaultValue="" className={selectBase}>
+                      <select 
+                        required 
+                        name="security_question_1" 
+                        defaultValue="" 
+                        className={selectBase}
+                        value={formData.security_question_1}
+                        onChange={handleChange}
+                      >
                         <option value="" disabled className="bg-zinc-800">Select a question...</option>
                         {securityQuestions.map((q, i) => <option key={i} value={q} className="bg-zinc-800">{q}</option>)}
                       </select>
-                      <input required name="security_answer_1" placeholder="Your answer" className={`${inputBase} mt-3`} />
+                      <input 
+                        required 
+                        name="security_answer_1" 
+                        placeholder="Your answer" 
+                        className={`${inputBase} mt-3`}
+                        value={formData.security_answer_1}
+                        onChange={handleChange}
+                      />
                     </div>
 
                     <div>
                       <label className={labelBase}>Security Question 2 *</label>
-                      <select required name="security_question_2" defaultValue="" className={selectBase}>
+                      <select 
+                        required 
+                        name="security_question_2" 
+                        defaultValue="" 
+                        className={selectBase}
+                        value={formData.security_question_2}
+                        onChange={handleChange}
+                      >
                         <option value="" disabled className="bg-zinc-800">Select a different question...</option>
                         {securityQuestions.map((q, i) => <option key={i} value={q} className="bg-zinc-800">{q}</option>)}
                       </select>
-                      <input required name="security_answer_2" placeholder="Your answer" className={`${inputBase} mt-3`} />
+                      <input 
+                        required 
+                        name="security_answer_2" 
+                        placeholder="Your answer" 
+                        className={`${inputBase} mt-3`}
+                        value={formData.security_answer_2}
+                        onChange={handleChange}
+                      />
                     </div>
                   </div>
-                )}
+                </div>
 
                 {/* Error Message */}
                 {error && <div className="bg-red-900/40 border border-red-700 rounded-xl p-3 text-xs text-red-300 mt-4">{error}</div>}
