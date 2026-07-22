@@ -59,6 +59,7 @@ netlify/
     admin-growth.cjs
     admin-health.cjs
     admin-login.cjs
+    admin-logout.cjs
     admin-logs.cjs
     admin-manual-payment.cjs
     admin-manual-payout.cjs
@@ -2189,61 +2190,37 @@ exports.handler = async (event) => {
 };
 </file>
 
-<file path="netlify/functions/admin-login.cjs">
-const jwt = require('jsonwebtoken');
+<file path="netlify/functions/admin-logout.cjs">
+// netlify/functions/admin-logout.cjs
 const cookie = require('cookie');
 
 exports.handler = async (event) => {
-  // Only POST
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
-  }
-
-  try {
-    const { password } = JSON.parse(event.body);
-    const adminPassword = process.env.ADMIN_PASSWORD;
-
-    if (!adminPassword) {
-      console.error('ADMIN_PASSWORD is not set');
-      return { statusCode: 500, body: JSON.stringify({ error: 'Admin not configured' }) };
-    }
-
-    if (password !== adminPassword) {
-      return { statusCode: 401, body: JSON.stringify({ error: 'Invalid password' }) };
-    }
-
-    const JWT_SECRET = process.env.JWT_SECRET;
-    if (!JWT_SECRET) {
-      console.error('JWT_SECRET not set');
-      return { statusCode: 500, body: JSON.stringify({ error: 'Server misconfiguration' }) };
-    }
-
-    const token = jwt.sign(
-      { role: 'admin', timestamp: Date.now() },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict',
-      maxAge: 24 * 60 * 60,
-      path: '/',
-    };
-
     return {
-      statusCode: 200,
-      headers: {
-        'Set-Cookie': cookie.serialize('admin_token', token, cookieOptions),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ success: true }),
+      statusCode: 405,
+      body: JSON.stringify({ error: 'Method not allowed' }),
     };
-  } catch (err) {
-    console.error('Admin login error:', err);
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
+
+  // Clear the admin_token cookie by setting it to expire immediately
+  const isSecure = process.env.NODE_ENV === 'production';
+  const cookieOptions = {
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: 'Strict',
+    path: '/',
+    expires: new Date(0), // already expired
+    maxAge: 0,
+  };
+
+  return {
+    statusCode: 200,
+    headers: {
+      'Set-Cookie': cookie.serialize('admin_token', '', cookieOptions),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ success: true }),
+  };
 };
 </file>
 
@@ -10985,90 +10962,6 @@ export function optimizeImage(url, width = 800) {
 }
 </file>
 
-<file path="src/pages/AdminDashboard.jsx">
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getCsrfToken } from '../lib/csrf';
-import { useAdminState } from '../hooks/useAdminState';
-import AdminLayout from '../components/admin/AdminLayout';
-import OverviewTab from '../components/admin/OverviewTab';
-import RevenueTab from '../components/admin/RevenueTab';
-import GrowthTab from '../components/admin/GrowthTab';
-import GeoTab from '../components/admin/GeoTab';
-import ChurnTab from '../components/admin/ChurnTab';
-import BusinessesTab from '../components/admin/BusinessesTab';
-import AffiliatesTab from '../components/admin/AffiliatesTab';
-import PayoutsTab from '../components/admin/PayoutsTab';
-import TransactionsTab from '../components/admin/TransactionsTab';
-import SettingsTab from '../components/admin/SettingsTab';
-import SystemTab from '../components/admin/SystemTab';
-import ReportsTab from '../components/admin/ReportsTab';
-import EditBusinessModal from '../components/admin/EditBusinessModal';
-
-export default function AdminDashboard() {
-  const navigate = useNavigate();
-  const state = useAdminState();
-  const {
-    activeTab, setActiveTab,
-    stats, error, setError,
-    showEditModal, setShowEditModal,
-    selectedBusiness, editForm, setEditForm,
-    handleSaveEdit, actionLoading,
-    // we need to pass all state to tabs, so we'll spread state
-  } = state;
-
-  useEffect(() => {
-    getCsrfToken();
-  }, []);
-
-  const handleLogout = () => {
-    document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
-    navigate('/admin/login');
-  };
-
-  const renderTab = () => {
-    const props = { ...state, exportCSV: state.exportCSV || (() => {}) };
-    switch (activeTab) {
-      case 'overview': return <OverviewTab {...props} />;
-      case 'revenue': return <RevenueTab {...props} />;
-      case 'growth': return <GrowthTab {...props} />;
-      case 'geo': return <GeoTab {...props} />;
-      case 'churn': return <ChurnTab {...props} />;
-      case 'businesses': return <BusinessesTab {...props} />;
-      case 'affiliates': return <AffiliatesTab {...props} />;
-      case 'payouts': return <PayoutsTab {...props} />;
-      case 'transactions': return <TransactionsTab {...props} />;
-      case 'settings': return <SettingsTab {...props} />;
-      case 'system': return <SystemTab {...props} />;
-      case 'reports': return <ReportsTab {...props} />;
-      default: return <div className="text-zinc-400">Tab not implemented.</div>;
-    }
-  };
-
-  return (
-    <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab} stats={stats} onLogout={handleLogout}>
-      {error && (
-        <div className="bg-red-900/20 border border-red-700 rounded-xl p-4 mb-6 text-center">
-          <p className="text-red-400 font-medium">{error}</p>
-          <button onClick={() => setError('')} className="mt-2 text-sm text-red-300 hover:text-red-200">Dismiss</button>
-        </div>
-      )}
-      {renderTab()}
-
-      <EditBusinessModal
-        show={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        business={selectedBusiness}
-        editForm={editForm}
-        setEditForm={setEditForm}
-        onSave={handleSaveEdit}
-        saving={actionLoading['edit-' + selectedBusiness?.slug]}
-      />
-    </AdminLayout>
-  );
-}
-</file>
-
 <file path="src/sw.js">
 // src/sw.js
 // This file is the source for the service worker.
@@ -11224,6 +11117,106 @@ exports.handler = async (event) => {
   } catch (err) {
     console.error('Backup error:', err);
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+  }
+};
+</file>
+
+<file path="netlify/functions/admin-login.cjs">
+// netlify/functions/admin-login.cjs
+const jwt = require('jsonwebtoken');
+const cookie = require('cookie');
+
+const TOKEN_EXPIRY = '24h';
+
+exports.handler = async (event) => {
+  // Only accept POST requests
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+    };
+  }
+
+  try {
+    // Parse and validate request body
+    let password;
+    try {
+      const body = JSON.parse(event.body);
+      password = body.password;
+    } catch (parseErr) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Invalid JSON payload' }),
+      };
+    }
+
+    if (!password || typeof password !== 'string') {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Password is required' }),
+      };
+    }
+
+    // Check admin password
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (!adminPassword) {
+      console.error('❌ ADMIN_PASSWORD environment variable is not set');
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Admin not configured' }),
+      };
+    }
+
+    if (password !== adminPassword) {
+      console.warn('⚠️ Failed admin login attempt');
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Invalid password' }),
+      };
+    }
+
+    // Generate JWT
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (!JWT_SECRET) {
+      console.error('❌ JWT_SECRET environment variable is not set');
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Server misconfiguration' }),
+      };
+    }
+
+    const token = jwt.sign(
+      { role: 'admin', timestamp: Date.now() },
+      JWT_SECRET,
+      { expiresIn: TOKEN_EXPIRY }
+    );
+
+    // Set cookie with same attributes as logout
+    const isSecure = process.env.NODE_ENV === 'production';
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: 'Strict',
+      maxAge: 24 * 60 * 60, // 24 hours
+      path: '/',
+    };
+
+    console.log('✅ Admin login successful');
+
+    return {
+      statusCode: 200,
+      headers: {
+        'Set-Cookie': cookie.serialize('admin_token', token, cookieOptions),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ success: true }),
+    };
+  } catch (err) {
+    console.error('🔥 Admin login error:', err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: err.message }),
+    };
   }
 };
 </file>
@@ -21540,6 +21533,141 @@ export function useDashboard() {
     uid,
     optimizeCloudinaryUrl,
   };
+}
+</file>
+
+<file path="src/pages/AdminDashboard.jsx">
+// src/pages/AdminDashboard.jsx
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getCsrfToken } from '../lib/csrf';
+import { useAdminState } from '../hooks/useAdminState';
+import AdminLayout from '../components/admin/AdminLayout';
+import OverviewTab from '../components/admin/OverviewTab';
+import RevenueTab from '../components/admin/RevenueTab';
+import GrowthTab from '../components/admin/GrowthTab';
+import GeoTab from '../components/admin/GeoTab';
+import ChurnTab from '../components/admin/ChurnTab';
+import BusinessesTab from '../components/admin/BusinessesTab';
+import AffiliatesTab from '../components/admin/AffiliatesTab';
+import PayoutsTab from '../components/admin/PayoutsTab';
+import TransactionsTab from '../components/admin/TransactionsTab';
+import SettingsTab from '../components/admin/SettingsTab';
+import SystemTab from '../components/admin/SystemTab';
+import ReportsTab from '../components/admin/ReportsTab';
+import EditBusinessModal from '../components/admin/EditBusinessModal';
+
+export default function AdminDashboard() {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const state = useAdminState();
+  const {
+    activeTab, setActiveTab,
+    stats, error, setError,
+    showEditModal, setShowEditModal,
+    selectedBusiness, editForm, setEditForm,
+    handleSaveEdit, actionLoading,
+  } = state;
+
+  // ─── CSRF Token ──────────────────────────────────────────
+  useEffect(() => {
+    getCsrfToken();
+  }, []);
+
+  // ─── VERIFY ADMIN SESSION ──────────────────────────────
+  useEffect(() => {
+    const verifySession = async () => {
+      try {
+        const res = await fetch('/.netlify/functions/admin-verify');
+        if (!res.ok) {
+          navigate('/admin/login');
+          return;
+        }
+        setIsLoading(false);
+      } catch (err) {
+        navigate('/admin/login');
+      }
+    };
+
+    verifySession();
+  }, [navigate]);
+
+  // ─── LOGOUT ─────────────────────────────────────────────
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      // Call server-side logout to clear the httpOnly cookie
+      await fetch('/.netlify/functions/admin-logout', {
+        method: 'POST',
+        credentials: 'same-origin',
+      });
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      setIsLoggingOut(false);
+      // Always redirect to login, even if the API call fails
+      navigate('/admin/login');
+    }
+  };
+
+  // ─── RENDER TAB ──────────────────────────────────────────
+  const renderTab = () => {
+    const props = { ...state, exportCSV: state.exportCSV || (() => {}) };
+    switch (activeTab) {
+      case 'overview': return <OverviewTab {...props} />;
+      case 'revenue': return <RevenueTab {...props} />;
+      case 'growth': return <GrowthTab {...props} />;
+      case 'geo': return <GeoTab {...props} />;
+      case 'churn': return <ChurnTab {...props} />;
+      case 'businesses': return <BusinessesTab {...props} />;
+      case 'affiliates': return <AffiliatesTab {...props} />;
+      case 'payouts': return <PayoutsTab {...props} />;
+      case 'transactions': return <TransactionsTab {...props} />;
+      case 'settings': return <SettingsTab {...props} />;
+      case 'system': return <SystemTab {...props} />;
+      case 'reports': return <ReportsTab {...props} />;
+      default: return <div className="text-zinc-400">Tab not implemented.</div>;
+    }
+  };
+
+  // ─── LOADING STATE ──────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm text-zinc-400">Verifying session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── MAIN RENDER ────────────────────────────────────────
+  return (
+    <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab} stats={stats} onLogout={handleLogout}>
+      {error && (
+        <div className="bg-red-900/20 border border-red-700 rounded-xl p-4 mb-6 text-center">
+          <p className="text-red-400 font-medium">{error}</p>
+          <button onClick={() => setError('')} className="mt-2 text-sm text-red-300 hover:text-red-200">
+            Dismiss
+          </button>
+        </div>
+      )}
+      {renderTab()}
+
+      <EditBusinessModal
+        show={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        business={selectedBusiness}
+        editForm={editForm}
+        setEditForm={setEditForm}
+        onSave={handleSaveEdit}
+        saving={actionLoading['edit-' + selectedBusiness?.slug]}
+      />
+    </AdminLayout>
+  );
 }
 </file>
 

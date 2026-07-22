@@ -82,14 +82,28 @@
   pattern = "/.netlify/functions/get-subscription-history"
   rate = "10 per minute"
 
-# ─── BLOG POSTS: Serve static HTML files directly ───
+# ─── REDIRECTS (ORDER MATTERS!) ───
+
+# 1. API PROXY: Maps frontend /api/* calls to Netlify Functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# 2. BLOG BASE: Prevents 404 on the /blog homepage
+[[redirects]]
+  from = "/blog"
+  to = "/index.html"
+  status = 200
+
+# 3. BLOG POSTS: Serve static HTML files directly
 [[redirects]]
   from = "/blog/*"
   to = "/blog/:splat/index.html"
   status = 200
   force = true
 
-# ─── SPA FALLBACK: Only for non-blog routes ───
+# 4. SPA FALLBACK: Catch-all for React Router (Must be last!)
 [[redirects]]
   from = "/*"
   to = "/index.html"
