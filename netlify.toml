@@ -1,6 +1,10 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  # ⚠️ CRITICAL FOR LAUNCH: Tell Netlify where your backend files are.
+  # If your folder is NOT named "netlify/functions", change the path below!
+  # Examples: "src/functions", "api", "backend/functions"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "20"
