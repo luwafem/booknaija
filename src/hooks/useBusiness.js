@@ -119,6 +119,10 @@ function transformBusiness(row, includeChildren) {
     team: (row.team && typeof row.team === 'string')
       ? JSON.parse(row.team)
       : (Array.isArray(row.team) ? row.team : []),
+    // ─── Stats (customisable in dashboard) ───
+    stats: (row.stats && typeof row.stats === 'string')
+      ? JSON.parse(row.stats)
+      : (Array.isArray(row.stats) ? row.stats : []),
   };
 
   // Only include child items if requested

@@ -347,6 +347,62 @@ export default function InfoTab({
         </div>
       </div>
 
+      {/* ─── BUSINESS STATS ─── */}
+      <div className={card}>
+        <h3 className="text-sm font-bold text-white tracking-tight mb-4">Business Stats</h3>
+        <p className="text-[10px] text-zinc-500 mb-4">
+          Displayed in the "About Us" section of your property page.
+        </p>
+        <div className="space-y-2">
+          {(biz.stats || []).map((stat, idx) => (
+            <div key={idx} className="flex gap-2 items-center">
+              <input
+                className={inp + " flex-1"}
+                placeholder="Value (e.g. 10+)"
+                value={stat.value || ''}
+                onChange={(e) => {
+                  const newStats = [...(biz.stats || [])];
+                  newStats[idx] = { ...newStats[idx], value: e.target.value };
+                  setField('stats', newStats);
+                }}
+              />
+              <input
+                className={inp + " flex-1"}
+                placeholder="Label (e.g. Happy Clients)"
+                value={stat.label || ''}
+                onChange={(e) => {
+                  const newStats = [...(biz.stats || [])];
+                  newStats[idx] = { ...newStats[idx], label: e.target.value };
+                  setField('stats', newStats);
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const newStats = (biz.stats || []).filter((_, i) => i !== idx);
+                  setField('stats', newStats);
+                }}
+                className="text-zinc-500 hover:text-red-400 transition-colors p-1 flex-shrink-0"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => {
+              const newStats = [...(biz.stats || []), { value: '', label: '' }];
+              setField('stats', newStats);
+            }}
+            className="text-[10px] font-bold tracking-[0.15em] uppercase px-4 py-2 rounded-full border border-white/[0.06] hover:bg-white/[0.06] text-zinc-300 transition-all duration-300"
+          >
+            + Add Stat
+          </button>
+        </div>
+      </div>
+
       {/* ─── SHARE LINKS ─── */}
       <div className={card}>
         <h3 className="text-sm font-bold text-white tracking-tight mb-4">Share Links</h3>

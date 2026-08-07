@@ -1,8 +1,22 @@
 // src/hooks/useSignup.js
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-// Not used in signup flow (no direct save-business call), but kept for consistency
-import { getCsrfToken } from '../lib/csrf';
+
+const ALL_BUSINESS_TYPES = [
+  'Lash Artist',
+  'Hair Stylist',
+  'Makeup Artist',
+  'Nail Technician',
+  'Skin Care / Facialist',
+  'Fashion / Boutique',
+  'Restaurant / Food',
+  'Auto Dealer / Rental',
+  'Real Estate',
+  'Shortlet',
+  'Cleaner',
+  'Tutor',
+  'Other',
+];
 
 export function useSignup() {
   const [params] = useSearchParams();
@@ -11,6 +25,7 @@ export function useSignup() {
   const [loading, setLoading] = useState(false);
   const [banks, setBanks] = useState([]);
   const [banksLoading, setBanksLoading] = useState(true);
+  const [disabledTypes, setDisabledTypes] = useState([]);
   const [error, setError] = useState('');
   const [consent, setConsent] = useState(false);
   const [brandColor, setBrandColor] = useState('#c8a97e');
@@ -77,7 +92,10 @@ export function useSignup() {
 
   const currentTypeFeatures = formValues.business_type ? getFeaturesForType(formValues.business_type) : null;
 
-  // ─── Load banks ───
+  // ─── Available business types (filtered by admin settings) ───
+  const availableTypes = ALL_BUSINESS_TYPES.filter((type) => !disabledTypes.includes(type));
+
+  // ─── Load banks & settings ───
   useEffect(() => {
     const fetchBanks = async () => {
       try {
@@ -92,6 +110,20 @@ export function useSignup() {
     };
     fetchBanks();
 
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/.netlify/functions/admin-settings');
+        const data = await res.json();
+        if (data.disabled_business_types) {
+          setDisabledTypes(JSON.parse(data.disabled_business_types));
+        }
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      }
+    };
+    fetchSettings();
+
+    // Load Cloudinary widget
     const script = document.createElement('script');
     script.src = 'https://widget.cloudinary.com/v2.0/global/all.js';
     script.async = true;
@@ -139,21 +171,54 @@ export function useSignup() {
   const validateStep = (step) => {
     setError('');
     if (step === 1) {
-      if (!formValues.business_name.trim()) { setError('Business name is required.'); return false; }
-      if (!formValues.email.trim()) { setError('Email is required.'); return false; }
-      if (!formValues.phone.trim()) { setError('Phone number is required.'); return false; }
-      if (!formValues.business_type) { setError('Please select a business type.'); return false; }
+      if (!formValues.business_name.trim()) {
+        setError('Business name is required.');
+        return false;
+      }
+      if (!formValues.email.trim()) {
+        setError('Email is required.');
+        return false;
+      }
+      if (!formValues.phone.trim()) {
+        setError('Phone number is required.');
+        return false;
+      }
+      if (!formValues.business_type) {
+        setError('Please select a business type.');
+        return false;
+      }
     }
     if (step === 2) {
-      if (!formValues.business_description.trim()) { setError('Business description is required.'); return false; }
-      if (!formValues.business_address.trim()) { setError('Business address is required.'); return false; }
-      if (!formValues.whatsapp_number.trim()) { setError('WhatsApp number is required.'); return false; }
+      if (!formValues.business_description.trim()) {
+        setError('Business description is required.');
+        return false;
+      }
+      if (!formValues.business_address.trim()) {
+        setError('Business address is required.');
+        return false;
+      }
+      if (!formValues.whatsapp_number.trim()) {
+        setError('WhatsApp number is required.');
+        return false;
+      }
     }
     if (step === 5) {
-      if (!formValues.account_name.trim()) { setError('Account name is required.'); return false; }
-      if (!formValues.settlement_bank) { setError('Please select a bank.'); return false; }
-      if (!/^[0-9]{10}$/.test(formValues.account_number)) { setError('Account number must be exactly 10 digits.'); return false; }
-      if (!consent) { setError('Please accept the payment policy.'); return false; }
+      if (!formValues.account_name.trim()) {
+        setError('Account name is required.');
+        return false;
+      }
+      if (!formValues.settlement_bank) {
+        setError('Please select a bank.');
+        return false;
+      }
+      if (!/^[0-9]{10}$/.test(formValues.account_number)) {
+        setError('Account number must be exactly 10 digits.');
+        return false;
+      }
+      if (!consent) {
+        setError('Please accept the payment policy.');
+        return false;
+      }
     }
     return true;
   };
@@ -191,11 +256,6 @@ export function useSignup() {
 
     setLoading(true);
     setError('');
-
-    // Note: signup does NOT call save-business directly.
-    // Instead, it initializes payment and redirects to onboarding,
-    // where save-business is called with CSRF protection.
-    // The CSRF token is not needed here, but the import is present for completeness.
 
     const {
       business_name,
@@ -351,6 +411,7 @@ export function useSignup() {
     banks,
     banksLoading,
     currentTypeFeatures,
+    availableTypes, // 👈 NEW: filtered business types
     // Navigation
     nextStep,
     prevStep,

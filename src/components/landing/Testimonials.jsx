@@ -1,29 +1,31 @@
-// src/components/landing/StepsSection.jsx
-import { steps } from '../../data/landingData.jsx';
+// src/components/landing/Testimonials.jsx
+import { testimonials } from '../../data/landingData.jsx';
 
-export default function StepsSection({ T }) {
+export default function Testimonials({ T }) {
   return (
-    <section className="py-20 md:py-28">
+    <section className="py-20 md:py-28 border-t border-white/5">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="text-center sm:text-left mb-16" data-animate>
           <h2 className="font-display text-4xl sm:text-5xl font-bold text-white">
-            How it works
+            What they say
           </h2>
           <div className="w-16 h-1 bg-lime-400 mt-4 mx-auto sm:mx-0" />
         </div>
-        <div className="grid sm:grid-cols-3 gap-10">
-          {steps.map((s, i) => (
+        <div className="grid sm:grid-cols-3 gap-8">
+          {testimonials.map((item, i) => (
             <div
-              key={s.n}
+              key={i}
               className="text-center sm:text-left"
               data-animate
               data-delay-1={i === 0 ? true : undefined}
               data-delay-2={i === 1 ? true : undefined}
               data-delay-3={i === 2 ? true : undefined}
             >
-              <span className="font-display text-5xl font-bold text-lime-400/30">{s.n}</span>
-              <h4 className="text-xl font-bold text-white mt-3">{s.t}</h4>
-              <p className="text-zinc-400 text-sm leading-relaxed mt-2">{s.d}</p>
+              <p className="text-white text-sm leading-relaxed">{item.text}</p>
+              <div className="mt-4">
+                <p className="font-bold text-white">{item.name}</p>
+                <p className="text-xs text-zinc-500">{item.role}</p>
+              </div>
             </div>
           ))}
         </div>

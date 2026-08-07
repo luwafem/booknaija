@@ -25,6 +25,7 @@ export default function Signup() {
     banks,
     banksLoading,
     currentTypeFeatures,
+    availableTypes, // 👈 new
     nextStep,
     prevStep,
     handleSubmit,
@@ -50,6 +51,7 @@ export default function Signup() {
             formValues={formValues}
             handleChange={handleChange}
             currentTypeFeatures={currentTypeFeatures}
+            businessTypeOptions={availableTypes} // 👈 pass the filtered types
           />
         );
       case 2:

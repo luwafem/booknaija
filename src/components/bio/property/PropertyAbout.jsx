@@ -1,4 +1,4 @@
-// PropertyAbout.jsx
+// src/components/bio/property/PropertyAbout.jsx
 export default function PropertyAbout({ biz, accent, isDark }) {
   const team = biz.team || [];
 
@@ -22,12 +22,15 @@ export default function PropertyAbout({ biz, accent, isDark }) {
         pill: 'bg-gray-100',
       };
 
-  const stats = [
-    { value: biz.referralCount || '10+', label: 'Happy Clients' },
-    { value: team.length > 0 ? `${team.length}+` : '5+', label: 'Team Members' },
-    { value: '8+', label: 'Years Experience' },
-    { value: '50+', label: 'Projects Completed' },
-  ];
+  // ─── Use custom stats if available, otherwise fallback to defaults ───
+  const stats = biz.stats && Array.isArray(biz.stats) && biz.stats.length > 0
+    ? biz.stats
+    : [
+        { value: biz.referralCount || '10+', label: 'Happy Clients' },
+        { value: team.length > 0 ? `${team.length}+` : '5+', label: 'Team Members' },
+        { value: '8+', label: 'Years Experience' },
+        { value: '50+', label: 'Projects Completed' },
+      ];
 
   const whatsappLink = biz.whatsapp
     ? `https://wa.me/234${biz.whatsapp.replace(/^0/, '')}`

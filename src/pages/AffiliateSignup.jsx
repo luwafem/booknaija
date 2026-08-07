@@ -2,6 +2,23 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getCsrfToken } from '../lib/csrf';
 
+// ─── Full list of business types (same as in useSignup) ───
+const ALL_BUSINESS_TYPES = [
+  'Lash Artist',
+  'Hair Stylist',
+  'Makeup Artist',
+  'Nail Technician',
+  'Skin Care / Facialist',
+  'Fashion / Boutique',
+  'Restaurant / Food',
+  'Auto Dealer / Rental',
+  'Real Estate',
+  'Shortlet',
+  'Cleaner',
+  'Tutor',
+  'Other',
+];
+
 const securityQuestions = [
   "What is the name of your first pet?",
   "What city were you born in?",
@@ -21,6 +38,7 @@ export default function AffiliateSignup() {
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
   const [banks, setBanks] = useState([]);
+  const [disabledTypes, setDisabledTypes] = useState([]);
   const [error, setError] = useState('');
   const [affiliateId, setAffiliateId] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
@@ -57,11 +75,37 @@ export default function AffiliateSignup() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // ─── Available business types (filtered by admin settings) ───
+  const availableTypes = ALL_BUSINESS_TYPES.filter(
+    (type) => !disabledTypes.includes(type)
+  );
+
   useEffect(() => {
-    fetch('/.netlify/functions/list-banks')
-      .then(res => res.json())
-      .then(data => setBanks(data || []))
-      .catch(err => console.error(err));
+    // Fetch banks
+    const fetchBanks = async () => {
+      try {
+        const res = await fetch('/.netlify/functions/list-banks');
+        const data = await res.json();
+        if (Array.isArray(data)) setBanks(data || []);
+      } catch (err) {
+        console.error('Failed to load banks:', err);
+      }
+    };
+    fetchBanks();
+
+    // Fetch settings (disabled business types)
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/.netlify/functions/admin-settings');
+        const data = await res.json();
+        if (data.disabled_business_types) {
+          setDisabledTypes(JSON.parse(data.disabled_business_types));
+        }
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      }
+    };
+    fetchSettings();
   }, []);
 
   const handleSignIn = async (e) => {
@@ -245,11 +289,10 @@ export default function AffiliateSignup() {
   const sectionTitle = "text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2 mt-1";
   const sectionDesc = "text-xs text-zinc-400 mb-3 -mt-1";
 
-  // --- SUCCESS STATE ---
+  // --- SUCCESS STATE (unchanged) ---
   if (done) {
     return (
       <div className="min-h-screen bg-zinc-950 text-white font-sans selection:bg-zinc-700 selection:text-white flex items-center justify-center px-6 py-12">
-        {/* Header */}
         <nav className="bg-white sticky top-0 z-50 border-b border-zinc-200 w-full absolute left-0">
           <div className="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
             <Link to="/" className="flex items-center flex-shrink-0">
@@ -350,21 +393,20 @@ export default function AffiliateSignup() {
               </div>
             </div>
 
+            {/* ─── WHO TO REFER (filtered by admin settings) ─── */}
             <div className="mb-10 sm:mb-12">
               <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-5">Who to refer</h3>
               <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                {[
-                  'Lash Artists', 'Cleaners', 'Tutors', 'Hair Stylists',
-                  'Makeup Artists', 'Nail Technicians', 'Skincare & Facialists',
-                  'Fashion & Boutiques', 'Restaurants & Food', 'Auto Dealers & Rentals'
-                ].map((item) => (
-                  <div key={item} className="flex items-center gap-3 text-sm font-medium text-zinc-300">
-                    <div className="w-5 h-5 bg-zinc-700 rounded-full flex items-center justify-center text-zinc-400 shrink-0">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                {availableTypes
+                  .filter(type => type !== 'Other') // Exclude "Other" from pitch list
+                  .map((type) => (
+                    <div key={type} className="flex items-center gap-3 text-sm font-medium text-zinc-300">
+                      <div className="w-5 h-5 bg-zinc-700 rounded-full flex items-center justify-center text-zinc-400 shrink-0">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                      </div>
+                      {type}
                     </div>
-                    {item}
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
 
@@ -380,7 +422,7 @@ export default function AffiliateSignup() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN - THE FORM */}
+        {/* RIGHT COLUMN - THE FORM (unchanged) */}
         <div className="w-full lg:w-1/2 bg-zinc-950 p-8 sm:p-10 flex items-start justify-center pt-8 sm:pt-16 lg:pt-0 lg:items-center">
           <div className="w-full max-w-md">
             
@@ -402,7 +444,7 @@ export default function AffiliateSignup() {
               </button>
             </div>
 
-            {/* Sign In Form */}
+            {/* Sign In Form (unchanged) */}
             {!isSignUp ? (
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div>
@@ -452,7 +494,7 @@ export default function AffiliateSignup() {
                 </button>
               </form>
             ) : (
-              /* Sign Up Form */
+              /* Sign Up Form (unchanged) */
               <form onSubmit={handleSignUp} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
                 
                 {/* Progress Indicator */}
@@ -467,7 +509,6 @@ export default function AffiliateSignup() {
                       style={{ width: `${(currentStep / signupSteps.length) * 100}%` }}
                     />
                   </div>
-                  {/* Mobile step dots */}
                   <div className="flex justify-center gap-1.5 mt-3 md:hidden">
                     {signupSteps.map(step => (
                       <button

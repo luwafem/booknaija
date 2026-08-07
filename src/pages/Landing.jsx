@@ -1,18 +1,19 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+// src/pages/Landing.jsx
+import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useLandingTheme } from '../hooks/useLandingTheme';
-import { businessCategories } from '../data/landingData.jsx';
+import { optimizeImage } from '../lib/utils';
 
-// Import all landing components
+// Components
 import AnnouncementBar from '../components/landing/AnnouncementBar';
 import NavBar from '../components/landing/NavBar';
 import HeroSection from '../components/landing/HeroSection';
-import ShowcaseSection from '../components/landing/ShowcaseSection';
-import MetaProofSection from '../components/landing/MetaProofSection';
-import GetPaidSection from '../components/landing/GetPaidSection';
-import FeaturesGrid from '../components/landing/FeaturesGrid';
-import PricingSection from '../components/landing/PricingSection';
+import TrustBar from '../components/landing/TrustBar';
 import StepsSection from '../components/landing/StepsSection';
+import Categories from '../components/landing/Categories';
+import FeaturesGrid from '../components/landing/FeaturesGrid';
+import Testimonials from '../components/landing/Testimonials';
+import PricingSection from '../components/landing/PricingSection';
 import FinalCTA from '../components/landing/FinalCTA';
 import Footer from '../components/landing/Footer';
 
@@ -23,12 +24,36 @@ export default function Landing() {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [activeCategory, setActiveCategory] = useState(0);
   const debounceTimer = useRef(null);
 
-  const active = useMemo(() => businessCategories[activeCategory], [activeCategory]);
+  // ─── Hero data from admin settings ───
+  const [heroTitle, setHeroTitle] = useState('');
+  const [heroDescription, setHeroDescription] = useState('');
+  const [heroImage, setHeroImage] = useState('');
+  const [heroLoading, setHeroLoading] = useState(true);
 
-  // ─── Animation Observer ───
+  // ─── Fetch hero text and image from public settings endpoint ───
+  useEffect(() => {
+    const fetchHeroData = async () => {
+      setHeroLoading(true);
+      try {
+        const res = await fetch('/.netlify/functions/public-settings');
+        if (!res.ok) throw new Error('Failed to fetch hero settings');
+        const data = await res.json();
+        if (data.hero_title) setHeroTitle(data.hero_title);
+        if (data.hero_description) setHeroDescription(data.hero_description);
+        if (data.hero_image) setHeroImage(data.hero_image);
+      } catch (err) {
+        // Silently fail – hero data will use default fallbacks in HeroSection
+        console.warn('Hero settings not available, using defaults.');
+      } finally {
+        setHeroLoading(false);
+      }
+    };
+    fetchHeroData();
+  }, []);
+
+  // Animation Observer
   useEffect(() => {
     document.documentElement.classList.add('bn-anim-ready');
     const observer = new IntersectionObserver(
@@ -49,15 +74,7 @@ export default function Landing() {
     };
   }, []);
 
-  // ─── Auto-rotate categories ───
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveCategory((prev) => (prev === businessCategories.length - 1 ? 0 : prev + 1));
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // ─── Search debounce ───
+  // Search debounce
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     if (!searchQuery.trim()) {
@@ -94,7 +111,7 @@ export default function Landing() {
   }, [searchQuery]);
 
   return (
-    <div className={`min-h-screen ${T.page} ${T.pageText} font-sans selection:bg-lime-500/30 selection:text-white overflow-x-hidden transition-colors duration-300`}>
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-lime-400/30 selection:text-black overflow-x-hidden">
       <style>{`
         [data-animate]{opacity:1;transform:translateY(0)}
         .bn-anim-ready [data-animate]{opacity:0;transform:translateY(24px);transition:opacity .6s cubic-bezier(.22,1,.36,1),transform .6s cubic-bezier(.22,1,.36,1)}
@@ -102,12 +119,7 @@ export default function Landing() {
         .bn-anim-ready [data-delay-1]{transition-delay:.1s}
         .bn-anim-ready [data-delay-2]{transition-delay:.2s}
         .bn-anim-ready [data-delay-3]{transition-delay:.3s}
-        @keyframes bn-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-        .bn-float{animation:bn-float 3s ease-in-out infinite}
-        @keyframes bn-float2{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-        .bn-float2{animation:bn-float2 3.5s ease-in-out infinite;animation-delay:.6s}
-        .scrollbar-hide::-webkit-scrollbar{display:none}
-        .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+        .font-display { font-family: 'Syne', sans-serif; font-weight: 700; letter-spacing: -0.02em; }
       `}</style>
 
       <AnnouncementBar />
@@ -116,30 +128,26 @@ export default function Landing() {
       <main>
         <HeroSection
           T={T}
-          d={d}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           isSearching={isSearching}
           searchResults={searchResults}
           hasSearched={hasSearched}
+          heroTitle={heroTitle}
+          heroDescription={heroDescription}
+          heroImage={heroImage ? optimizeImage(heroImage, 1200) : ''}
+          heroLoading={heroLoading}
         />
-
-        <ShowcaseSection
-          T={T}
-          activeCategory={activeCategory}
-          setActiveCategory={setActiveCategory}
-          active={active}
-        />
-
-        <MetaProofSection T={T} />
-        <GetPaidSection T={T} d={d} />
-        <FeaturesGrid T={T} />
-        <PricingSection T={T} />
+        <TrustBar T={T} />
         <StepsSection T={T} />
+        <Categories T={T} />
+        <PricingSection T={T} />
+        <FeaturesGrid T={T} />
+        <Testimonials T={T} />
         <FinalCTA T={T} />
       </main>
 
-      <Footer T={T} />
+      <Footer />
     </div>
   );
 }

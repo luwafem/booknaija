@@ -229,7 +229,8 @@ exports.handler = async function (event) {
       'services_enabled', 'products_enabled', 'cars_enabled',
       'food_enabled', 'properties_enabled', 'estates_enabled',
       'socials', 'gallery', 'security_code', 'security_question_1',
-      'security_answer_1', 'security_question_2', 'security_answer_2'
+      'security_answer_1', 'security_question_2', 'security_answer_2',
+      'stats' // 👈 Added 'stats' to allowed fields
     ];
 
     if (isNew) {

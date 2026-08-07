@@ -1,71 +1,53 @@
+// src/components/landing/PricingSection.jsx
 import { Link } from 'react-router-dom';
-import { pricingFeatures } from '../../data/landingData.jsx';
 
 export default function PricingSection({ T }) {
-  return (
-    <section id="pricing" className={`py-16 md:py-24 border-t ${T.sectionBorder} relative z-10`}>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="grid lg:grid-cols-2 gap-10 items-center">
-          <div data-animate>
-            <h2 className={`text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-[-0.05em] leading-[0.9] ${T.text}`}>
-              ₦2,500<span className={`${T.textMuted} text-2xl sm:text-3xl font-medium`}>/mo</span>
-            </h2>
-            <p className={`mt-6 ${T.textSub} text-base sm:text-lg max-w-md leading-relaxed`}>
-              Everything included. Unlimited bookings. Unlimited products.
-              Unlimited payments. No commissions.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-2">
-              {['Unlimited Bookings', 'Card Payments', 'Bank Transfers', 'WhatsApp Reminders', 'Product Sales', 'Custom Page'].map((item) => (
-                <div key={item} className={`px-3 py-1.5 rounded-md border ${T.accentBorder} ${T.accentBg} ${T.textAccent} text-xs font-medium`}>
-                  {item}
-                </div>
-              ))}
-            </div>
-          </div>
+  const pricingFeatures = [
+    'Sell Services & Products',
+    'Card & Bank Transfer Payments',
+    'Google Calendar Sync',
+    'Listings for any business type',
+    'Meta-proof page',
+  ];
 
-          <div className="relative" data-animate data-delay-2>
-            <div className={`${T.cardAlt} p-6 sm:p-8 rounded-xl ${T.border}`}>
-              <div className="absolute -top-3 left-6 bg-lime-400 text-black px-3 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider">
-                All Access
-              </div>
-              <div className="pt-4">
-                <p className={`${T.textMuted} text-[10px] font-semibold uppercase tracking-wider mb-2`}>Monthly Plan</p>
-                <div className="mb-6">
-                  <div className="flex items-baseline gap-1">
-                    <span className={`text-4xl sm:text-5xl font-extrabold tracking-tighter ${T.text}`}>₦2,500</span>
-                    <span className={`${T.textMuted} font-medium text-sm`}>/month</span>
-                  </div>
-                </div>
-                <ul className="space-y-2.5 mb-6 text-sm">
-                  {pricingFeatures.map((item) => (
-                    <li key={item} className={`flex items-center gap-2.5 ${T.textSub}`}>
-                      <div className={`w-4 h-4 ${T.accentBg2} rounded-full flex items-center justify-center flex-shrink-0`}>
-                        <svg className={`w-2.5 h-2.5 ${T.textAccent}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      {item}
-                    </li>
-                  ))}
-                  <li className={`flex items-center gap-2.5 ${T.text} font-semibold pt-1`}>
-                    <div className={`w-4 h-4 ${T.accentBg2} rounded-full flex items-center justify-center flex-shrink-0`}>
-                      <svg className={`w-2.5 h-2.5 ${T.textAccent}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    Refer 3 friends = 1 Free Month
-                  </li>
-                </ul>
-                <Link
-                  to="/signup"
-                  className="block w-full bg-lime-400 text-black py-3.5 font-bold rounded-xl hover:bg-lime-300 transition-all text-center text-sm"
-                >
-                  Start Your Page
-                </Link>
-                <p className={`mt-2.5 text-xs ${T.textMuted} text-center`}>Cancel anytime. No contracts.</p>
-              </div>
-            </div>
+  return (
+    <section className="py-20 md:py-28 border-t border-white/5">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-16" data-animate>
+          <h2 className="font-display text-4xl sm:text-5xl font-bold text-white">
+            Simple pricing
+          </h2>
+          <div className="w-16 h-1 bg-lime-400 mt-4 mx-auto" />
+        </div>
+        <div className="max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto border-2 border-white/10 p-8 sm:p-10 md:p-12 rounded-2xl" data-animate data-delay-1>
+          <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Monthly plan</p>
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="font-display text-5xl font-bold text-white">₦2,500</span>
+            <span className="text-zinc-500 text-sm">/month</span>
           </div>
+          <ul className="mt-6 space-y-2.5 text-sm sm:text-base">
+            {pricingFeatures.map((item) => (
+              <li key={item} className="flex items-center gap-2.5 text-zinc-300">
+                <svg className="w-4 h-4 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                {item}
+              </li>
+            ))}
+            <li className="flex items-center gap-2.5 text-white font-semibold pt-1">
+              <svg className="w-4 h-4 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Refer 3 friends = 1 free month
+            </li>
+          </ul>
+          <Link
+            to="/signup"
+            className="mt-8 block w-full bg-lime-400 text-black py-4 font-bold hover:bg-lime-300 transition-all text-center rounded-lg"
+          >
+            Start your page
+          </Link>
+          <p className="mt-3 text-xs text-zinc-500 text-center">Cancel anytime. No contracts.</p>
         </div>
       </div>
     </section>

@@ -1,4 +1,21 @@
 // src/components/signup/StepBusinessInfo.jsx
+
+const DEFAULT_BUSINESS_TYPES = [
+  'Lash Artist',
+  'Cleaner',
+  'Tutor',
+  'Hair Stylist',
+  'Makeup Artist',
+  'Nail Technician',
+  'Skin Care / Facialist',
+  'Fashion / Boutique',
+  'Restaurant / Food',
+  'Auto Dealer / Rental',
+  'Real Estate',
+  'Shortlet / Airbnb',
+  'Other',
+];
+
 export default function StepBusinessInfo({
   formValues,
   handleChange,
@@ -6,6 +23,7 @@ export default function StepBusinessInfo({
   inputBase,
   selectBase,
   labelBase,
+  businessTypeOptions = DEFAULT_BUSINESS_TYPES, // 👈 new prop with fallback
 }) {
   const ChevronDown = () => (
     <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-zinc-400">
@@ -62,19 +80,11 @@ export default function StepBusinessInfo({
             className={selectBase}
           >
             <option value="" disabled>Select type</option>
-            <option value="Lash Artist">Lash Artist</option>
-            <option value="Cleaner">Cleaner</option>
-            <option value="Tutor">Tutor</option>
-            <option value="Hair Stylist">Hair Stylist</option>
-            <option value="Makeup Artist">Makeup Artist</option>
-            <option value="Nail Technician">Nail Technician</option>
-            <option value="Skin Care">Skin Care / Facialist</option>
-            <option value="Fashion">Fashion / Boutique</option>
-            <option value="Restaurant">Restaurant / Food</option>
-            <option value="Auto">Auto Dealer / Rental</option>
-            <option value="Real Estate">Real Estate</option>
-            <option value="Shortlet">Shortlet / Airbnb</option>
-            <option value="Other">Other</option>
+            {businessTypeOptions.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
           </select>
           <ChevronDown />
         </div>

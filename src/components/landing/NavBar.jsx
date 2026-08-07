@@ -8,13 +8,13 @@ export default function NavBar({ d, toggleTheme }) {
           <img src="/fav-removebg.png" alt="Five9" className="h-8 w-auto transition-transform group-hover:scale-105" />
         </Link>
 
-        <div className="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-600">
+        <div className="hidden md:flex items-center gap-10 text-sm font-medium text-zinc-600">
           <a href="#features" className="hover:text-zinc-900 transition-colors">Features</a>
           <a href="#showcase" className="hover:text-zinc-900 transition-colors">Showcase</a>
           <a href="#pricing" className="hover:text-zinc-900 transition-colors">Pricing</a>
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-3">
+        <div className="flex items-center gap-3 sm:gap-4">
           <Link
             to="/dashboard"
             className="text-xs sm:text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors whitespace-nowrap"
@@ -42,7 +42,7 @@ export default function NavBar({ d, toggleTheme }) {
             to="/signup"
             className="bg-lime-400 text-black px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold hover:bg-lime-300 transition-all whitespace-nowrap"
           >
-            Start Free
+            Get Started
           </Link>
         </div>
       </div>
