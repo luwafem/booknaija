@@ -1,5 +1,5 @@
 // PUBLIC business configs — NO secrets here
-const PLATFORM_PAYSTACK_KEY = 'pk_test_129628160c0fdb0e1e837751e5ff0233872676b8';
+const PLATFORM_PAYSTACK_KEY = 'pk_live_2ba1413aaaf5091188571ea6f87cca34945d943c';
 
 const businesses = {
   'glamour-lash': {
