@@ -45,7 +45,7 @@ const SWIPE_FILES = [
   {
     id: 'professional',
     label: 'Professional / Cold Pitch',
-    text: `Hi [Name], I help local businesses get found on Google.\n\nRight now, when someone searches "[their service] near me" in your area, your business doesn't appear. That's free traffic you're losing every day.\n\nI can set up your Google Maps ranking + a professional online storefront (with card & bank transfer payments) + SEO optimization so you show up in searches. Everything runs on autopilot.\n\nThe plan is ₦2,500/month. Should I send the details?`,
+    text: `Hi Name, I help local businesses get found on Google.\n\nRight now, when someone searches "their service near me" in your area, your business doesn't appear. That's free traffic you're losing every day.\n\nI can set up your Google Maps ranking + a professional online storefront (with card & bank transfer payments) + SEO optimization so you show up in searches. Everything runs on autopilot.\n\nThe plan is ₦2,500/month. Should I send the details?`,
   },
 ];
 
@@ -234,10 +234,10 @@ export default function AffiliateDashboard() {
             <span className="font-bold text-white"> ₦1,500 is sent instantly</span> to your bank via Paystack split. 
             If they stay active for a second month, you get 
             <span className="font-bold text-white"> another ₦1,000</span> automatically. 
-            That's <span className="font-bold text-white">₦2,500 total</span> — the full month's fee back to you!
+            That's <span className="font-bold text-white">₦2,500 total</span> the full month's fee back to you!
           </p>
           <p className="text-xs text-zinc-500 mt-2">
-            💡 If a referred business becomes inactive, you won't earn future commissions on them.
+            If a referred business becomes inactive, you won't earn future commissions on them.
           </p>
         </div>
 
@@ -258,7 +258,7 @@ export default function AffiliateDashboard() {
             )}
             {inactive > 0 && (
               <p className="statDesc text-[10px] text-zinc-500 mt-1">
-                ⚠️ {inactive} inactive — no future earnings from these
+                 {inactive} inactive no future earnings from these
               </p>
             )}
           </div>
@@ -569,7 +569,7 @@ export default function AffiliateDashboard() {
                         <p className="text-xs text-zinc-400 font-mono truncate">five9.com.ng/{ref.slug}</p>
                         {!ref.active && (
                           <span className="text-[9px] text-zinc-500 mt-0.5 block">
-                            ⚠️ Inactive — no future commissions
+                            Inactive no future commissions
                           </span>
                         )}
                       </div>
