@@ -320,6 +320,8 @@ exports.handler = async (event) => {
         referredBy: referredBy || null,
         isSignup: isSignup,
         affiliateCommissionMonth: isSignup && referredBy ? 0 : null,
+        // 👇 NEW: Payment type to distinguish signup from renewals/bookings
+        payment_type: isSignup ? 'signup' : (type || 'booking'),
       },
     };
 

@@ -24,11 +24,21 @@ export default function AdminDashboard() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const state = useAdminState();
   const {
-    activeTab, setActiveTab,
-    stats, error, setError,
-    showEditModal, setShowEditModal,
-    selectedBusiness, editForm, setEditForm,
-    handleSaveEdit, actionLoading,
+    activeTab,
+    setActiveTab,
+    stats,
+    error,
+    setError,
+    showEditModal,
+    setShowEditModal,
+    selectedBusiness,
+    editForm,
+    setEditForm,
+    handleSaveEdit,
+    actionLoading,
+    setActionLoading, // 👈 ADDED: needed for verify loading state
+    safeFetch,        // 👈 ADDED: needed for API calls
+    fetchAffiliates,  // 👈 ADDED: to refresh the list after verification
   } = state;
 
   // ─── CSRF Token ──────────────────────────────────────────
@@ -59,7 +69,6 @@ export default function AdminDashboard() {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
     try {
-      // Call server-side logout to clear the httpOnly cookie
       await fetch('/.netlify/functions/admin-logout', {
         method: 'POST',
         credentials: 'same-origin',
@@ -68,28 +77,67 @@ export default function AdminDashboard() {
       console.error('Logout error:', err);
     } finally {
       setIsLoggingOut(false);
-      // Always redirect to login, even if the API call fails
       navigate('/admin/login');
+    }
+  };
+
+  // ─── HANDLE VERIFY AFFILIATE ────────────────────────────
+  const handleVerifyAffiliate = async (affiliateId, currentVerified) => {
+    const newVerified = !currentVerified;
+    if (!confirm(`Are you sure you want to ${newVerified ? 'verify' : 'unverify'} this affiliate?`)) return;
+
+    const key = 'verify-' + affiliateId;
+    setActionLoading((prev) => ({ ...prev, [key]: true }));
+
+    try {
+      await safeFetch('/.netlify/functions/admin-affiliate-verify', {
+        method: 'POST',
+        body: JSON.stringify({ affiliateId, verified: newVerified }),
+      });
+      await fetchAffiliates(); // refresh the list
+      alert(`Affiliate ${newVerified ? 'verified' : 'unverified'} successfully.`);
+    } catch (err) {
+      alert('Failed to update verification status.');
+      console.error(err);
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [key]: false }));
     }
   };
 
   // ─── RENDER TAB ──────────────────────────────────────────
   const renderTab = () => {
-    const props = { ...state, exportCSV: state.exportCSV || (() => {}) };
+    const props = {
+      ...state,
+      exportCSV: state.exportCSV || (() => {}),
+      handleVerifyAffiliate, // 👈 ADDED: pass the handler to all tabs
+    };
     switch (activeTab) {
-      case 'overview': return <OverviewTab {...props} />;
-      case 'revenue': return <RevenueTab {...props} />;
-      case 'growth': return <GrowthTab {...props} />;
-      case 'geo': return <GeoTab {...props} />;
-      case 'churn': return <ChurnTab {...props} />;
-      case 'businesses': return <BusinessesTab {...props} />;
-      case 'affiliates': return <AffiliatesTab {...props} />;
-      case 'payouts': return <PayoutsTab {...props} />;
-      case 'transactions': return <TransactionsTab {...props} />;
-      case 'settings': return <SettingsTab {...props} />;
-      case 'system': return <SystemTab {...props} />;
-      case 'reports': return <ReportsTab {...props} />;
-      default: return <div className="text-zinc-400">Tab not implemented.</div>;
+      case 'overview':
+        return <OverviewTab {...props} />;
+      case 'revenue':
+        return <RevenueTab {...props} />;
+      case 'growth':
+        return <GrowthTab {...props} />;
+      case 'geo':
+        return <GeoTab {...props} />;
+      case 'churn':
+        return <ChurnTab {...props} />;
+      case 'businesses':
+        return <BusinessesTab {...props} />;
+      case 'affiliates':
+        return <AffiliatesTab {...props} />;
+      case 'payouts':
+        return <PayoutsTab {...props} />;
+      case 'transactions':
+        return <TransactionsTab {...props} />;
+      case 'settings':
+        return <SettingsTab {...props} />;
+      case 'system':
+        return <SystemTab {...props} />;
+      case 'reports':
+        return <ReportsTab {...props} />;
+      default:
+        return <div className="text-zinc-400">Tab not implemented.</div>;
     }
   };
 

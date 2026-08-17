@@ -97,7 +97,7 @@ exports.handler = async (event) => {
     if (eventType === 'charge.success') {
       const paystackData = payload.data;
       const reference = sanitizeString(paystackData.reference);
-      const amountInKobo = paystackData.amount || 0; // Paystack amount is in kobo
+      const amountInKobo = paystackData.amount || 0;
       const metadata = paystackData.metadata || {};
       const slug = sanitizeString(metadata.slug);
       const paymentType = sanitizeString(metadata.payment_type);
@@ -123,9 +123,47 @@ exports.handler = async (event) => {
         // Continue processing – idempotency is best-effort
       }
 
-      // ─── PROCESS THE EVENT ───
+      // ─── HANDLE SIGNUP (first payment) ──────────────────────
+      if (paymentType === 'signup' && slug) {
+        console.log(`📦 Signup success for slug: ${slug}`);
+
+        // Fetch business to get referral and current month
+        const { data: biz, error: bizErr } = await supabase
+          .from('businesses')
+          .select('referred_by_affiliate, affiliate_commission_month')
+          .eq('slug', slug)
+          .single();
+
+        if (bizErr || !biz) {
+          console.error('❌ Failed to fetch business for signup:', bizErr);
+          // Still return 200 to avoid retries
+          return { statusCode: 200, body: JSON.stringify({ received: true }) };
+        }
+
+        // Only set month to 1 if there is a referral and month is still 0
+        if (biz.referred_by_affiliate && biz.affiliate_commission_month === 0) {
+          const { error: updateErr } = await supabase
+            .from('businesses')
+            .update({ affiliate_commission_month: 1 })
+            .eq('slug', slug)
+            .eq('affiliate_commission_month', 0); // atomic
+
+          if (updateErr) {
+            console.error('❌ Failed to update commission month for signup:', updateErr);
+          } else {
+            console.log(`✅ Set affiliate_commission_month to 1 for ${slug} (signup)`);
+          }
+        } else {
+          console.log(`ℹ️ No action needed for signup ${slug} (month=${biz?.affiliate_commission_month})`);
+        }
+
+        // No transfer – the split already paid the affiliate ₦1,500
+        return { statusCode: 200, body: JSON.stringify({ received: true }) };
+      }
+
+      // ─── HANDLE MONTHLY SUBSCRIPTION (renewals) ────────────
       if (paymentType === 'monthly_subscription' && slug) {
-        console.log(`📦 Subscription success for slug: ${slug}`);
+        console.log(`📦 Subscription renewal success for slug: ${slug}`);
 
         // ─── 1. Fetch current business to get existing subscription end date ───
         const { data: existingBiz, error: fetchBizErr } = await supabase
@@ -136,7 +174,6 @@ exports.handler = async (event) => {
 
         if (fetchBizErr) {
           console.error('❌ Failed to fetch business:', fetchBizErr);
-          // If we can't fetch the business, we still want to mark the webhook as processed
           return { statusCode: 200, body: JSON.stringify({ received: true, error: 'Business fetch failed' }) };
         }
 
@@ -170,7 +207,6 @@ exports.handler = async (event) => {
         }
 
         // ─── 4. AFFILIATE COMMISSION (60% + 40% MODEL) ───
-        // Use existingBiz data we already fetched
         if (existingBiz.referred_by_affiliate) {
           const currentMonth = existingBiz.affiliate_commission_month || 0;
 
@@ -245,6 +281,10 @@ exports.handler = async (event) => {
           console.log(`ℹ️ No affiliate referral for ${slug}, skipping commission.`);
         }
       }
+
+      // ─── HANDLE OTHER PAYMENT TYPES (bookings, products, etc.) ───
+      // No affiliate commission applies; we can optionally log or ignore.
+      // We don't need to do anything here.
     }
 
     // Always return 200 OK to prevent Paystack retries

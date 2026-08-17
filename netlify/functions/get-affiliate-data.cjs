@@ -52,7 +52,7 @@ exports.handler = async (event) => {
     // ─── 1. Get Affiliate Details ───
     const { data: affiliate, error: affErr } = await supabase
       .from('affiliates')
-      .select('id, name, email, phone, subaccount_code, transfer_recipient_code')
+      .select('id, name, email, phone, subaccount_code, transfer_recipient_code, verified') // ✅ ADDED verified
       .eq('id', affiliateId)
       .single();
 
@@ -62,7 +62,6 @@ exports.handler = async (event) => {
     }
 
     // ─── CHECK TRANSFER RECIPIENT STATUS ───
-    // Determine if the affiliate has a valid transfer recipient code
     const hasValidTransferRecipient = !!(affiliate.transfer_recipient_code && affiliate.transfer_recipient_code.startsWith('RCP_'));
 
     // ─── 2. Get all businesses referred by this affiliate ───
@@ -74,10 +73,9 @@ exports.handler = async (event) => {
 
     if (refErr) {
       console.error('Error fetching referrals:', refErr.message);
-      // Still return affiliate data with empty referrals
     }
 
-    // ─── 3. Enrich referrals with human-readable commission status ───
+    // ─── 3. Enrich referrals with human‑readable commission status ───
     const enrichedReferrals = (referrals || []).map((ref) => {
       const month = ref.affiliate_commission_month || 0;
       let status = '';
@@ -157,8 +155,6 @@ exports.handler = async (event) => {
     }
 
     // ─── 7. Check if affiliate is missing transfer recipient but has referrals on month 1 ───
-    // This is a critical check: if they have referrals with affiliate_commission_month = 1,
-    // they need a transfer_recipient_code to receive their ₦1,000 bonus.
     const needsTransferRecipient = enrichedReferrals.some(
       (r) => r.active && r.affiliate_commission_month === 1
     );
@@ -186,11 +182,10 @@ exports.handler = async (event) => {
           link: affiliateLink,
           subaccount_code: affiliate.subaccount_code || null,
           transfer_recipient_code: affiliate.transfer_recipient_code || null,
-          // ─── NEW: Transfer recipient status for frontend ───
           transfer_recipient_status: transferRecipientStatus,
           has_valid_transfer_recipient: hasValidTransferRecipient,
-          // ─── NEW: Flag indicating if they need a transfer recipient urgently ───
           needs_transfer_recipient: needsTransferRecipient,
+          verified: affiliate.verified || false, // ✅ ADDED
         },
         referrals: enrichedReferrals,
         summary: {
@@ -204,7 +199,6 @@ exports.handler = async (event) => {
           totalPending,
           potentialEarnings: totalEarned + totalPending,
         },
-        // ─── NEW: Failed payouts that need attention ───
         failed_payouts: failedPayouts || [],
         has_failed_payouts: (failedPayouts || []).length > 0,
       }),

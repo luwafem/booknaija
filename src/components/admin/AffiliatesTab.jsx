@@ -6,17 +6,32 @@ import ExportButton from './ExportButton';
 import ReferralModal from './ReferralModal';
 
 export default function AffiliatesTab({
-  affiliates, loading, search, setSearch,
-  page, setPage, totalPages,
-  handleManualPayout, setManualPayoutAffiliate,
-  manualPayoutAffiliate, manualPayoutAmount, setManualPayoutAmount,
-  manualPayoutReason, setManualPayoutReason,
-  actionLoading, exportCSV,
+  affiliates,
+  loading,
+  search,
+  setSearch,
+  page,
+  setPage,
+  totalPages,
+  handleManualPayout,
+  setManualPayoutAffiliate,
+  manualPayoutAffiliate,
+  manualPayoutAmount,
+  setManualPayoutAmount,
+  manualPayoutReason,
+  setManualPayoutReason,
+  actionLoading,
+  exportCSV,
   // referral modal
-  showReferralModal, setShowReferralModal,
-  selectedAffiliate, setSelectedAffiliate,
-  affiliateReferrals, fetchAffiliateReferrals,
+  showReferralModal,
+  setShowReferralModal,
+  selectedAffiliate,
+  setSelectedAffiliate,
+  affiliateReferrals,
+  fetchAffiliateReferrals,
   handleCommissionOverride,
+  // 👇 NEW: Verification handler
+  handleVerifyAffiliate,
 }) {
   const handleViewReferrals = (aff) => {
     setSelectedAffiliate(aff);
@@ -76,9 +91,19 @@ export default function AffiliatesTab({
         <div className="py-16 text-center text-zinc-400">Loading...</div>
       ) : (
         <Table
-          headers={['ID', 'Name', 'Email', 'Referrals', 'Pending Payouts', 'Subaccount', 'Actions']}
-          rows={affiliates.map(aff => ({
+          headers={[
+            'ID',
+            'Name',
+            'Email',
+            'Referrals',
+            'Pending Payouts',
+            'Subaccount',
+            'Verified', // 👈 NEW column
+            'Actions',
+          ]}
+          rows={affiliates.map((aff) => ({
             cells: [
+              // ID – click to auto-fill manual payout
               <button
                 onClick={() => setManualPayoutAffiliate(aff.id)}
                 className="font-mono text-xs text-purple-400 hover:text-purple-300 transition-colors"
@@ -86,9 +111,13 @@ export default function AffiliatesTab({
               >
                 {aff.id}
               </button>,
+              // Name
               aff.name,
+              // Email
               <span className="hidden sm:table-cell text-zinc-400">{aff.email}</span>,
+              // Referrals
               <span className="text-center">{aff.referral_count}</span>,
+              // Pending Payouts
               <span className="text-center hidden md:table-cell">
                 {aff.pending_payouts > 0 ? (
                   <span className="text-red-400 font-bold">{aff.pending_payouts}</span>
@@ -96,9 +125,23 @@ export default function AffiliatesTab({
                   <span className="text-zinc-500">0</span>
                 )}
               </span>,
+              // Subaccount
               <span className="text-zinc-400 font-mono text-xs truncate max-w-[120px]">
                 {aff.subaccount_code || 'N/A'}
               </span>,
+              // Verified badge
+              <span>
+                {aff.verified ? (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">
+                    ✓ Verified
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-700/50 text-zinc-400 border border-zinc-600">
+                    Unverified
+                  </span>
+                )}
+              </span>,
+              // Actions
               <div className="flex flex-wrap gap-1">
                 <ActionButton
                   onClick={() => handleViewReferrals(aff)}
@@ -109,6 +152,12 @@ export default function AffiliatesTab({
                   onClick={() => handleCommissionOverride(aff.id)}
                   label="Commission"
                   color="yellow"
+                />
+                <ActionButton
+                  onClick={() => handleVerifyAffiliate(aff.id, aff.verified)}
+                  label={aff.verified ? 'Unverify' : 'Verify'}
+                  color={aff.verified ? 'red' : 'green'}
+                  disabled={actionLoading['verify-' + aff.id]}
                 />
               </div>,
             ],

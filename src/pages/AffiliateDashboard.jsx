@@ -62,7 +62,7 @@ export default function AffiliateDashboard() {
   const [copied, setCopied] = useState(false);
   const [swipeCopied, setSwipeCopied] = useState('');
   const [expandedSection, setExpandedSection] = useState(null);
-  const [showInactive, setShowInactive] = useState(true); // NEW: toggle to show/hide inactive referrals
+  const [showInactive, setShowInactive] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -126,7 +126,6 @@ export default function AffiliateDashboard() {
     </div>
   );
 
-  // Destructure summary and referrals from the new data structure
   const { referrals = [], summary = {} } = data;
   const {
     total = 0,
@@ -140,10 +139,8 @@ export default function AffiliateDashboard() {
     potentialEarnings = 0,
   } = summary;
 
-  // ─── FILTER REFERRALS (optional: hide inactive) ───
   const filteredReferrals = showInactive ? referrals : referrals.filter(ref => ref.active);
 
-  // Dark theme styles matching other pages
   const cardBase = "bg-zinc-900 border border-zinc-800 rounded-xl";
   const labelBase = "text-xs font-bold text-zinc-400 uppercase tracking-wider";
   const statValue = "text-3xl sm:text-4xl font-black text-white";
@@ -159,7 +156,6 @@ export default function AffiliateDashboard() {
   const btnPrimary = "bg-white text-zinc-900 px-4 py-2 rounded-lg text-xs font-bold hover:bg-zinc-200 transition-colors shrink-0";
   const btnSecondary = "bg-zinc-800 text-white px-3 py-1.5 rounded-md text-[11px] font-bold hover:bg-zinc-700 transition-colors";
 
-  // Helper to get badge styles based on commission status
   const getBadgeStyles = (statusColor) => {
     switch (statusColor) {
       case 'green':
@@ -175,7 +171,6 @@ export default function AffiliateDashboard() {
     }
   };
 
-  // ─── Helper to get display status for inactive businesses ───
   const getInactiveDisplay = (ref) => {
     const month = ref.affiliate_commission_month || 0;
     if (month === 0) return 'Inactive (No earnings)';
@@ -194,7 +189,14 @@ export default function AffiliateDashboard() {
             <img src="/fav-removebg.png" alt="Logo" className="h-9 w-auto object-contain" />
             <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider hidden sm:inline">Affiliate Portal</span>
           </Link>
-          <p className="text-sm font-medium text-zinc-600">Welcome, {data.affiliate.name.split(' ')[0]}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-zinc-600">Welcome, {data.affiliate.name.split(' ')[0]}</p>
+            {data.affiliate.verified && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-300">
+                ✓ Verified
+              </span>
+            )}
+          </div>
         </div>
       </nav>
 
@@ -215,7 +217,7 @@ export default function AffiliateDashboard() {
           </p>
         </div>
 
-        {/* ===== STATS (Using new summary) ===== */}
+        {/* ===== STATS ===== */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className={`${cardBase} p-5`}>
             <p className={labelBase}>Total Referrals</p>
@@ -264,7 +266,7 @@ export default function AffiliateDashboard() {
           </div>
         </div>
 
-        {/* ===== BUSINESSES WE SERVE (unchanged) ===== */}
+        {/* ===== BUSINESSES WE SERVE ===== */}
         <div className={`${cardBase} overflow-hidden`}>
           <div className={sectionHeader}>
             <h3 className={sectionTitle}>Businesses We Serve</h3>
@@ -287,7 +289,7 @@ export default function AffiliateDashboard() {
           </div>
         </div>
 
-        {/* ===== AFFILIATE TOOLKIT (unchanged) ===== */}
+        {/* ===== AFFILIATE TOOLKIT ===== */}
         <div className={`${cardBase} overflow-hidden`}>
           <div className={sectionHeader}>
             <h3 className={sectionTitle}>Affiliate Toolkit</h3>
@@ -471,7 +473,7 @@ export default function AffiliateDashboard() {
           </div>
         </div>
 
-        {/* ===== REFERRALS LIST (Updated with commission status & inactive toggle) ===== */}
+        {/* ===== REFERRALS LIST ===== */}
         <div className={`${cardBase} overflow-hidden`}>
           <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between">
             <div>
@@ -547,7 +549,7 @@ export default function AffiliateDashboard() {
           )}
         </div>
 
-        {/* ===== PAYOUT INFO (unchanged) ===== */}
+        {/* ===== PAYOUT INFO ===== */}
         <div className={`${cardBase} p-6`}>
           <h3 className="text-base font-bold text-white mb-1">Payout Details</h3>
           <p className="text-xs text-zinc-400 mb-4">Commissions are sent automatically to your linked bank account.</p>
