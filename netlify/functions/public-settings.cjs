@@ -10,10 +10,16 @@ exports.handler = async (event) => {
   }
 
   try {
+    // Include disabled_business_types so the affiliate dashboard can filter its list
     const { data, error } = await supabase
       .from('platform_settings')
       .select('key, value')
-      .in('key', ['hero_title', 'hero_description', 'hero_image']);
+      .in('key', [
+        'hero_title',
+        'hero_description',
+        'hero_image',
+        'disabled_business_types' // 👈 ADDED
+      ]);
 
     if (error) throw error;
 
@@ -26,6 +32,7 @@ exports.handler = async (event) => {
       body: JSON.stringify(settings),
     };
   } catch (err) {
+    console.error('Public settings error:', err);
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };

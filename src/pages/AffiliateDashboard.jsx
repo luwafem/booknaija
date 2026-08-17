@@ -1,17 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 
-const BUSINESS_TYPES = [
-  'Lash Artist',
-  'Cleaner',
-  'Tutor',
-  'Hair Stylist',
-  'Makeup Artist',
-  'Nail Technician',
-  'Skin Care / Facialist',
-  'Fashion / Boutique',
-  'Restaurant / Food',
-  'Auto Dealer / Rental',
+// ─── Master list of all business types (must match SettingsTab) ───
+const ALL_BUSINESS_TYPES = [
+  'Lash Artist', 'Hair Stylist', 'Makeup Artist', 'Nail Technician',
+  'Skin Care / Facialist', 'Fashion / Boutique', 'Restaurant / Food',
+  'Auto Dealer / Rental', 'Real Estate', 'Shortlet', 'Cleaner', 'Tutor', 'Other'
 ];
 
 const OBJECTIONS = [
@@ -64,6 +58,11 @@ export default function AffiliateDashboard() {
   const [expandedSection, setExpandedSection] = useState(null);
   const [showInactive, setShowInactive] = useState(true);
 
+  // ─── Admin Settings: disabled business types ───
+  const [disabledTypes, setDisabledTypes] = useState([]);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+
+  // ─── Fetch affiliate data ───
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -85,6 +84,31 @@ export default function AffiliateDashboard() {
 
     if (affiliateId) fetchStats();
   }, [affiliateId]);
+
+  // ─── Fetch public settings for disabled business types ───
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/.netlify/functions/public-settings');
+        if (res.ok) {
+          const settings = await res.json();
+          if (settings.disabled_business_types) {
+            setDisabledTypes(JSON.parse(settings.disabled_business_types));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch business type settings:', err);
+      } finally {
+        setSettingsLoading(false);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  // ─── Compute available types ───
+  const availableTypes = ALL_BUSINESS_TYPES.filter(
+    (type) => !disabledTypes.includes(type)
+  );
 
   const copyLink = () => {
     if (data?.affiliate?.link) {
@@ -270,19 +294,35 @@ export default function AffiliateDashboard() {
         <div className={`${cardBase} overflow-hidden`}>
           <div className={sectionHeader}>
             <h3 className={sectionTitle}>Businesses We Serve</h3>
-            <p className={sectionDesc}>Any of these business types can be set up on Five9. Use this list to find leads.</p>
+            <p className={sectionDesc}>
+              {settingsLoading
+                ? 'Loading available business types...'
+                : 'Any of these business types can be set up on Five9. Use this list to find leads.'}
+            </p>
           </div>
           <div className="p-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-              {BUSINESS_TYPES.map((type) => (
-                <div 
-                  key={type} 
-                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-center text-xs font-semibold text-zinc-300"
-                >
-                  {type}
-                </div>
-              ))}
-            </div>
+            {settingsLoading ? (
+              <div className="flex justify-center py-4">
+                <div className="w-6 h-6 border-2 border-zinc-600 border-t-zinc-300 rounded-full animate-spin" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                {availableTypes.length > 0 ? (
+                  availableTypes.map((type) => (
+                    <div 
+                      key={type} 
+                      className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-center text-xs font-semibold text-zinc-300"
+                    >
+                      {type}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-zinc-400 text-sm col-span-full text-center">
+                    No business types are currently enabled. Please contact support.
+                  </p>
+                )}
+              </div>
+            )}
             <p className="text-[11px] text-zinc-400 mt-4 font-medium">
               Don't see a fit? Any business that sells products or takes bookings can use Five9.
             </p>
