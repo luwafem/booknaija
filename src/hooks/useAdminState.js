@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAdminApi } from './useAdminApi';
+import * as Sentry from '@sentry/react';
 
-export function useAdminState() {
+export function useAdminState(enabled = true) {
   const { safeFetch } = useAdminApi();
 
   // ─── Tabs ────────────────────────────────────────────────
@@ -62,30 +63,58 @@ export function useAdminState() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({});
 
+  // ─── Helper: log errors silently (Sentry + console) ────
+  const logError = useCallback((source, err, metadata = {}) => {
+    console.error(`[Admin Error] ${source}:`, err);
+    Sentry.captureException(err, {
+      tags: { source, component: 'AdminDashboard' },
+      extra: { ...metadata, errorMessage: err.message || String(err) },
+    });
+  }, []);
+
   // ─── Data Fetchers (memoized, stable) ──────────────────
   const fetchStats = useCallback(async () => {
-    try { setStats(await safeFetch('/.netlify/functions/admin-stats')); } catch {}
-  }, [safeFetch]);
+    try {
+      setStats(await safeFetch('/.netlify/functions/admin-stats'));
+    } catch (err) {
+      logError('fetchStats', err);
+    }
+  }, [safeFetch, logError]);
 
   const fetchRevenue = useCallback(async () => {
-    try { setRevenue(await safeFetch('/.netlify/functions/admin-revenue')); } catch {}
-  }, [safeFetch]);
+    try {
+      setRevenue(await safeFetch('/.netlify/functions/admin-revenue'));
+    } catch (err) {
+      logError('fetchRevenue', err);
+    }
+  }, [safeFetch, logError]);
 
   const fetchGrowth = useCallback(async () => {
-    try { setGrowthData(await safeFetch('/.netlify/functions/admin-growth')); } catch {}
-  }, [safeFetch]);
+    try {
+      setGrowthData(await safeFetch('/.netlify/functions/admin-growth'));
+    } catch (err) {
+      logError('fetchGrowth', err);
+    }
+  }, [safeFetch, logError]);
 
   const fetchGeo = useCallback(async () => {
-    try { setGeoData(await safeFetch('/.netlify/functions/admin-geo')); } catch {}
-  }, [safeFetch]);
+    try {
+      setGeoData(await safeFetch('/.netlify/functions/admin-geo'));
+    } catch (err) {
+      logError('fetchGeo', err);
+    }
+  }, [safeFetch, logError]);
 
   const fetchChurn = useCallback(async () => {
-    try { setChurnData(await safeFetch('/.netlify/functions/admin-churn')); } catch {}
-  }, [safeFetch]);
+    try {
+      setChurnData(await safeFetch('/.netlify/functions/admin-churn'));
+    } catch (err) {
+      logError('fetchChurn', err);
+    }
+  }, [safeFetch, logError]);
 
   const fetchBusinesses = useCallback(async () => {
     setLoading(true);
-    setError('');
     try {
       let url = `/.netlify/functions/admin-businesses?page=${page}&limit=20`;
       if (search) url += `&search=${encodeURIComponent(search)}`;
@@ -94,7 +123,6 @@ export function useAdminState() {
       if (businessTypeFilter) url += `&businessType=${encodeURIComponent(businessTypeFilter)}`;
       const data = await safeFetch(url);
       let filtered = data.businesses || [];
-      // subscription filter
       const now = new Date();
       if (subscriptionFilter === 'expiring') {
         const fiveDaysLater = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
@@ -114,9 +142,12 @@ export function useAdminState() {
       }
       setBusinesses(filtered);
       setTotalPages(data.totalPages || 1);
-    } catch (err) { setError(err.message); }
-    setLoading(false);
-  }, [page, search, businessFilter, businessTypeFilter, subscriptionFilter, safeFetch]);
+    } catch (err) {
+      logError('fetchBusinesses', err, { page, search, businessFilter, businessTypeFilter, subscriptionFilter });
+    } finally {
+      setLoading(false);
+    }
+  }, [page, search, businessFilter, businessTypeFilter, subscriptionFilter, safeFetch, logError]);
 
   const fetchAffiliates = useCallback(async () => {
     setLoading(true);
@@ -126,9 +157,12 @@ export function useAdminState() {
       const data = await safeFetch(url);
       setAffiliates(data.affiliates || []);
       setTotalPages(data.totalPages || 1);
-    } catch {}
-    setLoading(false);
-  }, [page, search, safeFetch]);
+    } catch (err) {
+      logError('fetchAffiliates', err, { page, search });
+    } finally {
+      setLoading(false);
+    }
+  }, [page, search, safeFetch, logError]);
 
   const fetchFailedPayouts = useCallback(async () => {
     setLoading(true);
@@ -136,9 +170,12 @@ export function useAdminState() {
       const data = await safeFetch(`/.netlify/functions/admin-failed-payouts?page=${page}&limit=20`);
       setFailedPayouts(data.payouts || []);
       setTotalPages(data.totalPages || 1);
-    } catch {}
-    setLoading(false);
-  }, [page, safeFetch]);
+    } catch (err) {
+      logError('fetchFailedPayouts', err, { page });
+    } finally {
+      setLoading(false);
+    }
+  }, [page, safeFetch, logError]);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -148,9 +185,12 @@ export function useAdminState() {
       const data = await safeFetch(url);
       setLogs(data.logs || []);
       setTotalPages(data.totalPages || 1);
-    } catch {}
-    setLoading(false);
-  }, [page, logLevel, safeFetch]);
+    } catch (err) {
+      logError('fetchLogs', err, { page, logLevel });
+    } finally {
+      setLoading(false);
+    }
+  }, [page, logLevel, safeFetch, logError]);
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true);
@@ -158,23 +198,37 @@ export function useAdminState() {
       const data = await safeFetch(`/.netlify/functions/admin-webhooks?page=${page}&limit=20`);
       setTransactions(data.webhooks || []);
       setTotalPages(data.totalPages || 1);
-    } catch {}
-    setLoading(false);
-  }, [page, safeFetch]);
+    } catch (err) {
+      logError('fetchTransactions', err, { page });
+    } finally {
+      setLoading(false);
+    }
+  }, [page, safeFetch, logError]);
 
   const fetchSettings = useCallback(async () => {
-    try { setSettings(await safeFetch('/.netlify/functions/admin-settings')); } catch {}
-  }, [safeFetch]);
+    try {
+      setSettings(await safeFetch('/.netlify/functions/admin-settings'));
+    } catch (err) {
+      logError('fetchSettings', err);
+    }
+  }, [safeFetch, logError]);
 
   const fetchHealth = useCallback(async () => {
-    try { setHealth(await safeFetch('/.netlify/functions/admin-health')); } catch {}
-  }, [safeFetch]);
+    try {
+      setHealth(await safeFetch('/.netlify/functions/admin-health'));
+    } catch (err) {
+      logError('fetchHealth', err);
+    }
+  }, [safeFetch, logError]);
 
   const fetchAffiliateReferrals = useCallback(async (affiliateId) => {
     try {
       setAffiliateReferrals((await safeFetch(`/.netlify/functions/admin-affiliate-referrals?affiliateId=${affiliateId}`)).referrals || []);
-    } catch { setAffiliateReferrals([]); }
-  }, [safeFetch]);
+    } catch (err) {
+      logError('fetchAffiliateReferrals', err, { affiliateId });
+      setAffiliateReferrals([]);
+    }
+  }, [safeFetch, logError]);
 
   // ─── Unified Data Loader ────────────────────────────────
   const loadData = useCallback(async () => {
@@ -226,7 +280,8 @@ export function useAdminState() {
           break;
       }
     } catch (err) {
-      setError(err.message || 'Failed to load data');
+      logError('loadData', err);
+      setError('Failed to load data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -234,16 +289,17 @@ export function useAdminState() {
     activeTab,
     fetchStats, fetchRevenue, fetchGrowth, fetchGeo, fetchChurn,
     fetchBusinesses, fetchAffiliates, fetchFailedPayouts, fetchLogs,
-    fetchTransactions, fetchSettings, fetchHealth,
+    fetchTransactions, fetchSettings, fetchHealth, logError,
   ]);
 
   // ─── Effect ──────────────────────────────────────────────
   useEffect(() => {
+    if (!enabled) return; // 👈 Do NOT load data if not enabled
+
     let isMounted = true;
     const abortController = new AbortController();
 
     const doLoad = async () => {
-      // loadData already handles its own loading state, but we could add abort support
       await loadData();
     };
 
@@ -253,9 +309,10 @@ export function useAdminState() {
       isMounted = false;
       abortController.abort();
     };
-  }, [loadData]); // Only runs when loadData changes (i.e., activeTab or filter dependencies)
+  }, [loadData, enabled]);
 
   // ─── Actions ─────────────────────────────────────────────
+
   const handleBusinessAction = async (slug, action, extra = {}) => {
     if (!confirm(`Are you sure you want to ${action} for ${slug}?`)) return;
     setActionLoading(prev => ({ ...prev, [slug]: true }));
@@ -266,8 +323,11 @@ export function useAdminState() {
       });
       await fetchBusinesses();
       await fetchStats();
-    } catch {}
-    setActionLoading(prev => ({ ...prev, [slug]: false }));
+    } catch (err) {
+      logError('handleBusinessAction', err, { slug, action });
+    } finally {
+      setActionLoading(prev => ({ ...prev, [slug]: false }));
+    }
   };
 
   const handleBulkAction = async (action) => {
@@ -281,7 +341,9 @@ export function useAdminState() {
       await fetchBusinesses();
       setSelectedSlugs([]);
       alert(`Bulk action "${action}" completed.`);
-    } catch {}
+    } catch (err) {
+      logError('handleBulkAction', err, { action, count: selectedSlugs.length });
+    }
   };
 
   const handleRetryPayout = async (payoutId) => {
@@ -296,8 +358,11 @@ export function useAdminState() {
       alert('Payout retried successfully!');
       await fetchFailedPayouts();
       await fetchStats();
-    } catch {}
-    setActionLoading(prev => ({ ...prev, [key]: false }));
+    } catch (err) {
+      logError('handleRetryPayout', err, { payoutId });
+    } finally {
+      setActionLoading(prev => ({ ...prev, [key]: false }));
+    }
   };
 
   const handleEditBusiness = (biz) => {
@@ -331,8 +396,11 @@ export function useAdminState() {
       await fetchBusinesses();
       await fetchStats();
       alert('Business updated successfully!');
-    } catch {}
-    setActionLoading(prev => ({ ...prev, [key]: false }));
+    } catch (err) {
+      logError('handleSaveEdit', err, { slug: selectedBusiness.slug });
+    } finally {
+      setActionLoading(prev => ({ ...prev, [key]: false }));
+    }
   };
 
   const handleManualPayment = async (e) => {
@@ -352,12 +420,17 @@ export function useAdminState() {
         }),
       });
       alert(`Payment recorded and subscription extended to ${new Date(data.new_end_date).toLocaleDateString()}`);
-      setManualSlug(''); setManualAmount(''); setManualNote('');
+      setManualSlug('');
+      setManualAmount('');
+      setManualNote('');
       await fetchTransactions();
       await fetchRevenue();
       await fetchStats();
-    } catch {}
-    setManualLoading(false);
+    } catch (err) {
+      logError('handleManualPayment', err, { manualSlug, manualAmount });
+    } finally {
+      setManualLoading(false);
+    }
   };
 
   const toggleSetting = async (key, value) => {
@@ -367,7 +440,9 @@ export function useAdminState() {
         body: JSON.stringify({ key, value }),
       });
       await fetchSettings();
-    } catch {}
+    } catch (err) {
+      logError('toggleSetting', err, { key, value });
+    }
   };
 
   const generateReport = async () => {
@@ -381,7 +456,9 @@ export function useAdminState() {
         }),
       });
       setReportResult(data);
-    } catch {}
+    } catch (err) {
+      logError('generateReport', err, { reportStart, reportEnd, reportMetrics });
+    }
   };
 
   const handleManualPayout = async () => {
@@ -400,10 +477,15 @@ export function useAdminState() {
         }),
       });
       alert('Payout sent successfully!');
-      setManualPayoutAffiliate(''); setManualPayoutAmount(''); setManualPayoutReason('');
+      setManualPayoutAffiliate('');
+      setManualPayoutAmount('');
+      setManualPayoutReason('');
       await fetchAffiliates();
-    } catch {}
-    setActionLoading(prev => ({ ...prev, ['manualPayout']: false }));
+    } catch (err) {
+      logError('handleManualPayout', err, { manualPayoutAffiliate, manualPayoutAmount });
+    } finally {
+      setActionLoading(prev => ({ ...prev, ['manualPayout']: false }));
+    }
   };
 
   const handleCommissionOverride = async (affiliateId) => {
@@ -422,7 +504,9 @@ export function useAdminState() {
       setCommissionOverride(prev => ({ ...prev, [affiliateId]: numRate }));
       await fetchAffiliates();
       alert('Commission rate updated!');
-    } catch {}
+    } catch (err) {
+      logError('handleCommissionOverride', err, { affiliateId, rate: numRate });
+    }
   };
 
   const handleRefund = async (reference) => {
@@ -439,7 +523,83 @@ export function useAdminState() {
       });
       alert('Refund processed!');
       await fetchTransactions();
-    } catch {}
+    } catch (err) {
+      logError('handleRefund', err, { reference });
+    }
+  };
+
+  // ─── Affiliate Verification ─────────────────────────────
+  const handleAffiliateVerify = async (affiliateId, currentVerified) => {
+    const newVerified = !currentVerified;
+    if (!confirm(`Are you sure you want to ${newVerified ? 'verify' : 'unverify'} this affiliate?`)) return;
+
+    const key = 'verify-' + affiliateId;
+    setActionLoading(prev => ({ ...prev, [key]: true }));
+    try {
+      await safeFetch('/.netlify/functions/admin-affiliate-verify', {
+        method: 'POST',
+        body: JSON.stringify({ affiliateId, verified: newVerified }),
+      });
+      await fetchAffiliates();
+      alert(`Affiliate ${newVerified ? 'verified' : 'unverified'} successfully.`);
+    } catch (err) {
+      logError('handleAffiliateVerify', err, { affiliateId, newVerified });
+      alert('Failed to update verification status.');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [key]: false }));
+    }
+  };
+
+  // ─── NEW: Custom Domain Management ──────────────────────
+  const handleDomainAction = async (biz) => {
+    // Prompt for action
+    const action = prompt('Enter action (approve, reject, verify):', 'approve');
+    if (!action) return;
+    if (!['approve', 'reject', 'verify'].includes(action)) {
+      alert('Invalid action. Please enter approve, reject, or verify.');
+      return;
+    }
+
+    let dnsRecords = null;
+    let notes = prompt('Admin note (optional):', '');
+
+    if (action === 'approve') {
+      const recordsInput = prompt(
+        'Enter DNS records as JSON (e.g., {"type":"CNAME","name":"www","value":"five9.netlify.app"}):'
+      );
+      if (recordsInput) {
+        try {
+          dnsRecords = JSON.parse(recordsInput);
+        } catch (e) {
+          alert('Invalid JSON. Please enter a valid JSON object.');
+          return;
+        }
+      }
+    }
+
+    const key = 'domain-' + biz.slug;
+    setActionLoading(prev => ({ ...prev, [key]: true }));
+
+    try {
+      await safeFetch('/.netlify/functions/admin-businesses', {
+        method: 'POST',
+        body: JSON.stringify({
+          slug: biz.slug,
+          action: 'domain_action',
+          domainAction: action,
+          dnsRecords,
+          notes,
+        }),
+      });
+      await fetchBusinesses();
+      await fetchStats();
+      alert(`Domain ${action}d successfully.`);
+    } catch (err) {
+      logError('handleDomainAction', err, { slug: biz.slug, action });
+      alert('Failed to update domain status.');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [key]: false }));
+    }
   };
 
   // ─── Return ──────────────────────────────────────────────
@@ -476,7 +636,7 @@ export function useAdminState() {
     selectedBusiness,
     showEditModal, setShowEditModal,
     editForm, setEditForm,
-    // actions (most are already exposed; you may want to expose loadData for manual refresh)
+    // actions
     fetchStats, fetchRevenue, fetchGrowth, fetchGeo, fetchChurn,
     fetchBusinesses, fetchAffiliates, fetchFailedPayouts, fetchLogs, fetchTransactions,
     fetchSettings, fetchHealth, fetchAffiliateReferrals,
@@ -484,7 +644,8 @@ export function useAdminState() {
     handleEditBusiness, handleSaveEdit,
     handleManualPayment, toggleSetting, generateReport,
     handleManualPayout, handleCommissionOverride, handleRefund,
-    // optional: expose loadData for manual refresh
+    handleAffiliateVerify,
+    handleDomainAction,
     loadData,
   };
 }

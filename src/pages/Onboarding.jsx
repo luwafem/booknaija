@@ -1,7 +1,9 @@
 // src/pages/Onboarding.jsx
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useOnboarding } from '../hooks/useOnboarding';
 import OnboardingLayout from '../components/onboarding/OnboardingLayout';
-import StepWrapper from '../components/ui/StepWrapper'; // ✅ shared component
+import StepWrapper from '../components/ui/StepWrapper';
 import StepSecurity from '../components/onboarding/StepSecurity';
 import StepGallery from '../components/onboarding/StepGallery';
 import StepServices from '../components/onboarding/StepServices';
@@ -12,6 +14,45 @@ import StepProperties from '../components/onboarding/StepProperties';
 import StepReview from '../components/onboarding/StepReview';
 
 export default function Onboarding() {
+  const [searchParams] = useSearchParams();
+  const reference = searchParams.get('reference');
+  const slugFromUrl = searchParams.get('slug');
+
+  const [paymentVerified, setPaymentVerified] = useState(false);
+  const [verifying, setVerifying] = useState(true);
+  const [verifyError, setVerifyError] = useState('');
+
+  // Verify payment on mount
+  useEffect(() => {
+    if (!reference || !slugFromUrl) {
+      setVerifying(false);
+      setVerifyError('Payment not initiated. Please complete payment first.');
+      return;
+    }
+
+    const verify = async () => {
+      try {
+        const res = await fetch('/.netlify/functions/verify-subscription', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reference, slug: slugFromUrl }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setPaymentVerified(true);
+          setVerifyError('');
+        } else {
+          setVerifyError(data.error || 'Payment verification failed.');
+        }
+      } catch (err) {
+        setVerifyError('Network error verifying payment.');
+      } finally {
+        setVerifying(false);
+      }
+    };
+    verify();
+  }, [reference, slugFromUrl]);
+
   const hook = useOnboarding();
 
   const {
@@ -102,7 +143,7 @@ export default function Onboarding() {
     businessSlug,
   } = hook;
 
-  // UI tokens (moved to a separate file in practice, but kept here for clarity)
+  // UI tokens
   const inputBase =
     'w-full bg-zinc-800 border border-zinc-700 text-white text-sm rounded-xl px-4 py-3 placeholder-zinc-400 focus:outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500 transition-all duration-200';
   const selectBase =
@@ -283,9 +324,19 @@ export default function Onboarding() {
 
   const currentStepData = steps.find((s) => s.id === currentStep) || steps[0];
 
+  // Disable submit if payment not verified, still verifying, or loading
+  const isSubmitDisabled = !paymentVerified || verifying || loading;
+
   return (
     <OnboardingLayout steps={steps} currentStep={currentStep}>
       <form onSubmit={handleSubmit}>
+        {/* Show payment verification error */}
+        {verifyError && (
+          <div className="bg-red-900/40 border border-red-700 rounded-xl p-3 mb-4">
+            <p className="text-xs text-red-300">{verifyError}</p>
+          </div>
+        )}
+
         <StepWrapper
           title={currentStepData.title}
           description={currentStepData.desc}
@@ -296,7 +347,8 @@ export default function Onboarding() {
           onFinish={handleSubmit}
           loading={loading}
           error={error}
-          // submitLabel defaults to "Finish Setup" – we can leave it out
+          disabled={isSubmitDisabled} // 👈 NEW: pass disabled state
+          submitLabel={verifying ? 'Verifying payment...' : 'Finish Setup'}
         >
           {renderStepContent()}
         </StepWrapper>

@@ -60,6 +60,7 @@ export function useBusiness(slug, options = {}) {
     business: query.data,
     loading: query.isLoading,
     error: query.error,
+    refetch: query.refetch, // 👈 Expose refetch
   };
 }
 
@@ -81,6 +82,11 @@ function transformBusiness(row, includeChildren) {
     hours: row.hours || '',
     accent: row.accent || '#c8a97e',
     theme: row.theme || 'light',
+    template: row.template || 'default',
+    custom_domain: row.custom_domain || '',
+    custom_domain_status: row.custom_domain_status || 'none', // 👈 NEW
+    custom_domain_notes: row.custom_domain_notes || '',       // 👈 NEW
+    dns_records: row.dns_records || null,                     // 👈 NEW
     googleMapsClaimed: row.google_maps_claimed || false,
     avatar: row.avatar || '',
     hero: row.hero || '',
@@ -119,7 +125,6 @@ function transformBusiness(row, includeChildren) {
     team: (row.team && typeof row.team === 'string')
       ? JSON.parse(row.team)
       : (Array.isArray(row.team) ? row.team : []),
-    // ─── Stats (customisable in dashboard) ───
     stats: (row.stats && typeof row.stats === 'string')
       ? JSON.parse(row.stats)
       : (Array.isArray(row.stats) ? row.stats : []),

@@ -11,6 +11,7 @@ export default function StepWrapper({
   loading,
   error,
   submitLabel = 'Finish Setup',
+  disabled = false, // 👈 NEW: external disabled state
 }) {
   return (
     <div>
@@ -48,7 +49,7 @@ export default function StepWrapper({
           <button
             type="button"
             onClick={onFinish}
-            disabled={loading}
+            disabled={loading || disabled} // 👈 NEW: disable if loading OR external disabled
             className="flex-1 bg-white hover:bg-zinc-200 text-zinc-900 py-3 rounded-xl text-sm font-semibold transition-all disabled:bg-zinc-700 disabled:text-zinc-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (

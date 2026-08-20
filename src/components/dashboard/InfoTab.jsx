@@ -1,5 +1,6 @@
 // src/components/dashboard/InfoTab.jsx
 import ImageUploadArea from './ImageUploadArea';
+import { TEMPLATE_OPTIONS } from '../../data/templates';
 
 export default function InfoTab({
   biz,
@@ -32,6 +33,12 @@ export default function InfoTab({
   const hasPreciseLocation = biz.lat && biz.lng;
   const subscriptionEndsAt = biz.subscription_ends_at ? new Date(biz.subscription_ends_at) : null;
   const isActive = !isExpired && subscriptionEndsAt && subscriptionEndsAt > new Date();
+
+  // Get available templates based on business type
+  const getTemplateOptions = () => {
+    const type = biz.businessType || '';
+    return TEMPLATE_OPTIONS[type] || TEMPLATE_OPTIONS.fallback || [];
+  };
 
   return (
     <div className="space-y-6">
@@ -72,12 +79,6 @@ export default function InfoTab({
           <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-white/10 rounded-full" />
           <div className="relative">
             <div className="flex items-start gap-3 mb-4">
-              <div className="flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 bg-white/20 rounded-xl flex items-center justify-center">
-                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-0.5">
                   <h3 className="text-base sm:text-lg font-bold tracking-tight leading-tight">Get on Google Maps</h3>
@@ -119,7 +120,6 @@ export default function InfoTab({
                   </svg>
                   Add to Google Maps
                 </button>
-                <p className="text-[10px] text-emerald-200/80 text-center mt-2 px-2">Copy your website URL below • Free • ~2 mins</p>
               </div>
             )}
           </div>
@@ -319,6 +319,25 @@ export default function InfoTab({
                 onChange={(e) => setField('accent', e.target.value)}
               />
             </div>
+          </div>
+
+          {/* ─── TEMPLATE SELECTOR ─── */}
+          <div>
+            <label className={lbl}>Page Template</label>
+            <select
+              className={sel}
+              value={biz.template || 'default'}
+              onChange={(e) => setField('template', e.target.value)}
+            >
+              {getTemplateOptions().map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] text-zinc-500 mt-1.5">
+              Choose a layout style for your public page. Changes are applied immediately after saving.
+            </p>
           </div>
 
           <div>

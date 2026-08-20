@@ -1,6 +1,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const { verifyAdmin } = require('./_utils/admin-utils.cjs');
 const { validateCsrf } = require('./_utils/csrf.cjs');
+const { Resend } = require('resend');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -18,6 +19,22 @@ async function logSystemEvent(level, source, message, metadata = {}) {
     });
   } catch (err) {
     console.error('Failed to log system event:', err.message);
+  }
+}
+
+// ─── Helper to send email to business ─────────────────────
+async function notifyBusiness(email, name, subject, html, text) {
+  try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'Five9 <noreply@five9.com.ng>',
+      to: email,
+      subject,
+      html,
+      text: text || undefined, // fallback if text not provided
+    });
+  } catch (err) {
+    console.error('Failed to send notification email:', err.message);
   }
 }
 
@@ -162,7 +179,6 @@ exports.handler = async (event) => {
         if (!fields || typeof fields !== 'object') {
           return { statusCode: 400, body: JSON.stringify({ error: 'Missing update data' }) };
         }
-        // Add business_type to allowed fields
         const allowedFields = ['name', 'email', 'phone', 'location', 'tagline', 'bio', 'logo', 'business_type'];
         const updateData = {};
         for (const field of allowedFields) {
@@ -177,12 +193,90 @@ exports.handler = async (event) => {
         logMessage = `Updated business ${slug}: ${Object.keys(updateData).join(', ')}`;
       }
 
+      // ── domain_action ──
+      else if (action === 'domain_action') {
+        const { domainAction, dnsRecords, notes } = body;
+        if (!domainAction) {
+          return { statusCode: 400, body: JSON.stringify({ error: 'Missing domainAction' }) };
+        }
+
+        if (domainAction === 'approve') {
+          updatePayload.custom_domain_status = 'approved';
+          if (dnsRecords) {
+            updatePayload.dns_records = dnsRecords;
+          }
+          if (notes) updatePayload.custom_domain_notes = notes;
+          logMessage = `Approved custom domain for ${slug}`;
+        } else if (domainAction === 'reject') {
+          updatePayload.custom_domain_status = 'rejected';
+          if (notes) updatePayload.custom_domain_notes = notes;
+          logMessage = `Rejected custom domain for ${slug}`;
+        } else if (domainAction === 'verify') {
+          updatePayload.custom_domain_status = 'verified';
+          logMessage = `Verified custom domain for ${slug}`;
+        } else {
+          return { statusCode: 400, body: JSON.stringify({ error: 'Invalid domainAction' }) };
+        }
+
+        // Execute the update
+        const { error } = await supabase
+          .from('businesses')
+          .update(updatePayload)
+          .eq('slug', slug);
+        if (error) throw error;
+
+        // ─── Notify the business via email ──────────────────
+        try {
+          const { data: biz } = await supabase
+            .from('businesses')
+            .select('email, name')
+            .eq('slug', slug)
+            .single();
+
+          if (biz?.email) {
+            const subject = domainAction === 'approve' ? 'Custom domain approved' : 'Custom domain request update';
+            
+            // Build HTML and plain text versions
+            let html = `<p>Hi ${biz.name},</p><p>Your custom domain request has been <strong>${domainAction}d</strong>.</p>`;
+            let text = `Hi ${biz.name},\n\nYour custom domain request has been ${domainAction}d.\n\n`;
+
+            if (domainAction === 'approve') {
+              const records = dnsRecords ? JSON.stringify(dnsRecords, null, 2) : '';
+              html += `<p>Here are the DNS records to add to your domain registrar:</p><pre>${records}</pre>`;
+              text += `Here are the DNS records to add to your domain registrar:\n${records}\n\n`;
+            }
+            if (notes) {
+              html += `<p>Admin note: ${notes}</p>`;
+              text += `Admin note: ${notes}\n\n`;
+            }
+            if (domainAction === 'verify') {
+              html += `<p>Your domain is now live and routing to Five9. 🎉</p>`;
+              text += `Your domain is now live and routing to Five9. 🎉\n\n`;
+            }
+            html += `<p>If you have any questions, reply to this email.</p>`;
+            text += `If you have any questions, reply to this email.\n\n— Five9 Team`;
+
+            await notifyBusiness(biz.email, biz.name, subject, html, text);
+          }
+        } catch (notifyErr) {
+          console.error('Failed to send domain action notification:', notifyErr.message);
+          // Non‑critical – continue
+        }
+
+        // Log the action
+        await logSystemEvent('info', 'admin-businesses', logMessage, { slug, domainAction, notes });
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ success: true, updated: updatePayload }),
+        };
+      }
+
       // ── Unknown action ──
       else {
         return { statusCode: 400, body: JSON.stringify({ error: 'Invalid action' }) };
       }
 
-      // ─── Execute the update ──────────────────────────────
+      // ─── Execute the update (for non-domain actions) ──────
       const { error } = await supabase
         .from('businesses')
         .update(updatePayload)

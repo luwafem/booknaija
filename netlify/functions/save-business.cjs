@@ -230,7 +230,8 @@ exports.handler = async function (event) {
       'food_enabled', 'properties_enabled', 'estates_enabled',
       'socials', 'gallery', 'security_code', 'security_question_1',
       'security_answer_1', 'security_question_2', 'security_answer_2',
-      'stats' // 👈 Added 'stats' to allowed fields
+      'stats',
+      'custom_domain' // 👈 ADDED: custom domain field
     ];
 
     if (isNew) {
@@ -328,6 +329,21 @@ exports.handler = async function (event) {
 
       if (insertErr) {
         console.error('Insert error:', insertErr);
+        // Handle duplicate custom_domain
+        if (insertErr.code === '23505') {
+          // Check if the error is for custom_domain
+          if (insertErr.message && insertErr.message.includes('custom_domain')) {
+            return {
+              statusCode: 409,
+              body: JSON.stringify({ error: 'This custom domain is already taken by another business. Please choose a different domain.' }),
+            };
+          }
+          // Could be duplicate slug or other unique constraint
+          return {
+            statusCode: 409,
+            body: JSON.stringify({ error: 'A business with this slug or custom domain already exists. Please use a different one.' }),
+          };
+        }
         throw insertErr;
       }
       businessId = newRow.id;
@@ -341,6 +357,15 @@ exports.handler = async function (event) {
 
         if (updateErr) {
           console.error('Update error:', updateErr);
+          // Handle duplicate custom_domain on update
+          if (updateErr.code === '23505') {
+            if (updateErr.message && updateErr.message.includes('custom_domain')) {
+              return {
+                statusCode: 409,
+                body: JSON.stringify({ error: 'This custom domain is already taken by another business. Please choose a different domain.' }),
+              };
+            }
+          }
           throw updateErr;
         }
         console.log(`✅ Business updated: ${slug} (fields: ${Object.keys(bizPayload).join(', ')})`);

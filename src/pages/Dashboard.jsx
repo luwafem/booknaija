@@ -4,7 +4,7 @@ import DashboardLayout from '../components/dashboard/DashboardLayout';
 import SaveBar from '../components/dashboard/SaveBar';
 import InfoTab from '../components/dashboard/InfoTab';
 import SecurityTab from '../components/dashboard/SecurityTab';
-import SubscriptionTab from '../components/dashboard/SubscriptionTab'; // 👈 NEW
+import SubscriptionTab from '../components/dashboard/SubscriptionTab';
 import GalleryTab from '../components/dashboard/GalleryTab';
 import OfflinePaymentsTab from '../components/dashboard/OfflinePaymentsTab';
 import ServicesTab from '../components/dashboard/ServicesTab';
@@ -13,6 +13,7 @@ import CarsTab from '../components/dashboard/CarsTab';
 import FoodTab from '../components/dashboard/FoodTab';
 import PropertiesTab from '../components/dashboard/PropertiesTab';
 import EstatesTab from '../components/dashboard/EstatesTab';
+import CustomDomainTab from '../components/dashboard/CustomDomainTab';
 import LocationPicker from '../components/LocationPicker';
 
 export default function Dashboard() {
@@ -66,10 +67,10 @@ export default function Dashboard() {
     uploadImage,
     referralCount,
     freeMonthsEarned,
-    // 👇 NEW props from useDashboard
     subscriptionHistory,
     historyLoading,
     fetchSubscriptionHistory,
+    refreshBusiness, // 👈 ADD
   } = useDashboard();
 
   if (loading) {
@@ -146,7 +147,7 @@ export default function Dashboard() {
             handleLogoUpload={() => uploadImage((url) => setField('logo', url), false, 1)}
           />
         );
-      case 'subscription': // 👈 NEW
+      case 'subscription':
         return (
           <SubscriptionTab
             biz={biz}
@@ -161,8 +162,19 @@ export default function Dashboard() {
             subMsg={subMsg}
             handlePaySubscription={handlePaySubscription}
             subscriptionHistory={subscriptionHistory}
-            historyLoading={historyLoading} // 👈 ADDED
-            fetchSubscriptionHistory={fetchSubscriptionHistory} // 👈 ADDED
+            historyLoading={historyLoading}
+            fetchSubscriptionHistory={fetchSubscriptionHistory}
+          />
+        );
+      case 'custom-domain':
+        return (
+          <CustomDomainTab
+            biz={biz}
+            accent={accent}
+            inp={inp}
+            lbl={lbl}
+            card={card}
+            onRefresh={refreshBusiness} // 👈 PASSED
           />
         );
       case 'security':

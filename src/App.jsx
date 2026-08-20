@@ -3,7 +3,7 @@ import React, { Suspense, lazy } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 
-// ─── SMALL COMPONENTS (keep as regular imports) ───
+// ─── SMALL COMPONENTS ───
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -30,6 +30,7 @@ function RouteTracker() {
 
 // ─── LAZY‑LOAD ALL PAGE COMPONENTS ───
 const Landing = lazy(() => import('./pages/Landing'));
+const RootRouter = lazy(() => import('./pages/RootRouter')); // 👈 NEW
 const Signup = lazy(() => import('./pages/Signup'));
 const Onboarding = lazy(() => import('./pages/Onboarding'));
 const OnboardingSuccess = lazy(() => import('./pages/OnboardingSuccess'));
@@ -54,7 +55,6 @@ export default function App() {
     <>
       <ScrollToTop />
       <RouteTracker />
-      {/* Wrap Routes in Suspense – shows a minimal fallback while chunks load */}
       <Suspense
         fallback={
           <div className="min-h-screen flex items-center justify-center bg-black text-white">
@@ -66,10 +66,12 @@ export default function App() {
         }
       >
         <Routes>
-          <Route path="/" element={<Landing />} />
+          {/* Root route – handles both main domain and custom domains */}
+          <Route path="/" element={<RootRouter />} />
+
           <Route path="/discover" element={<Discover />} />
 
-          {/* Blog Routes - MUST be before /:slug catch‑all */}
+          {/* Blog Routes */}
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogArticle />} />
 
@@ -84,11 +86,11 @@ export default function App() {
           <Route path="/dashboard/:slug" element={<Dashboard />} />
           <Route path="/book/:slug" element={<BookingPage />} />
 
-          {/* Admin Routes - MUST be before /:slug catch‑all */}
+          {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />
 
-          {/* Property Details Page - MUST be before /:slug catch‑all */}
+          {/* Property Details */}
           <Route path="/:slug/property/:propertyId" element={<PropertyDetails />} />
 
           {/* Business Profile Pages */}

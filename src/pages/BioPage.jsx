@@ -4,13 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useBusinessWithSEO } from '../hooks/useBusinessWithSEO';
 import { usePaginatedItems } from '../hooks/usePaginatedItems';
 import SEO from '../hooks/useSEO';
-import HeroSection from '../components/bio/HeroSection';
-import Gallery from '../components/bio/Gallery';
-import ServiceList from '../components/bio/ServiceList';
-import ProductList from '../components/bio/ProductList';
-import FoodList from '../components/bio/FoodList';
-import CarList from '../components/bio/CarList';
-import PropertyLayout from '../components/bio/property/PropertyLayout';
+import { getLayoutComponent } from '../data/layouts';
 
 // --- ADSENSE CONFIGURATION (GLOBAL) ---
 const ADSENSE_CLIENT = 'ca-pub-1898000452698308';
@@ -261,7 +255,7 @@ export default function BioPage() {
     );
   }
 
-  // ─── Guard: if biz is still undefined (shouldn't happen if loading is false, but safe) ───
+  // ─── Guard: if biz is still undefined ───
   if (!biz) {
     const accent = '#c8a97e';
     const ui = { bg: 'bg-white' };
@@ -338,14 +332,19 @@ export default function BioPage() {
   const showFood = biz.foodEnabled && (isSearchActive ? filteredFood.length > 0 : paginatedFood.length > 0);
   const showCars = biz.carsEnabled && (isSearchActive ? filteredCars.length > 0 : paginatedCars.length > 0);
 
-  // ─── FORCE PROPERTY LAYOUT FOR REAL ESTATE / SHORTLET ───
-  // Even if no properties exist yet, we want to show the property template.
-  const isPropertyBusiness = biz.businessType === 'Real Estate' || biz.businessType === 'Shortlet';
-  const hasProperties = (biz.properties || []).length > 0;
-  // ✅ CHANGE: Always use property layout if business type is Real Estate/Shortlet OR propertiesEnabled is true
-  const isPropertyWebsite = isPropertyBusiness || biz.propertiesEnabled;
+  // ─── Template resolution ──────────────────────────────────────
+  const businessType = biz.businessType || '';
+  const template = biz.template || 'default';
 
-  const adsEnabled = biz.adsEnabled !== false && !isPropertyWebsite;
+  // Determine if we should use property layout (Real Estate or Shortlet)
+  const isPropertyBusiness = businessType === 'Real Estate' || businessType === 'Shortlet';
+  const usePropertyLayout = isPropertyBusiness || biz.propertiesEnabled;
+
+  // Get the layout component from the map (handles fallback internally)
+  const LayoutComponent = getLayoutComponent(businessType, template);
+
+  // ─── Ads logic (unchanged) ──────────────────────────────────
+  const adsEnabled = biz.adsEnabled !== false && !usePropertyLayout;
   const totalItems = (isSearchActive ? filteredServices.length + filteredProducts.length + filteredFood.length + filteredCars.length : servicesTotal + productsTotal + foodTotal + carsTotal);
   const hasAnyContent = showServices || showProducts || showFood || showCars;
 
@@ -353,6 +352,7 @@ export default function BioPage() {
   const showSecondaryAd = adsEnabled && hasAnyContent && !isSearchActive && totalItems >= 6;
   const showFooterAd = adsEnabled && hasAnyContent && !isSearchActive && totalItems >= 4;
 
+  // ─── Handlers ────────────────────────────────────────────────
   const handleSearch = (e) => {
     e.preventDefault();
     setIsSearchActive(!!searchQuery.trim());
@@ -440,7 +440,7 @@ export default function BioPage() {
         ? `Booking an appointment with ${biz.name} is simple. Browse the services listed above, select your preferred option, and you will be directed to a secure checkout page.`
         : showCars 
         ? `Scheduling a rental or viewing with ${biz.name} is easy. Browse the available vehicles, select the one you are interested in, and proceed to secure checkout.`
-        : isPropertyWebsite
+        : usePropertyLayout
         ? `Booking a viewing or securing a property with ${biz.name} is easy. Browse the available listings, select the property you are interested in, and proceed to secure checkout.`
         : showFood
         ? `Placing an order with ${biz.name} is straightforward. Browse their menu, customize your items, and proceed to secure checkout.`
@@ -460,7 +460,7 @@ export default function BioPage() {
       q: `Can I buy products from ${biz.name} online?`,
       a: showProducts 
         ? `Yes! ${biz.name} offers a selection of products that you can purchase directly through this page. Simply select the items you want and proceed to secure checkout.`
-        : isPropertyWebsite
+        : usePropertyLayout
         ? `Yes, you can secure a property rental, lease, or purchase online directly through this page with safe, upfront payments.`
         : showFood 
         ? `Yes! ${biz.name} offers online ordering for their menu items with secure checkout and delivery options.`
@@ -475,312 +475,70 @@ export default function BioPage() {
   const faqA = faqOnLight ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.8)';
   const faqBadge = faqOnLight ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.15)';
 
-  return (
-    <div
-      className={`min-h-screen ${ui.bg} ${ui.text} transition-colors duration-500`}
-      itemScope
-      itemType="https://schema.org/LocalBusiness"
-    >
-      <style>{`body, body * { font-family: 'DM Sans', system-ui, -apple-system, sans-serif; }`}</style>
+  // ─── Common props for both layout types ─────────────────────
+  const commonProps = {
+    biz,
+    accent,
+    isDark,
+  };
 
-      <SEO
-        title={biz.name}
-        description={seoDescription}
-        image={seoImage}
-        type="business.business"
-        noIndex={!biz.active}
-        structuredData={structuredData}
-        location={biz.location}
+  // ─── Render the selected layout ─────────────────────────────
+  if (usePropertyLayout) {
+    // Property layout – pass property‑specific handler
+    return (
+      <LayoutComponent
+        {...commonProps}
+        onSelectProperty={handlePropertySelect}
       />
+    );
+  }
 
-      <meta itemProp="url" content={`${window.location.origin}/${biz.slug}`} />
-      <meta itemProp="name" content={biz.name} />
-      {biz.phone && <meta itemProp="telephone" content={biz.phone} />}
-      {biz.location && <meta itemProp="address" content={biz.location} />}
-
-      {isPropertyWebsite ? (
-        <PropertyLayout 
-          biz={biz} 
-          accent={accent} 
-          isDark={isDark} 
-          onSelectProperty={handlePropertySelect} 
-        />
-      ) : (
-        <>
-          <style>{`
-            .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-            .scrollbar-hide::-webkit-scrollbar { display: none; }
-          `}</style>
-
-          <div className="flex flex-col xl:flex-row xl:h-screen overflow-hidden">
-      
-            <aside className="xl:sticky xl:top-0 h-screen xl:overflow-y-auto xl:overflow-x-hidden scrollbar-hide xl:shrink-0 xl:w-[35%]">
-              <HeroSection biz={{
-                logo: biz.logo, name: biz.name, slug: biz.slug, tagline: biz.tagline,
-                bio: biz.bio, phone: biz.phone, whatsapp: biz.whatsapp, location: biz.location,
-                hours: biz.hours, accent: biz.accent, avatar: biz.avatar, hero: biz.hero,
-                gallery: biz.gallery, socials: biz.socials, theme: biz.theme
-              }} />
-            </aside>
-
-            <main className={`flex-1 xl:w-[65%] xl:min-w-0 xl:overflow-y-auto ${ui.bg}`}>
-              <div className="w-full max-w-3xl mx-auto px-6 sm:px-10 lg:px-12 pb-12 xl:pb-16">
-
-                {biz.gallery && biz.gallery.length > 0 && (
-                  <div itemScope itemType="https://schema.org/ImageGallery" aria-label="Photo gallery" className="pt-10 lg:pt-14">
-                    <meta itemProp="name" content={`${biz.name} Gallery`} />
-                    <Gallery gallery={biz.gallery} accent={accent} location={biz.location} theme={theme} />
-                  </div>
-                )}
-
-                {/* ── SEARCH BAR ── */}
-                <section className="mt-12 lg:mt-16" aria-label="Search">
-                  <form onSubmit={handleSearch} className="relative" role="search" aria-label="Search services and products">
-                    <label htmlFor="business-search" className="sr-only">Search by name, code, or description</label>
-                    <div className="absolute inset-y-0 left-0 pl-0 flex items-center pointer-events-none" aria-hidden="true">
-                      <svg className="w-4 h-4 transition-colors duration-300" style={{ color: searchQuery ? accent : accent + '40' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    </div>
-                    <input 
-                      id="business-search" 
-                      type="search" 
-                      value={searchQuery} 
-                      onChange={(e) => setSearchQuery(e.target.value)} 
-                      placeholder="Search by name, code, or description..." 
-                      className="w-full rounded-xl pl-6 pr-10 py-3 text-sm border focus:outline-none transition-all duration-300"
-                      style={{ 
-                        backgroundColor: accent + '08',
-                        borderColor: searchQuery ? accent : accent + '15',
-                        color: isDark ? '#fff' : '#000',
-                      }}
-                      onFocus={(e) => { if (!searchQuery) e.target.style.borderColor = accent; }}
-                      onBlur={(e) => { if (!searchQuery) e.target.style.borderColor = accent + '15'; }}
-                    />
-                    {searchQuery && (
-                      <button type="button" onClick={clearSearch} className="absolute inset-y-0 right-0 pr-4 flex items-center transition-opacity hover:opacity-70" style={{ color: accent }} aria-label="Clear search">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                      </button>
-                    )}
-                  </form>
-                  {isSearchActive && searchQuery && (
-                    <div className="mt-3 flex items-center justify-between" role="status" aria-live="polite">
-                      <p className="text-xs font-medium" style={{ color: accent }}>Showing results for "{searchQuery}"</p>
-                      <button onClick={clearSearch} className="text-xs font-semibold transition-opacity hover:opacity-70" style={{ color: accent }}>Clear</button>
-                    </div>
-                  )}
-                </section>
-
-                {/* ── ACCENT DIVIDER ── */}
-                <div className="mt-12 lg:mt-16 flex items-center gap-3" aria-hidden="true">
-                  <div className="flex-1 h-px" style={{ backgroundColor: accent + '15' }} />
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent }} />
-                  <div className="flex-1 h-px" style={{ backgroundColor: accent + '15' }} />
-                </div>
-
-                {showPrimaryAd && (
-                  <div className="mt-12 lg:mt-16">
-                    <div className="rounded-2xl p-6 lg:p-8 flex flex-col items-center" style={{ backgroundColor: accent + '08', borderColor: accent + '15', borderWidth: '1px' }}>
-                      <span className="text-[10px] uppercase tracking-[0.25em] mb-4 font-semibold text-center block" style={{ color: accent }}>Sponsored</span>
-                      <GoogleAd slot={AD_SLOT_PRIMARY} className="w-full max-w-md" />
-                    </div>
-                  </div>
-                )}
-
-                {/* ── ABOUT ── */}
-                {biz.bio && (
-                  <section className="mt-16 lg:mt-24" aria-label="About business">
-                    <div className="border-l-2 pl-6 md:pl-8" style={{ borderColor: accent }}>
-                      <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: accent }}>
-                        About {biz.name}
-                      </h2>
-                      <p className={`text-sm leading-[1.9] ${ui.sub}`}>
-                        {biz.bio}
-                      </p>
-                    </div>
-                  </section>
-                )}
-
-                {isSearchActive && !hasAnyContent && (
-                  <div className="mt-16 lg:mt-24 text-center" role="status">
-                    <div className="w-16 h-16 rounded-full mx-auto mb-6 flex items-center justify-center" style={{ backgroundColor: accent + '08', boxShadow: `0 0 0 1px ${accent + '15'}` }}>
-                      <svg className="w-6 h-6" style={{ color: accent }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    </div>
-                    <p className={`text-sm font-medium ${ui.sub}`}>No results found</p>
-                    <button onClick={clearSearch} className="mt-4 px-5 py-2 text-xs font-semibold tracking-wide rounded-full transition-all duration-300 hover:opacity-80" style={{ backgroundColor: accent + '08', color: accent }}>
-                      View All
-                    </button>
-                  </div>
-                )}
-
-                {/* ── SERVICES ── */}
-                {showServices && (
-                  <section itemScope itemType="https://schema.org/ItemList" aria-label="Services" className="mt-16 lg:mt-24">
-                    <meta itemProp="name" content={`${biz.name} Services`} />
-                    <meta itemProp="numberOfItems" content={isSearchActive ? filteredServices.length : servicesTotal} />
-                    <SectionHeading accent={accent} id="services">Services</SectionHeading>
-                    <ServiceList services={displayServices} selectedId={activeService} onSelect={handleServiceSelect} accent={accent} location={biz.location} theme={theme} />
-                    {!isSearchActive && servicesHasMore && (
-                      <div className="mt-6 flex justify-center">
-                        <button
-                          onClick={loadMoreServices}
-                          disabled={servicesLoading}
-                          className="px-6 py-3 text-sm font-semibold rounded-full transition-all duration-300 hover:opacity-80 disabled:opacity-50"
-                          style={{ backgroundColor: accent + '10', color: accent, border: `1px solid ${accent}20` }}
-                        >
-                          {servicesLoading ? 'Loading...' : 'Load More Services'}
-                        </button>
-                      </div>
-                    )}
-                  </section>
-                )}
-
-                {/* ── PRODUCTS ── */}
-                {showProducts && (
-                  <section itemScope itemType="https://schema.org/ItemList" aria-label={showServices ? 'Products' : 'Shop'} className="mt-16 lg:mt-24">
-                    <meta itemProp="name" content={`${biz.name} Products`} />
-                    <meta itemProp="numberOfItems" content={isSearchActive ? filteredProducts.length : productsTotal} />
-                    <SectionHeading accent={accent} id="products">{showServices ? 'Products' : 'Shop'}</SectionHeading>
-                    <ProductList products={displayProducts} selectedProducts={activeProducts} onSelect={handleProductSelect} accent={accent} label={showServices ? 'Products' : 'Shop'} location={biz.location} theme={theme} />
-                    {!isSearchActive && productsHasMore && (
-                      <div className="mt-6 flex justify-center">
-                        <button
-                          onClick={loadMoreProducts}
-                          disabled={productsLoading}
-                          className="px-6 py-3 text-sm font-semibold rounded-full transition-all duration-300 hover:opacity-80 disabled:opacity-50"
-                          style={{ backgroundColor: accent + '10', color: accent, border: `1px solid ${accent}20` }}
-                        >
-                          {productsLoading ? 'Loading...' : 'Load More Products'}
-                        </button>
-                      </div>
-                    )}
-                  </section>
-                )}
-
-                {/* ── FOOD ── */}
-                {showFood && (
-                  <section itemScope itemType="https://schema.org/ItemList" aria-label="Menu" className="mt-16 lg:mt-24">
-                    <meta itemProp="name" content={`${biz.name} Menu`} />
-                    <meta itemProp="numberOfItems" content={isSearchActive ? filteredFood.length : foodTotal} />
-                    <SectionHeading accent={accent} id="menu">Menu</SectionHeading>
-                    <FoodList food={displayFood} selectedFood={activeFood} foodVariants={getCart().foodVariants || {}} onSelect={handleFoodSelect} accent={accent} location={biz.location} theme={theme} />
-                    {!isSearchActive && foodHasMore && (
-                      <div className="mt-6 flex justify-center">
-                        <button
-                          onClick={loadMoreFood}
-                          disabled={foodLoading}
-                          className="px-6 py-3 text-sm font-semibold rounded-full transition-all duration-300 hover:opacity-80 disabled:opacity-50"
-                          style={{ backgroundColor: accent + '10', color: accent, border: `1px solid ${accent}20` }}
-                        >
-                          {foodLoading ? 'Loading...' : 'Load More Menu Items'}
-                        </button>
-                      </div>
-                    )}
-                  </section>
-                )}
-
-                {/* ── CARS ── */}
-                {showCars && (
-                  <section itemScope itemType="https://schema.org/ItemList" aria-label="Vehicles" className="mt-16 lg:mt-24">
-                    <meta itemProp="name" content={`${biz.name} Vehicles`} />
-                    <meta itemProp="numberOfItems" content={isSearchActive ? filteredCars.length : carsTotal} />
-                    <SectionHeading accent={accent} id="vehicles">Vehicles</SectionHeading>
-                    <CarList cars={displayCars} selectedCar={activeCar ? biz.cars.find(c => c.id === activeCar) : null} onSelect={handleCarSelect} accent={accent} location={biz.location} theme={theme} />
-                    {!isSearchActive && carsHasMore && (
-                      <div className="mt-6 flex justify-center">
-                        <button
-                          onClick={loadMoreCars}
-                          disabled={carsLoading}
-                          className="px-6 py-3 text-sm font-semibold rounded-full transition-all duration-300 hover:opacity-80 disabled:opacity-50"
-                          style={{ backgroundColor: accent + '10', color: accent, border: `1px solid ${accent}20` }}
-                        >
-                          {carsLoading ? 'Loading...' : 'Load More Vehicles'}
-                        </button>
-                      </div>
-                    )}
-                  </section>
-                )}
-
-                {showSecondaryAd && (
-                  <div className="mt-16 lg:mt-24">
-                    <div className="rounded-2xl p-6 lg:p-8 flex flex-col items-center" style={{ backgroundColor: accent + '08', borderColor: accent + '15', borderWidth: '1px' }}>
-                      <span className="text-[10px] uppercase tracking-[0.25em] mb-4 font-semibold text-center block" style={{ color: accent }}>Sponsored</span>
-                      <GoogleAd slot={AD_SLOT_SECONDARY} className="w-full max-w-md" />
-                    </div>
-                  </div>
-                )}
-
-                {/* ── FAQ ── */}
-                <section className="mt-16 lg:mt-24" aria-label="Frequently Asked Questions">
-                  <SectionHeading accent={accent} id="faq">FAQs</SectionHeading>
-                  <div className="space-y-4">
-                    {faqs.map((faq, index) => (
-                      <div 
-                        key={index} 
-                        className="rounded-2xl transition-all duration-500 hover:shadow-lg hover:-translate-y-0.5"
-                        style={{ backgroundColor: accent }}
-                      >
-                        <div className="p-5 md:p-6">
-                          <div className="flex items-start gap-4">
-                            <span 
-                              className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold mt-0.5" 
-                              style={{ backgroundColor: faqBadge, color: '#fff' }}
-                            >
-                              {index + 1}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-sm font-semibold mb-2.5" style={{ color: faqQ }}>
-                                {faq.q}
-                              </h3>
-                              <p className="text-sm leading-relaxed" style={{ color: faqA }}>
-                                {faq.a}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                {showFooterAd && (
-                  <div className="mt-16 lg:mt-24 pt-16" style={{ borderTop: `1px solid ${accent + '15'}` }}>
-                    <div className="rounded-2xl p-6 lg:p-8 flex flex-col items-center" style={{ backgroundColor: accent + '08', borderColor: accent + '15', borderWidth: '1px' }}>
-                      <span className="text-[10px] uppercase tracking-[0.25em] mb-4 font-semibold text-center block" style={{ color: accent }}>Sponsored</span>
-                      <GoogleAd slot={AD_SLOT_FOOTER} className="w-full max-w-md mx-auto" />
-                    </div>
-                  </div>
-                )}
-
-                {/* ── FOOTER ── */}
-                <footer className="mt-16 lg:mt-24 pt-10" style={{ borderTop: `1px solid ${accent + '15'}` }}>
-                  <div className="flex flex-col items-center text-center">
-                    
-                    
-
-                    <nav className="flex items-center gap-2 mb-8" aria-label="Legal links">
-                      <a href="/privacy" className="px-4 py-1.5 text-[10px] font-semibold tracking-[0.15em] uppercase transition-all duration-300 rounded-full" style={{ color: accent, backgroundColor: accent + '08' }}>
-                        Privacy
-                      </a>
-                      <a href="/terms" className="px-4 py-1.5 text-[10px] font-semibold tracking-[0.15em] uppercase transition-all duration-300 rounded-full" style={{ color: accent, backgroundColor: accent + '08' }}>
-                        Terms
-                      </a>
-                    </nav>
-
-                    <div className="flex items-center gap-6">
-                      <span className="text-[10px] uppercase tracking-widest flex items-center gap-2 font-semibold" style={{ color: accent }}>
-                        Secured by Paystack
-                      </span>
-                      <span className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: accent }}>
-                        Powered by Five9
-                      </span>
-                    </div>
-                  </div>
-                </footer>
-
-              </div>
-            </main>
-          </div>
-        </>
-      )}
-    </div>
+  // Default (non‑property) layout – pass all the handlers and data
+  return (
+    <LayoutComponent
+      {...commonProps}
+      ui={ui}
+      searchQuery={searchQuery}
+      isSearchActive={isSearchActive}
+      activeService={activeService}
+      activeProducts={activeProducts}
+      activeFood={activeFood}
+      activeCar={activeCar}
+      handleServiceSelect={handleServiceSelect}
+      handleProductSelect={handleProductSelect}
+      handleFoodSelect={handleFoodSelect}
+      handleCarSelect={handleCarSelect}
+      showServices={showServices}
+      showProducts={showProducts}
+      showFood={showFood}
+      showCars={showCars}
+      displayServices={displayServices}
+      displayProducts={displayProducts}
+      displayFood={displayFood}
+      displayCars={displayCars}
+      servicesHasMore={servicesHasMore}
+      loadMoreServices={loadMoreServices}
+      servicesLoading={servicesLoading}
+      productsHasMore={productsHasMore}
+      loadMoreProducts={loadMoreProducts}
+      productsLoading={productsLoading}
+      foodHasMore={foodHasMore}
+      loadMoreFood={loadMoreFood}
+      foodLoading={foodLoading}
+      carsHasMore={carsHasMore}
+      loadMoreCars={loadMoreCars}
+      carsLoading={carsLoading}
+      showPrimaryAd={showPrimaryAd}
+      showSecondaryAd={showSecondaryAd}
+      showFooterAd={showFooterAd}
+      faqs={faqs}
+      faqQ={faqQ}
+      faqA={faqA}
+      faqBadge={faqBadge}
+      handleSearch={handleSearch}
+      clearSearch={clearSearch}
+      getCart={getCart}
+      slug={slug}
+    />
   );
 }

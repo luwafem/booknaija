@@ -22,13 +22,14 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const state = useAdminState();
+  
+  // 👇 Only enable data fetching after authentication is confirmed
+  const state = useAdminState(!isLoading);
+  
   const {
     activeTab,
     setActiveTab,
     stats,
-    error,
-    setError,
     showEditModal,
     setShowEditModal,
     selectedBusiness,
@@ -36,9 +37,8 @@ export default function AdminDashboard() {
     setEditForm,
     handleSaveEdit,
     actionLoading,
-    setActionLoading, // 👈 ADDED: needed for verify loading state
-    safeFetch,        // 👈 ADDED: needed for API calls
-    fetchAffiliates,  // 👈 ADDED: to refresh the list after verification
+    handleAffiliateVerify,
+    handleDomainAction, // 👈 NEW: For custom domain management
   } = state;
 
   // ─── CSRF Token ──────────────────────────────────────────
@@ -81,35 +81,11 @@ export default function AdminDashboard() {
     }
   };
 
-  // ─── HANDLE VERIFY AFFILIATE ────────────────────────────
-  const handleVerifyAffiliate = async (affiliateId, currentVerified) => {
-    const newVerified = !currentVerified;
-    if (!confirm(`Are you sure you want to ${newVerified ? 'verify' : 'unverify'} this affiliate?`)) return;
-
-    const key = 'verify-' + affiliateId;
-    setActionLoading((prev) => ({ ...prev, [key]: true }));
-
-    try {
-      await safeFetch('/.netlify/functions/admin-affiliate-verify', {
-        method: 'POST',
-        body: JSON.stringify({ affiliateId, verified: newVerified }),
-      });
-      await fetchAffiliates(); // refresh the list
-      alert(`Affiliate ${newVerified ? 'verified' : 'unverified'} successfully.`);
-    } catch (err) {
-      alert('Failed to update verification status.');
-      console.error(err);
-    } finally {
-      setActionLoading((prev) => ({ ...prev, [key]: false }));
-    }
-  };
-
   // ─── RENDER TAB ──────────────────────────────────────────
   const renderTab = () => {
     const props = {
       ...state,
       exportCSV: state.exportCSV || (() => {}),
-      handleVerifyAffiliate, // 👈 ADDED: pass the handler to all tabs
     };
     switch (activeTab) {
       case 'overview':
@@ -156,14 +132,6 @@ export default function AdminDashboard() {
   // ─── MAIN RENDER ────────────────────────────────────────
   return (
     <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab} stats={stats} onLogout={handleLogout}>
-      {error && (
-        <div className="bg-red-900/20 border border-red-700 rounded-xl p-4 mb-6 text-center">
-          <p className="text-red-400 font-medium">{error}</p>
-          <button onClick={() => setError('')} className="mt-2 text-sm text-red-300 hover:text-red-200">
-            Dismiss
-          </button>
-        </div>
-      )}
       {renderTab()}
 
       <EditBusinessModal
