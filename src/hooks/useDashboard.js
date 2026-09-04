@@ -427,7 +427,8 @@ export function useDashboard() {
       { id: 'custom-domain', label: 'Custom Domain' },
       { id: 'security', label: 'Security' },
       { id: 'gallery', label: 'Gallery' },
-      { id: 'offline-payments', label: 'Bank Payments' }
+      { id: 'offline-payments', label: 'Bank Payments' },
+      { id: 'support', label: 'Support' }, // 👈 ADDED
     ];
     if (biz.servicesEnabled) base.push({ id: 'services', label: 'Services' });
     if (biz.productsEnabled) base.push({ id: 'products', label: 'Products' });
@@ -490,7 +491,7 @@ export function useDashboard() {
     historyLoading,
     fetchSubscriptionHistory,
     // ─── Refresh ───
-    refreshBusiness, // 👈 EXPOSED
+    refreshBusiness,
     // Derived
     isExpired,
     isWarning,

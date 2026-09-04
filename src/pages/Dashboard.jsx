@@ -15,6 +15,7 @@ import PropertiesTab from '../components/dashboard/PropertiesTab';
 import EstatesTab from '../components/dashboard/EstatesTab';
 import CustomDomainTab from '../components/dashboard/CustomDomainTab';
 import LocationPicker from '../components/LocationPicker';
+import SupportForm from '../components/SupportForm'; // 👈 NEW IMPORT
 
 export default function Dashboard() {
   const {
@@ -70,7 +71,7 @@ export default function Dashboard() {
     subscriptionHistory,
     historyLoading,
     fetchSubscriptionHistory,
-    refreshBusiness, // 👈 ADD
+    refreshBusiness,
   } = useDashboard();
 
   if (loading) {
@@ -174,7 +175,7 @@ export default function Dashboard() {
             inp={inp}
             lbl={lbl}
             card={card}
-            onRefresh={refreshBusiness} // 👈 PASSED
+            onRefresh={refreshBusiness}
           />
         );
       case 'security':
@@ -228,7 +229,6 @@ export default function Dashboard() {
             handleVerifyOfflinePayment={handleVerifyOfflinePayment}
             accent={accent}
             card={card}
-            // Additional bank-related props
             biz={biz}
             setField={setField}
             banks={banks}
@@ -261,6 +261,21 @@ export default function Dashboard() {
         return <PropertiesTab {...commonTabProps} />;
       case 'estates':
         return <EstatesTab {...commonTabProps} />;
+      case 'support': // 👈 NEW SUPPORT TAB
+        return (
+          <div className={card}>
+            <h3 className="text-sm font-bold text-white tracking-tight mb-4">Contact Support</h3>
+            <p className="text-xs text-zinc-400 mb-6">
+              Have an issue or feedback? Submit a ticket and we'll get back to you as soon as possible.
+            </p>
+            <SupportForm
+              userType="business"
+              userId={biz.slug}
+              userEmail={biz.email || ''}
+              accent={accent}
+            />
+          </div>
+        );
       default:
         return null;
     }
@@ -269,7 +284,6 @@ export default function Dashboard() {
   // ─── RENDER ───
   return (
     <>
-      {/* Font load (same as before) */}
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       <link
@@ -291,7 +305,6 @@ export default function Dashboard() {
         >
           {renderTabContent()}
 
-          {/* SaveBar – always visible at bottom */}
           <SaveBar
             error={error}
             saved={saved}
@@ -301,7 +314,6 @@ export default function Dashboard() {
           />
         </DashboardLayout>
 
-        {/* Location Picker Modal */}
         {showMapPicker && (
           <div
             className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"

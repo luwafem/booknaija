@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import SupportForm from '../components/SupportForm'; // 👈 NEW IMPORT
 
 // ─── Master list of all business types (must match SettingsTab) ───
 const ALL_BUSINESS_TYPES = [
@@ -622,6 +623,20 @@ export default function AffiliateDashboard() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* ===== SUPPORT SECTION (NEW) ===== */}
+        <div className={`${cardBase} p-6`}>
+          <h3 className="text-base font-bold text-white mb-1">Support</h3>
+          <p className="text-xs text-zinc-400 mb-4">
+            Have an issue or feedback? Submit a ticket and we'll get back to you as soon as possible.
+          </p>
+          <SupportForm
+            userType="affiliate"
+            userId={affiliateId}
+            userEmail={data.affiliate.email || ''}
+            accent="#c8a97e" // Use default or a specific color; can be passed from props if needed
+          />
         </div>
 
       </main>

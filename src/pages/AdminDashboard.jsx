@@ -16,6 +16,7 @@ import TransactionsTab from '../components/admin/TransactionsTab';
 import SettingsTab from '../components/admin/SettingsTab';
 import SystemTab from '../components/admin/SystemTab';
 import ReportsTab from '../components/admin/ReportsTab';
+import SupportTab from '../components/admin/SupportTab'; // 👈 NEW IMPORT
 import EditBusinessModal from '../components/admin/EditBusinessModal';
 
 export default function AdminDashboard() {
@@ -38,7 +39,7 @@ export default function AdminDashboard() {
     handleSaveEdit,
     actionLoading,
     handleAffiliateVerify,
-    handleDomainAction, // 👈 NEW: For custom domain management
+    handleDomainAction,
   } = state;
 
   // ─── CSRF Token ──────────────────────────────────────────
@@ -112,6 +113,8 @@ export default function AdminDashboard() {
         return <SystemTab {...props} />;
       case 'reports':
         return <ReportsTab {...props} />;
+      case 'support': // 👈 NEW SUPPORT TAB
+        return <SupportTab />;
       default:
         return <div className="text-zinc-400">Tab not implemented.</div>;
     }

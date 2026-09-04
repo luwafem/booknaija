@@ -3,7 +3,7 @@ import React from 'react';
 const TABS = [
   'overview', 'revenue', 'growth', 'geo', 'churn',
   'businesses', 'affiliates', 'payouts', 'transactions',
-  'settings', 'system', 'reports'
+  'settings', 'system', 'reports', 'support' // 👈 ADDED
 ];
 
 export default function AdminLayout({ activeTab, setActiveTab, children, stats, onLogout }) {
