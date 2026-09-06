@@ -8,11 +8,14 @@ export default function AnnouncementBar() {
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-black opacity-40" />
           <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-black" />
         </span>
-        <span className="hidden sm:inline">Meta took down your page?</span>
-        <span className="sm:hidden">Meta took your page?</span>
-        &nbsp;Your Five9 link never goes down.
-        <Link to="/signup" className="underline underline-offset-2 font-extrabold hover:text-lime-900 transition-colors ml-1">
-          Get protected →
+        <span>
+          Keep your business running — with or without you.
+        </span>
+        <Link
+          to="/signup"
+          className="underline underline-offset-2 font-extrabold hover:text-lime-900 transition-colors ml-1"
+        >
+          Get started →
         </Link>
       </div>
     </div>
