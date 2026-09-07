@@ -9,13 +9,13 @@ export default function AnnouncementBar() {
           <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-black" />
         </span>
         <span>
-          Keep your business running — with or without you.
+          Keep your business running with or without you.
         </span>
         <Link
           to="/signup"
           className="underline underline-offset-2 font-extrabold hover:text-lime-900 transition-colors ml-1"
         >
-          Get started →
+          Get started
         </Link>
       </div>
     </div>
