@@ -58,6 +58,45 @@ function getFeaturesForType(type) {
   }
 }
 
+// ─── VERIFY A PAYSTACK REFERENCE (used to anchor signup subscription window) ───
+// Returns { paidAt: Date, amount: number } if the reference is a successful
+// payment matching the expected slug, or null otherwise. Never throws.
+async function verifySignupPayment(reference, expectedSlug) {
+  if (!reference) return null;
+  const secretKey = process.env.PAYSTACK_SECRET_KEY;
+  if (!secretKey) {
+    console.warn('⚠️ PAYSTACK_SECRET_KEY not set; cannot verify payment reference.');
+    return null;
+  }
+  try {
+    const res = await fetch(
+      `https://api.paystack.co/transaction/verify/${reference}`,
+      { headers: { Authorization: `Bearer ${secretKey}` } }
+    );
+    const data = await res.json();
+
+    if (!data.status || data.data?.status !== 'success') {
+      console.warn(`⚠️ Reference ${reference} not successful: ${data.message || data.data?.gateway_response || 'unknown'}`);
+      return null;
+    }
+
+    // Guard against a malicious / stale reference pointing at a different business
+    const refSlug = data.data?.metadata?.slug;
+    if (expectedSlug && refSlug && refSlug !== expectedSlug) {
+      console.warn(`⚠️ Reference ${reference} slug mismatch: metadata says "${refSlug}", expected "${expectedSlug}"`);
+      return null;
+    }
+
+    return {
+      paidAt: new Date(data.data.paid_at || Date.now()),
+      amount: data.data.amount,
+    };
+  } catch (err) {
+    console.error('verifySignupPayment failed:', err.message);
+    return null;
+  }
+}
+
 // ─── HELPERS FOR GRANULAR SYNC ───
 function toSnakeCase(str) {
   return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
@@ -158,7 +197,7 @@ exports.handler = async function (event) {
     let d = JSON.parse(event.body);
     d = sanitizeDeep(d);
 
-    const { slug } = d;
+    const { slug, paymentReference } = d;
     if (!slug) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing slug' }) };
     }
@@ -231,7 +270,7 @@ exports.handler = async function (event) {
       'socials', 'gallery', 'security_code', 'security_question_1',
       'security_answer_1', 'security_question_2', 'security_answer_2',
       'stats',
-      'custom_domain' // 👈 ADDED: custom domain field
+      'custom_domain'
     ];
 
     if (isNew) {
@@ -248,7 +287,27 @@ exports.handler = async function (event) {
       // Ensure required fields for new business
       bizPayload.slug = d.slug;
       bizPayload.active = true;
-      bizPayload.subscription_ends_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      // ─── ANCHOR SUBSCRIPTION WINDOW TO ACTUAL PAYMENT TIME ───
+      // Bank transfers can take minutes/hours to settle, and the user may
+      // abandon the tab and come back much later. Anchoring to paid_at
+      // guarantees the customer gets the full 30 days they paid for.
+      let paidAt = null;
+      if (paymentReference) {
+        const verified = await verifySignupPayment(paymentReference, slug);
+        if (verified) {
+          paidAt = verified.paidAt;
+          console.log(`✅ Anchored subscription for ${slug} to paid_at ${paidAt.toISOString()} (ref: ${paymentReference})`);
+        } else {
+          console.warn(`⚠️ Could not verify paymentReference "${paymentReference}" for ${slug}; falling back to now.`);
+        }
+      } else {
+        console.warn(`⚠️ No paymentReference in payload for new business ${slug}; falling back to now.`);
+      }
+      const anchor = paidAt || new Date();
+      bizPayload.subscription_ends_at = new Date(
+        anchor.getTime() + 30 * 24 * 60 * 60 * 1000
+      ).toISOString();
 
       // Apply derived feature flags if not explicitly set
       if (bizPayload.services_enabled === undefined) bizPayload.services_enabled = derived.services_enabled;
@@ -274,14 +333,19 @@ exports.handler = async function (event) {
         bizPayload.security_answer_2_hash = bcrypt.hashSync(trimmed, 10);
       }
 
-      // Affiliate referral
+      // ─── AFFILIATE REFERRAL ───
+      // IMPORTANT: the affiliate was ALREADY paid ₦1,500 via the Paystack split
+      // at the moment the signup payment succeeded. So we mark month = 1
+      // (month‑1 handled), NOT 0. This prevents a double ₦1,500 payout on the
+      // next renewal — the next payout should be the ₦1,000 month‑2 bonus.
       if (d.referredBy && d.referredBy.startsWith('aff_')) {
         bizPayload.referred_by_affiliate = d.referredBy;
         bizPayload.affiliate_bounty_paid = true;
-        bizPayload.affiliate_commission_month = 0;
+        bizPayload.affiliate_commission_month = 1;
+        console.log(`✅ Affiliate referral recorded for ${slug}: ${d.referredBy} (month set to 1; month‑1 already paid via split)`);
       }
 
-      // Remove security plaintext if hash exists
+      // Remove security plaintext if hash exists (belt‑and‑braces; already deleted above)
       if (bizPayload.security_code_hash) delete bizPayload.security_code;
       if (bizPayload.security_answer_1_hash) delete bizPayload.security_answer_1;
       if (bizPayload.security_answer_2_hash) delete bizPayload.security_answer_2;
@@ -291,7 +355,7 @@ exports.handler = async function (event) {
       for (const field of allowedFields) {
         if (d[field] !== undefined && d[field] !== existingBiz[field]) {
           let value = d[field];
-          
+
           // Handle security hashing
           if (field === 'security_code' && value) {
             bizPayload.security_code = value; // keep plaintext for backward compatibility
@@ -331,14 +395,12 @@ exports.handler = async function (event) {
         console.error('Insert error:', insertErr);
         // Handle duplicate custom_domain
         if (insertErr.code === '23505') {
-          // Check if the error is for custom_domain
           if (insertErr.message && insertErr.message.includes('custom_domain')) {
             return {
               statusCode: 409,
               body: JSON.stringify({ error: 'This custom domain is already taken by another business. Please choose a different domain.' }),
             };
           }
-          // Could be duplicate slug or other unique constraint
           return {
             statusCode: 409,
             body: JSON.stringify({ error: 'A business with this slug or custom domain already exists. Please use a different one.' }),
@@ -357,7 +419,6 @@ exports.handler = async function (event) {
 
         if (updateErr) {
           console.error('Update error:', updateErr);
-          // Handle duplicate custom_domain on update
           if (updateErr.code === '23505') {
             if (updateErr.message && updateErr.message.includes('custom_domain')) {
               return {
@@ -386,7 +447,7 @@ exports.handler = async function (event) {
       businessId = updatedRow.id;
     }
 
-    // ─── Referral tracking (only for new businesses) ───
+    // ─── Referral tracking (only for new businesses, business-to-business) ───
     if (isNew && d.referredBy && d.referredBy !== slug && !d.referredBy.startsWith('aff_')) {
       try {
         const { data: referrer, error: refErr } = await supabase

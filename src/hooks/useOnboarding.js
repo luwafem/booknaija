@@ -16,6 +16,10 @@ export function useOnboarding() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const slugFromUrl = searchParams.get('slug');
+  // 👇 NEW: read the Paystack reference so we can anchor the subscription window
+  // to the actual payment time (not the time the user finished the form).
+  const referenceFromUrl =
+    searchParams.get('reference') || searchParams.get('trxref') || null;
 
   // ─── Load business data from storage ───
   const loadBizData = () => {
@@ -534,6 +538,7 @@ export function useOnboarding() {
     // ─── UPDATED PAYLOAD WITH SNAKE_CASE KEYS ───
     const payload = {
       slug: businessSlug,
+      paymentReference: referenceFromUrl,      // 👈 NEW: lets save-business anchor subscription_ends_at
       name: businessName,
       logo: logoUrl,
       tagline: 'A professional ' + businessType + ' in Lagos',

@@ -22,6 +22,10 @@ export function useDashboard() {
   const clickCount = useRef(0);
   const clickTimer = useRef(null);
 
+  // Guard so the renewal-return effect only runs once per reference,
+  // even under React StrictMode double-mount or biz refetches.
+  const subscriptionVerifyRef = useRef('');
+
   const [copied, setCopied] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
 
@@ -122,37 +126,52 @@ export function useDashboard() {
     }
   }, [activeTab, biz, fetchSubscriptionHistory]);
 
-  // Handle subscription payment return
+  // ─── Handle subscription payment return ───
+  // Paystack redirects to `.../dashboard/:slug?sub_ref=SUCCESS&reference=XXX&trxref=XXX`.
+  // `sub_ref` is just a marker we set ourselves in initialize-subscription.cjs.
+  // The actual Paystack reference is in `reference` (or `trxref` as a fallback).
+  // Earlier code mistakenly sent the literal "SUCCESS" string as the reference,
+  // which caused every renewal to show a false failure message.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const subRef = params.get('sub_ref');
-    if (subRef && biz) {
-      setSubLoading(true);
-      fetch('/.netlify/functions/verify-subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': getCsrfToken(),
-        },
-        body: JSON.stringify({ reference: subRef, slug })
+    const isSubReturn = params.get('sub_ref') === 'SUCCESS';
+    const actualRef = params.get('reference') || params.get('trxref');
+
+    if (!isSubReturn || !actualRef || !biz) return;
+
+    // Guard against StrictMode double-mount and re-renders
+    if (subscriptionVerifyRef.current === actualRef) return;
+    subscriptionVerifyRef.current = actualRef;
+
+    setSubLoading(true);
+    setSubMsg('');
+
+    fetch('/.netlify/functions/verify-subscription', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': getCsrfToken(),
+      },
+      body: JSON.stringify({ reference: actualRef, slug }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          setSubMsg('Payment successful! Subscription extended by 30 days.');
+          queryClient.invalidateQueries({ queryKey: ['business', slug] });
+          setTimeout(() => {
+            fetchSubscriptionHistory();
+            window.location.reload();
+          }, 2000);
+        } else {
+          setSubMsg('Payment verification failed. Contact support.');
+        }
       })
-        .then(r => r.json())
-        .then(data => {
-          if (data.success) {
-            setSubMsg('Payment successful! Subscription extended by 30 days.');
-            queryClient.invalidateQueries({ queryKey: ['business', slug] });
-            setTimeout(() => {
-              fetchSubscriptionHistory();
-              window.location.reload();
-            }, 2000);
-          } else {
-            setSubMsg('Payment verification failed. Contact support.');
-          }
-        })
-        .catch(() => setSubMsg('Network error verifying payment.'))
-        .finally(() => setSubLoading(false));
-      window.history.replaceState({}, '', window.location.pathname);
-    }
+      .catch(() => setSubMsg('Network error verifying payment.'))
+      .finally(() => setSubLoading(false));
+
+    // Clean the URL so a manual refresh doesn't re-trigger verification
+    window.history.replaceState({}, '', window.location.pathname);
   }, [biz, slug, fetchSubscriptionHistory, queryClient]);
 
   // Load Cloudinary widget
@@ -214,8 +233,13 @@ export function useDashboard() {
     try {
       const res = await fetch('/.netlify/functions/initialize-subscription', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, email: biz.email })
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': getCsrfToken(),
+        },
+        // Only send slug. The server reads the owner's email from the DB
+        // rather than trusting the client, which prevents receipt-spoofing.
+        body: JSON.stringify({ slug }),
       });
       const data = await res.json();
       if (data.authorization_url) {
@@ -428,7 +452,7 @@ export function useDashboard() {
       { id: 'security', label: 'Security' },
       { id: 'gallery', label: 'Gallery' },
       { id: 'offline-payments', label: 'Bank Payments' },
-      { id: 'support', label: 'Support' }, // 👈 ADDED
+      { id: 'support', label: 'Support' },
     ];
     if (biz.servicesEnabled) base.push({ id: 'services', label: 'Services' });
     if (biz.productsEnabled) base.push({ id: 'products', label: 'Products' });

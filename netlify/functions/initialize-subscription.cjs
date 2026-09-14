@@ -1,14 +1,16 @@
+// netlify/functions/initialize-subscription.cjs
 const { createClient } = require('@supabase/supabase-js');
 const xss = require('xss');
-const cookie = require('cookie');          // 👈 ADDED
-const jwt = require('jsonwebtoken');       // 👈 ADDED
+const cookie = require('cookie');
+const jwt = require('jsonwebtoken');
+const { validateCsrf } = require('./_utils/csrf');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// ─── SANITISATION HELPER ───
+// ─── SANITISATION ───
 function sanitizeDeep(input) {
   if (typeof input === 'string') {
     return xss(input, {
@@ -32,19 +34,36 @@ function sanitizeDeep(input) {
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method not allowed' };
+    return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
   try {
-    const raw = JSON.parse(event.body);
-    const sanitized = sanitizeDeep(raw);
-    const { slug, email, callback_url, referredBy } = sanitized;
-
-    if (!slug || !email) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Missing slug or email' }) };
+    // ─── CSRF PROTECTION ───
+    // This endpoint is only ever called from the authenticated dashboard
+    // (useDashboard.js → handlePaySubscription). The CSRF cookie exists
+    // by then, so we can safely enforce it.
+    if (!validateCsrf(event)) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: 'Invalid security token. Please refresh and try again.' }),
+      };
     }
 
-    // ─── JWT AUTHENTICATION (NEW) ───
+    // ─── PARSE & SANITISE ───
+    let raw;
+    try {
+      raw = JSON.parse(event.body);
+    } catch (_) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON payload' }) };
+    }
+    const sanitized = sanitizeDeep(raw);
+    const { slug, callback_url } = sanitized;
+
+    if (!slug) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'Missing slug' }) };
+    }
+
+    // ─── JWT AUTHENTICATION ───
     const cookies = cookie.parse(event.headers.cookie || '');
     const token = cookies.dashboard_token;
     if (!token) {
@@ -74,7 +93,6 @@ exports.handler = async (event) => {
       };
     }
 
-    // Ensure the JWT slug matches the requested slug
     if (decoded.slug !== slug) {
       console.warn(`JWT slug mismatch: ${decoded.slug} vs ${slug}`);
       return {
@@ -83,64 +101,78 @@ exports.handler = async (event) => {
       };
     }
 
-    // ─── 1. Determine subaccount for split ───
+    // ─── 1. Fetch business from DB ───
+    // We read the owner's email here rather than trusting the client payload.
+    // Otherwise a logged-in user could redirect the Paystack receipt (which
+    // contains their billing info) to an arbitrary email address.
+    const { data: biz, error: bizErr } = await supabase
+      .from('businesses')
+      .select('email, referred_by_affiliate, affiliate_bounty_paid')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    // Real DB error (not "no rows")
+    if (bizErr && bizErr.code !== 'PGRST116') {
+      console.error('Failed to fetch business:', bizErr);
+      return { statusCode: 500, body: JSON.stringify({ error: 'Failed to fetch business' }) };
+    }
+
+    if (!biz) {
+      return { statusCode: 404, body: JSON.stringify({ error: 'Business not found' }) };
+    }
+
+    if (!biz.email) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          error: 'Please add an email address to your business profile before renewing.',
+        }),
+      };
+    }
+
+    // ─── 2. Determine affiliate subaccount for split ───
+    // NOTE: In practice this branch rarely fires on renewals because
+    // save-business.cjs already sets affiliate_bounty_paid = true for
+    // affiliate signups (the split paid month 1 at signup time). Kept here
+    // for safety on legacy rows.
     let subaccountToUse = null;
 
-    // a. If referral is provided directly (signup or direct affiliate link)
-    if (referredBy && referredBy.startsWith('aff_')) {
+    if (biz.referred_by_affiliate && !biz.affiliate_bounty_paid) {
       const { data: affiliate, error: affErr } = await supabase
         .from('affiliates')
         .select('subaccount_code')
-        .eq('id', referredBy)
-        .single();
+        .eq('id', biz.referred_by_affiliate)
+        .maybeSingle();
 
       if (!affErr && affiliate && affiliate.subaccount_code) {
         subaccountToUse = affiliate.subaccount_code;
-        console.log(`✅ Using affiliate subaccount from referral: ${subaccountToUse}`);
+        console.log(`✅ Using affiliate subaccount for split: ${subaccountToUse}`);
       } else {
-        console.warn(`⚠️ Affiliate ${referredBy} not found or has no subaccount_code.`);
+        console.warn(
+          `⚠️ Affiliate ${biz.referred_by_affiliate} not found or has no subaccount_code. Continuing without split.`
+        );
       }
     }
 
-    // b. If no affiliate from referral, check if business exists and has a referred affiliate
-    if (!subaccountToUse) {
-      const { data: biz, error: bizErr } = await supabase
-        .from('businesses')
-        .select('referred_by_affiliate, affiliate_bounty_paid')
-        .eq('slug', slug)
-        .single();
-
-      if (bizErr) {
-        console.log(`ℹ️ Business not found (likely signup). Skipping business-based affiliate lookup.`);
-      } else if (biz && biz.referred_by_affiliate && !biz.affiliate_bounty_paid) {
-        const { data: affiliate, error: affErr2 } = await supabase
-          .from('affiliates')
-          .select('subaccount_code')
-          .eq('id', biz.referred_by_affiliate)
-          .single();
-
-        if (!affErr2 && affiliate && affiliate.subaccount_code) {
-          subaccountToUse = affiliate.subaccount_code;
-          console.log(`✅ Using affiliate subaccount from existing business: ${subaccountToUse}`);
-        }
-      }
-    }
-
-    // ─── 2. Build callback URL ───
+    // ─── 3. Build callback URL ───
+    // Paystack appends `&reference=XXX&trxref=XXX` to whatever callback_url
+    // we pass. The `?sub_ref=SUCCESS` marker is just a hint that the user
+    // returned from a subscription payment — the real reference is read from
+    // the `reference`/`trxref` params by useDashboard.js.
     const baseUrl = process.env.SITE_URL || process.env.URL || 'https://five9.com.ng';
     const cleanBaseUrl = baseUrl.replace(/\/$/, '');
-    const finalCallbackUrl = callback_url || `${cleanBaseUrl}/dashboard/${slug}?sub_ref=SUCCESS`;
+    const finalCallbackUrl =
+      callback_url || `${cleanBaseUrl}/dashboard/${slug}?sub_ref=SUCCESS`;
 
-    // ─── 3. Initialize Paystack ───
+    // ─── 4. Initialize Paystack ───
     const payload = {
-      email,
-      amount: 2500 * 100, // ₦2,500
+      email: biz.email,          // ← from DB, not client
+      amount: 2500 * 100,        // ₦2,500 in kobo
       currency: 'NGN',
       callback_url: finalCallbackUrl,
       metadata: {
         slug,
         payment_type: 'monthly_subscription',
-        referredBy: referredBy || null,
       },
     };
 
