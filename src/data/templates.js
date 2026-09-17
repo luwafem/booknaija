@@ -8,7 +8,8 @@
 export const TEMPLATE_OPTIONS = {
   // ─── Real Estate ──────────────────────────────────────────
   'Real Estate': [
-    { value: 'default', label: 'Classic' },
+    { value: 'default', label: 'Minimalist (Dark)' },
+    { value: 'estateo', label: 'Estateo (Warm)' },
     // Future templates:
     // { value: 'modern', label: 'Modern' },
     // { value: 'minimalist', label: 'Minimalist' },
@@ -16,7 +17,8 @@ export const TEMPLATE_OPTIONS = {
 
   // ─── Shortlet ────────────────────────────────────────────
   'Shortlet': [
-    { value: 'default', label: 'Classic' },
+    { value: 'default', label: 'Minimalist (Dark)' },
+    { value: 'estateo', label: 'Estateo (Warm)' },
   ],
 
   // ─── Fallback for any other business type ────────────────

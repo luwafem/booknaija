@@ -1,5 +1,6 @@
 // src/data/layouts.js
 import PropertyLayout from '../components/bio/property/PropertyLayout';
+import EstateoLayout from '../components/bio/property/estateo/EstateoLayout';
 import DefaultLayout from '../components/bio/DefaultLayout';
 // import ModernPropertyLayout from '../components/bio/property/ModernPropertyLayout'; // future
 
@@ -7,6 +8,7 @@ export const LAYOUT_MAP = {
   // For property‑oriented businesses (Real Estate, Shortlet)
   property: {
     default: PropertyLayout,
+    estateo: EstateoLayout,
     // modern: ModernPropertyLayout,
   },
   // For all other business types (fallback)
