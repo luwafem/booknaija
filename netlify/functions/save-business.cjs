@@ -262,6 +262,7 @@ exports.handler = async function (event) {
     const allowedFields = [
       'name', 'logo', 'tagline', 'bio', 'phone', 'whatsapp', 'email',
       'location', 'lat', 'lng', 'hours', 'accent', 'theme',
+      'template',                       // 👈 NEW: enables page template switching
       'google_maps_claimed', 'hero', 'hero_slides', 'team',
       'subaccount_code', 'calendar_id', 'account_name', 'account_number',
       'settlement_bank', 'active', 'ads_enabled', 'business_type',
