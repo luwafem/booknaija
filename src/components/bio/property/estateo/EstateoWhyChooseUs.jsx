@@ -1,5 +1,11 @@
 import { EGREEN, EGREEN_DARK } from './EstateoLayout';
 
+// ─── STATIC DESIGN COPY ───
+// These four cards are generic value propositions — the kind of thing every
+// property business advertises ("trusted agents", "best prices", etc.).
+// They are NOT business data, so they stay hardcoded. If you ever want them
+// per-business-editable, that would be a new dashboard field, but the
+// whole point of this template is to avoid that.
 const FEATURES = [
   {
     title: 'Trusted Agents',
@@ -32,6 +38,12 @@ const FEATURES = [
 ];
 
 export default function EstateoWhyChooseUs({ biz, accent }) {
+  // 👇 Heading personalized with biz.name. This used to say
+  //    "We Provide The Best Property For You", which duplicated the About
+  //    section heading. Now it's a distinct closing statement that reads
+  //    naturally after the About section has introduced the business.
+  const heading = `Why clients choose ${biz.name}`;
+
   return (
     <section className="relative">
       <div
@@ -45,8 +57,10 @@ export default function EstateoWhyChooseUs({ biz, accent }) {
             <p className="text-[11px] font-bold tracking-[0.22em] uppercase mb-4 text-white/60">
               Why Choose Us
             </p>
+
+            {/* 👇 Driven by biz.name */}
             <h2 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold leading-[1.1] tracking-[-0.02em] text-white max-w-2xl mx-auto">
-              We Provide The Best Property For You
+              {heading}
             </h2>
           </div>
 

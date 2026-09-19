@@ -11,6 +11,16 @@ export default function EstateoCTA({ biz, accent }) {
     biz.hero ||
     'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1600';
 
+  // 👇 Heading personalized with biz.name — reads naturally as a closing
+  //    invitation, and avoids duplicating the Hero tagline (which is the H1).
+  const ctaHeading = `Ready to find your perfect property with ${biz.name}?`;
+
+  // 👇 Body pulled from the first sentence of biz.bio, with a graceful
+  //    fallback that still mentions the business name.
+  const ctaBody = biz.bio
+    ? biz.bio.split(/(?<=[.!?])\s+/)[0]
+    : `Speak with ${biz.name} today and take the first step toward your next home or investment.`;
+
   return (
     <section className="relative">
       <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-16 lg:py-20">
@@ -20,7 +30,7 @@ export default function EstateoCTA({ biz, accent }) {
             background: `linear-gradient(135deg, ${EGREEN} 0%, ${EGREEN_DARK} 100%)`,
           }}
         >
-          {/* Optional blurred bg image overlay */}
+          {/* Blurred background image overlay */}
           <div className="absolute inset-0 opacity-[0.08]">
             <img src={heroImage} alt="" className="w-full h-full object-cover" />
           </div>
@@ -31,16 +41,19 @@ export default function EstateoCTA({ biz, accent }) {
               <p className="text-[11px] font-bold tracking-[0.22em] uppercase mb-4 text-white/60">
                 Get Started Today
               </p>
+
+              {/* 👇 Driven by biz.name */}
               <h2 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold leading-[1.1] tracking-[-0.02em] text-white mb-4 max-w-xl">
-                Ready to Find Your Dream Property?
+                {ctaHeading}
               </h2>
+
+              {/* 👇 Driven by first sentence of biz.bio */}
               <p className="text-base text-white/80 leading-relaxed max-w-lg">
-                Speak with our team today and take the first step toward your next home or
-                investment.
+                {ctaBody}
               </p>
             </div>
 
-            {/* Right: CTA */}
+            {/* Right: CTA — already wired to biz.whatsapp and biz.phone */}
             <div className="lg:col-span-2 flex flex-col sm:flex-row lg:flex-col gap-3 lg:items-end">
               {waLink && (
                 <a

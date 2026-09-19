@@ -1,6 +1,7 @@
 import { EGREEN, buildWhatsAppLink } from './EstateoLayout';
 
-// Default trust badges / mock agents for the "happy customers" bubble
+// Placeholder avatars for the "happy customers" bubble.
+// These are decorative design elements, not business data.
 const DEFAULT_AVATARS = ['AO', 'CN', 'EK', 'TB'];
 
 export default function EstateoHero({ biz, accent }) {
@@ -9,7 +10,18 @@ export default function EstateoHero({ biz, accent }) {
     biz.hero ||
     'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1600';
 
-  const happyCount = biz.happyCustomers || '12K+';
+  // 👇 Pull hero badge data from the dashboard "Stats" editor (biz.stats).
+  //    Falls back to sensible defaults if the owner hasn't added any stats yet.
+  const happyCount = biz.stats?.[0]?.value || '12K+';
+  const happyLabel = biz.stats?.[0]?.label || 'Happy Customers';
+
+  // 👇 Hero headline now driven by the dashboard "Tagline" field.
+  //    Splits on the first comma so we can two‑tone it (line 1 plain, line 2 green)
+  //    while still working if the tagline has no comma.
+  const rawTagline = biz.tagline || 'Find Your Best Dream Property';
+  const [headlineLead, ...headlineRestParts] = rawTagline.split(',');
+  const headlineHighlight = headlineRestParts.join(',').trim() || headlineLead;
+
   const waLink = buildWhatsAppLink(
     biz.whatsapp,
     `Hi ${biz.name}, I'd like to enquire about your properties.`
@@ -29,10 +41,15 @@ export default function EstateoHero({ biz, accent }) {
               Discover Your Perfect Home
             </p>
 
+            {/* 👇 Headline driven by biz.tagline */}
             <h1 className="text-[2.5rem] sm:text-5xl lg:text-[3.75rem] xl:text-[4.25rem] font-extrabold leading-[1.05] tracking-[-0.03em] text-gray-900 mb-6">
-              Find Your Best
-              <br />
-              <span style={{ color: EGREEN }}>Dream Property</span>
+              {headlineLead}
+              {headlineRestParts.length > 0 && (
+                <>
+                  <br />
+                  <span style={{ color: EGREEN }}>{headlineHighlight}</span>
+                </>
+              )}
             </h1>
 
             <p className="text-base sm:text-lg text-gray-600 leading-relaxed mb-8 max-w-lg">
@@ -108,7 +125,7 @@ export default function EstateoHero({ biz, accent }) {
               <div className="absolute inset-0 bg-gradient-to-t from-black/15 to-transparent" />
             </div>
 
-            {/* Floating "Happy Customers" card */}
+            {/* Floating "Happy Customers" card — driven by biz.stats[0] */}
             <div className="absolute -bottom-4 -left-4 sm:bottom-6 sm:left-6 bg-white rounded-2xl shadow-2xl p-4 flex items-center gap-3 border border-gray-100">
               <div className="flex -space-x-2">
                 {DEFAULT_AVATARS.map((initials, i) => (
@@ -125,7 +142,7 @@ export default function EstateoHero({ biz, accent }) {
               </div>
               <div className="pr-1">
                 <p className="text-sm font-extrabold text-gray-900 leading-tight">{happyCount}</p>
-                <p className="text-[11px] text-gray-500 font-medium">Happy Customers</p>
+                <p className="text-[11px] text-gray-500 font-medium">{happyLabel}</p>
               </div>
             </div>
           </div>
