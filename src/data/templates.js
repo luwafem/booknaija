@@ -10,6 +10,7 @@ export const TEMPLATE_OPTIONS = {
   'Real Estate': [
     { value: 'default', label: 'Minimalist (Dark)' },
     { value: 'estateo', label: 'Estateo (Warm)' },
+    { value: 'havenly', label: 'Havenly (Light Editorial)' },   // 👈 NEW
     // Future templates:
     // { value: 'modern', label: 'Modern' },
     // { value: 'minimalist', label: 'Minimalist' },
@@ -19,6 +20,7 @@ export const TEMPLATE_OPTIONS = {
   'Shortlet': [
     { value: 'default', label: 'Minimalist (Dark)' },
     { value: 'estateo', label: 'Estateo (Warm)' },
+    { value: 'havenly', label: 'Havenly (Light Editorial)' },   // 👈 NEW
   ],
 
   // ─── Fallback for any other business type ────────────────

@@ -1,6 +1,7 @@
 // src/data/layouts.js
 import PropertyLayout from '../components/bio/property/PropertyLayout';
 import EstateoLayout from '../components/bio/property/estateo/EstateoLayout';
+import HavenlyLayout from '../components/bio/property/havenly/HavenlyLayout'; // 👈 NEW
 import DefaultLayout from '../components/bio/DefaultLayout';
 // import ModernPropertyLayout from '../components/bio/property/ModernPropertyLayout'; // future
 
@@ -9,7 +10,8 @@ export const LAYOUT_MAP = {
   property: {
     default: PropertyLayout,
     estateo: EstateoLayout,
-    // modern: ModernPropertyLayout,
+    havenly: HavenlyLayout,              // 👈 NEW
+    // modern: ModernPropertyLayout,     // future
   },
   // For all other business types (fallback)
   default: {

@@ -215,6 +215,7 @@ export default function AffiliateSignup() {
         primary_contact_name: sanitized.fullName,
         primary_contact_email: sanitized.email,
         primary_contact_phone: sanitized.phone,
+        type: 'affiliate',   // 👈 NEW — triggers the 40%-only guard server-side
       }),
     });
 

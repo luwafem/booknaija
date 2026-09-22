@@ -13,7 +13,10 @@
     "!**/*.test.js",
     "!**/*.spec.js"
   ]
-  [functions."*.js"]
+  # 👈 FIXED: was `[functions."*.js"]` which never matched anything — our
+  # functions are named `initialize-payment.cjs`, `save-business.cjs`, etc.
+  # Netlify matches function names, not filenames. `"*"` applies to all.
+  [functions."*"]
     memory = 1024
     timeout = 30
 
@@ -25,16 +28,40 @@
   schedule = "0 8 * * *"
 
 # ─── RATE LIMITING ───
+# Most-specific pattern wins. The wildcard below is the floor; specific
+# patterns override it for sensitive endpoints.
 [[rate_limit]]
   pattern = "/.netlify/functions/*"
   rate = "100 per minute"
 
+# ─── Payment / money endpoints ───
 [[rate_limit]]
   pattern = "/.netlify/functions/initialize-payment"
   rate = "10 per minute"
 
 [[rate_limit]]
+  pattern = "/.netlify/functions/initialize-subscription"
+  rate = "10 per minute"   # 👈 NEW — was missing; throttles renewal spam
+
+[[rate_limit]]
+  pattern = "/.netlify/functions/create-subaccount"
+  rate = "5 per minute"    # 👈 NEW — public endpoint, protects Paystack account
+
+[[rate_limit]]
+  pattern = "/.netlify/functions/update-subaccount"
+  rate = "5 per minute"    # 👈 NEW — limits Paystack subaccount churn
+
+[[rate_limit]]
   pattern = "/.netlify/functions/save-business"
+  rate = "5 per minute"
+
+# ─── Auth endpoints ───
+[[rate_limit]]
+  pattern = "/.netlify/functions/admin-login"
+  rate = "5 per minute"    # 👈 NEW — CRITICAL, admin password had zero throttling
+
+[[rate_limit]]
+  pattern = "/.netlify/functions/dashboard-login"
   rate = "5 per minute"
 
 [[rate_limit]]
@@ -43,18 +70,6 @@
 
 [[rate_limit]]
   pattern = "/.netlify/functions/save-affiliate"
-  rate = "5 per minute"
-
-[[rate_limit]]
-  pattern = "/.netlify/functions/submit-offline-booking"
-  rate = "10 per minute"
-
-[[rate_limit]]
-  pattern = "/.netlify/functions/verify-offline-booking"
-  rate = "10 per minute"
-
-[[rate_limit]]
-  pattern = "/.netlify/functions/dashboard-login"
   rate = "5 per minute"
 
 [[rate_limit]]
@@ -70,12 +85,22 @@
   rate = "5 per minute"
 
 [[rate_limit]]
-  pattern = "/.netlify/functions/get-business-items"
-  rate = "30 per minute"
-
-[[rate_limit]]
   pattern = "/.netlify/functions/update-security"
   rate = "5 per minute"
+
+# ─── Booking / offline payment endpoints ───
+[[rate_limit]]
+  pattern = "/.netlify/functions/submit-offline-booking"
+  rate = "10 per minute"
+
+[[rate_limit]]
+  pattern = "/.netlify/functions/verify-offline-booking"
+  rate = "10 per minute"
+
+# ─── Read endpoints ───
+[[rate_limit]]
+  pattern = "/.netlify/functions/get-business-items"
+  rate = "30 per minute"
 
 [[rate_limit]]
   pattern = "/.netlify/functions/get-subscription-history"
@@ -89,12 +114,13 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
-# 2. BLOG: Commented out static redirects – SPA fallback will handle /blog
+# 2. BLOG: SPA fallback handles /blog — do NOT uncomment these or you'll
+#    break the prerendered /blog/<slug>/index.html files.
 # [[redirects]]
 #   from = "/blog"
 #   to = "/index.html"
 #   status = 200
-
+#
 # [[redirects]]
 #   from = "/blog/*"
 #   to = "/blog/:splat/index.html"
@@ -114,7 +140,13 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=()"
+    # 👈 FIXED: was `camera=()` which silently blocks the Cloudinary upload
+    # widget's "Take Photo" source on desktop. `camera=(self)` allows our
+    # own origin to request camera access — third parties still blocked.
+    Permissions-Policy = "camera=(self), microphone=()"
+    # 👈 NEW: Force HTTPS on every request for a year. Safe to add now —
+    # if you ever need to disable it, remove this and wait a year.
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
 
 # ─── CACHE POLICIES ───
 [[headers]]
@@ -129,6 +161,13 @@
 
 [[headers]]
   for = "/blog/*/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# 👈 NEW: Service worker must NEVER be cached long-term, otherwise PWA
+# updates get stuck on users' devices for weeks.
+[[headers]]
+  for = "/sw.js"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 

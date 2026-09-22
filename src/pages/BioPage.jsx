@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useBusinessWithSEO } from '../hooks/useBusinessWithSEO';
 import { usePaginatedItems } from '../hooks/usePaginatedItems';
 import SEO from '../hooks/useSEO';
-import { getLayoutComponent } from '../data/layouts';
+// 👇 FIXED: also import LAYOUT_MAP so we can compare against the actual
+// resolved component rather than guessing from the business type.
+import { getLayoutComponent, LAYOUT_MAP } from '../data/layouts';
 
 // --- ADSENSE CONFIGURATION (GLOBAL) ---
 const ADSENSE_CLIENT = 'ca-pub-1898000452698308';
@@ -336,12 +338,19 @@ export default function BioPage() {
   const businessType = biz.businessType || '';
   const template = biz.template || 'default';
 
-  // Determine if we should use property layout (Real Estate or Shortlet)
-  const isPropertyBusiness = businessType === 'Real Estate' || businessType === 'Shortlet';
-  const usePropertyLayout = isPropertyBusiness || biz.propertiesEnabled;
-
   // Get the layout component from the map (handles fallback internally)
   const LayoutComponent = getLayoutComponent(businessType, template);
+
+  // 👇 FIXED: Decide the branch by comparing against the ACTUAL resolved
+  // component, not by guessing from the business type. This means a
+  // non-property business with `propertiesEnabled = true` (which any owner
+  // can toggle from the dashboard) will now correctly render DefaultLayout
+  // instead of crashing on missing props.
+  //
+  // Previously: `usePropertyLayout = isPropertyBusiness || biz.propertiesEnabled`
+  // That let a Restaurant/Shortlet flip into the property branch while still
+  // getting DefaultLayout back from the resolver — crash.
+  const usePropertyLayout = LayoutComponent === LAYOUT_MAP.property.default;
 
   // ─── Ads logic (unchanged) ──────────────────────────────────
   const adsEnabled = biz.adsEnabled !== false && !usePropertyLayout;

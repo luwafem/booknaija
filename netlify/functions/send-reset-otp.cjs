@@ -19,10 +19,6 @@ function sanitizeString(str) {
 }
 
 exports.handler = async (event) => {
-  console.log('🚀 send-reset-otp invoked');
-  console.log('📨 Method:', event.httpMethod);
-  console.log('📦 Headers:', JSON.stringify(event.headers, null, 2));
-
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -36,9 +32,7 @@ exports.handler = async (event) => {
     try {
       const parsed = JSON.parse(event.body);
       email = parsed.email;
-      console.log('📩 Received email from body:', email);
     } catch (parseErr) {
-      console.error('❌ JSON parse error:', parseErr);
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -49,11 +43,9 @@ exports.handler = async (event) => {
     // Sanitise email
     if (typeof email === 'string') {
       email = sanitizeString(email);
-      console.log('🧹 Sanitised email:', email);
     }
 
     if (!email || typeof email !== 'string' || !email.trim()) {
-      console.warn('⚠️ Email missing or invalid');
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -62,37 +54,33 @@ exports.handler = async (event) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    console.log('🔍 Normalised email:', normalizedEmail);
 
     // ─── Find business by email ───
-    console.log('🔎 Querying Supabase for business...');
     const { data: biz, error: findError } = await supabase
       .from('businesses')
       .select('id')
       .eq('email', normalizedEmail)
       .single();
 
-    if (findError) {
-      console.error('❌ Supabase find error:', findError);
-    }
-    if (!biz) {
-      console.warn('⚠️ No business found for email:', normalizedEmail);
+    if (findError || !biz) {
+      // NOTE: Returning 404 here technically leaks whether an email is
+      // registered. That's acceptable for this app since the signup flow
+      // already reveals this via a duplicate-email error, and the admin
+      // dashboard needs the clear error message. If you ever want to hide
+      // it, return 200 with { success: true } regardless — but then the
+      // user has no idea when they typo their email.
       return {
         statusCode: 404,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'No business found with that email' }),
       };
     }
-    console.log('✅ Business found:', biz.id);
 
     // ─── Generate OTP ───
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-    console.log('🔑 Generated OTP:', otp);
-    console.log('⏳ Expires at:', expiresAt);
 
     // ─── Store OTP ───
-    console.log('💾 Storing OTP in security_resets...');
     const { error: insertError } = await supabase
       .from('security_resets')
       .insert({
@@ -102,29 +90,24 @@ exports.handler = async (event) => {
       });
 
     if (insertError) {
-      console.error('❌ Insert error:', insertError);
+      console.error('Failed to store reset OTP:', insertError.message);
       return {
         statusCode: 500,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'Failed to generate reset code' }),
       };
     }
-    console.log('✅ OTP stored successfully');
 
     // ─── Send email with Resend ───
-    console.log('📧 Preparing to send email via Resend...');
     const resendApiKey = process.env.RESEND_API_KEY;
-    console.log('🔑 RESEND_API_KEY present?', resendApiKey ? '✅ Yes' : '❌ No');
-
-    const emailFrom = 'onboarding@resend.dev';
+    const emailFrom = process.env.EMAIL_FROM || 'Five9 <onboarding@resend.dev>';
     let emailSent = false;
     let emailError = null;
 
     if (resendApiKey) {
       try {
         const resend = new Resend(resendApiKey);
-        console.log('📤 Sending email to:', normalizedEmail);
-        const { data, error: sendError } = await resend.emails.send({
+        const { error: sendError } = await resend.emails.send({
           from: emailFrom,
           to: normalizedEmail,
           subject: 'Your Five9 Password Reset OTP',
@@ -167,35 +150,35 @@ exports.handler = async (event) => {
 
         if (sendError) {
           emailError = sendError;
-          console.error('❌ Resend send error:', sendError);
+          console.error('Resend send error:', sendError.message || sendError);
         } else {
           emailSent = true;
-          console.log('✅ Email sent successfully, Resend response:', data);
         }
       } catch (err) {
         emailError = err;
-        console.error('❌ Resend exception:', err);
+        console.error('Resend exception:', err.message);
       }
     } else {
-      console.warn('⚠️ RESEND_API_KEY not set – OTP email not sent.');
+      console.warn('RESEND_API_KEY not set — OTP email not sent.');
     }
 
     // ─── Return response ───
-    const response = {
-      success: true,
-      emailSent,
-      emailError: emailError ? emailError.message : null,
-      // Include OTP for debugging (remove later)
-      otp: otp,
-    };
-    console.log('📤 Response:', response);
+    // 👈 FIXED: The `otp` field has been REMOVED. Previously this function
+    // returned the OTP in the HTTP response body, which meant anyone who
+    // knew a business's email could bypass the email entirely and reset
+    // that business's security details directly. The OTP now only travels
+    // via the Resend email — never over the wire to the caller.
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(response),
+      body: JSON.stringify({
+        success: true,
+        emailSent,
+        emailError: emailError ? (emailError.message || String(emailError)) : null,
+      }),
     };
   } catch (err) {
-    console.error('💥 Unhandled error:', err);
+    console.error('Unhandled error in send-reset-otp:', err);
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },

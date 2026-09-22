@@ -134,31 +134,9 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Payment not verified' }) };
     }
 
-    // ─── 2. IDEMPOTENCY CHECK ───
-    const { data: existingRecord, error: checkError } = await supabase
-      .from('processed_webhooks')
-      .select('reference')
-      .eq('reference', reference)
-      .maybeSingle();
+    const amountKobo = paystackData.data.amount || 0;
 
-    if (checkError) {
-      console.error('Error checking processed_webhooks:', checkError.message);
-    }
-
-    if (existingRecord) {
-      console.log(`ℹ️ Reference ${reference} already processed. Skipping duplicate.`);
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          success: true,
-          new_end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          duplicate: true,
-          message: 'This payment was already processed.',
-        }),
-      };
-    }
-
-    // ─── 3. Fetch current business (may not exist yet for a brand‑new signup) ───
+    // ─── 2. Fetch current business (may not exist yet for a brand‑new signup) ───
     // NOTE: We use .maybeSingle() instead of .single() so that PGRST116
     // ("no rows") is NOT treated as an error. During signup, the business row
     // is only created by save-business.cjs AFTER this function returns, so
@@ -175,7 +153,7 @@ exports.handler = async (event) => {
       return { statusCode: 500, body: JSON.stringify({ error: 'Failed to fetch business' }) };
     }
 
-    // ─── 3a. Brand‑new signup: business row not created yet ───
+    // ─── 3. Brand‑new signup: business row not created yet ───
     // The user is mid‑onboarding; save-business.cjs will create the row and
     // anchor subscription_ends_at to paid_at. We just confirm the payment is
     // legit so the onboarding form is not blocked.
@@ -183,9 +161,9 @@ exports.handler = async (event) => {
       console.log(
         `ℹ️ Signup flow: business "${slug}" not yet in DB. Payment verified — returning success so onboarding can proceed.`
       );
-      // DO NOT insert into processed_webhooks here. The webhook (or the
-      // subsequent save-business call) will own that row. If we inserted now,
-      // the webhook would skip commission handling for this reference.
+      // DO NOT claim the reference here. The webhook (or the subsequent
+      // save-business call) will own that row. If we claimed now, the webhook
+      // would skip its own handling for this reference.
       return {
         statusCode: 200,
         body: JSON.stringify({
@@ -196,148 +174,185 @@ exports.handler = async (event) => {
       };
     }
 
-    // ─── 4. Compute new end date ───
-    let newEndDate;
-    const currentEnd = existingBiz.subscription_ends_at ? new Date(existingBiz.subscription_ends_at) : null;
-    const now = new Date();
+    // ─── 4. ATOMICALLY CLAIM the reference ───
+    // This replaces the previous "check then insert" pattern, which had a
+    // TOCTOU race with paystack-webhook.cjs: both functions could pass the
+    // check, both extend the subscription, both try to insert — one silently
+    // loses (23505) but the double extension has already happened.
+    //
+    // Claiming up‑front via INSERT (with 23505 as "already claimed") closes
+    // that window. Only one process can win the claim, so only one process
+    // performs the subscription update and affiliate payout.
+    const { error: claimErr } = await supabase
+      .from('processed_webhooks')
+      .insert({
+        reference,
+        processed_at: new Date().toISOString(),
+        amount: amountKobo,
+        source: 'verify',
+        currency: 'NGN',
+        note: `Subscription renewal for ${slug}`,
+      });
 
-    if (currentEnd && currentEnd > now) {
-      // Active subscription – add 30 days to existing end date
-      newEndDate = new Date(currentEnd.getTime() + 30 * 24 * 60 * 60 * 1000);
-    } else {
-      // Expired or no subscription – start from now
-      newEndDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    if (claimErr) {
+      if (claimErr.code === '23505') {
+        console.log(`ℹ️ Reference ${reference} already claimed by another process. Skipping.`);
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            success: true,
+            duplicate: true,
+            new_end_date:
+              existingBiz.subscription_ends_at ||
+              new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            message: 'This payment was already processed.',
+          }),
+        };
+      }
+      // A real DB error (connection, permissions, missing table). Do NOT
+      // proceed — without a successful claim we have no protection against
+      // double‑processing if the client retries.
+      console.error('❌ Failed to claim reference:', claimErr.message);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Failed to claim reference. Please retry.' }),
+      };
     }
 
-    const newEndDateISO = newEndDate.toISOString();
-
-    // ─── 5. Update subscription expiry and ensure business is active ───
-    const { error: updateErr } = await supabase
-      .from('businesses')
-      .update({
-        subscription_ends_at: newEndDateISO,
-        active: true,
-      })
-      .eq('slug', slug);
-
-    if (updateErr) {
-      console.error('Supabase update error:', updateErr);
-      throw new Error('Failed to update subscription');
-    }
-
-    // ─── 6. Affiliate Commission (60% + 40% model) ───
+    // ─── 5. We own the reference now. If work fails irrecoverably, release
+    //        the claim so the caller can retry without burning the ref. ───
+    let newEndDateISO = null;
     let commissionProcessed = false;
 
-    if (existingBiz.referred_by_affiliate) {
-      const currentMonth = existingBiz.affiliate_commission_month || 0;
+    try {
+      // ─── 5a. Compute new end date ───
+      let newEndDate;
+      const currentEnd = existingBiz.subscription_ends_at
+        ? new Date(existingBiz.subscription_ends_at)
+        : null;
+      const now = new Date();
 
-      if (currentMonth < 2) {
-        let payoutAmount = 0;
-        let newMonth = currentMonth + 1;
+      if (currentEnd && currentEnd > now) {
+        // Active subscription – add 30 days to existing end date
+        newEndDate = new Date(currentEnd.getTime() + 30 * 24 * 60 * 60 * 1000);
+      } else {
+        // Expired or no subscription – start from now
+        newEndDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      }
+      newEndDateISO = newEndDate.toISOString();
 
-        if (currentMonth === 0) payoutAmount = 1500;
-        else if (currentMonth === 1) payoutAmount = 1000;
+      // ─── 5b. Update subscription expiry and ensure business is active ───
+      const { error: updateErr } = await supabase
+        .from('businesses')
+        .update({
+          subscription_ends_at: newEndDateISO,
+          active: true,
+        })
+        .eq('slug', slug);
 
-        if (payoutAmount > 0) {
-          // ─── 1. Attempt to increment the month atomically ───
-          const { data: updatedBusiness, error: updateCommErr } = await supabase
-            .from('businesses')
-            .update({ affiliate_commission_month: newMonth })
-            .eq('slug', slug)
-            .eq('affiliate_commission_month', currentMonth)
-            .select('referred_by_affiliate');
+      if (updateErr) {
+        throw new Error(`Subscription update failed: ${updateErr.message}`);
+      }
 
-          if (updateCommErr) {
-            console.error('❌ Failed to update commission month:', updateCommErr);
-            return {
-              statusCode: 200,
-              body: JSON.stringify({
-                success: true,
-                new_end_date: newEndDateISO,
-                commission_processed: false,
-                warning: 'Commission month update failed; manual intervention may be needed.',
-              }),
-            };
-          }
+      // ─── 5c. Affiliate Commission (60% + 40% model) ───
+      if (existingBiz.referred_by_affiliate) {
+        const currentMonth = existingBiz.affiliate_commission_month || 0;
 
-          if (!updatedBusiness || updatedBusiness.length === 0) {
-            console.log(`ℹ️ Commission month for ${slug} already advanced by another process. Skipping.`);
-            commissionProcessed = false;
-          } else {
-            const affiliateId = updatedBusiness[0].referred_by_affiliate;
-            const { data: affiliateData, error: affErr } = await supabase
-              .from('affiliates')
-              .select('transfer_recipient_code')
-              .eq('id', affiliateId)
-              .single();
+        if (currentMonth < 2) {
+          let payoutAmount = 0;
+          const newMonth = currentMonth + 1;
 
-            if (affErr || !affiliateData || !affiliateData.transfer_recipient_code) {
-              console.error(`❌ Affiliate ${affiliateId} has no transfer recipient code. Logging failed payout.`);
-              await logFailedPayout(
-                affiliateId,
-                slug,
-                payoutAmount,
-                'Missing transfer_recipient_code after month update',
-                { currentMonth, newMonth, source: 'verify-subscription' }
-              );
-              commissionProcessed = false;
+          if (currentMonth === 0) payoutAmount = 1500;
+          else if (currentMonth === 1) payoutAmount = 1000;
+
+          if (payoutAmount > 0) {
+            // Atomic compare‑and‑swap on month. Guards against a race where
+            // another process (e.g. the webhook) is also mid‑payout for the
+            // same business.
+            const { data: updatedBusiness, error: updateCommErr } = await supabase
+              .from('businesses')
+              .update({ affiliate_commission_month: newMonth })
+              .eq('slug', slug)
+              .eq('affiliate_commission_month', currentMonth)
+              .select('referred_by_affiliate');
+
+            if (updateCommErr) {
+              console.error('❌ Failed to update commission month:', updateCommErr.message);
+              // Non‑fatal: the sub is already extended and the reference is
+              // claimed. We just don't pay commission on this run. A future
+              // manual retry via admin tooling can recover.
+            } else if (!updatedBusiness || updatedBusiness.length === 0) {
+              console.log(`ℹ️ Commission month for ${slug} already advanced by another process. Skipping payout.`);
             } else {
-              try {
-                await sendTransfer(
-                  affiliateData.transfer_recipient_code,
-                  payoutAmount * 100,
-                  `${currentMonth === 0 ? '1st' : '2nd'} month commission for ${slug}`
-                );
-                console.log(`✅ Paid affiliate ${affiliateId} ₦${payoutAmount} for ${slug} (Month ${newMonth})`);
-                commissionProcessed = true;
-              } catch (transferErr) {
-                console.error(`❌ Transfer failed for affiliate ${affiliateId}:`, transferErr.message);
+              const affiliateId = updatedBusiness[0].referred_by_affiliate;
+              const { data: affiliateData, error: affErr } = await supabase
+                .from('affiliates')
+                .select('transfer_recipient_code')
+                .eq('id', affiliateId)
+                .single();
+
+              if (affErr || !affiliateData || !affiliateData.transfer_recipient_code) {
+                console.error(`❌ Affiliate ${affiliateId} has no transfer recipient code. Logging failed payout.`);
                 await logFailedPayout(
                   affiliateId,
                   slug,
                   payoutAmount,
-                  `Transfer API error: ${transferErr.message}`,
+                  'Missing transfer_recipient_code after month update',
                   { currentMonth, newMonth, source: 'verify-subscription' }
                 );
-                commissionProcessed = false;
+              } else {
+                try {
+                  await sendTransfer(
+                    affiliateData.transfer_recipient_code,
+                    payoutAmount * 100,
+                    `${currentMonth === 0 ? '1st' : '2nd'} month commission for ${slug}`
+                  );
+                  console.log(`✅ Paid affiliate ${affiliateId} ₦${payoutAmount} for ${slug} (Month ${newMonth})`);
+                  commissionProcessed = true;
+                } catch (transferErr) {
+                  console.error(`❌ Transfer failed for affiliate ${affiliateId}:`, transferErr.message);
+                  await logFailedPayout(
+                    affiliateId,
+                    slug,
+                    payoutAmount,
+                    `Transfer API error: ${transferErr.message}`,
+                    { currentMonth, newMonth, source: 'verify-subscription' }
+                  );
+                }
               }
             }
+          } else {
+            console.log(`ℹ️ No payout due for ${slug} (commission month already ${currentMonth})`);
           }
         } else {
-          console.log(`ℹ️ No payout due for ${slug} (commission month already ${currentMonth})`);
+          console.log(`ℹ️ Affiliate commission already fully paid for ${slug}`);
         }
       } else {
-        console.log(`ℹ️ Affiliate commission already fully paid for ${slug}`);
+        console.log(`ℹ️ No affiliate referral for ${slug}, skipping commission.`);
       }
-    } else {
-      console.log(`ℹ️ No affiliate referral for ${slug}, skipping commission.`);
-    }
 
-    // ─── 7. Mark as processed (idempotency) ───
-    if (!existingRecord) {
-      const { error: insertError } = await supabase
+      // ─── 5d. Mark legacy Affiliate Bounty (idempotent, non‑fatal) ───
+      const { error: bountyErr } = await supabase
+        .from('businesses')
+        .update({ affiliate_bounty_paid: true })
+        .eq('slug', slug)
+        .eq('affiliate_bounty_paid', false);
+
+      if (bountyErr) {
+        console.error('Error marking affiliate bounty paid:', bountyErr.message);
+      }
+
+    } catch (workErr) {
+      // Release the claim so the caller can retry without burning the ref.
+      console.error('❌ Work failed after claim; releasing reference:', workErr.message);
+      const { error: delErr } = await supabase
         .from('processed_webhooks')
-        .insert({
-          reference,
-          processed_at: new Date().toISOString(),
-        });
-
-      if (insertError) {
-        console.error('Error inserting into processed_webhooks:', insertError.message);
-      } else {
-        console.log(`✅ Marked reference ${reference} as processed.`);
+        .delete()
+        .eq('reference', reference);
+      if (delErr) {
+        console.error('Failed to release claim:', delErr.message);
       }
-    }
-
-    // ─── 8. Mark legacy Affiliate Bounty (optional) ───
-    const { error: bountyErr } = await supabase
-      .from('businesses')
-      .update({ affiliate_bounty_paid: true })
-      .eq('slug', slug)
-      .eq('affiliate_bounty_paid', false);
-
-    if (bountyErr) {
-      console.error('Error marking affiliate bounty paid:', bountyErr.message);
+      throw workErr;
     }
 
     return {

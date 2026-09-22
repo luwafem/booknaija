@@ -147,6 +147,9 @@ exports.handler = async (event) => {
     const parsedBody = JSON.parse(event.body);
     const sanitized = sanitizeDeep(parsedBody);
 
+    // 👈 FIXED: `subaccountCode` removed from destructuring.
+    // We NEVER trust a client-supplied subaccount — it would let anyone
+    // redirect a payment to an arbitrary Paystack subaccount.
     const {
       slug,
       items,
@@ -155,7 +158,6 @@ exports.handler = async (event) => {
       date, time, address,
       calendarId,
       type,
-      subaccountCode,
       referredBy,
       callback_url,
     } = sanitized;
@@ -223,24 +225,6 @@ exports.handler = async (event) => {
         };
       }
       finalAmountKobo = expectedAmount * 100;
-
-      // ─── AFFILIATE COMMISSION TRACKING FOR SIGNUPS ───
-      if (referredBy && referredBy.startsWith('aff_')) {
-        console.log(`🔍 Affiliate referral detected for signup: ${referredBy}`);
-        const { data: affiliate, error: affErr } = await supabase
-          .from('affiliates')
-          .select('subaccount_code')
-          .eq('id', referredBy)
-          .single();
-
-        if (affErr) {
-          console.warn(`⚠️ Affiliate ${referredBy} not found or invalid:`, affErr.message);
-        } else if (affiliate && affiliate.subaccount_code) {
-          console.log(`✅ Affiliate ${referredBy} has subaccount: ${affiliate.subaccount_code}`);
-        } else {
-          console.warn(`⚠️ Affiliate ${referredBy} has no subaccount_code.`);
-        }
-      }
     } else {
       // ─── BOOKING / PRODUCT FLOW – server-side price computation ───
       let serverTotal = 0;
@@ -267,24 +251,67 @@ exports.handler = async (event) => {
       finalAmountKobo = serverTotalKobo;
     }
 
-    // ─── AFFILIATE SPLIT LOGIC (for both signup and booking) ───
-    let finalSubaccountCode = subaccountCode || null;
-    if (referredBy && referredBy.startsWith('aff_')) {
-      console.log(`Affiliate referral detected: ${referredBy}. Looking up subaccount...`);
-      const { data: affiliate, error: affErr } = await supabase
-        .from('affiliates')
+    // ─── SUBACCOUNT ROUTING ─────────────────────────────────────────
+    // 👈 FIXED: This is the critical block. Rules:
+    //
+    //   • Signup WITH affiliate ID  → route to the affiliate's subaccount
+    //                                 (60/40 split — affiliate gets ₦1,500,
+    //                                 platform keeps ₦1,000)
+    //   • Signup WITHOUT affiliate  → platform account only (no split)
+    //   • Booking / product / food / car (any) → route to the BUSINESS's
+    //                                 subaccount (95/5 split — business
+    //                                 keeps 95%, platform takes 5%)
+    //
+    // Never trust the client to supply a subaccount. Look it up server-side.
+    // ────────────────────────────────────────────────────────────────
+    let finalSubaccountCode = null;
+
+    if (isSignup) {
+      if (referredBy && referredBy.startsWith('aff_')) {
+        console.log(`Signup with affiliate ${referredBy} — looking up subaccount...`);
+        const { data: affiliate, error: affErr } = await supabase
+          .from('affiliates')
+          .select('subaccount_code')
+          .eq('id', referredBy)
+          .single();
+
+        if (affErr) {
+          console.error('Error fetching affiliate:', affErr.message);
+        } else if (affiliate && affiliate.subaccount_code) {
+          finalSubaccountCode = affiliate.subaccount_code;
+          console.log(`✅ Signup split → affiliate subaccount ${finalSubaccountCode}`);
+        } else {
+          console.warn(`⚠️ Affiliate ${referredBy} has no subaccount_code — signup falls back to platform account.`);
+        }
+      }
+      // No affiliate → no subaccount. Platform takes 100% of signup fee.
+    } else {
+      // Booking flow — always route to the business's own subaccount.
+      const { data: bizRow, error: bizErr } = await supabase
+        .from('businesses')
         .select('subaccount_code')
-        .eq('id', referredBy)
+        .eq('slug', slug)
         .single();
 
-      if (affErr) {
-        console.error('Error fetching affiliate:', affErr.message);
-      } else if (affiliate && affiliate.subaccount_code) {
-        finalSubaccountCode = affiliate.subaccount_code;
-        console.log(`Applying affiliate subaccount split: ${finalSubaccountCode}`);
-      } else {
-        console.warn('Affiliate ID provided but no subaccount code found in DB.');
+      if (bizErr || !bizRow) {
+        console.error(`Failed to load business "${slug}" for subaccount routing:`, bizErr?.message);
+        return { statusCode: 400, body: JSON.stringify({ error: 'Business not found.' }) };
       }
+
+      if (!bizRow.subaccount_code || !bizRow.subaccount_code.startsWith('ACCT_')) {
+        console.error(
+          `Business "${slug}" has no valid subaccount_code (got: ${bizRow.subaccount_code}). Cannot route booking payment.`
+        );
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            error: 'This business is not yet set up to receive payments. Please contact the business owner.',
+          }),
+        };
+      }
+
+      finalSubaccountCode = bizRow.subaccount_code;
+      console.log(`✅ Booking → business subaccount ${finalSubaccountCode}`);
     }
 
     // ─── BUILD CALLBACK URL ───
@@ -320,13 +347,15 @@ exports.handler = async (event) => {
         referredBy: referredBy || null,
         isSignup: isSignup,
         affiliateCommissionMonth: isSignup && referredBy ? 0 : null,
-        // 👇 NEW: Payment type to distinguish signup from renewals/bookings
         payment_type: isSignup ? 'signup' : (type || 'booking'),
       },
     };
 
     if (finalSubaccountCode) {
       payload.subaccount = finalSubaccountCode;
+      // `bearer: 'subaccount'` means the subaccount pays Paystack's transaction
+      // fee (1.5% + ₦100 cap). Standard practice — the business bears the cost
+      // of its own payment processing.
       payload.bearer = 'subaccount';
     }
 

@@ -17,11 +17,17 @@ exports.handler = async (event) => {
       return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
     }
 
-    // ─── Total Revenue (all time) – include webhook and manual ──
+    // ─── Total Revenue (all time) ──
+    // Sources that represent real money collected:
+    //   • 'webhook' — Paystack charge.success webhook (primary path)
+    //   • 'manual'  — admin-entered manual payment (admin-manual-payment.cjs)
+    //   • 'verify'  — verify-subscription.cjs won the idempotency race
+    //                 against the webhook. Same payment, different claimer.
+    //                 Must be counted or that revenue is invisible.
     const { data: totalData, error: totalErr } = await supabase
       .from('processed_webhooks')
       .select('amount')
-      .in('source', ['webhook', 'manual']);
+      .in('source', ['webhook', 'manual', 'verify']);
     if (totalErr) throw totalErr;
 
     // Sum amounts (in kobo) then divide by 100 to get Naira
@@ -35,7 +41,7 @@ exports.handler = async (event) => {
     const { data: monthlyData, error: monthlyErr } = await supabase
       .from('processed_webhooks')
       .select('amount, processed_at')
-      .in('source', ['webhook', 'manual'])
+      .in('source', ['webhook', 'manual', 'verify'])
       .gte('processed_at', twelveMonthsAgo.toISOString())
       .order('processed_at', { ascending: true });
     if (monthlyErr) throw monthlyErr;
@@ -54,7 +60,7 @@ exports.handler = async (event) => {
     const { data: mrrData, error: mrrErr } = await supabase
       .from('processed_webhooks')
       .select('amount')
-      .in('source', ['webhook', 'manual'])
+      .in('source', ['webhook', 'manual', 'verify'])
       .gte('processed_at', startOfMonth.toISOString());
     if (mrrErr) throw mrrErr;
 
