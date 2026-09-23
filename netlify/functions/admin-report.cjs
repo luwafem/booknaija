@@ -34,7 +34,7 @@ exports.handler = async (event) => {
         .lte('created_at', end.toISOString());
       report['New Businesses'] = count || 0;
     }
-
+ 
     // Revenue
     if (metricList.includes('revenue') || metricList.length === 0) {
       // Sources that represent real money collected:

@@ -33,10 +33,29 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
       .register('/sw.js')
       .then((registration) => {
         console.log('Service Worker registered with scope:', registration.scope);
+
+        // Ask the browser to check for a new SW on every page load.
+        // Without this, the check only fires roughly once every 24h, which
+        // is why template changes took forever to appear on browsers that
+        // had already visited the site.
+        registration.update();
       })
       .catch((error) => {
         console.error('Service Worker registration failed:', error);
       });
+
+    // When a new SW activates and claims this page (via skipWaiting +
+    // clientsClaim in workbox-config.cjs), reload once so the user sees
+    // the new build immediately instead of a half-old / half-new state.
+    //
+    // Guarded with `refreshing` so we don't loop if controllerchange
+    // fires more than once during the same session.
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
   });
 }
 
