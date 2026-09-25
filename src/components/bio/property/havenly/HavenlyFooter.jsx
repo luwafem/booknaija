@@ -152,14 +152,7 @@ export default function HavenlyFooter({ biz, accent }) {
         </div>
 
         {/* Giant brand name behind */}
-        <div className="relative pt-10 pb-2 overflow-hidden">
-          <h2
-            className="text-[22vw] lg:text-[14rem] font-black leading-[0.8] tracking-[-0.06em] text-white/[0.04] select-none pointer-events-none whitespace-nowrap"
-            aria-hidden="true"
-          >
-            {biz.name}
-          </h2>
-        </div>
+       
 
         {/* Bottom row */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/10">

@@ -103,15 +103,7 @@ export default function HavenlyWhyChooseUs({ biz, accent }) {
 
                 {/* Content */}
                 <div className="relative z-10">
-                  <span
-                    className="inline-block text-[9px] font-bold tracking-[0.15em] uppercase px-2.5 py-1 rounded-full mb-3"
-                    style={{
-                      backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : `${accent}18`,
-                      color: isDark ? '#ffffff' : accent,
-                    }}
-                  >
-                    {card.tag}
-                  </span>
+                  
                   <h3
                     className="text-xl font-bold leading-tight mb-2"
                     style={{ color: isDark ? '#ffffff' : '#1a1a1a' }}

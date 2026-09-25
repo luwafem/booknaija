@@ -32,11 +32,7 @@ export default function HavenlyHero({ biz, accent }) {
   return (
     <section className="relative overflow-hidden" style={{ backgroundColor: HAVENLY_BG }}>
       {/* Giant faded word behind everything */}
-      <div className="absolute top-0 left-0 right-0 pointer-events-none select-none overflow-hidden" aria-hidden="true">
-        <h2 className="text-[34vw] md:text-[24vw] lg:text-[20vw] font-black leading-[0.8] tracking-[-0.06em] text-black/[0.04] pl-3 md:pl-8 lg:pl-12 -mt-6 md:-mt-10 lg:-mt-14">
-          {bigWord}
-        </h2>
-      </div>
+     
 
       <div className="relative max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pt-6 md:pt-10 lg:pt-14 pb-16 lg:pb-24">
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-start">

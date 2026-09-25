@@ -71,31 +71,6 @@ export default function HavenlyHeader({ biz, accent }) {
             </nav>
 
             {/* Right actions */}
-            <div className="flex items-center gap-2">
-              <a
-                href="#havenly-properties"
-                className="hidden md:inline-flex text-[13px] font-semibold text-[#6b6b6b] hover:text-[#1a1a1a] transition-colors"
-              >
-                List for Sale
-              </a>
-              <a
-                href="#havenly-contact"
-                className="hidden sm:inline-flex items-center justify-center px-5 py-2 rounded-full text-[13px] font-semibold text-white transition-all duration-300 hover:brightness-110"
-                style={{ backgroundColor: '#1a1a1a' }}
-              >
-                Get Started
-              </a>
-
-              <button
-                onClick={() => setMobileOpen(true)}
-                className="lg:hidden w-9 h-9 flex items-center justify-center text-[#1a1a1a]"
-                aria-label="Open menu"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                </svg>
-              </button>
-            </div>
           </div>
         </div>
       </header>
@@ -119,28 +94,6 @@ export default function HavenlyHeader({ biz, accent }) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
-            </div>
-            <nav className="flex-1 overflow-y-auto p-4">
-              {NAV_LINKS.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="block px-4 py-3 text-[15px] font-medium text-[#1a1a1a] rounded-xl hover:bg-[#f8f7f4] transition-colors"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </nav>
-            <div className="p-4" style={{ borderTop: `1px solid ${HAVENLY_BORDER}` }}>
-              <a
-                href="#havenly-properties"
-                onClick={() => setMobileOpen(false)}
-                className="block w-full text-center px-5 py-3 rounded-full text-sm font-bold text-white"
-                style={{ backgroundColor: '#1a1a1a' }}
-              >
-                Get Started
-              </a>
             </div>
           </div>
         </div>
