@@ -54,9 +54,7 @@ export default function EstateoWhyChooseUs({ biz, accent }) {
       >
         <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12">
           <div className="text-center mb-14">
-            <p className="text-[11px] font-bold tracking-[0.22em] uppercase mb-4 text-white/60">
-              Why Choose Us
-            </p>
+            
 
             {/* 👇 Driven by biz.name */}
             <h2 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold leading-[1.1] tracking-[-0.02em] text-white max-w-2xl mx-auto">
@@ -72,7 +70,7 @@ export default function EstateoWhyChooseUs({ biz, accent }) {
               >
                 <div
                   className="w-14 h-14 rounded-full flex items-center justify-center mb-5"
-                  style={{ backgroundColor: accent + '20' }}
+                  
                 >
                   <svg
                     className="w-6 h-6"

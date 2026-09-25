@@ -70,13 +70,6 @@ export default function EstateoAbout({ biz, accent }) {
 
           {/* ─── RIGHT: Copy + stats ─── */}
           <div>
-            <p
-              className="text-[11px] font-bold tracking-[0.22em] uppercase mb-4 flex items-center gap-2"
-              style={{ color: accent }}
-            >
-              <span className="w-8 h-px" style={{ backgroundColor: accent }} />
-              Our Story
-            </p>
 
             {/* 👇 Now driven by biz.name — matches the Default template pattern */}
             <h2 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold leading-[1.1] tracking-[-0.02em] text-gray-900 mb-5">

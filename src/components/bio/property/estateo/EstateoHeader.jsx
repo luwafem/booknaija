@@ -72,19 +72,7 @@ export default function EstateoHeader({ biz, accent }) {
 
             {/* Right actions */}
             <div className="flex items-center gap-3">
-              <a
-                href="#contact"
-                className="hidden md:inline-flex text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
-              >
-                Login
-              </a>
-              <a
-                href="#properties"
-                className="hidden sm:inline-flex items-center justify-center px-5 py-2.5 rounded-full text-sm font-bold text-white transition-all duration-300 hover:shadow-lg"
-                style={{ backgroundColor: EGREEN }}
-              >
-                Get Started
-              </a>
+              
 
               {/* Mobile menu button */}
               <button
@@ -134,14 +122,7 @@ export default function EstateoHeader({ biz, accent }) {
               ))}
             </nav>
             <div className="p-4 border-t border-gray-100">
-              <a
-                href="#properties"
-                onClick={() => setMobileOpen(false)}
-                className="block w-full text-center px-5 py-3 rounded-full text-sm font-bold text-white"
-                style={{ backgroundColor: EGREEN }}
-              >
-                Get Started
-              </a>
+              
             </div>
           </div>
         </div>

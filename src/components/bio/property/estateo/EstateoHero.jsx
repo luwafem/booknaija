@@ -33,13 +33,7 @@ export default function EstateoHero({ biz, accent }) {
         <div className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
           {/* ─── LEFT: Text ─── */}
           <div className="lg:col-span-6 relative z-10">
-            <p
-              className="text-[11px] font-bold tracking-[0.22em] uppercase mb-5 flex items-center gap-2"
-              style={{ color: accent }}
-            >
-              <span className="w-8 h-px" style={{ backgroundColor: accent }} />
-              Discover Your Perfect Home
-            </p>
+            
 
             {/* 👇 Headline driven by biz.tagline */}
             <h1 className="text-[2.5rem] sm:text-5xl lg:text-[3.75rem] xl:text-[4.25rem] font-extrabold leading-[1.05] tracking-[-0.03em] text-gray-900 mb-6">
@@ -126,25 +120,7 @@ export default function EstateoHero({ biz, accent }) {
             </div>
 
             {/* Floating "Happy Customers" card — driven by biz.stats[0] */}
-            <div className="absolute -bottom-4 -left-4 sm:bottom-6 sm:left-6 bg-white rounded-2xl shadow-2xl p-4 flex items-center gap-3 border border-gray-100">
-              <div className="flex -space-x-2">
-                {DEFAULT_AVATARS.map((initials, i) => (
-                  <div
-                    key={i}
-                    className="w-9 h-9 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold text-white"
-                    style={{
-                      backgroundColor: i % 2 === 0 ? EGREEN : accent,
-                    }}
-                  >
-                    {initials}
-                  </div>
-                ))}
-              </div>
-              <div className="pr-1">
-                <p className="text-sm font-extrabold text-gray-900 leading-tight">{happyCount}</p>
-                <p className="text-[11px] text-gray-500 font-medium">{happyLabel}</p>
-              </div>
-            </div>
+            
           </div>
         </div>
       </div>
