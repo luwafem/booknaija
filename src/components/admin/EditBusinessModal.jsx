@@ -52,6 +52,22 @@ export default function EditBusinessModal({ show, onClose, business, editForm, s
             rows="3"
             className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm rounded-xl px-4 py-2.5 resize-none"
           />
+          {/* ─── BUSINESS TYPE ───
+              Values must match the canonical long forms in
+              src/hooks/useSignup.js ALL_BUSINESS_TYPES and
+              netlify/functions/save-business.cjs FEATURE_MATRIX.
+
+              The previous list used short forms ('Skin Care', 'Fashion',
+              'Restaurant', 'Auto') which did not match what the signup
+              form saves. Editing a business to a type the DB didn't
+              recognise would cause getFeaturesForType to fall through to
+              the default, silently zeroing out its feature flags.
+
+              Also note: save-business.cjs accepts both forms via the
+              FEATURE_MATRIX legacy entries, so a business saved under
+              the old short form (before this fix) will still resolve to
+              the correct flags. The dropdown here only offers long forms,
+              which is what new saves should write. */}
           <select
             value={editForm.business_type || ''}
             onChange={e => handleChange('business_type', e.target.value)}
@@ -62,10 +78,10 @@ export default function EditBusinessModal({ show, onClose, business, editForm, s
             <option value="Hair Stylist">Hair Stylist</option>
             <option value="Makeup Artist">Makeup Artist</option>
             <option value="Nail Technician">Nail Technician</option>
-            <option value="Skin Care">Skin Care</option>
-            <option value="Fashion">Fashion</option>
-            <option value="Restaurant">Restaurant</option>
-            <option value="Auto">Auto</option>
+            <option value="Skin Care / Facialist">Skin Care / Facialist</option>
+            <option value="Fashion / Boutique">Fashion / Boutique</option>
+            <option value="Restaurant / Food">Restaurant / Food</option>
+            <option value="Auto Dealer / Rental">Auto Dealer / Rental</option>
             <option value="Real Estate">Real Estate</option>
             <option value="Shortlet">Shortlet</option>
             <option value="Cleaner">Cleaner</option>

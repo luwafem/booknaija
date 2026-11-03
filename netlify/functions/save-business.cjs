@@ -33,34 +33,89 @@ function sanitizeDeep(input) {
   return input;
 }
 
-// ─── FEATURE FLAGS ───
+// ─── FEATURE FLAG MATRIX ────────────────────────────────────────
+// Maps every business type to its default feature flags at signup.
+//
+// Long forms are the CANONICAL values — they're what the signup
+// dropdown submits, what the admin dashboard stores, and what
+// every other file in the codebase checks against.
+//
+// Legacy short forms ('Skin Care', 'Restaurant', 'Auto', 'Fashion')
+// are kept here so that:
+//   • any existing DB row that still has a short form gets the right
+//     flags if it's ever re-saved through this function
+//   • an admin session with a stale form open doesn't silently write
+//     the wrong flags
+//
+// Once the DB migration below has been run and the admin Settings
+// tab has been re-saved, the four legacy entries can be deleted.
+//
+// SQL migration (run once):
+//   UPDATE businesses SET business_type = 'Skin Care / Facialist'
+//     WHERE business_type = 'Skin Care';
+//   UPDATE businesses SET business_type = 'Restaurant / Food'
+//     WHERE business_type = 'Restaurant';
+//   UPDATE businesses SET business_type = 'Auto Dealer / Rental'
+//     WHERE business_type = 'Auto';
+//   UPDATE businesses SET business_type = 'Fashion / Boutique'
+//     WHERE business_type = 'Fashion';
+// ────────────────────────────────────────────────────────────────
+const FEATURE_MATRIX = {
+  // ─── Beauty / Personal Care (services + products) ───
+  'Lash Artist':               { services_enabled: true,  products_enabled: true,  cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false },
+  'Hair Stylist':              { services_enabled: true,  products_enabled: true,  cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false },
+  'Makeup Artist':             { services_enabled: true,  products_enabled: true,  cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false },
+  'Nail Technician':           { services_enabled: true,  products_enabled: true,  cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false },
+  'Skin Care / Facialist':     { services_enabled: true,  products_enabled: true,  cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false },
+
+  // ─── Fashion / Retail (services + products) ───
+  'Fashion / Boutique':        { services_enabled: true,  products_enabled: true,  cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false },
+
+  // ─── Services-only ───
+  'Cleaner':                   { services_enabled: true,  products_enabled: false, cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false },
+  'Tutor':                     { services_enabled: true,  products_enabled: false, cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false },
+
+  // ─── Food (menu only) ───
+  'Restaurant / Food':         { services_enabled: false, products_enabled: false, cars_enabled: false, food_enabled: true,  properties_enabled: false, estates_enabled: false },
+
+  // ─── Auto (vehicles only) ───
+  'Auto Dealer / Rental':      { services_enabled: false, products_enabled: false, cars_enabled: true,  food_enabled: false, properties_enabled: false, estates_enabled: false },
+
+  // ─── Property (properties + estates) ───
+  'Real Estate':               { services_enabled: false, products_enabled: false, cars_enabled: false, food_enabled: false, properties_enabled: true,  estates_enabled: true },
+  'Shortlet':                  { services_enabled: false, products_enabled: false, cars_enabled: false, food_enabled: false, properties_enabled: true,  estates_enabled: true },
+
+  // ─── Catch-all ───
+  'Other':                     { services_enabled: true,  products_enabled: true,  cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false },
+
+  // ─── LEGACY SHORT FORMS (backward compat) ───
+  'Fashion':                   { services_enabled: true,  products_enabled: true,  cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false },
+  'Skin Care':                 { services_enabled: true,  products_enabled: true,  cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false },
+  'Restaurant':                { services_enabled: false, products_enabled: false, cars_enabled: false, food_enabled: true,  properties_enabled: false, estates_enabled: false },
+  'Auto':                      { services_enabled: false, products_enabled: false, cars_enabled: true,  food_enabled: false, properties_enabled: false, estates_enabled: false },
+};
+
+const DEFAULT_FEATURES = {
+  services_enabled: true,
+  products_enabled: true,
+  cars_enabled: false,
+  food_enabled: false,
+  properties_enabled: false,
+  estates_enabled: false,
+};
+
 function getFeaturesForType(type) {
-  switch (type) {
-    case 'Fashion':
-    case 'Lash Artist':
-    case 'Hair Stylist':
-    case 'Makeup Artist':
-    case 'Nail Technician':
-    case 'Skin Care':
-      return { services_enabled: true, products_enabled: true, cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false };
-    case 'Cleaner':
-    case 'Tutor':
-      return { services_enabled: true, products_enabled: false, cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false };
-    case 'Restaurant':
-      return { services_enabled: false, products_enabled: false, cars_enabled: false, food_enabled: true, properties_enabled: false, estates_enabled: false };
-    case 'Auto':
-      return { services_enabled: false, products_enabled: false, cars_enabled: true, food_enabled: false, properties_enabled: false, estates_enabled: false };
-    case 'Real Estate':
-    case 'Shortlet':
-      return { services_enabled: false, products_enabled: false, cars_enabled: false, food_enabled: false, properties_enabled: true, estates_enabled: true };
-    default:
-      return { services_enabled: true, products_enabled: true, cars_enabled: false, food_enabled: false, properties_enabled: false, estates_enabled: false };
-  }
+  if (!type) return DEFAULT_FEATURES;
+  return FEATURE_MATRIX[type] || DEFAULT_FEATURES;
 }
 
 // ─── VERIFY A PAYSTACK REFERENCE (used to anchor signup subscription window) ───
 // Returns { paidAt: Date, amount: number } if the reference is a successful
 // payment matching the expected slug, or null otherwise. Never throws.
+//
+// NOTE: With free signup, this function is no longer called from the signup
+// path. It remains here for future use (e.g. if a hybrid "premium signup"
+// flow is added later). Safe to leave in place.
 async function verifySignupPayment(reference, expectedSlug) {
   if (!reference) return null;
   const secretKey = process.env.PAYSTACK_SECRET_KEY;
@@ -262,7 +317,7 @@ exports.handler = async function (event) {
     const allowedFields = [
       'name', 'logo', 'tagline', 'bio', 'phone', 'whatsapp', 'email',
       'location', 'lat', 'lng', 'hours', 'accent', 'theme',
-      'template',                       // 👈 NEW: enables page template switching
+      'template',
       'google_maps_claimed', 'hero', 'hero_slides', 'team',
       'subaccount_code', 'calendar_id', 'account_name', 'account_number',
       'settlement_bank', 'active', 'ads_enabled', 'business_type',
@@ -271,7 +326,8 @@ exports.handler = async function (event) {
       'socials', 'gallery', 'security_code', 'security_question_1',
       'security_answer_1', 'security_question_2', 'security_answer_2',
       'stats',
-      'custom_domain'
+      'custom_domain',
+      'product_limit'   // 👈 NEW — free tier cap, updated by upgrade flow
     ];
 
     if (isNew) {
@@ -289,26 +345,21 @@ exports.handler = async function (event) {
       bizPayload.slug = d.slug;
       bizPayload.active = true;
 
-      // ─── ANCHOR SUBSCRIPTION WINDOW TO ACTUAL PAYMENT TIME ───
-      // Bank transfers can take minutes/hours to settle, and the user may
-      // abandon the tab and come back much later. Anchoring to paid_at
-      // guarantees the customer gets the full 30 days they paid for.
-      let paidAt = null;
-      if (paymentReference) {
-        const verified = await verifySignupPayment(paymentReference, slug);
-        if (verified) {
-          paidAt = verified.paidAt;
-          console.log(`✅ Anchored subscription for ${slug} to paid_at ${paidAt.toISOString()} (ref: ${paymentReference})`);
-        } else {
-          console.warn(`⚠️ Could not verify paymentReference "${paymentReference}" for ${slug}; falling back to now.`);
-        }
-      } else {
-        console.warn(`⚠️ No paymentReference in payload for new business ${slug}; falling back to now.`);
-      }
-      const anchor = paidAt || new Date();
-      bizPayload.subscription_ends_at = new Date(
-        anchor.getTime() + 30 * 24 * 60 * 60 * 1000
-      ).toISOString();
+      // ─── FREE TIER: NO SUBSCRIPTION WINDOW ───
+      // Signup is now free. New businesses start with
+      // `subscription_ends_at = NULL`, which means free tier.
+      // They upgrade by paying ₦2,500/month via the dashboard.
+      //
+      // Old behaviour anchored a 30-day window to the Paystack
+      // reference's paid_at. That path is retired — the signup
+      // flow no longer goes through Paystack at all.
+      //
+      // The `subscription_ends_at IS NULL` check is what
+      // `check-expired-subscriptions.cjs` uses to skip free-tier
+      // rows. See that file's comment for why it matters.
+      bizPayload.subscription_ends_at = null;
+      bizPayload.product_limit = 5; // free tier cap
+      console.log(`✅ New business ${slug} created on FREE tier (5 product cap)`);
 
       // Apply derived feature flags if not explicitly set
       if (bizPayload.services_enabled === undefined) bizPayload.services_enabled = derived.services_enabled;
@@ -321,7 +372,7 @@ exports.handler = async function (event) {
       // Security hashing
       if (bizPayload.security_code) {
         bizPayload.security_code_hash = bcrypt.hashSync(bizPayload.security_code, 10);
-        delete bizPayload.security_code; // remove plaintext
+        delete bizPayload.security_code;
       }
       if (bizPayload.security_answer_1) {
         const trimmed = bizPayload.security_answer_1.toLowerCase().trim();
@@ -335,10 +386,6 @@ exports.handler = async function (event) {
       }
 
       // ─── AFFILIATE REFERRAL ───
-      // IMPORTANT: the affiliate was ALREADY paid ₦1,500 via the Paystack split
-      // at the moment the signup payment succeeded. So we mark month = 1
-      // (month‑1 handled), NOT 0. This prevents a double ₦1,500 payout on the
-      // next renewal — the next payout should be the ₦1,000 month‑2 bonus.
       if (d.referredBy && d.referredBy.startsWith('aff_')) {
         bizPayload.referred_by_affiliate = d.referredBy;
         bizPayload.affiliate_bounty_paid = true;
@@ -346,7 +393,6 @@ exports.handler = async function (event) {
         console.log(`✅ Affiliate referral recorded for ${slug}: ${d.referredBy} (month set to 1; month‑1 already paid via split)`);
       }
 
-      // Remove security plaintext if hash exists (belt‑and‑braces; already deleted above)
       if (bizPayload.security_code_hash) delete bizPayload.security_code;
       if (bizPayload.security_answer_1_hash) delete bizPayload.security_answer_1;
       if (bizPayload.security_answer_2_hash) delete bizPayload.security_answer_2;
@@ -357,9 +403,8 @@ exports.handler = async function (event) {
         if (d[field] !== undefined && d[field] !== existingBiz[field]) {
           let value = d[field];
 
-          // Handle security hashing
           if (field === 'security_code' && value) {
-            bizPayload.security_code = value; // keep plaintext for backward compatibility
+            bizPayload.security_code = value;
             bizPayload.security_code_hash = bcrypt.hashSync(value, 10);
           } else if (field === 'security_answer_1' && value) {
             const trimmed = value.toLowerCase().trim();
@@ -375,7 +420,6 @@ exports.handler = async function (event) {
         }
       }
 
-      // Remove undefined values
       for (const key of Object.keys(bizPayload)) {
         if (bizPayload[key] === undefined) {
           delete bizPayload[key];
@@ -394,7 +438,6 @@ exports.handler = async function (event) {
 
       if (insertErr) {
         console.error('Insert error:', insertErr);
-        // Handle duplicate custom_domain
         if (insertErr.code === '23505') {
           if (insertErr.message && insertErr.message.includes('custom_domain')) {
             return {

@@ -6,6 +6,16 @@ import HavenlyProperties from './HavenlyProperties';
 import HavenlyShowcase from './HavenlyShowcase';
 import HavenlyTestimonials from './HavenlyTestimonials';
 import HavenlyFooter from './HavenlyFooter';
+// 👇 Shared ad primitives. Same import shape as PropertyLayout — this
+// template previously had no ad slots at all, so Havenly businesses
+// showed no ads regardless of the ads_enabled flag.
+import AdSlot from '../../../ads/AdSlot';
+import StickyAd from '../../../ads/StickyAd';
+import {
+  AD_SLOT_TOP,
+  AD_SLOT_FOOTER,
+  AD_SLOT_STICKY_MOBILE,
+} from '../../../ads/adSlots';
 
 // Fixed design tokens for the Havenly template
 export const HAVENLY_BG = '#f8f7f4';
@@ -16,6 +26,9 @@ export const HAVENLY_MUTED = '#6b6b6b';
 export const HAVENLY_FAINT = '#a3a3a3';
 
 export default function HavenlyLayout({ biz, accent, isDark, onSelectProperty }) {
+  // Ads kill-switch — same semantics as PropertyLayout and DefaultLayout.
+  const adsEnabled = biz.adsEnabled !== false;
+
   return (
     <>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -35,6 +48,21 @@ export default function HavenlyLayout({ biz, accent, isDark, onSelectProperty })
         <HavenlyHeader biz={biz} accent={accent} />
         <main>
           <HavenlyHero biz={biz} accent={accent} />
+
+          {/* ── TOP AD ──
+              Sits between the hero and the WhyChooseUs section.
+              Container padding matches the max-w-7xl pattern used by
+              sibling Havenly sections, so the ad aligns with them. */}
+          <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12">
+            <AdSlot
+              slot={AD_SLOT_TOP}
+              accent={accent}
+              enabled={adsEnabled}
+              format="horizontal"
+              className="py-8 lg:py-12"
+            />
+          </div>
+
           <HavenlyWhyChooseUs biz={biz} accent={accent} />
           <HavenlyProperties
             biz={biz}
@@ -43,9 +71,32 @@ export default function HavenlyLayout({ biz, accent, isDark, onSelectProperty })
           />
           <HavenlyShowcase biz={biz} accent={accent} />
           <HavenlyTestimonials biz={biz} accent={accent} />
+
+          {/* ── FOOTER AD ──
+              Sits between the last content section and the footer. */}
+          <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12">
+            <AdSlot
+              slot={AD_SLOT_FOOTER}
+              accent={accent}
+              enabled={adsEnabled}
+              format="auto"
+              className="py-8 lg:py-12"
+            />
+          </div>
         </main>
         <HavenlyFooter biz={biz} accent={accent} />
       </div>
+
+      {/* ── STICKY MOBILE AD ──
+          Fixed bottom banner on phones only. Self-gates on scroll
+          position and dwell time, and never renders at lg+. Lives
+          outside the main wrapper so it isn't clipped by any parent
+          overflow rules. */}
+      <StickyAd
+        slot={AD_SLOT_STICKY_MOBILE}
+        enabled={adsEnabled}
+        accent={accent}
+      />
     </>
   );
 }

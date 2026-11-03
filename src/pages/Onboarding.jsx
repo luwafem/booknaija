@@ -1,5 +1,4 @@
 // src/pages/Onboarding.jsx
-import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useOnboarding } from '../hooks/useOnboarding';
 import OnboardingLayout from '../components/onboarding/OnboardingLayout';
@@ -12,73 +11,23 @@ import StepCars from '../components/onboarding/StepCars';
 import StepFood from '../components/onboarding/StepFood';
 import StepProperties from '../components/onboarding/StepProperties';
 import StepReview from '../components/onboarding/StepReview';
-import { getCsrfToken } from '../lib/csrf';
 
 export default function Onboarding() {
   const [searchParams] = useSearchParams();
-  const reference = searchParams.get('reference') || searchParams.get('trxref');
   const slugFromUrl = searchParams.get('slug');
 
-  const [paymentVerified, setPaymentVerified] = useState(false);
-  const [verifying, setVerifying] = useState(!!reference && !!slugFromUrl);
-  const [verifyError, setVerifyError] = useState('');
-
-  // Guard so a double-click on "Retry" (or StrictMode double-mount) can't
-  // launch two verification requests simultaneously.
-  const verifyInFlight = useRef(false);
-
-  // ─── Run verification against the backend ───
-  const runVerification = useCallback(async () => {
-    if (verifyInFlight.current) return;         // already in flight
-    if (!reference || !slugFromUrl) {
-      setVerifying(false);
-      setVerifyError('Missing payment reference or business slug. Please complete payment first.');
-      return;
-    }
-
-    verifyInFlight.current = true;
-    setVerifying(true);
-    setVerifyError('');                          // clear stale error immediately
-
-    try {
-      const res = await fetch('/.netlify/functions/verify-subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Sends the CSRF token when one exists. On the signup callback
-          // the cookie hasn't been issued yet, so this is a no-op; on a
-          // dashboard-return path it's validated. The endpoint itself
-          // treats CSRF as optional (see verify-subscription.cjs).
-          'X-CSRF-Token': getCsrfToken(),
-        },
-        body: JSON.stringify({ reference, slug: slugFromUrl }),
-      });
-
-      let data = {};
-      try {
-        data = await res.json();
-      } catch {
-        // Server returned non-JSON (rare, but possible on 5xx)
-        data = { error: 'Unexpected response from server. Please try again.' };
-      }
-
-      if (res.ok && data.success) {
-        setPaymentVerified(true);
-        setVerifyError('');
-      } else {
-        setVerifyError(data.error || 'Payment verification failed. Please retry.');
-      }
-    } catch (err) {
-      setVerifyError('Network error verifying payment. Please check your connection and retry.');
-    } finally {
-      setVerifying(false);
-      verifyInFlight.current = false;
-    }
-  }, [reference, slugFromUrl]);
-
-  useEffect(() => {
-    runVerification();
-  }, [runVerification]);
+  // ─── SIGNUP IS FREE NOW ───
+  // No Paystack reference is ever present, so payment is
+  // always "verified" from the onboarding form's perspective.
+  // We keep the slug check because that's what ties the form
+  // to a business record that save-business will create.
+  //
+  // The old `reference` extraction, verification state, retry
+  // logic, and the entire missing-reference hard-block below
+  // are gone. If someone lands here without a slug, we still
+  // show the "session missing" screen because without a slug
+  // we can't create a business.
+  const missingSlug = !slugFromUrl;
 
   const hook = useOnboarding();
 
@@ -351,13 +300,8 @@ export default function Onboarding() {
 
   const currentStepData = steps.find((s) => s.id === currentStep) || steps[0];
 
-  // Disable submit if payment not verified, still verifying, or loading
-  const isSubmitDisabled = !paymentVerified || verifying || loading;
-
-  // ─── Hard block: no reference/slug at all → don't show a form they can't submit ───
-  const missingReference = !reference || !slugFromUrl;
-
-  if (missingReference) {
+  // ─── Hard block: no slug at all → we can't create a business ───
+  if (missingSlug) {
     return (
       <OnboardingLayout steps={steps} currentStep={currentStep}>
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-center">
@@ -366,16 +310,16 @@ export default function Onboarding() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
             </svg>
           </div>
-          <h2 className="text-lg font-bold text-white mb-2">Payment required</h2>
+          <h2 className="text-lg font-bold text-white mb-2">Session missing</h2>
           <p className="text-sm text-zinc-400 mb-5 leading-relaxed">
-            We couldn't find a payment reference in the URL. Please complete the signup
-            payment first, then you'll be redirected back here automatically.
+            We couldn't find the business slug in the URL. Please start the signup
+            process again.
           </p>
           <Link
             to="/signup"
             className="inline-block w-full bg-white text-zinc-900 py-3 rounded-xl text-sm font-semibold hover:bg-zinc-200 transition-colors"
           >
-            Back to Signup
+            Start Over
           </Link>
         </div>
       </OnboardingLayout>
@@ -385,28 +329,6 @@ export default function Onboarding() {
   return (
     <OnboardingLayout steps={steps} currentStep={currentStep}>
       <form onSubmit={handleSubmit}>
-        {/* ─── Payment verification error banner ─── */}
-        {verifyError && (
-          <div className="bg-zinc-800/80 border border-zinc-700 rounded-xl p-4 mb-4">
-            <div className="flex items-start gap-3">
-              <svg className="w-4 h-4 text-zinc-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
-              </svg>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-zinc-200 leading-relaxed">{verifyError}</p>
-                <button
-                  type="button"
-                  onClick={runVerification}
-                  disabled={verifying}
-                  className="mt-2 text-[11px] font-semibold text-white underline underline-offset-2 hover:no-underline disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {verifying ? 'Retrying…' : 'Retry verification'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         <StepWrapper
           title={currentStepData.title}
           description={currentStepData.desc}
@@ -417,14 +339,7 @@ export default function Onboarding() {
           onFinish={handleSubmit}
           loading={loading}
           error={error}
-          disabled={isSubmitDisabled}
-          submitLabel={
-            verifying
-              ? 'Verifying payment...'
-              : !paymentVerified && verifyError
-              ? 'Payment not verified'
-              : 'Finish Setup'
-          }
+          submitLabel="Finish Setup"
         >
           {renderStepContent()}
         </StepWrapper>

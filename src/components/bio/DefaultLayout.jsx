@@ -1,28 +1,20 @@
 // src/components/bio/DefaultLayout.jsx
-import { useEffect } from 'react';
 import HeroSection from './HeroSection';
 import Gallery from './Gallery';
 import ServiceList from './ServiceList';
 import ProductList from './ProductList';
 import FoodList from './FoodList';
 import CarList from './CarList';
-
-// GoogleAd and ReferralLink components are reused from BioPage – we can import them or duplicate.
-// For simplicity, we'll import them from BioPage or define them locally.
-
-// Assuming we have a shared GoogleAd component – we'll import from BioPage or define a shared file.
-// For brevity, we'll keep them here; in a real project, move to a shared file.
-
-const GoogleAd = ({ slot, className = '' }) => {
-  // (same implementation as in BioPage – can be imported from a shared file)
-  // For now, we'll assume it's defined globally or we'll copy it.
-  return <div>Ad placeholder</div>;
-};
-
-const ReferralLink = ({ slug, accent }) => {
-  // (same)
-  return <div>Referral link</div>;
-};
+import LocalAdBanner from '../ads/LocalAdBanner';   // 👈 NEW
+// Shared ad primitives from src/components/ads/.
+import AdSlot from '../ads/AdSlot';
+import StickyAd from '../ads/StickyAd';
+import {
+  AD_SLOT_TOP,
+  AD_SLOT_INFEED,
+  AD_SLOT_FOOTER,
+  AD_SLOT_STICKY_MOBILE,
+} from '../ads/adSlots';
 
 const SectionHeading = ({ children, accent, id }) => (
   <div className="flex items-center gap-4 mb-8 md:mb-10">
@@ -40,6 +32,8 @@ export default function DefaultLayout({
   isDark,
   ui,
   searchQuery,
+  localAds,                    // 👈 NEW
+  setSearchQuery,
   isSearchActive,
   activeService,
   activeProducts,
@@ -81,7 +75,36 @@ export default function DefaultLayout({
   getCart,
   slug,
 }) {
-  // Optional: scroll to top on mount, etc.
+  // Local fallback so this component doesn't crash if a caller forgets to
+  // pass setSearchQuery. When BioPage is updated to pass it, typing will
+  // update the parent's state as intended.
+  const fallbackSetSearchQuery = () => {};
+  const updateSearchQuery = setSearchQuery || fallbackSetSearchQuery;
+
+  // ─── AD GATING ─────────────────────────────────────────────────
+  //
+  // The three `<AdSlot>` gates (showPrimaryAd, showSecondaryAd,
+  // showFooterAd) come in as props from BioPage and are the SINGLE
+  // SOURCE OF TRUTH for in-page ad visibility. They encode:
+  //   • ads enabled for this business (biz.adsEnabled !== false)
+  //   • there is content on the page to place ads beside
+  //   • the user is not currently searching
+  //
+  // We deliberately do NOT re-derive `adsEnabled` here. An earlier
+  // version did (`const adsEnabled = biz.adsEnabled !== false`) and
+  // passed it to <StickyAd>, which meant two gates existed in two
+  // files. They agreed today but would drift the moment anyone added
+  // a per-slot rule (e.g. "hide TOP on mobile"), and the drift would
+  // be silent.
+  //
+  // The sticky banner is the ONE exception: it should render
+  // whenever ads are enabled for the business, regardless of whether
+  // the page has content or the user is searching. So we derive its
+  // gate locally from the single business-level flag, inline. This
+  // is not "a second gate" — it's the SAME business-level check, just
+  // consulted directly because it isn't in the prop contract.
+  //
+  const stickyAdEnabled = biz.adsEnabled !== false;
 
   return (
     <>
@@ -91,7 +114,7 @@ export default function DefaultLayout({
       `}</style>
 
       <div className="flex flex-col xl:flex-row xl:h-screen overflow-hidden">
-  
+
         <aside className="xl:sticky xl:top-0 h-screen xl:overflow-y-auto xl:overflow-x-hidden scrollbar-hide xl:shrink-0 xl:w-[35%]">
           <HeroSection biz={{
             logo: biz.logo, name: biz.name, slug: biz.slug, tagline: biz.tagline,
@@ -118,20 +141,18 @@ export default function DefaultLayout({
                 <div className="absolute inset-y-0 left-0 pl-0 flex items-center pointer-events-none" aria-hidden="true">
                   <svg className="w-4 h-4 transition-colors duration-300" style={{ color: searchQuery ? accent : accent + '40' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
-                <input 
-                  id="business-search" 
-                  type="search" 
-                  value={searchQuery} 
-                  onChange={(e) => setSearchQuery(e.target.value)} 
-                  placeholder="Search by name, code, or description..." 
+                <input
+                  id="business-search"
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => updateSearchQuery(e.target.value)}
+                  placeholder="Search by name, code, or description..."
                   className="w-full rounded-xl pl-6 pr-10 py-3 text-sm border focus:outline-none transition-all duration-300"
-                  style={{ 
+                  style={{
                     backgroundColor: accent + '08',
                     borderColor: searchQuery ? accent : accent + '15',
                     color: isDark ? '#fff' : '#000',
                   }}
-                  onFocus={(e) => { if (!searchQuery) e.target.style.borderColor = accent; }}
-                  onBlur={(e) => { if (!searchQuery) e.target.style.borderColor = accent + '15'; }}
                 />
                 {searchQuery && (
                   <button type="button" onClick={clearSearch} className="absolute inset-y-0 right-0 pr-4 flex items-center transition-opacity hover:opacity-70" style={{ color: accent }} aria-label="Clear search">
@@ -147,6 +168,19 @@ export default function DefaultLayout({
               )}
             </section>
 
+            {/* ── LOCAL PARTNER AD ──
+                One new banner position, between search and first content
+                section. Only renders when a matching local ad exists for
+                this business type. AdSense slots below are untouched.
+
+                Gate: `localAds` comes from BioPage's `useLocalAds` hook,
+                which already filters by businessType and active window.
+                A truthy non-empty `localAds` is sufficient here — no
+                extra `biz.adsEnabled` check needed. */}
+            {localAds && localAds.length > 0 && (
+              <LocalAdBanner ads={localAds} accent={accent} className="mt-12 lg:mt-16" />
+            )}
+
             {/* ── ACCENT DIVIDER ── */}
             <div className="mt-12 lg:mt-16 flex items-center gap-3" aria-hidden="true">
               <div className="flex-1 h-px" style={{ backgroundColor: accent + '15' }} />
@@ -154,14 +188,14 @@ export default function DefaultLayout({
               <div className="flex-1 h-px" style={{ backgroundColor: accent + '15' }} />
             </div>
 
-            {showPrimaryAd && (
-              <div className="mt-12 lg:mt-16">
-                <div className="rounded-2xl p-6 lg:p-8 flex flex-col items-center" style={{ backgroundColor: accent + '08', borderColor: accent + '15', borderWidth: '1px' }}>
-                  <span className="text-[10px] uppercase tracking-[0.25em] mb-4 font-semibold text-center block" style={{ color: accent }}>Sponsored</span>
-                  <GoogleAd slot="1234567890" className="w-full max-w-md" />
-                </div>
-              </div>
-            )}
+            {/* ── TOP AD ── */}
+            <AdSlot
+              slot={AD_SLOT_TOP}
+              accent={accent}
+              enabled={showPrimaryAd}
+              format="horizontal"
+              className="mt-12 lg:mt-16"
+            />
 
             {/* ── ABOUT ── */}
             {biz.bio && (
@@ -277,29 +311,29 @@ export default function DefaultLayout({
               </section>
             )}
 
-            {showSecondaryAd && (
-              <div className="mt-16 lg:mt-24">
-                <div className="rounded-2xl p-6 lg:p-8 flex flex-col items-center" style={{ backgroundColor: accent + '08', borderColor: accent + '15', borderWidth: '1px' }}>
-                  <span className="text-[10px] uppercase tracking-[0.25em] mb-4 font-semibold text-center block" style={{ color: accent }}>Sponsored</span>
-                  <GoogleAd slot="1111111111" className="w-full max-w-md" />
-                </div>
-              </div>
-            )}
+            {/* ── INFEED AD ── */}
+            <AdSlot
+              slot={AD_SLOT_INFEED}
+              accent={accent}
+              enabled={showSecondaryAd}
+              format="fluid"
+              className="mt-16 lg:mt-24"
+            />
 
             {/* ── FAQ ── */}
             <section className="mt-16 lg:mt-24" aria-label="Frequently Asked Questions">
               <SectionHeading accent={accent} id="faq">FAQs</SectionHeading>
               <div className="space-y-4">
                 {faqs.map((faq, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="rounded-2xl transition-all duration-500 hover:shadow-lg hover:-translate-y-0.5"
                     style={{ backgroundColor: accent }}
                   >
                     <div className="p-5 md:p-6">
                       <div className="flex items-start gap-4">
-                        <span 
-                          className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold mt-0.5" 
+                        <span
+                          className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold mt-0.5"
                           style={{ backgroundColor: faqBadge, color: '#fff' }}
                         >
                           {index + 1}
@@ -319,14 +353,16 @@ export default function DefaultLayout({
               </div>
             </section>
 
-            {showFooterAd && (
-              <div className="mt-16 lg:mt-24 pt-16" style={{ borderTop: `1px solid ${accent + '15'}` }}>
-                <div className="rounded-2xl p-6 lg:p-8 flex flex-col items-center" style={{ backgroundColor: accent + '08', borderColor: accent + '15', borderWidth: '1px' }}>
-                  <span className="text-[10px] uppercase tracking-[0.25em] mb-4 font-semibold text-center block" style={{ color: accent }}>Sponsored</span>
-                  <GoogleAd slot="0987654321" className="w-full max-w-md mx-auto" />
-                </div>
-              </div>
-            )}
+            {/* ── FOOTER AD ── */}
+            <div style={{ borderTop: showFooterAd ? `1px solid ${accent + '15'}` : 'none' }} className={showFooterAd ? 'mt-16 lg:mt-24 pt-16' : 'mt-16 lg:mt-24'}>
+              <AdSlot
+                slot={AD_SLOT_FOOTER}
+                accent={accent}
+                enabled={showFooterAd}
+                format="auto"
+                className=""
+              />
+            </div>
 
             {/* ── FOOTER ── */}
             <footer className="mt-16 lg:mt-24 pt-10" style={{ borderTop: `1px solid ${accent + '15'}` }}>
@@ -354,6 +390,23 @@ export default function DefaultLayout({
           </div>
         </main>
       </div>
+
+      {/* ── STICKY MOBILE AD ──
+          Fixed bottom banner on phones only. Self-gates on scroll position
+          (20%–85%) and dwell time (5s+), and never renders at lg+. Lives
+          OUTSIDE the scroll container so it doesn't get clipped by the
+          xl:overflow-y-auto on <main>.
+
+          Gate is `stickyAdEnabled`, derived inline from the single
+          business-level flag. Unlike the three <AdSlot> gates above
+          (which come from BioPage because they also depend on content
+          and search state), sticky visibility only depends on whether
+          ads are enabled for this business. */}
+      <StickyAd
+        slot={AD_SLOT_STICKY_MOBILE}
+        enabled={stickyAdEnabled}
+        accent={accent}
+      />
     </>
   );
 }

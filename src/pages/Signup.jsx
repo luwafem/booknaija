@@ -114,7 +114,7 @@ export default function Signup() {
         onFinish={handleSubmit}
         loading={loading}
         error={error}
-        submitLabel="Pay ₦2,500 to Get Started"
+        submitLabel="Create My Free Page"
       >
         {renderStep()}
       </StepWrapper>

@@ -1,6 +1,6 @@
 // PropertyDetails.jsx — with shortlet "Check Availability" on WhatsApp
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Navigate, Link } from 'react-router-dom';
 import { useBusinessWithSEO } from '../hooks/useBusinessWithSEO';
 import SEO from '../hooks/useSEO';
 import PropertyHeader from '../components/bio/property/PropertyHeader';
@@ -28,14 +28,25 @@ export default function PropertyDetails() {
     );
   }
 
+  // ─── Redirects ───
+  // Use <Navigate> instead of `return navigate(...)`. navigate() returns
+  // undefined as a side effect; returning that from a component makes
+  // React try to render undefined. In StrictMode this also fires the
+  // navigation twice on the initial render, and any error boundary
+  // wrapping this page would see a returned-undefined render.
+  //
+  // <Navigate> is the declarative redirect component — it renders
+  // nothing, respects the React lifecycle, and is safe under StrictMode.
+  // `replace` means the failed URL is swapped in history rather than
+  // pushed, so Back from the redirect target skips the broken URL.
   if (!biz || !biz.active) {
-    return navigate(`/${slug}`);
+    return <Navigate to={`/${slug}`} replace />;
   }
 
   const property = (biz.properties || []).find(p => p.id === propertyId);
 
   if (!property) {
-    return navigate(`/${slug}`);
+    return <Navigate to={`/${slug}`} replace />;
   }
 
   const isDark = biz.theme === 'dark';

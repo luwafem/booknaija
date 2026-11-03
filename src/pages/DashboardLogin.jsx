@@ -148,6 +148,16 @@ export default function DashboardLogin() {
       if (!res.ok) {
         throw new Error(data.error || 'Failed to send OTP.');
       }
+      // ─── CRITICAL: check emailSent ───
+      // The backend returns 200 even when Resend fails or RESEND_API_KEY
+      // is missing (payload: { success: true, emailSent: false, emailError }).
+      // Without this check, the user advances to the "Enter OTP" step and
+      // waits forever for an email that was never sent.
+      if (data.emailSent === false) {
+        throw new Error(
+          `Could not send the OTP email${data.emailError ? ` (${data.emailError})` : ''}. Please contact support at support@five9.com.ng.`
+        );
+      }
       setResetStep(2);
       setResetError('');
     } catch (err) {

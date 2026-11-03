@@ -1,154 +1,23 @@
 // src/pages/BioPage.jsx
 import { useParams, useSearchParams, useNavigate, Navigate } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useBusinessWithSEO } from '../hooks/useBusinessWithSEO';
 import { usePaginatedItems } from '../hooks/usePaginatedItems';
+import { useLocalAds } from '../hooks/useLocalAds';   // 👈 NEW
 import SEO from '../hooks/useSEO';
-// 👇 FIXED: also import LAYOUT_MAP so we can compare against the actual
-// resolved component rather than guessing from the business type.
+// 👇 LAYOUT_MAP is used to check whether the resolved layout is a
+// property-template so we can pick the right props branch. It's NOT
+// used for the ad logic anymore — each layout handles its own ad slots.
 import { getLayoutComponent, LAYOUT_MAP } from '../data/layouts';
 
-// --- ADSENSE CONFIGURATION (GLOBAL) ---
-const ADSENSE_CLIENT = 'ca-pub-1898000452698308';
-const AD_SLOT_PRIMARY = '1234567890';
-const AD_SLOT_SECONDARY = '1111111111';
-const AD_SLOT_FOOTER = '0987654321';
-
-let adsenseScriptLoaded = false;
-let adsenseScriptLoading = false;
-
-const GoogleAd = ({ slot, className = '' }) => {
-  const adRef = useRef(null);
-  const hasPushed = useRef(false);
-
-  useEffect(() => {
-    if (hasPushed.current) return;
-    hasPushed.current = true;
-
-    const pushAd = () => {
-      if (!adRef.current) return;
-      try {
-        if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
-          window.adsbygoogle.push({});
-        }
-      } catch (e) {}
-    };
-
-    if (adsenseScriptLoaded) {
-      const timer = setTimeout(pushAd, 150);
-      return () => clearTimeout(timer);
-    }
-
-    if (adsenseScriptLoading) {
-      let attempts = 0;
-      const interval = setInterval(() => {
-        attempts++;
-        if (adsenseScriptLoaded || attempts > 20) {
-          clearInterval(interval);
-          if (adsenseScriptLoaded) pushAd();
-        }
-      }, 100);
-      return () => clearInterval(interval);
-    }
-
-    adsenseScriptLoading = true;
-    const script = document.createElement('script');
-    script.async = true;
-    script.crossOrigin = 'anonymous';
-    script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`;
-
-    script.onload = () => {
-      adsenseScriptLoaded = true;
-      adsenseScriptLoading = false;
-      const timer = setTimeout(pushAd, 100);
-      script._timerCleanup = () => clearTimeout(timer);
-    };
-
-    script.onerror = () => {
-      adsenseScriptLoading = false;
-    };
-
-    document.head.appendChild(script);
-
-    return () => {
-      if (script._timerCleanup) script._timerCleanup();
-    };
-  }, [slot]);
-
-  return (
-    <div className={`w-full flex justify-center overflow-hidden ${className}`} aria-hidden="true">
-      <ins
-        ref={adRef}
-        className="adsbygoogle"
-        style={{ display: 'block' }}
-        data-ad-client={ADSENSE_CLIENT}
-        data-ad-slot={slot}
-        data-ad-format="auto"
-        data-full-width-responsive="true"
-        data-ad-test="on"
-      />
-    </div>
-  );
-};
-
-const ReferralLink = ({ slug, accent = '#c8a97e' }) => {
-  const [copied, setCopied] = useState(false);
-  const referralUrl = `${window.location.origin}/signup?ref=${slug}`;
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(referralUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      const textArea = document.createElement('textarea');
-      textArea.value = referralUrl;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  return (
-    <div className="mb-8">
-      <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-center mb-4" style={{ color: accent }}>
-        Refer 3 friends = 1 Free Month
-      </p>
-      <div className="flex justify-center">
-        <button
-          onClick={handleCopy}
-          className="group flex items-center gap-3 px-5 py-2.5 rounded-full border transition-all duration-300"
-          style={{ 
-            backgroundColor: accent + '08',
-            borderColor: accent + '15',
-          }}
-          aria-label="Copy referral link"
-        >
-          <span className="text-xs font-medium truncate max-w-[160px] sm:max-w-[200px]" style={{ color: accent }}>
-            {referralUrl.replace(/^https?:\/\//, '')}
-          </span>
-          <div className="h-4 w-px" style={{ backgroundColor: accent + '18' }} aria-hidden="true" />
-          <span className="text-xs font-semibold transition-all duration-300" style={{ color: accent }}>
-            {copied ? 'Copied!' : 'Copy'}
-          </span>
-        </button>
-      </div>
-    </div>
-  );
-};
-
-const SectionHeading = ({ children, accent, id }) => (
-  <div className="flex items-center gap-4 mb-8 md:mb-10">
-    <div className="h-px flex-1" style={{ backgroundColor: accent + '15' }} />
-    <h2 id={id} className="text-2xl md:text-3xl font-medium tracking-tight whitespace-nowrap text-black">
-      {children}
-    </h2>
-    <div className="h-px flex-1" style={{ backgroundColor: accent + '15' }} />
-  </div>
-);
+// 👇 REMOVED: inline GoogleAd, ReferralLink, SectionHeading, useRef.
+// 👇 REMOVED: StickyAd + AD_SLOT_STICKY_MOBILE imports.
+//    Reason: DefaultLayout already renders <StickyAd> internally, and
+//    the previous comment claiming StickyAd "self-dedupes" was wrong —
+//    `dismissed` is component-local state, so two instances render two
+//    stacked banners. Rendering it here caused a double-sticky bug on
+//    every Default-layout page. The property templates also render their
+//    own <StickyAd>, so both branches are covered without BioPage's help.
 
 function isLight(hex) {
   if (!hex || !hex.startsWith('#') || hex.length < 7) return false;
@@ -166,14 +35,27 @@ export default function BioPage() {
   const codeParam = params.get('code') || '';
 
   // ─── Use the hook with the URL slug ───
-  const { 
-    business: biz, 
-    loading, 
-    error, 
-    seoDescription, 
-    seoImage, 
-    structuredData 
+  const {
+    business: biz,
+    loading,
+    error,
+    seoDescription,
+    seoImage,
+    structuredData
   } = useBusinessWithSEO(slug);
+
+  // ─── LOCAL ADS ───────────────────────────────────────────────
+  // Fetches active partner ads matching this business's type. The
+  // hook caches per businessType for 5 min (same TTL as the server's
+  // Cache-Control header on get-local-ads.cjs), so navigating between
+  // pages of the same type doesn't refetch.
+  //
+  // When biz is still loading, biz?.businessType is undefined and the
+  // hook is called with '' — which returns only 'all'-targeted ads.
+  // That's harmless: DefaultLayout won't render anything because
+  // `loading` short-circuits below. Once biz resolves, the hook
+  // re-runs with the real businessType and picks up type-targeted ads.
+  const { ads: localAds } = useLocalAds(biz?.businessType || '');
 
   const [searchQuery, setSearchQuery] = useState(codeParam);
   const [isSearchActive, setIsSearchActive] = useState(!!codeParam);
@@ -341,25 +223,31 @@ export default function BioPage() {
   // Get the layout component from the map (handles fallback internally)
   const LayoutComponent = getLayoutComponent(businessType, template);
 
-  // 👇 FIXED: Decide the branch by comparing against the ACTUAL resolved
-  // component, not by guessing from the business type. This means a
-  // non-property business with `propertiesEnabled = true` (which any owner
-  // can toggle from the dashboard) will now correctly render DefaultLayout
-  // instead of crashing on missing props.
-  //
-  // Previously: `usePropertyLayout = isPropertyBusiness || biz.propertiesEnabled`
-  // That let a Restaurant/Shortlet flip into the property branch while still
-  // getting DefaultLayout back from the resolver — crash.
+  // Decide the props branch by comparing against the ACTUAL resolved
+  // component, not by guessing from business type. A non-property
+  // business with `propertiesEnabled = true` will still get DefaultLayout
+  // back from the resolver — this comparison keeps the props correct.
   const usePropertyLayout = LayoutComponent === LAYOUT_MAP.property.default;
 
-  // ─── Ads logic (unchanged) ──────────────────────────────────
-  const adsEnabled = biz.adsEnabled !== false && !usePropertyLayout;
-  const totalItems = (isSearchActive ? filteredServices.length + filteredProducts.length + filteredFood.length + filteredCars.length : servicesTotal + productsTotal + foodTotal + carsTotal);
+  // ─── Ad gating for DefaultLayout ────────────────────────────
+  // These three flags are the SINGLE SOURCE OF TRUTH for the Default
+  // layout's ad visibility. Previously DefaultLayout *also* computed its
+  // own `adsEnabled` from `biz.adsEnabled !== false`, which meant two
+  // gates that happened to agree today but would drift the moment
+  // anyone added a per-slot rule. That local computation has now been
+  // removed from DefaultLayout — it reads only these three props.
+  //
+  // Property templates ignore these three props entirely; they compute
+  // their own `adsEnabled` internally and render their own slots.
+  const adsAllowedForBusiness = biz.adsEnabled !== false && !usePropertyLayout;
+  const totalItems = isSearchActive
+    ? filteredServices.length + filteredProducts.length + filteredFood.length + filteredCars.length
+    : servicesTotal + productsTotal + foodTotal + carsTotal;
   const hasAnyContent = showServices || showProducts || showFood || showCars;
 
-  const showPrimaryAd = adsEnabled && hasAnyContent && !isSearchActive;
-  const showSecondaryAd = adsEnabled && hasAnyContent && !isSearchActive && totalItems >= 6;
-  const showFooterAd = adsEnabled && hasAnyContent && !isSearchActive && totalItems >= 4;
+  const showPrimaryAd = adsAllowedForBusiness && hasAnyContent && !isSearchActive;
+  const showSecondaryAd = adsAllowedForBusiness && hasAnyContent && !isSearchActive && totalItems >= 6;
+  const showFooterAd = adsAllowedForBusiness && hasAnyContent && !isSearchActive && totalItems >= 4;
 
   // ─── Handlers ────────────────────────────────────────────────
   const handleSearch = (e) => {
@@ -374,7 +262,7 @@ export default function BioPage() {
 
   function handleServiceSelect(id) {
     const cart = getCart();
-    if (cart.service === id) { cart.service = ''; } 
+    if (cart.service === id) { cart.service = ''; }
     else {
       cart.service = id; cart.products = []; cart.productVariants = {};
       cart.food = []; cart.foodVariants = {}; cart.car = null; cart.property = null;
@@ -423,7 +311,7 @@ export default function BioPage() {
 
   function handleCarSelect(car) {
     const cart = getCart();
-    if (cart.car === car.id) { cart.car = null; } 
+    if (cart.car === car.id) { cart.car = null; }
     else {
       cart.service = ''; cart.products = []; cart.productVariants = {};
       cart.food = []; cart.foodVariants = {}; cart.car = car.id; cart.property = null;
@@ -441,13 +329,13 @@ export default function BioPage() {
     saveCart(cart);
     navigate(`/book/${slug}`);
   }
-  
+
   const faqs = [
     {
       q: `How do I book with ${biz.name}?`,
-      a: showServices 
+      a: showServices
         ? `Booking an appointment with ${biz.name} is simple. Browse the services listed above, select your preferred option, and you will be directed to a secure checkout page.`
-        : showCars 
+        : showCars
         ? `Scheduling a rental or viewing with ${biz.name} is easy. Browse the available vehicles, select the one you are interested in, and proceed to secure checkout.`
         : usePropertyLayout
         ? `Booking a viewing or securing a property with ${biz.name} is easy. Browse the available listings, select the property you are interested in, and proceed to secure checkout.`
@@ -456,9 +344,9 @@ export default function BioPage() {
         : `Booking or purchasing from ${biz.name} is simple. Browse the listings above, select your preferred option, and proceed to secure checkout.`
     },
     {
-      q: `Where is ${biz.name} located?`,      
-      a: biz.location 
-        ? `${biz.name} is located in ${biz.location}. You can find more details and contact them directly through this page.` 
+      q: `Where is ${biz.name} located?`,
+      a: biz.location
+        ? `${biz.name} is located in ${biz.location}. You can find more details and contact them directly through this page.`
         : `You can find location details and contact information for ${biz.name} on this page.`
     },
     {
@@ -467,11 +355,11 @@ export default function BioPage() {
     },
     {
       q: `Can I buy products from ${biz.name} online?`,
-      a: showProducts 
+      a: showProducts
         ? `Yes! ${biz.name} offers a selection of products that you can purchase directly through this page. Simply select the items you want and proceed to secure checkout.`
         : usePropertyLayout
         ? `Yes, you can secure a property rental, lease, or purchase online directly through this page with safe, upfront payments.`
-        : showFood 
+        : showFood
         ? `Yes! ${biz.name} offers online ordering for their menu items with secure checkout and delivery options.`
         : showCars
         ? `Yes, you can secure a vehicle rental or schedule a viewing online directly through this page with safe, upfront payments.`
@@ -492,8 +380,25 @@ export default function BioPage() {
   };
 
   // ─── Render the selected layout ─────────────────────────────
+  //
+  // Both branches render their own <StickyAd> internally:
+  //   • DefaultLayout  — has <StickyAd> at its root
+  //   • Property layouts (PropertyLayout, EstateoLayout, HavenlyLayout)
+  //     — each has <StickyAd> at its root
+  //
+  // BioPage deliberately does NOT render a <StickyAd> of its own.
+  // An earlier version did, as a "fallback", but StickyAd's `dismissed`
+  // flag is component-local state, so two instances stacked instead of
+  // deduplicating. That produced a visible double-banner on mobile and
+  // risked an AdSense policy flag for multiple sticky units.
+  //
   if (usePropertyLayout) {
-    // Property layout – pass property‑specific handler
+    // Property layout – pass property‑specific handler.
+    // No `localAds` here: property templates don't render a partner
+    // banner (they only render AdSense slots). If you later want
+    // local ads on property pages, add a <LocalAdBanner> call to
+    // PropertyLayout / EstateoLayout / HavenlyLayout and thread
+    // `localAds` through `commonProps` here.
     return (
       <LayoutComponent
         {...commonProps}
@@ -502,12 +407,15 @@ export default function BioPage() {
     );
   }
 
-  // Default (non‑property) layout – pass all the handlers and data
+  // Default (non‑property) layout – pass all the handlers and data.
+  // 👇 NEW: `localAds` is threaded through so DefaultLayout can render
+  //    <LocalAdBanner> between the search bar and the accent divider.
   return (
     <LayoutComponent
       {...commonProps}
       ui={ui}
       searchQuery={searchQuery}
+      setSearchQuery={setSearchQuery}
       isSearchActive={isSearchActive}
       activeService={activeService}
       activeProducts={activeProducts}
@@ -537,6 +445,7 @@ export default function BioPage() {
       carsHasMore={carsHasMore}
       loadMoreCars={loadMoreCars}
       carsLoading={carsLoading}
+      localAds={localAds}                         // 👈 NEW
       showPrimaryAd={showPrimaryAd}
       showSecondaryAd={showSecondaryAd}
       showFooterAd={showFooterAd}

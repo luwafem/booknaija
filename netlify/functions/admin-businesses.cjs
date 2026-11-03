@@ -31,7 +31,7 @@ async function notifyBusiness(email, name, subject, html, text) {
       to: email,
       subject,
       html,
-      text: text || undefined, // fallback if text not provided
+      text: text || undefined,
     });
   } catch (err) {
     console.error('Failed to send notification email:', err.message);
@@ -55,6 +55,17 @@ exports.handler = async (event) => {
       const search = params.search || '';
       const filterActive = params.active; // 'true' or 'false'
       const businessType = params.businessType; // filter by business_type
+      // 👇 NEW: server-side subscription filter.
+      // Before this change, the client fetched a page of 20 rows and
+      // then filtered them in JS. With 500 businesses and 15 expiring,
+      // "Expiring Soon" would only show the expiring businesses that
+      // happened to land in the current 20-row window, and totalPages
+      // was computed against the unfiltered count. The page shown to
+      // the admin lied about both the results and the page count.
+      //
+      // Now the filter runs in SQL against the full table, so `count`
+      // reflects the filtered total and pagination is correct.
+      const subscriptionStatus = params.subscriptionStatus; // 'active' | 'expiring' | 'expired'
 
       let query = supabase
         .from('businesses')
@@ -71,6 +82,43 @@ exports.handler = async (event) => {
       if (businessType) {
         query = query.eq('business_type', businessType);
       }
+
+      // ─── Subscription filter (server-side) ───
+      // Semantics matching the client-side logic it replaces:
+      //   • active   → subscription_ends_at is in the future AND active
+      //   • expiring → subscription_ends_at is in the future but within
+      //                the next 5 days
+      //   • expired  → subscription_ends_at is null OR in the past
+      //
+      // All comparisons use the ISO string representation, which Supabase
+      // accepts for timestamp columns. `new Date().toISOString()` produces
+      // e.g. "2026-06-29T21:36:25.087Z" — direct comparison against the
+      // stored timestamptz column is lexicographic-safe because both are
+      // UTC ISO 8601.
+      const nowIso = new Date().toISOString();
+
+      if (subscriptionStatus === 'active') {
+        query = query
+          .not('subscription_ends_at', 'is', null)
+          .gt('subscription_ends_at', nowIso)
+          .eq('active', true);
+      } else if (subscriptionStatus === 'expiring') {
+        const fiveDaysLaterIso = new Date(
+          Date.now() + 5 * 24 * 60 * 60 * 1000
+        ).toISOString();
+        query = query
+          .not('subscription_ends_at', 'is', null)
+          .gt('subscription_ends_at', nowIso)
+          .lte('subscription_ends_at', fiveDaysLaterIso);
+      } else if (subscriptionStatus === 'expired') {
+        // Postgres OR: subscription_ends_at IS NULL OR subscription_ends_at < now
+        // Supabase's .or() syntax takes a comma-separated string of
+        // "column.operator.value" clauses.
+        query = query.or(
+          `subscription_ends_at.is.null,subscription_ends_at.lt.${nowIso}`
+        );
+      }
+      // Any other value (undefined, 'all', '') → no subscription filter.
 
       const from = (page - 1) * limit;
       const to = from + limit - 1;
@@ -94,7 +142,6 @@ exports.handler = async (event) => {
     // ─── POST: Perform actions ─────────────────────────────
     if (event.httpMethod === 'POST') {
       console.log('✅ Handling POST request');
-      // 🔒 CSRF protection
       if (!validateCsrf(event)) {
         return {
           statusCode: 403,
@@ -179,7 +226,17 @@ exports.handler = async (event) => {
         if (!fields || typeof fields !== 'object') {
           return { statusCode: 400, body: JSON.stringify({ error: 'Missing update data' }) };
         }
-        const allowedFields = ['name', 'email', 'phone', 'location', 'tagline', 'bio', 'logo', 'business_type'];
+        const allowedFields = [
+          'name',
+          'email',
+          'phone',
+          'location',
+          'tagline',
+          'bio',
+          'logo',
+          'business_type',
+          'ads_enabled',
+        ];
         const updateData = {};
         for (const field of allowedFields) {
           if (fields[field] !== undefined) {
@@ -218,14 +275,12 @@ exports.handler = async (event) => {
           return { statusCode: 400, body: JSON.stringify({ error: 'Invalid domainAction' }) };
         }
 
-        // Execute the update
         const { error } = await supabase
           .from('businesses')
           .update(updatePayload)
           .eq('slug', slug);
         if (error) throw error;
 
-        // ─── Notify the business via email ──────────────────
         try {
           const { data: biz } = await supabase
             .from('businesses')
@@ -236,7 +291,6 @@ exports.handler = async (event) => {
           if (biz?.email) {
             const subject = domainAction === 'approve' ? 'Custom domain approved' : 'Custom domain request update';
             
-            // Build HTML and plain text versions
             let html = `<p>Hi ${biz.name},</p><p>Your custom domain request has been <strong>${domainAction}d</strong>.</p>`;
             let text = `Hi ${biz.name},\n\nYour custom domain request has been ${domainAction}d.\n\n`;
 
@@ -260,10 +314,8 @@ exports.handler = async (event) => {
           }
         } catch (notifyErr) {
           console.error('Failed to send domain action notification:', notifyErr.message);
-          // Non‑critical – continue
         }
 
-        // Log the action
         await logSystemEvent('info', 'admin-businesses', logMessage, { slug, domainAction, notes });
         return {
           statusCode: 200,
@@ -271,19 +323,16 @@ exports.handler = async (event) => {
         };
       }
 
-      // ── Unknown action ──
       else {
         return { statusCode: 400, body: JSON.stringify({ error: 'Invalid action' }) };
       }
 
-      // ─── Execute the update (for non-domain actions) ──────
       const { error } = await supabase
         .from('businesses')
         .update(updatePayload)
         .eq('slug', slug);
       if (error) throw error;
 
-      // ─── Log the action ──────────────────────────────────
       await logSystemEvent('info', 'admin-businesses', logMessage, { slug, action, updatePayload });
 
       return {
@@ -292,7 +341,6 @@ exports.handler = async (event) => {
       };
     }
 
-    // ─── Method not allowed ──────────────────────────────
     console.warn('⚠️ Method not allowed:', event.httpMethod);
     return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
   } catch (err) {

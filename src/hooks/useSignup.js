@@ -2,6 +2,18 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+// ─── CANONICAL BUSINESS TYPES ──────────────────────────────────
+// These are the values the signup form submits to save-business.cjs,
+// and the values stored in the `business_type` column.
+//
+// They MUST match:
+//   • netlify/functions/save-business.cjs → getFeaturesForType()
+//   • src/components/admin/SettingsTab.jsx → ALL_BUSINESS_TYPES
+//   • src/components/admin/BusinessesTab.jsx → typeOptions
+//   • src/components/admin/EditBusinessModal.jsx → dropdown
+//
+// All five files now use these long forms. Nothing should produce
+// the short forms ('Skin Care', 'Restaurant', 'Auto') anymore.
 const ALL_BUSINESS_TYPES = [
   'Lash Artist',
   'Hair Stylist',
@@ -17,6 +29,62 @@ const ALL_BUSINESS_TYPES = [
   'Tutor',
   'Other',
 ];
+
+// ─── FEATURE FLAG MATRIX ────────────────────────────────────────
+// Maps every business type to the feature flags it should start with.
+// Both long and short forms are listed so that:
+//   • new signups (long form) get the right flags
+//   • any existing DB row that still has the old short form, if it's
+//     ever re-submitted through the signup hook, still gets the right
+//     flags instead of the default fallback.
+//
+// The short-form entries can be removed once every business in the DB
+// has been migrated to the long form (see migration note below).
+const FEATURE_MATRIX = {
+  // ─── Beauty / Personal Care (services + products) ───
+  'Lash Artist':               { servicesEnabled: true,  productsEnabled: true,  carsEnabled: false, foodEnabled: false, propertiesEnabled: false },
+  'Hair Stylist':              { servicesEnabled: true,  productsEnabled: true,  carsEnabled: false, foodEnabled: false, propertiesEnabled: false },
+  'Makeup Artist':             { servicesEnabled: true,  productsEnabled: true,  carsEnabled: false, foodEnabled: false, propertiesEnabled: false },
+  'Nail Technician':           { servicesEnabled: true,  productsEnabled: true,  carsEnabled: false, foodEnabled: false, propertiesEnabled: false },
+  'Skin Care / Facialist':     { servicesEnabled: true,  productsEnabled: true,  carsEnabled: false, foodEnabled: false, propertiesEnabled: false },
+
+  // ─── Fashion / Retail (services + products) ───
+  'Fashion / Boutique':        { servicesEnabled: true,  productsEnabled: true,  carsEnabled: false, foodEnabled: false, propertiesEnabled: false },
+
+  // ─── Services-only ───
+  'Cleaner':                   { servicesEnabled: true,  productsEnabled: false, carsEnabled: false, foodEnabled: false, propertiesEnabled: false },
+  'Tutor':                     { servicesEnabled: true,  productsEnabled: false, carsEnabled: false, foodEnabled: false, propertiesEnabled: false },
+
+  // ─── Food (menu only) ───
+  'Restaurant / Food':         { servicesEnabled: false, productsEnabled: false, carsEnabled: false, foodEnabled: true,  propertiesEnabled: false },
+
+  // ─── Auto (vehicles only) ───
+  'Auto Dealer / Rental':      { servicesEnabled: false, productsEnabled: false, carsEnabled: true,  foodEnabled: false, propertiesEnabled: false },
+
+  // ─── Property (properties + estates) ───
+  'Real Estate':               { servicesEnabled: false, productsEnabled: false, carsEnabled: false, foodEnabled: false, propertiesEnabled: true },
+  'Shortlet':                  { servicesEnabled: false, productsEnabled: false, carsEnabled: false, foodEnabled: false, propertiesEnabled: true },
+
+  // ─── Catch-all ───
+  'Other':                     { servicesEnabled: true,  productsEnabled: true,  carsEnabled: false, foodEnabled: false, propertiesEnabled: false },
+
+  // ─── LEGACY SHORT FORMS ────────────────────────────────────
+  // These exist only for backward compatibility with any DB rows
+  // created before the vocabulary was unified. Once you've run the
+  // SQL migration below, the entries can be deleted.
+  'Fashion':                   { servicesEnabled: true,  productsEnabled: true,  carsEnabled: false, foodEnabled: false, propertiesEnabled: false },
+  'Skin Care':                 { servicesEnabled: true,  productsEnabled: true,  carsEnabled: false, foodEnabled: false, propertiesEnabled: false },
+  'Restaurant':                { servicesEnabled: false, productsEnabled: false, carsEnabled: false, foodEnabled: true,  propertiesEnabled: false },
+  'Auto':                      { servicesEnabled: false, productsEnabled: false, carsEnabled: true,  foodEnabled: false, propertiesEnabled: false },
+};
+
+const DEFAULT_FEATURES = {
+  servicesEnabled: true,
+  productsEnabled: true,
+  carsEnabled: false,
+  foodEnabled: false,
+  propertiesEnabled: false,
+};
 
 export function useSignup() {
   const [params] = useSearchParams();
@@ -64,33 +132,18 @@ export function useSignup() {
     setFormValues((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ─── Derive feature flags ───
+  // ─── Derive feature flags from a business type ───
+  // Accepts either the long canonical form or the legacy short form.
+  // Falls back to DEFAULT_FEATURES for anything unrecognized (e.g. a
+  // free-text type that somehow gets past validation).
   const getFeaturesForType = (type) => {
-    switch (type) {
-      case 'Fashion':
-        return { servicesEnabled: true, productsEnabled: true, carsEnabled: false, foodEnabled: false, propertiesEnabled: false };
-      case 'Lash Artist':
-      case 'Hair Stylist':
-      case 'Makeup Artist':
-      case 'Nail Technician':
-      case 'Skin Care':
-        return { servicesEnabled: true, productsEnabled: true, carsEnabled: false, foodEnabled: false, propertiesEnabled: false };
-      case 'Cleaner':
-      case 'Tutor':
-        return { servicesEnabled: true, productsEnabled: false, carsEnabled: false, foodEnabled: false, propertiesEnabled: false };
-      case 'Restaurant':
-        return { servicesEnabled: false, productsEnabled: false, carsEnabled: false, foodEnabled: true, propertiesEnabled: false };
-      case 'Auto':
-        return { servicesEnabled: false, productsEnabled: false, carsEnabled: true, foodEnabled: false, propertiesEnabled: false };
-      case 'Real Estate':
-      case 'Shortlet':
-        return { servicesEnabled: false, productsEnabled: false, carsEnabled: false, foodEnabled: false, propertiesEnabled: true };
-      default:
-        return { servicesEnabled: true, productsEnabled: true, carsEnabled: false, foodEnabled: false, propertiesEnabled: false };
-    }
+    if (!type) return DEFAULT_FEATURES;
+    return FEATURE_MATRIX[type] || DEFAULT_FEATURES;
   };
 
-  const currentTypeFeatures = formValues.business_type ? getFeaturesForType(formValues.business_type) : null;
+  const currentTypeFeatures = formValues.business_type
+    ? getFeaturesForType(formValues.business_type)
+    : null;
 
   // ─── Available business types (filtered by admin settings) ───
   const availableTypes = ALL_BUSINESS_TYPES.filter((type) => !disabledTypes.includes(type));
@@ -275,7 +328,6 @@ export function useSignup() {
 
     const colorToUse = brandColor || '#c8a97e';
     const businessSlug = generateSlug(business_name);
-    const signupAmount = 2500;
 
     if (!businessSlug) {
       setError('Business name is missing. Please go back to Step 1.');
@@ -293,7 +345,9 @@ export function useSignup() {
     let finalSubaccountCode = null;
 
     try {
-      // 1. Create subaccount
+      // 1. Create subaccount — still required so the business can
+      //    receive bookings & product payments later. Nothing to do
+      //    with the signup fee anymore, this is just the payout target.
       const subaccountRes = await fetchWithTimeout(
         '/.netlify/functions/create-subaccount',
         {
@@ -343,7 +397,6 @@ export function useSignup() {
       instagram: instagram_link,
       tiktok: tiktok_link,
       referredBy: referralParam,
-      initialPaymentAmount: signupAmount,
       accountName: account_name,
       accountNumber: account_number,
       settlementBank: settlementBankName,
@@ -352,45 +405,10 @@ export function useSignup() {
 
     localStorage.setItem(`pending_signup_${businessSlug}`, JSON.stringify(tempBusinessData));
 
-    // 2. Initialize payment
-    try {
-      const payRes = await fetchWithTimeout(
-        '/.netlify/functions/initialize-payment',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email,
-            amount: signupAmount,
-            slug: businessSlug,
-            referredBy: referralParam && referralParam.startsWith('aff_') ? referralParam : null,
-            callback_url: `${window.location.origin}/onboarding?slug=${businessSlug}`,
-          }),
-        },
-        20000
-      );
-
-      if (!payRes.ok) {
-        const errData = await payRes.json().catch(() => ({}));
-        throw new Error(errData.error || `Payment init failed: ${payRes.status}`);
-      }
-
-      const payData = await payRes.json();
-      if (payData.authorization_url) {
-        window.location.href = payData.authorization_url;
-        return;
-      } else {
-        throw new Error(payData.error || 'No authorization URL returned from Paystack.');
-      }
-    } catch (err) {
-      console.error('Payment initialization error:', err.message);
-      setError(
-        err.message.includes('aborted')
-          ? 'Request timed out. Please check your connection and try again.'
-          : err.message || 'Failed to start payment. Please try again.'
-      );
-      setLoading(false);
-    }
+    // 2. FREE SIGNUP — no Paystack. Go straight to onboarding.
+    //    save-business.cjs will set subscription_ends_at = null
+    //    and product_limit = 5 on the new row.
+    window.location.href = `/onboarding?slug=${businessSlug}`;
   };
 
   return {
@@ -411,7 +429,7 @@ export function useSignup() {
     banks,
     banksLoading,
     currentTypeFeatures,
-    availableTypes, // 👈 NEW: filtered business types
+    availableTypes,
     // Navigation
     nextStep,
     prevStep,

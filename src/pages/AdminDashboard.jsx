@@ -16,7 +16,8 @@ import TransactionsTab from '../components/admin/TransactionsTab';
 import SettingsTab from '../components/admin/SettingsTab';
 import SystemTab from '../components/admin/SystemTab';
 import ReportsTab from '../components/admin/ReportsTab';
-import SupportTab from '../components/admin/SupportTab'; // 👈 NEW IMPORT
+import SupportTab from '../components/admin/SupportTab';
+import AdsTab from '../components/admin/AdsTab';              // 👈 NEW
 import EditBusinessModal from '../components/admin/EditBusinessModal';
 
 export default function AdminDashboard() {
@@ -107,13 +108,15 @@ export default function AdminDashboard() {
         return <PayoutsTab {...props} />;
       case 'transactions':
         return <TransactionsTab {...props} />;
+      case 'ads':                                              // 👈 NEW
+        return <AdsTab />;
       case 'settings':
         return <SettingsTab {...props} />;
       case 'system':
         return <SystemTab {...props} />;
       case 'reports':
         return <ReportsTab {...props} />;
-      case 'support': // 👈 NEW SUPPORT TAB
+      case 'support':
         return <SupportTab />;
       default:
         return <div className="text-zinc-400">Tab not implemented.</div>;

@@ -15,7 +15,7 @@ import PropertiesTab from '../components/dashboard/PropertiesTab';
 import EstatesTab from '../components/dashboard/EstatesTab';
 import CustomDomainTab from '../components/dashboard/CustomDomainTab';
 import LocationPicker from '../components/LocationPicker';
-import SupportForm from '../components/SupportForm'; // 👈 NEW IMPORT
+import SupportForm from '../components/SupportForm';
 
 export default function Dashboard() {
   const {
@@ -250,9 +250,23 @@ export default function Dashboard() {
           />
         );
       case 'services':
-        return <ServicesTab {...commonTabProps} />;
+        return (
+          <ServicesTab
+            {...commonTabProps}
+            isFreeTier={!biz.subscription_ends_at}
+            limit={biz.product_limit || 5}
+            onUpgradeClick={() => setActiveTab('subscription')}
+          />
+        );
       case 'products':
-        return <ProductsTab {...commonTabProps} />;
+        return (
+          <ProductsTab
+            {...commonTabProps}
+            isFreeTier={!biz.subscription_ends_at}
+            limit={biz.product_limit || 5}
+            onUpgradeClick={() => setActiveTab('subscription')}
+          />
+        );
       case 'cars':
         return <CarsTab {...commonTabProps} />;
       case 'food':
@@ -261,7 +275,7 @@ export default function Dashboard() {
         return <PropertiesTab {...commonTabProps} />;
       case 'estates':
         return <EstatesTab {...commonTabProps} />;
-      case 'support': // 👈 NEW SUPPORT TAB
+      case 'support':
         return (
           <div className={card}>
             <h3 className="text-sm font-bold text-white tracking-tight mb-4">Contact Support</h3>

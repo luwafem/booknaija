@@ -60,7 +60,7 @@ export function useBusiness(slug, options = {}) {
     business: query.data,
     loading: query.isLoading,
     error: query.error,
-    refetch: query.refetch, // 👈 Expose refetch
+    refetch: query.refetch,
   };
 }
 
@@ -84,9 +84,9 @@ function transformBusiness(row, includeChildren) {
     theme: row.theme || 'light',
     template: row.template || 'default',
     custom_domain: row.custom_domain || '',
-    custom_domain_status: row.custom_domain_status || 'none', // 👈 NEW
-    custom_domain_notes: row.custom_domain_notes || '',       // 👈 NEW
-    dns_records: row.dns_records || null,                     // 👈 NEW
+    custom_domain_status: row.custom_domain_status || 'none',
+    custom_domain_notes: row.custom_domain_notes || '',
+    dns_records: row.dns_records || null,
     googleMapsClaimed: row.google_maps_claimed || false,
     avatar: row.avatar || '',
     hero: row.hero || '',
@@ -99,6 +99,11 @@ function transformBusiness(row, includeChildren) {
     // ─── Subscription & affiliate fields ───
     active: row.active,
     subscription_ends_at: row.subscription_ends_at || null,
+    // 👈 NEW: free tier cap. Must be mapped explicitly so that admin
+    // overrides (UPDATE businesses SET product_limit = N) take effect
+    // on the dashboard. Without this line the UI falls back to 5
+    // unconditionally and paying customers would still see the free cap.
+    product_limit: row.product_limit ?? 5,
     referred_by_affiliate: row.referred_by_affiliate || null,
     affiliate_commission_month: row.affiliate_commission_month || 0,
     affiliate_bounty_paid: row.affiliate_bounty_paid || false,

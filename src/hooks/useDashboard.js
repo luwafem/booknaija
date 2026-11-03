@@ -66,12 +66,45 @@ export function useDashboard() {
       .catch(console.error);
   }, []);
 
-  // Auth check
+  // ─── Auth check ───
+  // Two-stage: sessionStorage fast path, then a server round-trip to
+  // verify the JWT cookie is still valid.
+  //
+  // Why the server check matters: sessionStorage survives tab navigation
+  // but NOT page reloads within the same origin after 24h+ (actually it
+  // survives reloads, but NOT browser restarts). More importantly, even
+  // if sessionStorage still says "auth" the JWT cookie may have expired
+  // on the server. Without the server check, a user who left the tab
+  // open overnight would see a fully-functional dashboard whose every
+  // save call silently 401s — very confusing.
+  //
+  // `cancelled` guard prevents the fetch from firing navigate() after
+  // unmount (e.g. if the user navigates away mid-check).
   useEffect(() => {
-    if (!loading && biz) {
-      const authStatus = sessionStorage.getItem('biz_auth_' + slug);
-      if (!authStatus) navigate('/dashboard');
+    if (loading || !biz) return;
+
+    const authStatus = sessionStorage.getItem('biz_auth_' + slug);
+    if (!authStatus) {
+      navigate('/dashboard');
+      return;
     }
+
+    let cancelled = false;
+    fetch('/.netlify/functions/verify-dashboard')
+      .then((r) => {
+        if (cancelled) return;
+        if (!r.ok) {
+          sessionStorage.removeItem('biz_auth_' + slug);
+          navigate('/dashboard');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) navigate('/dashboard');
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [loading, biz, slug, navigate]);
 
   // Sync initial data
@@ -170,8 +203,20 @@ export function useDashboard() {
       .catch(() => setSubMsg('Network error verifying payment.'))
       .finally(() => setSubLoading(false));
 
-    // Clean the URL so a manual refresh doesn't re-trigger verification
-    window.history.replaceState({}, '', window.location.pathname);
+    // Clean the URL so a manual refresh doesn't re-trigger verification.
+    // Only strip the Paystack params — preserve any others (e.g. ?tab=...).
+    // Previously this call wiped the entire query string, which silently
+    // broke any deep-linked dashboard state.
+    const cleanParams = new URLSearchParams(window.location.search);
+    cleanParams.delete('sub_ref');
+    cleanParams.delete('reference');
+    cleanParams.delete('trxref');
+    const newSearch = cleanParams.toString();
+    window.history.replaceState(
+      {},
+      '',
+      window.location.pathname + (newSearch ? `?${newSearch}` : '')
+    );
   }, [biz, slug, fetchSubscriptionHistory, queryClient]);
 
   // Load Cloudinary widget

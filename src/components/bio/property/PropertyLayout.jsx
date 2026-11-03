@@ -1,10 +1,19 @@
-// PropertyLayout.jsx — adds DM Sans font globally
+// src/components/bio/property/PropertyLayout.jsx
 import PropertyHeader from './PropertyHeader';
 import PropertyHero from './PropertyHero';
 import PropertyEstates from './PropertyEstates';
 import PropertyListings from './PropertyListings';
 import PropertyAbout from './PropertyAbout';
 import PropertyFooter from './PropertyFooter';
+// 👇 Shared ad primitives. Property businesses previously had NO ad slots
+// at all — this is what closes that gap.
+import AdSlot from '../../ads/AdSlot';
+import StickyAd from '../../ads/StickyAd';
+import {
+  AD_SLOT_TOP,
+  AD_SLOT_FOOTER,
+  AD_SLOT_STICKY_MOBILE,
+} from '../../ads/adSlots';
 
 export default function PropertyLayout({ biz, accent, isDark, onSelectProperty }) {
   const estatesEnabled = biz.estatesEnabled === true;
@@ -20,6 +29,11 @@ export default function PropertyLayout({ biz, accent, isDark, onSelectProperty }
   const showEstates = estatesEnabled && estates.length > 0;
   const showProperties = propertiesEnabled && (biz.properties || []).length > 0;
 
+  // Ads kill-switch: same flag that drives the Default layout. When
+  // an admin disables ads for a business (AdSense policy violation,
+  // for example), this whole layout stops rendering every ad slot.
+  const adsEnabled = biz.adsEnabled !== false;
+
   return (
     <>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -30,8 +44,18 @@ export default function PropertyLayout({ biz, accent, isDark, onSelectProperty }
         <PropertyHeader biz={biz} accent={accent} isDark={isDark} />
         <PropertyHero biz={biz} accent={accent} isDark={isDark} />
 
-        
-
+        {/* ── TOP AD ──
+            Sits between the hero and the property listings. Uses the
+            shared <AdSlot> so styling matches the Default layout. */}
+        <div className="px-6 sm:px-10 lg:px-14">
+          <AdSlot
+            slot={AD_SLOT_TOP}
+            accent={accent}
+            enabled={adsEnabled}
+            format="horizontal"
+            className="py-8 lg:py-12"
+          />
+        </div>
 
         {showProperties && (
           <PropertyListings
@@ -52,8 +76,31 @@ export default function PropertyLayout({ biz, accent, isDark, onSelectProperty }
         )}
 
         <PropertyAbout biz={biz} accent={accent} isDark={isDark} />
+
+        {/* ── FOOTER AD ──
+            Sits between the About section and the footer. */}
+        <div className="px-6 sm:px-10 lg:px-14">
+          <AdSlot
+            slot={AD_SLOT_FOOTER}
+            accent={accent}
+            enabled={adsEnabled}
+            format="auto"
+            className="py-8 lg:py-12"
+          />
+        </div>
+
         <PropertyFooter biz={biz} accent={accent} isDark={isDark} />
       </div>
+
+      {/* ── STICKY MOBILE AD ──
+          Fixed bottom banner on phones only. Self-gates on scroll
+          position and dwell time, and never renders at lg+. Lives
+          outside the main div so it isn't clipped. */}
+      <StickyAd
+        slot={AD_SLOT_STICKY_MOBILE}
+        enabled={adsEnabled}
+        accent={accent}
+      />
     </>
   );
 }

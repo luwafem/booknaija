@@ -16,10 +16,11 @@ export function useOnboarding() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const slugFromUrl = searchParams.get('slug');
-  // 👇 NEW: read the Paystack reference so we can anchor the subscription window
-  // to the actual payment time (not the time the user finished the form).
-  const referenceFromUrl =
-    searchParams.get('reference') || searchParams.get('trxref') || null;
+  // NOTE: referenceFromUrl was removed with the free-signup migration.
+  // The signup flow no longer redirects through Paystack, so no reference
+  // ever appears in the URL. If a hybrid "premium signup" flow is added
+  // later, restore this and the corresponding paymentReference field in
+  // the save-business payload.
 
   // ─── Load business data from storage ───
   const loadBizData = () => {
@@ -535,10 +536,9 @@ export function useOnboarding() {
 
     const finalGallery = galleryData.length > 0 ? galleryData : [{ group: 'Gallery', images: [] }];
 
-    // ─── UPDATED PAYLOAD WITH SNAKE_CASE KEYS ───
+    // ─── PAYLOAD (snake_case keys) ───
     const payload = {
       slug: businessSlug,
-      paymentReference: referenceFromUrl,      // 👈 NEW: lets save-business anchor subscription_ends_at
       name: businessName,
       logo: logoUrl,
       tagline: 'A professional ' + businessType + ' in Lagos',

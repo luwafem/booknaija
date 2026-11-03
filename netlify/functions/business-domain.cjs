@@ -12,7 +12,11 @@ const supabase = createClient(
 
 function sanitizeDeep(input) {
   if (typeof input === 'string') {
-    return xss(input, { whiteList: [], stripIgnoreTag: true });
+    return xss(input, {
+      whiteList: [],
+      stripIgnoreTag: true,
+      stripIgnoreTagBody: ['script', 'style'],
+    });
   }
   if (Array.isArray(input)) return input.map(sanitizeDeep);
   if (input && typeof input === 'object') {

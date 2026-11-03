@@ -6,6 +6,15 @@
 [build.environment]
   NODE_VERSION = "20"
 
+# ─── FUNCTION DEFAULTS ───
+# NOTE: `memory` and `timeout` are NOT valid keys under the top-level
+# `[functions]` table in the current Netlify schema. They must be
+# applied per-function using `[functions."<name>"]` blocks, or omitted
+# entirely to use Netlify's defaults (1024 MB, 10 s).
+#
+# `netlify dev` rejects the whole config if these keys are present here,
+# which is what produced:
+#   "Configuration property functions.timeout must be an object."
 [functions]
   node_bundler = "esbuild"
   included_files = [
@@ -13,23 +22,26 @@
     "!**/*.test.js",
     "!**/*.spec.js"
   ]
-  # 👈 FIXED: was `[functions."*.js"]` which never matched anything — our
-  # functions are named `initialize-payment.cjs`, `save-business.cjs`, etc.
-  # Netlify matches function names, not filenames. `"*"` applies to all.
-  [functions."*"]
-    memory = 1024
-    timeout = 30
+
+# ─── WEBHOOK TIMEOUT ───
+# The Paystack webhook does a Paystack verify call plus, on renewal
+# paths, a transfer API call. 10 s of default budget is tight; 30 s
+# gives comfortable headroom without holding a slot open indefinitely.
+[functions."paystack-webhook"]
+  timeout = 30
 
 # ─── SCHEDULED FUNCTIONS ───
+# Timeouts here are generous because these run on a schedule, not on
+# user requests — nobody is waiting on them.
 [functions."check-expired-subscriptions"]
   schedule = "0 0 * * *"
+  timeout = 30
 
 [functions."send-expiry-reminders"]
   schedule = "0 8 * * *"
+  timeout = 60
 
 # ─── RATE LIMITING ───
-# Most-specific pattern wins. The wildcard below is the floor; specific
-# patterns override it for sensitive endpoints.
 [[rate_limit]]
   pattern = "/.netlify/functions/*"
   rate = "100 per minute"
@@ -41,15 +53,15 @@
 
 [[rate_limit]]
   pattern = "/.netlify/functions/initialize-subscription"
-  rate = "10 per minute"   # 👈 NEW — was missing; throttles renewal spam
+  rate = "10 per minute"
 
 [[rate_limit]]
   pattern = "/.netlify/functions/create-subaccount"
-  rate = "5 per minute"    # 👈 NEW — public endpoint, protects Paystack account
+  rate = "5 per minute"
 
 [[rate_limit]]
   pattern = "/.netlify/functions/update-subaccount"
-  rate = "5 per minute"    # 👈 NEW — limits Paystack subaccount churn
+  rate = "5 per minute"
 
 [[rate_limit]]
   pattern = "/.netlify/functions/save-business"
@@ -58,7 +70,7 @@
 # ─── Auth endpoints ───
 [[rate_limit]]
   pattern = "/.netlify/functions/admin-login"
-  rate = "5 per minute"    # 👈 NEW — CRITICAL, admin password had zero throttling
+  rate = "5 per minute"
 
 [[rate_limit]]
   pattern = "/.netlify/functions/dashboard-login"
@@ -88,6 +100,24 @@
   pattern = "/.netlify/functions/update-security"
   rate = "5 per minute"
 
+# ─── Affiliate endpoints ───
+[[rate_limit]]
+  pattern = "/.netlify/functions/get-affiliate-data"
+  rate = "30 per minute"
+
+# ─── Admin write endpoints ───
+[[rate_limit]]
+  pattern = "/.netlify/functions/admin-businesses"
+  rate = "30 per minute"
+
+[[rate_limit]]
+  pattern = "/.netlify/functions/admin-businesses-bulk"
+  rate = "10 per minute"
+
+[[rate_limit]]
+  pattern = "/.netlify/functions/admin-settings"
+  rate = "20 per minute"
+
 # ─── Booking / offline payment endpoints ───
 [[rate_limit]]
   pattern = "/.netlify/functions/submit-offline-booking"
@@ -114,20 +144,7 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
-# 2. BLOG: SPA fallback handles /blog — do NOT uncomment these or you'll
-#    break the prerendered /blog/<slug>/index.html files.
-# [[redirects]]
-#   from = "/blog"
-#   to = "/index.html"
-#   status = 200
-#
-# [[redirects]]
-#   from = "/blog/*"
-#   to = "/blog/:splat/index.html"
-#   status = 200
-#   force = true
-
-# 3. SPA FALLBACK: Catch-all for React Router (Must be last!)
+# 2. SPA FALLBACK: Catch-all for React Router (Must be last!)
 [[redirects]]
   from = "/*"
   to = "/index.html"
@@ -140,36 +157,66 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    # 👈 FIXED: was `camera=()` which silently blocks the Cloudinary upload
-    # widget's "Take Photo" source on desktop. `camera=(self)` allows our
-    # own origin to request camera access — third parties still blocked.
     Permissions-Policy = "camera=(self), microphone=()"
-    # 👈 NEW: Force HTTPS on every request for a year. Safe to add now —
-    # if you ever need to disable it, remove this and wait a year.
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
 
-# ─── CACHE POLICIES ───
-[[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+# ═══════════════════════════════════════════════════════════════
+# CACHE POLICIES — ORDER IS CRITICAL
+#
+# Netlify resolves overlapping header rules by FILE ORDER: the first
+# rule that matches a URL wins, and later matches for the same header
+# are ignored. So the most specific rules MUST come first.
+#
+# Previous bug: `for = "/*.js"` was listed above `for = "/sw.js"`,
+# so the service worker matched the 1-year immutable rule and got
+# cached on users' devices. That meant template changes were invisible
+# for returning visitors — they kept loading old JS bundles from the
+# old SW until the SW's own cache expired ~12 months later.
+#
+# Fix: SW, HTML, and anything that must stay fresh are listed BEFORE
+# the aggressive JS/CSS cache rules.
+# ═══════════════════════════════════════════════════════════════
 
+# ─── Must NEVER be cached long-term ───
+
+# Service worker — the single most important file to keep fresh.
+# If this is stale, no other update reaches the user.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Workbox runtime if it ever lands at root under a different name
+[[headers]]
+  for = "/workbox-*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# HTML — the entry point. Always revalidate so new hashed bundles
+# referenced inside are picked up on the next load.
 [[headers]]
   for = "/*.html"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 
+# Prerendered blog pages (React Router URL is /blog/<slug>, so the
+# header pattern must match that URL, not the file path on disk)
 [[headers]]
-  for = "/blog/*/index.html"
+  for = "/blog/*"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 
-# 👈 NEW: Service worker must NEVER be cached long-term, otherwise PWA
-# updates get stuck on users' devices for weeks.
+# ─── Long-term immutable assets ───
+# Vite hashes filenames on every build, so a filename change == a new
+# file. Safe to cache for a year. Scoped to /assets/ so it can't
+# accidentally catch /sw.js or any other root-level JS.
+
 [[headers]]
-  for = "/sw.js"
+  for = "/assets/*"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# ─── Short-lived metadata ───
 
 [[headers]]
   for = "/sitemap.xml"
